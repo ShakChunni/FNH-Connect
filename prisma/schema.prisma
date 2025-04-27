@@ -1,0 +1,276 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DIGITAL_OCEAN_URL")
+}
+
+// Core Models
+model Patient {
+  id           Int       @id @default(autoincrement())
+  firstName    String
+  lastName     String
+  fullName     String // Pre-computed for easier querying
+  gender       String
+  age          Int?
+  dateOfBirth  DateTime?
+  guardianName String?
+  address      String?
+  phoneNumber  String?
+  email        String?
+  bloodGroup   String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  createdBy    Int // Staff ID who created the record
+
+  // Relations
+  admissions     Admission[]
+  pathologyTests PathologyTest[]
+
+  @@index([fullName])
+  @@index([phoneNumber])
+}
+
+model Department {
+  id          Int     @id @default(autoincrement())
+  name        String  @unique
+  description String?
+  isActive    Boolean @default(true)
+
+  // Relations
+  staffAssignments StaffDepartment[]
+  admissions       Admission[]
+  pathologyTests   PathologyTest[]
+}
+
+model Staff {
+  id             Int      @id @default(autoincrement())
+  firstName      String
+  lastName       String
+  fullName       String
+  role           String // Doctor, Nurse, PIC, Admin, etc.
+  specialization String?
+  phoneNumber    String?
+  email          String?
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  // Relations
+  departmentAssignments StaffDepartment[]
+  supervisedAdmissions  Admission[]       @relation("AdmittingDoctor")
+  collectedPayments     Payment[]
+  pathologyOrderedBy    PathologyTest[]   @relation("OrderedBy")
+  pathologyDoneBy       PathologyTest[]   @relation("DoneBy")
+
+  // Login credentials
+  user User?
+
+  @@index([fullName])
+}
+
+model StaffDepartment {
+  id           Int     @id @default(autoincrement())
+  staffId      Int
+  departmentId Int
+  isPrimary    Boolean @default(false)
+
+  staff      Staff      @relation(fields: [staffId], references: [id])
+  department Department @relation(fields: [departmentId], references: [id])
+
+  @@unique([staffId, departmentId])
+}
+
+model User {
+  id        Int       @id @default(autoincrement())
+  username  String    @unique
+  password  String
+  staffId   Int       @unique
+  role      String
+  isActive  Boolean   @default(true)
+  lastLogin DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  // Relations
+  staff        Staff         @relation(fields: [staffId], references: [id])
+  sessions     Session[]
+  activityLogs ActivityLog[]
+}
+
+// Gynecology Department
+model Admission {
+  id              Int       @id @default(autoincrement())
+  patientId       Int
+  departmentId    Int
+  admissionNumber String    @unique
+  doctorId        Int
+  dateAdmitted    DateTime  @default(now())
+  dateDischarged  DateTime?
+  isDischarged    Boolean   @default(false)
+
+  // Financial
+  admissionFee   Decimal @default(0)
+  serviceCharge  Decimal @default(0)
+  seatRent       Decimal @default(0)
+  otCharge       Decimal @default(0)
+  medicineCharge Decimal @default(0)
+  otherCharges   Decimal @default(0)
+
+  totalAmount    Decimal @default(0)
+  discountAmount Decimal @default(0)
+  grandTotal     Decimal @default(0)
+  paidAmount     Decimal @default(0) // Sum of all payments
+  dueAmount      Decimal @default(0) // Calculated: grandTotal - paidAmount
+  initialPayment Decimal @default(0) // First payment at admission
+
+  // Room details
+  seatNumber String?
+  ward       String?
+
+  // Medical details
+  diagnosis String?
+  otType    String?
+  treatment String?
+  remarks   String?
+
+  // Tracking
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  createdBy      Int
+  lastModifiedBy Int
+
+  // Relations
+  patient        Patient         @relation(fields: [patientId], references: [id])
+  department     Department      @relation(fields: [departmentId], references: [id])
+  doctor         Staff           @relation("AdmittingDoctor", fields: [doctorId], references: [id])
+  payments       Payment[]
+  pathologyTests PathologyTest[]
+
+  @@index([patientId])
+  @@index([departmentId])
+  @@index([doctorId])
+  @@index([dateAdmitted])
+  @@index([isDischarged])
+}
+
+// Pathology Department
+model PathologyTest {
+  id           Int    @id @default(autoincrement())
+  patientId    Int
+  departmentId Int
+  testNumber   String @unique
+  admissionId  Int? // Optional link to admission if patient is admitted
+  orderedById  Int // Doctor who ordered the test
+  doneById     Int? // Staff who performed the test
+
+  // Test info
+  testDate     DateTime  @default(now())
+  reportDate   DateTime?
+  testCategory String // Blood, Urine, X-ray, etc.
+  testResults  Json? // Store test name, value, normal range, etc.
+  remarks      String?
+  isCompleted  Boolean   @default(false)
+
+  // Financial
+  testCharge     Decimal @default(0)
+  discountAmount Decimal @default(0)
+  grandTotal     Decimal @default(0)
+  paidAmount     Decimal @default(0) // Sum of all payments
+  dueAmount      Decimal @default(0) // Calculated: grandTotal - paidAmount
+  initialPayment Decimal @default(0) // First payment when test ordered
+
+  // Tracking
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  createdBy      Int
+  lastModifiedBy Int
+
+  // Relations
+  patient    Patient    @relation(fields: [patientId], references: [id])
+  department Department @relation(fields: [departmentId], references: [id])
+  admission  Admission? @relation(fields: [admissionId], references: [id])
+  orderedBy  Staff      @relation("OrderedBy", fields: [orderedById], references: [id])
+  doneBy     Staff?     @relation("DoneBy", fields: [doneById], references: [id])
+  payments   Payment[]
+
+  @@index([patientId])
+  @@index([departmentId])
+  @@index([admissionId])
+  @@index([orderedById])
+  @@index([testDate])
+}
+
+// Payment Tracking
+model Payment {
+  id            Int      @id @default(autoincrement())
+  amount        Decimal
+  paymentMethod String // Cash, Card, etc.
+  paymentDate   DateTime @default(now())
+  collectedById Int
+  shiftInfo     String? // Morning, Evening, Night shift
+
+  // Source of payment - relation to one of these services
+  admissionId     Int?
+  pathologyTestId Int?
+
+  receiptNumber String  @unique
+  notes         String?
+
+  // Tracking
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  collector     Staff          @relation(fields: [collectedById], references: [id])
+  admission     Admission?     @relation(fields: [admissionId], references: [id])
+  pathologyTest PathologyTest? @relation(fields: [pathologyTestId], references: [id])
+
+  @@index([collectedById])
+  @@index([paymentDate])
+  @@index([admissionId])
+  @@index([pathologyTestId])
+  @@index([shiftInfo])
+}
+
+// Session & Activity Tracking
+model Session {
+  id        String   @id @default(cuid())
+  userId    Int
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+}
+
+model ActivityLog {
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  action      String
+  description String?
+  entityType  String? // Patient, Admission, Payment, etc.
+  entityId    Int? // ID of the affected entity
+  timestamp   DateTime @default(now())
+  ipAddress   String?
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([timestamp])
+  @@index([entityType, entityId])
+}
+
+// Configuration
+model HospitalConfig {
+  id          Int      @id @default(autoincrement())
+  key         String   @unique
+  value       String
+  description String?
+  updatedAt   DateTime @updatedAt
+  updatedBy   Int
+}
