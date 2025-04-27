@@ -1,0 +1,32 @@
+.radix-themes {
+  /* Keep existing font config */
+  --default-font-family: var(--font-inter) !important;
+
+  /* Darker navy accent colors */
+  --blue-1: hsl(217, 60%, 3%);
+  --blue-2: hsl(217, 60%, 6%);
+  --blue-3: hsl(217, 60%, 9%);
+  --blue-4: hsl(217, 60%, 12%);
+  --blue-5: hsl(217, 60%, 15%);
+  --blue-6: hsl(217, 60%, 18%);
+  --blue-7: hsl(217, 60%, 21%);
+  --blue-8: hsl(217, 60%, 24%);
+  --blue-9: hsl(217, 60%, 27%); /* Base color #0d1a2b */
+  --blue-10: hsl(217, 60%, 30%);
+  --blue-11: hsl(217, 60%, 33%);
+  --blue-12: hsl(217, 60%, 36%);
+
+  /* Adjusted alpha variations */
+  --blue-a1: hsla(217, 60%, 3%, 0.05);
+  --blue-a2: hsla(217, 60%, 6%, 0.1);
+  --blue-a3: hsla(217, 60%, 9%, 0.15);
+  --blue-a4: hsla(217, 60%, 12%, 0.2);
+  --blue-a5: hsla(217, 60%, 15%, 0.3);
+  --blue-a6: hsla(217, 60%, 18%, 0.4);
+  --blue-a7: hsla(217, 60%, 21%, 0.5);
+  --blue-a8: hsla(217, 60%, 24%, 0.6);
+  --blue-a9: hsla(217, 60%, 27%, 0.7);
+  --blue-a10: hsla(217, 60%, 30%, 0.8);
+  --blue-a11: hsla(217, 60%, 33%, 0.9);
+  --blue-a12: hsla(217, 60%, 36%, 1);
+}
