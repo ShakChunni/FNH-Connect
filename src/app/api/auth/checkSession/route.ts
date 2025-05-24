@@ -9,10 +9,9 @@ const EXPIRATION_TIME = 60 * 60 * 24; // 1 day in seconds
 interface UserResponse {
   id: number;
   username: string;
-  fullName: string | null;
+  staffId: number;
+  fullName: string;
   role: string;
-  manages: string[] | null;
-  organizations: string[] | null;
 }
 
 export async function GET(request: NextRequest) {
@@ -50,7 +49,11 @@ export async function GET(request: NextRequest) {
         token: sessionToken,
       },
       include: {
-        user: true,
+        user: {
+          include: {
+            staff: true, // Include staff to get fullName
+          },
+        },
       },
     });
 
@@ -74,9 +77,9 @@ export async function GET(request: NextRequest) {
     const newExpiresAt = new Date();
     const newUpdatedAt = new Date();
 
-    // Set both times to MYT (+8)
+    // Set both times to Bangladesh time (+6)
     [newExpiresAt, newUpdatedAt].forEach((date) => {
-      date.setHours(date.getHours() + 8);
+      date.setHours(date.getHours() + 6);
     });
 
     newExpiresAt.setSeconds(newExpiresAt.getSeconds() + EXPIRATION_TIME);
@@ -92,10 +95,9 @@ export async function GET(request: NextRequest) {
     const userResponse: UserResponse = {
       id: session.user.id,
       username: session.user.username,
-      fullName: session.user.fullName,
+      staffId: session.user.staffId,
+      fullName: session.user.staff.fullName, // Get fullName from staff relation
       role: session.user.role,
-      manages: session.user.manages,
-      organizations: session.user.organizations,
     };
 
     const response = NextResponse.json({
@@ -103,9 +105,10 @@ export async function GET(request: NextRequest) {
       valid: true,
       user: userResponse,
     });
-    // Update browser cookie expiration
+
+    // Update browser cookie expiration - Bangladesh time (+6)
     const cookieExpiry = new Date();
-    cookieExpiry.setHours(cookieExpiry.getHours() + 8); // Set to MYT
+    cookieExpiry.setHours(cookieExpiry.getHours() + 6);
     cookieExpiry.setSeconds(cookieExpiry.getSeconds() + EXPIRATION_TIME);
 
     response.cookies.set({

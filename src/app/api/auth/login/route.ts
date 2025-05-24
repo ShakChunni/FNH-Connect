@@ -3,6 +3,7 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import DeviceDetector from "node-device-detector";
 import { prisma } from "@/lib/prisma";
+import crypto from "crypto";
 
 const SECRET_KEY = process.env.SECRET_KEY as string;
 const EXPIRATION_TIME = 60 * 60 * 24; // 1 day in seconds
@@ -19,10 +20,141 @@ interface LoginRequest {
 interface UserResponse {
   id: number;
   username: string;
-  fullName: string | null;
+  staffId: number;
+  fullName: string;
   role: string;
-  manages: string[] | null;
-  organizations: string[] | null;
+}
+
+interface DeviceInfo {
+  ipAddress: string;
+  userAgent: string;
+  deviceFingerprint: string;
+  readableFingerprint: string;
+  osType: string;
+  browserName: string;
+  browserVersion: string;
+  deviceType: string;
+  deviceString: string;
+}
+
+function generateDeviceFingerprint(
+  ip: string,
+  userAgent: string,
+  device: any,
+  os: any,
+  client: any,
+  userId?: number
+): string {
+  const components = [
+    ip,
+    client.name || "unknown",
+    os.name || "unknown",
+    device.type || "unknown",
+    userId ? `user-${userId}` : "anonymous",
+  ];
+
+  const fingerprint = crypto
+    .createHash("sha256")
+    .update(components.join("|"))
+    .digest("hex");
+
+  return fingerprint;
+}
+
+function getDeviceInfo(
+  userAgent: string,
+  clientIp: string,
+  userId?: number
+): DeviceInfo {
+  const detector = new DeviceDetector({
+    clientIndexes: true,
+    deviceIndexes: true,
+    deviceAliasCode: false,
+    deviceTrusted: true,
+    maxUserAgentSize: 500,
+  });
+
+  const result = detector.detect(userAgent);
+
+  // Get OS info
+  const osName = result.os?.name || "Unknown";
+  let osVersion = result.os?.version || "Unknown";
+
+  // Get device info with fallbacks
+  let deviceVendor = result.device?.brand || null;
+  let deviceModel = result.device?.model || null;
+  let deviceType = result.device?.type || null;
+
+  // Capitalize device type
+  if (deviceType && typeof deviceType === "string") {
+    deviceType =
+      deviceType.charAt(0).toUpperCase() + deviceType.slice(1).toLowerCase();
+  }
+
+  // Set desktop type for desktop operating systems
+  if (
+    !deviceType &&
+    ((osName && ["Windows", "Mac OS", "Linux"].includes(osName)) ||
+      result.os?.platform === "x64" ||
+      result.os?.platform === "x86")
+  ) {
+    deviceType = "Desktop";
+  }
+
+  // Generate device fingerprint
+  const deviceFingerprint = generateDeviceFingerprint(
+    clientIp,
+    userAgent,
+    result.device,
+    result.os,
+    result.client,
+    userId
+  );
+
+  // Create readable fingerprint (e.g., AB:CD:EF:12:34:56)
+  const readableFingerprint = deviceFingerprint
+    .substring(0, 12)
+    .replace(/(.{2})/g, "$1:")
+    .slice(0, -1)
+    .toUpperCase();
+
+  // Format device display string
+  let deviceTypeDisplay = "Unknown Device";
+
+  if (deviceVendor || deviceModel) {
+    deviceTypeDisplay =
+      [deviceVendor, deviceModel].filter(Boolean).join(" ").trim() ||
+      "Unknown Device";
+
+    if (
+      deviceType &&
+      !deviceTypeDisplay.toLowerCase().includes(deviceType.toLowerCase())
+    ) {
+      deviceTypeDisplay += ` (${deviceType})`;
+    }
+  } else if (result.client.name) {
+    deviceTypeDisplay = `${result.client.name} ${
+      result.client.version || ""
+    }`.trim();
+  }
+
+  const osInfo = result.os.name
+    ? `${result.os.name} ${result.os.version || ""}`.trim()
+    : "Unknown OS";
+
+  const deviceString = `${deviceTypeDisplay} on ${osInfo}`;
+
+  return {
+    ipAddress: clientIp,
+    userAgent: userAgent,
+    deviceFingerprint: deviceFingerprint,
+    readableFingerprint: readableFingerprint,
+    osType: result.os.name || "Unknown",
+    browserName: result.client.name || "Unknown",
+    browserVersion: result.client.version || "Unknown",
+    deviceType: deviceType || "Unknown",
+    deviceString,
+  };
 }
 
 export async function POST(request: NextRequest) {
@@ -31,9 +163,11 @@ export async function POST(request: NextRequest) {
 
     // Wrap all database operations in transaction
     const result = await prisma.$transaction(async (tx) => {
+      // Find user and include staff data
       const user = await tx.user.findUnique({
         where: { username },
         include: {
+          staff: true,
           sessions: true,
         },
       });
@@ -42,7 +176,7 @@ export async function POST(request: NextRequest) {
         throw new Error("Invalid username");
       }
 
-      if (user.archived) {
+      if (!user.isActive) {
         throw new Error(
           "Account has been deactivated. Please contact your administrator."
         );
@@ -53,41 +187,33 @@ export async function POST(request: NextRequest) {
         throw new Error("Invalid password");
       }
 
-      // Generate JWT token
+      // Generate JWT token with staffId and fullName from staff
       const sessionToken = jwt.sign(
         {
           userId: user.id,
           username: user.username,
-          fullName: user.fullName,
+          staffId: user.staffId,
+          fullName: user.staff.fullName,
           role: user.role,
-          manages: user.manages,
-          organizations: user.organizations,
         },
         SECRET_KEY,
         { expiresIn: EXPIRATION_TIME }
       );
 
+      // Create expiration date in Bangladesh time (UTC+6)
       const expiresAt = new Date();
       const createdAt = new Date();
       const updatedAt = new Date();
-      [expiresAt, createdAt, updatedAt].forEach((date) => {
-        date.setHours(date.getHours() + 8);
-      });
 
+      // Add 6 hours for Bangladesh time
+      expiresAt.setHours(expiresAt.getHours() + 6);
+      createdAt.setHours(createdAt.getHours() + 6);
+      updatedAt.setHours(updatedAt.getHours() + 6);
+
+      // Add expiration time
       expiresAt.setSeconds(expiresAt.getSeconds() + EXPIRATION_TIME);
 
-      // Create server-side session with MYT times
-      const session = await tx.session.create({
-        data: {
-          userId: user.id,
-          token: sessionToken,
-          expiresAt,
-          createdAt,
-          updatedAt,
-        },
-      });
-
-      // Get client IP address
+      // Process client IP address
       let clientIp =
         request.headers.get("x-forwarded-for")?.split(",")[0].trim() ||
         request.headers.get("x-real-ip") ||
@@ -101,69 +227,74 @@ export async function POST(request: NextRequest) {
         clientIp = "localhost";
       }
 
-      // Get detailed device information with node-device-detector
+      // Get detailed device information with device fingerprinting
       const userAgent = request.headers.get("user-agent") || "Unknown";
-      const deviceInfo = getDeviceInfo(userAgent);
+      const deviceInfo = getDeviceInfo(userAgent, clientIp, user.id);
 
-      // Format device display string
-      let deviceTypeDisplay = "Unknown Device";
+      // Check if there's an existing session with the same device fingerprint
+      const existingSession = await tx.session.findFirst({
+        where: {
+          userId: user.id,
+          deviceFingerprint: deviceInfo.deviceFingerprint,
+        },
+      });
 
-      if (deviceInfo.device.vendor || deviceInfo.device.model) {
-        deviceTypeDisplay =
-          [deviceInfo.device.vendor, deviceInfo.device.model]
-            .filter(Boolean)
-            .join(" ")
-            .trim() || "Unknown Device";
-
-        if (
-          deviceInfo.device.type &&
-          !deviceTypeDisplay
-            .toLowerCase()
-            .includes(deviceInfo.device.type.toLowerCase())
-        ) {
-          deviceTypeDisplay += ` (${deviceInfo.device.type})`;
-        }
-      } else if (deviceInfo.client.name) {
-        deviceTypeDisplay = `${deviceInfo.client.name} ${
-          deviceInfo.client.version || ""
-        }`.trim();
+      // If there's an existing session, you might want to invalidate it
+      if (existingSession) {
+        await tx.session.delete({
+          where: { id: existingSession.id },
+        });
       }
 
-      const osInfo = deviceInfo.os.name
-        ? `${deviceInfo.os.name} ${deviceInfo.os.version || ""}`.trim()
-        : "Unknown OS";
+      // Create server-side session with Bangladesh times and device info
+      const session = await tx.session.create({
+        data: {
+          userId: user.id,
+          token: sessionToken,
+          expiresAt,
+          createdAt,
+          updatedAt,
+          ipAddress: deviceInfo.ipAddress,
+          userAgent: deviceInfo.userAgent,
+          deviceFingerprint: deviceInfo.deviceFingerprint,
+          readableFingerprint: deviceInfo.readableFingerprint,
+          osType: deviceInfo.osType,
+          browserName: deviceInfo.browserName,
+          browserVersion: deviceInfo.browserVersion,
+          deviceType: deviceInfo.deviceType,
+        },
+      });
 
-      const deviceType = `${deviceTypeDisplay} on ${osInfo}`;
-      const klTime = new Date(new Date().getTime() + 8 * 60 * 60 * 1000);
+      // Bangladesh time (UTC+6)
+      const bdTime = new Date(new Date().getTime() + 6 * 60 * 60 * 1000);
 
       // Log the login activity with enhanced device information
       await tx.activityLog.create({
         data: {
           userId: user.id,
-          username: user.username,
           action: "LOGIN",
-          description: `User ${user.username} logged in from IP ${clientIp} using ${deviceType}`,
-          ip_address: clientIp,
-          device_type: deviceType,
-          // Add detailed device information
-          browser_name: deviceInfo.client.name || null,
-          browser_version: deviceInfo.client.version || null,
-          os_name: deviceInfo.os.name || null,
-          os_version: deviceInfo.os.version || null,
-          device_vendor: deviceInfo.device.vendor || null,
-          device_model: deviceInfo.device.model || null,
-          device_type_spec: deviceInfo.device.type || null,
-          timestamp: klTime,
+          description: `User ${user.username} logged in from ${deviceInfo.deviceString}`,
+          entityType: "User",
+          entityId: user.id,
+          ipAddress: deviceInfo.ipAddress,
+          sessionId: session.id,
+          deviceFingerprint: deviceInfo.deviceFingerprint,
+          readableFingerprint: deviceInfo.readableFingerprint,
+          deviceType: deviceInfo.deviceType,
+          browserName: deviceInfo.browserName,
+          browserVersion: deviceInfo.browserVersion,
+          osType: deviceInfo.osType,
+          timestamp: bdTime,
         },
       });
 
+      // Create user response object
       const userResponse: UserResponse = {
         id: user.id,
         username: user.username,
-        fullName: user.fullName,
+        staffId: user.staffId,
+        fullName: user.staff.fullName,
         role: user.role,
-        manages: user.manages,
-        organizations: user.organizations,
       };
 
       return { userResponse, sessionToken };
@@ -179,7 +310,7 @@ export async function POST(request: NextRequest) {
     );
 
     const cookieExpiry = new Date();
-    cookieExpiry.setHours(cookieExpiry.getHours() + 8); // Set to MYT
+    cookieExpiry.setHours(cookieExpiry.getHours() + 6); // Set to Bangladesh time
     cookieExpiry.setSeconds(cookieExpiry.getSeconds() + EXPIRATION_TIME);
 
     response.cookies.set({
@@ -212,151 +343,4 @@ export async function POST(request: NextRequest) {
       }
     );
   }
-}
-
-interface DeviceInfo {
-  client: {
-    name: string | null;
-    version: string | null;
-    type: string | null;
-  };
-  os: {
-    name: string | null;
-    version: string | null;
-    platform: string | null;
-  };
-  device: {
-    type: string | null;
-    brand: string | null;
-    model: string | null;
-    vendor: string | null;
-  };
-  bot: boolean;
-}
-
-function getDeviceInfo(userAgent: string): DeviceInfo {
-  const detector = new DeviceDetector({
-    clientIndexes: true,
-    deviceIndexes: true,
-    deviceAliasCode: false,
-    deviceTrusted: true,
-    maxUserAgentSize: 500,
-  });
-
-  const result = detector.detect(userAgent);
-
-  // Get OS info
-  const osName = result.os?.name || null;
-  let osVersion = result.os?.version || null;
-
-  // Enhance macOS versions with marketing names
-  if (osName === "Mac OS" && osVersion) {
-    const macOSVersions: Record<string, string> = {
-      "10.15": "Catalina",
-      "11": "Big Sur",
-      "12": "Monterey",
-      "13": "Ventura",
-      "14": "Sonoma",
-      "15": "Sequoia",
-    };
-
-    const majorVersion = osVersion.split(".")[0];
-    const minorVersion = osVersion.split(".")[1];
-    const versionKey =
-      majorVersion === "10" ? `${majorVersion}.${minorVersion}` : majorVersion;
-
-    if (macOSVersions[versionKey]) {
-      osVersion = `${osVersion} (${macOSVersions[versionKey]})`;
-    }
-  }
-
-  // Get device info with fallbacks
-  let deviceVendor = result.device?.brand || null;
-  let deviceModel = result.device?.model || null;
-  let deviceType = result.device?.type || null;
-
-  // Capitalize device type
-  if (deviceType && typeof deviceType === "string") {
-    deviceType =
-      deviceType.charAt(0).toUpperCase() + deviceType.slice(1).toLowerCase();
-  }
-
-  // Set desktop type for desktop operating systems
-  if (
-    !deviceType &&
-    ((osName && ["Windows", "Mac OS", "Linux"].includes(osName)) ||
-      result.os?.platform === "x64" ||
-      result.os?.platform === "x86")
-  ) {
-    deviceType = "Desktop";
-  }
-
-  // Handle frozen Android user agent (Chrome 110+ shows "Android 10; K")
-  const isFrozenAndroidUA =
-    osName === "Android" &&
-    osVersion === "10" &&
-    (deviceModel === "K" || !deviceModel);
-
-  if (isFrozenAndroidUA) {
-    // Try to get better device info from user agent
-    const androidDeviceMatch = userAgent.match(/;\s*([^;)]+?)(?:\s+Build|\))/i);
-    if (androidDeviceMatch && androidDeviceMatch[1]) {
-      const deviceString = androidDeviceMatch[1].trim();
-      if (deviceString && deviceString !== "K") {
-        const knownVendors = [
-          { name: "Samsung", patterns: ["SM-", "SAMSUNG"] },
-          { name: "Xiaomi", patterns: ["MI ", "Redmi", "POCO"] },
-          { name: "Google", patterns: ["Pixel"] },
-          { name: "OnePlus", patterns: ["OnePlus"] },
-          { name: "OPPO", patterns: ["OPPO", "CPH"] },
-          { name: "Vivo", patterns: ["vivo"] },
-          { name: "Huawei", patterns: ["HUAWEI"] },
-          { name: "Motorola", patterns: ["moto", "Motorola"] },
-          { name: "Nokia", patterns: ["Nokia"] },
-          { name: "Sony", patterns: ["Sony", "Xperia"] },
-        ];
-
-        for (const vendor of knownVendors) {
-          if (vendor.patterns.some((p) => deviceString.includes(p))) {
-            deviceVendor = vendor.name;
-            deviceModel = deviceString;
-            break;
-          }
-        }
-
-        if (!deviceVendor && deviceString !== "K") {
-          deviceModel = deviceString;
-        }
-      }
-    }
-  }
-
-  // Bot detection
-  let isBot = false;
-  const botResult = detector.parseBot(userAgent);
-  if (botResult && Object.keys(botResult).length > 0) {
-    isBot = true;
-  } else if (result.client?.type === "bot") {
-    isBot = true;
-  }
-
-  return {
-    client: {
-      name: result.client?.name || null,
-      version: result.client?.version || null,
-      type: result.client?.type || null,
-    },
-    os: {
-      name: osName,
-      version: osVersion,
-      platform: result.os?.platform || null,
-    },
-    device: {
-      type: deviceType,
-      brand: deviceVendor,
-      model: deviceModel,
-      vendor: deviceVendor,
-    },
-    bot: isBot,
-  };
 }

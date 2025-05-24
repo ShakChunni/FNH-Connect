@@ -21,7 +21,6 @@ import Dropdowns from "@/app/home/Dropdowns";
 import useFetchedFilteredData from "@/app/home/hooks/useFetchedFilteredData";
 import { useAuth } from "@/app/AuthContext";
 import useFetchPics from "@/app/home/hooks/useFetchPics";
-import Notification from "./components/Notification";
 
 interface FilterState {
   pic: string[];
