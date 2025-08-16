@@ -1,13 +1,15 @@
 import { useState, useCallback } from "react";
 import { useAuth } from "@/app/AuthContext";
 
+
 interface ImportLeadsOptions {
   onSuccess?: (data: any[]) => void;
   onError?: (message: string) => void;
 }
 
 interface ImportLeadsResponse {
-  success: boolean;
+  succes
+  s: boolean;
   data?: any[];
   message?: string;
 }

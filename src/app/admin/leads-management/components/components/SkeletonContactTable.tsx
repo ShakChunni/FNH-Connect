@@ -12,7 +12,8 @@ const SkeletonContactsTable: React.FC = () => {
     "PIC",
     "Meetings Conducted",
     "Meeting Date",
-    "Proposal In Progress",
+    "Pro
+    posal In Progress",
     "Proposal In Progress Date",
     "Proposal Sent Out",
     "Proposal Sent Out Date",

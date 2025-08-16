@@ -10,6 +10,7 @@ import ExcelFileUploader from "./components/ExcelFileUploaded/ExcelFileUploader"
 import { useAuth } from "@/app/AuthContext";
 import SkeletonContactsTable from "./components/SkeletonContactTable";
 
+
 interface ContactsTableProps {
   tableData: {
     id: number;

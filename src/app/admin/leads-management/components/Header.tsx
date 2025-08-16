@@ -11,6 +11,7 @@ const Header: React.FC = () => {
   const { user, logout } = useAuth();
   const isMobile = useMediaQuery("(max-width: 1023px)");
 
+  
   // Memoize handlers
   const handleLogout = useCallback(async () => {
     setIsLoggingOut(true);

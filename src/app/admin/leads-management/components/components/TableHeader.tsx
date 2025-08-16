@@ -14,6 +14,7 @@ const TableHeader: React.FC<TableHeaderProps> = ({
   sortConfig,
   requestSort,
   currentPage,
+  
   totalRows,
 }) => {
   const getSortIcon = (key: string) => {
