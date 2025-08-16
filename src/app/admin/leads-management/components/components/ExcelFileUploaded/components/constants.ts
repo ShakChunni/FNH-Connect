@@ -15,7 +15,8 @@ export const TARGET_FIELDS = [
 ];
 
 export const tabContentVariants = {
-  hidden: { opacity: 0 },
+  hidd
+  en: { opacity: 0 },
   visible: { opacity: 1 },
 };
 

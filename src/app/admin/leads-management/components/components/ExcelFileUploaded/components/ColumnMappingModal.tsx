@@ -8,8 +8,11 @@ import PreviewTab from "./components/PreviewTab";
 
 interface ColumnMappingModalProps {
   isOpen: boolean;
-  onClose: () => void;
-  sourceHeaders: string[];
+  onClo
+  se: () => void;
+  sourceHeaders: string[
+
+  ];
   sampleData: any[];
   onConfirm: (mappings: Record<string, string>) => void;
 }

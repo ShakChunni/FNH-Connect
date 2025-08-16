@@ -12,6 +12,7 @@ export default function LeadsManagement() {
   const [messageContent, setMessageContent] = useState<string>("");
   const messagePopupRef = useRef<HTMLDivElement>(null);
 
+  
   // Use the data fetching hook instead of hardcoded data
   const {
     data: contactsData,

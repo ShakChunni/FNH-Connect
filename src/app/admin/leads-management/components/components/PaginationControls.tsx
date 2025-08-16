@@ -12,7 +12,8 @@ interface PaginationControlsProps {
 
 const PaginationControls: FC<PaginationControlsProps> = ({
   currentPage,
-  totalPages,
+  tot
+  alPages,
   onPreviousPage,
   onNextPage,
   onPageChange,

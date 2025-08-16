@@ -11,7 +11,8 @@ export default function AppLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const { isExpanded, setSidebarState } = useSidebarState();
+  const { isE
+    xpanded, setSidebarState } = useSidebarState();
   const { user } = useAuth();
 
   const handleFilterUpdate = useCallback((value: string) => {
