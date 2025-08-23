@@ -7,7 +7,8 @@ import React, {
   useMemo,
 } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Text } from "@radix-ui/themes";
+import { createPortal } from "react-dom";
+import { Database, ChevronDown } from "lucide-react";
 
 interface SourceTableDropdownProps {
   onSelect: (value: string) => void;
@@ -39,13 +40,32 @@ const SourceTableDropdown: FC<SourceTableDropdownProps> = ({
 }) => {
   const [selectedValue, setSelectedValue] = useState<string>(defaultValue);
   const [isOpen, setIsOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState<string>("");
+  const [dropdownPosition, setDropdownPosition] = useState<{
+    top: number;
+    left: number;
+    width: number;
+  }>({ top: 0, left: 0, width: 0 });
+
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     if (defaultValue) {
       setSelectedValue(defaultValue);
     }
   }, [defaultValue]);
+
+  const updateDropdownPosition = useCallback(() => {
+    if (buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      setDropdownPosition({
+        top: rect.bottom + window.scrollY + 4,
+        left: rect.left + window.scrollX,
+        width: rect.width,
+      });
+    }
+  }, []);
 
   const handleSelect = useCallback(
     (value: string) => {
@@ -54,28 +74,38 @@ const SourceTableDropdown: FC<SourceTableDropdownProps> = ({
       setIsOpen(false);
       onDropdownToggle(false);
       onDropdownOpenStateChange(false);
+      setSearchTerm("");
     },
     [onSelect, onDropdownToggle, onDropdownOpenStateChange]
   );
 
   const handleOpenChange = useCallback(
     (open: boolean) => {
+      if (open) {
+        updateDropdownPosition();
+      }
       setIsOpen(open);
       onDropdownToggle(open);
       onDropdownOpenStateChange(open);
+      if (!open) {
+        setSearchTerm("");
+      }
     },
-    [onDropdownToggle, onDropdownOpenStateChange]
+    [onDropdownToggle, onDropdownOpenStateChange, updateDropdownPosition]
   );
 
   const handleClickOutside = useCallback(
     (event: MouseEvent) => {
       if (
         dropdownRef.current &&
-        !dropdownRef.current.contains(event.target as Node)
+        !dropdownRef.current.contains(event.target as Node) &&
+        buttonRef.current &&
+        !buttonRef.current.contains(event.target as Node)
       ) {
         setIsOpen(false);
         onDropdownToggle(false);
         onDropdownOpenStateChange(false);
+        setSearchTerm("");
       }
     },
     [onDropdownToggle, onDropdownOpenStateChange]
@@ -84,71 +114,133 @@ const SourceTableDropdown: FC<SourceTableDropdownProps> = ({
   useEffect(() => {
     if (isOpen) {
       document.addEventListener("mousedown", handleClickOutside);
+      window.addEventListener("resize", updateDropdownPosition);
+      window.addEventListener("scroll", updateDropdownPosition);
     } else {
       document.removeEventListener("mousedown", handleClickOutside);
+      window.removeEventListener("resize", updateDropdownPosition);
+      window.removeEventListener("scroll", updateDropdownPosition);
     }
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
+      window.removeEventListener("resize", updateDropdownPosition);
+      window.removeEventListener("scroll", updateDropdownPosition);
     };
-  }, [isOpen, handleClickOutside]);
+  }, [isOpen, handleClickOutside, updateDropdownPosition]);
 
-  const dropdownItems = useMemo(
-    () =>
-      sourceTableValues.map((value) => (
+  const filteredSourceTables = useMemo(() => {
+    if (!searchTerm) return sourceTableValues;
+    return sourceTableValues.filter((table) =>
+      getDisplayValue(table).toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [searchTerm]);
+
+  const formatDisplayValue = () => {
+    if (!selectedValue) return null;
+    const displayValue = getDisplayValue(selectedValue);
+    return displayValue.length > 6
+      ? `${displayValue.slice(0, 6)}...`
+      : displayValue;
+  };
+
+  const dropdownContent = (
+    <AnimatePresence>
+      {isOpen && (
         <motion.div
-          key={value}
-          onClick={() => handleSelect(value)}
-          className="cursor-pointer px-2 py-2 hover:bg-blue-900 hover:text-white hover:rounded-lg"
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
+          ref={dropdownRef}
+          initial={{ opacity: 0, y: -10, scale: 0.95 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0, y: -10, scale: 0.95 }}
+          transition={{ duration: 0.2, ease: "easeOut" }}
+          className="bg-white border border-gray-300 rounded-lg shadow-lg overflow-hidden z-[60]"
+          style={{
+            position: "absolute",
+            top: dropdownPosition.top,
+            left: dropdownPosition.left,
+            width: Math.max(
+              dropdownPosition.width,
+              window.innerWidth < 640 ? 140 : 180
+            ),
+            maxHeight: window.innerWidth < 640 ? "200px" : "250px",
+            boxShadow:
+              "0 10px 25px -5px rgba(0, 0, 0, 0.2), 0 8px 10px -6px rgba(0, 0, 0, 0.2)",
+          }}
         >
-          <Text>{getDisplayValue(value)}</Text>
+          {/* Search Input */}
+          <div className="p-2 sticky top-0 bg-white z-10 shadow-sm">
+            <input
+              type="text"
+              placeholder={
+                window.innerWidth < 640 ? "Search..." : "Search organization..."
+              }
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="source-search-input w-full p-2 rounded-xl border-2 border-gray-200 focus:border-blue-900 focus:ring-2 focus:ring-blue-950 focus:outline-none text-xs sm:text-sm"
+            />
+          </div>
+
+          {/* Dropdown Items */}
+          <div className="max-h-32 overflow-y-auto">
+            {filteredSourceTables.length > 0 ? (
+              filteredSourceTables.map((table) => (
+                <div
+                  key={table}
+                  onClick={() => handleSelect(table)}
+                  className="cursor-pointer px-4 py-3 hover:bg-blue-900 hover:text-white flex items-center transition-colors duration-200"
+                >
+                  <Database className="h-3 w-3 sm:h-4 sm:w-4 mr-2 opacity-70" />
+                  <span className="text-xs sm:text-sm font-medium">
+                    {getDisplayValue(table)}
+                  </span>
+                </div>
+              ))
+            ) : (
+              <div className="px-4 py-3 text-gray-500 text-xs sm:text-sm">
+                No organization found
+              </div>
+            )}
+          </div>
         </motion.div>
-      )),
-    [handleSelect]
+      )}
+    </AnimatePresence>
   );
 
   return (
-    <motion.div
-      layout
-      ref={dropdownRef}
-      onClick={(e) => e.stopPropagation()}
-      style={style}
-      className="relative"
-    >
-      <motion.button
-        layout
+    <>
+      <button
+        ref={buttonRef}
         onClick={() => handleOpenChange(!isOpen)}
-        className={`${
+        className={`flex items-center px-2 md:px-3 py-2 border rounded-lg cursor-pointer hover:bg-gray-50 transition-all duration-200 ${
           selectedValue
-            ? "bg-white border-2 border-blue-900"
-            : "bg-[#F0F4F8] border border-gray-300"
-        } text-[#2A3136] font-normal rounded-lg flex justify-between items-center cursor-pointer px-3 py-2 focus:border-blue-900 focus:ring-2 focus:ring-blue-900 outline-none shadow-sm hover:shadow-md transition-shadow duration-300`}
-        style={{ width: "100%" }}
+            ? "bg-purple-50 border-purple-200 text-purple-700"
+            : "bg-gray-50 border-gray-300 text-gray-700"
+        } ${isOpen ? "ring-2 ring-blue-200 border-blue-900" : ""}`}
+        style={style}
+        title={
+          selectedValue
+            ? `Organization: ${getDisplayValue(selectedValue)}`
+            : "Select Assigned Organization"
+        }
       >
-        <span
-          className={`${
-            selectedValue ? "text-[#2A3136] font-normal" : "text-gray-400"
-          }`}
-        >
-          {getDisplayValue(selectedValue) || "Select Source Table"}
+        <Database className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2 text-current" />
+        <span className="text-xs sm:text-sm font-medium whitespace-nowrap">
+          <span className="block sm:hidden">
+            {formatDisplayValue() || "Assigned Org"}
+          </span>
+          <span className="hidden sm:block">
+            {formatDisplayValue() || "Assigned Organization"}
+          </span>
         </span>
-      </motion.button>
-      <AnimatePresence>
-        {isOpen && (
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.25 }}
-            className="absolute z-50 bg-white border border-gray-200 rounded-lg shadow-lg mt-1 p-2"
-            style={{ width: "100%", minWidth: "fit-content" }}
-          >
-            {dropdownItems}
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </motion.div>
+        <ChevronDown
+          className={`ml-1 sm:ml-2 h-3 w-3 text-current transition-transform duration-200 ${
+            isOpen ? "rotate-180" : ""
+          }`}
+        />
+      </button>
+
+      {typeof window !== "undefined" &&
+        createPortal(dropdownContent, document.body)}
+    </>
   );
 };
 

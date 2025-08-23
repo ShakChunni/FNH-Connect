@@ -1,5 +1,4 @@
 import React from "react";
-import { Flex } from "@radix-ui/themes";
 import PaginationControls from "./PaginationControls";
 
 interface PaginationProps {
@@ -8,7 +7,7 @@ interface PaginationProps {
   onPreviousPage: () => void;
   onNextPage: () => void;
   onPageChange: (page: number) => void;
-  scrollToTop: () => void; // Add scrollToTop prop
+  scrollToTop: () => void;
 }
 
 const Pagination: React.FC<PaginationProps> = ({
@@ -17,20 +16,26 @@ const Pagination: React.FC<PaginationProps> = ({
   onPreviousPage,
   onNextPage,
   onPageChange,
-  scrollToTop, // Destructure scrollToTop
+  scrollToTop,
 }) => (
-  <Flex className="justify-center mb-5 px-4 sm:px-0">
+  <div className="flex justify-center items-center mt-6 px-4 sm:px-0 w-full">
     <PaginationControls
       currentPage={currentPage}
       totalPages={totalPages}
-      onPreviousPage={onPreviousPage}
-      onNextPage={onNextPage}
+      onPreviousPage={() => {
+        onPreviousPage();
+        scrollToTop();
+      }}
+      onNextPage={() => {
+        onNextPage();
+        scrollToTop();
+      }}
       onPageChange={(page) => {
         onPageChange(page);
-        scrollToTop(); // Call scrollToTop when page changes
+        scrollToTop();
       }}
     />
-  </Flex>
+  </div>
 );
 
 export default Pagination;

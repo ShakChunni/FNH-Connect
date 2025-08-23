@@ -5,18 +5,26 @@ import Header from "./components/Header";
 import { useAuth } from "@/app/AuthContext";
 import useSidebarState from "@/app/hooks/useSidebarState";
 import { TableSelectorProvider } from "@/app/context/TableSelectorContext";
+import { useMediaQuery } from "react-responsive";
 
 export default function AppLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const { isExpanded, setSidebarState } = useSidebarState();
+  const {
+    isExpanded,
+    isPinned,
+    isAnimating,
+    expandedSections,
+    setSidebarState,
+    setPinnedState,
+    toggleSection,
+  } = useSidebarState();
   const { user } = useAuth();
 
   const handleFilterUpdate = useCallback((value: string) => {
     setTableSelectorValue(value);
-    // This will trigger the data refetch
     if (window.dispatchEvent) {
       window.dispatchEvent(
         new CustomEvent("tableFilterChange", { detail: value })
@@ -40,10 +48,10 @@ export default function AppLayout({
     return "All";
   });
 
-  // Handle table selector changes
   const handleTableSelectorChange = useCallback((value: string) => {
     setTableSelectorValue(value);
   }, []);
+  const isLargeScreen = useMediaQuery({ minWidth: 1024 });
 
   return (
     <TableSelectorProvider
@@ -51,17 +59,24 @@ export default function AppLayout({
       onChange={handleTableSelectorChange}
       onFilterUpdate={handleFilterUpdate}
     >
-      <div className="flex h-screen w-full overflow-hidden bg-[#E3E6EB]">
-        <Aside isExpanded={isExpanded} setIsExpanded={setSidebarState} />
+      <div className="flex min-h-screen w-full bg-[#f6f9fd]">
+        <Aside
+          isExpanded={isExpanded}
+          setIsExpanded={setSidebarState}
+          isPinned={isPinned}
+          setPinnedState={setPinnedState}
+          isAnimating={isAnimating}
+          expandedSections={expandedSections}
+          toggleSection={toggleSection}
+        />
         <div
-          className={`flex flex-col flex-1 min-w-0 transition-all duration-300 ${
-            isExpanded ? "lg:ml-64" : "lg:ml-16"
-          }`}
+          className="flex flex-col flex-1 min-w-0 transition-all duration-300 ease-[cubic-bezier(0.25,0.1,0.25,1)]"
+          style={{
+            marginLeft: isLargeScreen ? (isPinned ? "16rem" : "5rem") : "0rem",
+          }}
         >
           <Header />
-          <main className="flex-1 overflow-x-hidden overflow-y-auto">
-            {children}
-          </main>
+          <main className="flex-1 overflow-x-hidden">{children}</main>
         </div>
       </div>
     </TableSelectorProvider>

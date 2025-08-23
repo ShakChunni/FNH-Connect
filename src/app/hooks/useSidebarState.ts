@@ -1,30 +1,50 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 
+type ExpandedSections = Record<string, boolean>;
+
 interface SidebarState {
   isExpanded: boolean;
   isPinned: boolean;
   isAnimating: boolean;
+  expandedSections: ExpandedSections;
 }
 
 const getInitialState = (): SidebarState => {
   if (typeof window === "undefined") {
-    return { isExpanded: false, isPinned: false, isAnimating: false };
+    return {
+      isExpanded: false,
+      isPinned: false,
+      isAnimating: false,
+      expandedSections: { dashboards: true },
+    };
   }
 
-  const savedExpanded = localStorage.getItem("isExpanded");
-  const savedPinned = localStorage.getItem("isPinned");
+  try {
+    const savedPinned = localStorage.getItem("isPinned");
+    const savedExpanded = localStorage.getItem("isExpanded");
+    const savedSections = localStorage.getItem("expandedSections");
 
-  const isPinned = savedPinned ? JSON.parse(savedPinned) : false;
-  // Only use the saved value if it exists, otherwise default to false
-  const isExpanded = savedExpanded ? JSON.parse(savedExpanded) : false;
+    const isPinned = savedPinned === "true";
+    const isExpanded = isPinned ? true : savedExpanded === "true";
+    const expandedSections: ExpandedSections = savedSections
+      ? JSON.parse(savedSections)
+      : { dashboards: true };
 
-  // Important: only expand if pinned, ignore the saved expanded state on initial load
-  return { isExpanded: isPinned, isPinned, isAnimating: false };
+    return { isExpanded, isPinned, isAnimating: false, expandedSections };
+  } catch (error) {
+    return {
+      isExpanded: false,
+      isPinned: false,
+      isAnimating: false,
+      expandedSections: { dashboards: true },
+    };
+  }
 };
 
 const useSidebarState = () => {
   const [state, setState] = useState<SidebarState>(getInitialState);
   const animationTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const isUpdatingRef = useRef(false);
 
   // Clean up timer on unmount
   useEffect(() => {
@@ -37,8 +57,7 @@ const useSidebarState = () => {
 
   const setSidebarState = useCallback((expanded: boolean) => {
     setState((prev) => {
-      // We still want to be able to collapse sidebar when mouse leaves
-      // even if the animation is still running
+      if (prev.isExpanded === expanded) return prev; // Prevent unnecessary updates
       const newState = { ...prev, isExpanded: expanded };
       if (typeof window !== "undefined") {
         localStorage.setItem("isExpanded", JSON.stringify(expanded));
@@ -48,38 +67,54 @@ const useSidebarState = () => {
   }, []);
 
   const setPinnedState = useCallback((pinned: boolean) => {
-    // If we're unpinning, just run a short animation
-    if (!pinned) {
-      setState((prev) => ({ ...prev, isAnimating: true, isPinned: false }));
-
-      // Just update pinned state in localStorage immediately
-      if (typeof window !== "undefined") {
-        localStorage.setItem("isPinned", "false");
-      }
-
-      // Use a shorter animation time - just enough for the icon to show rotation
-      animationTimerRef.current = setTimeout(() => {
-        setState((prev) => ({
-          ...prev,
-          isAnimating: false,
-        }));
-      }, 300); // Reduced from 600ms to 300ms
-
+    if (isUpdatingRef.current) {
       return;
     }
 
-    // Normal pin case
+    isUpdatingRef.current = true;
+
     setState((prev) => {
+      if (prev.isPinned === pinned) {
+        isUpdatingRef.current = false;
+        return prev; // Prevent unnecessary updates
+      }
+
       const newState = {
+        ...prev,
         isPinned: pinned,
-        isExpanded: true,
+        isExpanded: pinned ? true : prev.isExpanded,
         isAnimating: false,
       };
+
       if (typeof window !== "undefined") {
         localStorage.setItem("isPinned", JSON.stringify(pinned));
-        localStorage.setItem("isExpanded", JSON.stringify(true));
+        if (pinned) {
+          localStorage.setItem("isExpanded", JSON.stringify(true));
+        }
       }
+
+      // Reset the updating flag after state update
+      setTimeout(() => {
+        isUpdatingRef.current = false;
+      }, 0);
+
       return newState;
+    });
+  }, []);
+
+  const toggleSection = useCallback((sectionId: string) => {
+    setState((prev) => {
+      const expandedSections = {
+        ...prev.expandedSections,
+        [sectionId]: !prev.expandedSections[sectionId],
+      };
+      if (typeof window !== "undefined") {
+        localStorage.setItem(
+          "expandedSections",
+          JSON.stringify(expandedSections)
+        );
+      }
+      return { ...prev, expandedSections };
     });
   }, []);
 
@@ -87,8 +122,10 @@ const useSidebarState = () => {
     isExpanded: state.isExpanded,
     isPinned: state.isPinned,
     isAnimating: state.isAnimating,
+    expandedSections: state.expandedSections,
     setSidebarState,
     setPinnedState,
+    toggleSection,
   };
 };
 

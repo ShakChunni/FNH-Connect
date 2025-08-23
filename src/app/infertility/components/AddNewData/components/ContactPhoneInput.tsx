@@ -8,7 +8,11 @@ import React, {
 } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Text } from "@radix-ui/themes";
-import { getCountries, getCountryCallingCode } from "libphonenumber-js";
+import {
+  getCountries,
+  getCountryCallingCode,
+  isValidPhoneNumber,
+} from "libphonenumber-js";
 import Flag from "react-world-flags";
 import { FaChevronDown } from "react-icons/fa";
 import { FixedSizeList } from "react-window";
@@ -24,11 +28,11 @@ interface ContactPhoneInputProps {
   onChange: (value: string) => void;
   onValidationChange?: (isValid: boolean) => void;
   defaultCountry?: string;
+  isAutofilled?: boolean;
 }
 
 const generateCountries = (): Country[] => {
   const countryCodes = getCountries();
-
   return countryCodes
     .map((code) => {
       let name = "";
@@ -38,7 +42,6 @@ const generateCountries = (): Country[] => {
       } catch (e) {
         name = code;
       }
-
       return {
         name,
         code,
@@ -66,7 +69,6 @@ const useSortedCountries = () => {
 const LazyFlag = memo(
   ({ code, ...props }: { code: string; [key: string]: any }) => {
     const [isLoaded, setIsLoaded] = useState(false);
-
     return (
       <div
         className="relative"
@@ -122,7 +124,13 @@ const CountryItem = memo(
 CountryItem.displayName = "CountryItem";
 
 const ContactPhoneInput: React.FC<ContactPhoneInputProps> = memo(
-  ({ value, onChange, onValidationChange, defaultCountry = "MY" }) => {
+  ({
+    value,
+    onChange,
+    onValidationChange,
+    defaultCountry = "MY",
+    isAutofilled = false,
+  }) => {
     const sortedCountries = useSortedCountries();
     const [isDropdownOpen, setIsDropdownOpen] = useState<boolean>(false);
     const [isDropdownReady, setIsDropdownReady] = useState<boolean>(false);
@@ -201,21 +209,25 @@ const ContactPhoneInput: React.FC<ContactPhoneInputProps> = memo(
 
         const trimmedValue = localValue.trim();
         if (!trimmedValue) {
-          // If local value is just spaces, keep it empty
           onChange("");
           setLocalValue("");
+          validatePhoneNumber("");
           return;
         }
 
         const cleanedValue = cleanPhoneNumber(localValue);
 
         if (!cleanedValue.startsWith("+")) {
-          onChange(country.dialCode + cleanedValue);
+          const newValue = country.dialCode + cleanedValue;
+          onChange(newValue);
+          validatePhoneNumber(newValue);
         } else {
           const numberWithoutDialCode =
             extractNumberWithoutDialCode(cleanedValue);
-          onChange(country.dialCode + numberWithoutDialCode);
+          const newValue = country.dialCode + numberWithoutDialCode;
+          onChange(newValue);
           setLocalValue(numberWithoutDialCode);
+          validatePhoneNumber(newValue);
         }
 
         setTimeout(() => {
@@ -226,27 +238,30 @@ const ContactPhoneInput: React.FC<ContactPhoneInputProps> = memo(
     );
 
     const validatePhoneNumber = useCallback(
-      (phoneNumber: string) => {
-        // Trim spaces and check if input is empty
-        if (!phoneNumber.trim()) {
+      (fullPhoneNumber: string) => {
+        if (!fullPhoneNumber.trim()) {
           setIsValid(true);
           if (onValidationChange) onValidationChange(true);
           return;
         }
 
-        // If input is only spaces, treat as empty
-        if (phoneNumber.replace(/\s/g, "") === "") {
+        if (fullPhoneNumber.replace(/\s/g, "") === "") {
           setIsValid(true);
           if (onValidationChange) onValidationChange(true);
           return;
         }
 
-        const numDigits = phoneNumber.replace(/\D/g, "").length;
-        const isValidNumber = numDigits >= 7 && numDigits <= 15;
-
-        setIsValid(isValidNumber);
-        if (onValidationChange) {
-          onValidationChange(isValidNumber);
+        try {
+          const isValidNumber = isValidPhoneNumber(fullPhoneNumber);
+          setIsValid(isValidNumber);
+          if (onValidationChange) {
+            onValidationChange(isValidNumber);
+          }
+        } catch (error) {
+          setIsValid(false);
+          if (onValidationChange) {
+            onValidationChange(false);
+          }
         }
       },
       [onValidationChange]
@@ -257,26 +272,25 @@ const ContactPhoneInput: React.FC<ContactPhoneInputProps> = memo(
         let newInput = e.target.value;
         setHasUserInput(true);
 
-        // Check if input is just spaces or empty
         if (!newInput.trim()) {
-          // If input is empty or just spaces, pass empty string to parent
           onChange("");
           validatePhoneNumber("");
           setLocalValue("");
           return;
         }
 
-        // Prevent leading zero after country codes that end with 0
         if (
           selectedCountry &&
           selectedCountry.dialCode.endsWith("0") &&
           newInput.length === 1 &&
           newInput === "0"
         ) {
-          return; // Don't update for a leading zero when country code ends with 0
+          return;
         }
 
         setLocalValue(newInput);
+
+        let fullPhoneNumber = "";
 
         if (newInput.startsWith("+")) {
           const cleanedInput = cleanPhoneNumber(newInput);
@@ -285,27 +299,29 @@ const ContactPhoneInput: React.FC<ContactPhoneInputProps> = memo(
           if (potentialCountry) {
             setSelectedCountry(potentialCountry);
             const numberPart = extractNumberWithoutDialCode(cleanedInput);
+            fullPhoneNumber = cleanedInput;
             onChange(cleanedInput);
           } else {
+            fullPhoneNumber = cleanedInput;
             onChange(cleanedInput);
           }
         } else {
-          // For country codes ending with 0, prevent consecutive 0
           if (
             selectedCountry &&
             selectedCountry.dialCode.endsWith("0") &&
             newInput.startsWith("0")
           ) {
-            newInput = newInput.substring(1); // Remove leading 0
+            newInput = newInput.substring(1);
             setLocalValue(newInput);
           }
 
-          onChange(
-            selectedCountry ? selectedCountry.dialCode + newInput : newInput
-          );
+          fullPhoneNumber = selectedCountry
+            ? selectedCountry.dialCode + newInput
+            : newInput;
+          onChange(fullPhoneNumber);
         }
 
-        validatePhoneNumber(newInput);
+        validatePhoneNumber(fullPhoneNumber);
       },
       [
         findCountryByDialCode,
@@ -363,13 +379,27 @@ const ContactPhoneInput: React.FC<ContactPhoneInputProps> = memo(
           const matchedCountry = findCountryByDialCode(cleanedValue);
           if (matchedCountry) {
             setSelectedCountry(matchedCountry);
-            setLocalValue(extractNumberWithoutDialCode(cleanedValue));
+            const numberPart = extractNumberWithoutDialCode(cleanedValue);
+            setLocalValue(numberPart);
+            setHasUserInput(true);
           } else {
             setLocalValue(cleanedValue);
+            setHasUserInput(true);
           }
         } else {
           setLocalValue(value);
+          setHasUserInput(true);
         }
+        validatePhoneNumber(value);
+        if (value.trim()) {
+          setIsTouched(true);
+          setShowValidation(true);
+        }
+      } else if (!value && localValue) {
+        setLocalValue("");
+        setHasUserInput(false);
+        setIsTouched(false);
+        setShowValidation(false);
       }
     }, [
       value,
@@ -378,11 +408,11 @@ const ContactPhoneInput: React.FC<ContactPhoneInputProps> = memo(
       findCountryByDialCode,
       extractNumberWithoutDialCode,
       cleanPhoneNumber,
+      validatePhoneNumber,
     ]);
 
     const filteredCountries = useMemo(() => {
       if (!searchTerm) return sortedCountries;
-
       return sortedCountries.filter(
         (country) =>
           country.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -406,22 +436,29 @@ const ContactPhoneInput: React.FC<ContactPhoneInputProps> = memo(
       }
     }, [isDropdownOpen]);
 
+    const shouldShowValidation = isTouched && showValidation;
+    const shouldShowSuccess =
+      (isAutofilled || (isTouched && hasUserInput)) &&
+      isValid &&
+      localValue.trim().length > 0;
+    const shouldShowError = shouldShowValidation && !isValid;
+
     return (
       <div className="relative w-full" ref={dropdownRef}>
         <div
           className={`
             flex w-full rounded-lg overflow-hidden
             ${
-              isTouched && showValidation
-                ? isValid && hasUserInput && localValue.trim().length > 0
-                  ? "border border-green-700 ring-1 ring-green-700"
-                  : !isValid
-                  ? "border-red-700 ring-2 ring-red-700"
-                  : "border border-gray-300"
-                : "border border-gray-300"
+              isAutofilled
+                ? "border-2 border-green-300 bg-green-50"
+                : shouldShowSuccess
+                ? "border border-green-700 ring-1 ring-green-700 bg-white"
+                : shouldShowError
+                ? "border-2 border-red-700 ring-2 ring-red-700 bg-gray-50"
+                : "border-2 border-gray-300 bg-gray-50"
             }
             focus-within:border-blue-900 focus-within:ring-2 focus-within:ring-blue-950
-            shadow-sm hover:shadow-md transition-shadow duration-300
+            shadow-sm hover:shadow-md transition-all duration-300
           `}
         >
           <div
@@ -467,7 +504,18 @@ const ContactPhoneInput: React.FC<ContactPhoneInputProps> = memo(
           <input
             ref={inputRef}
             type="tel"
-            className="flex-1 px-3 py-2 bg-gray-50 text-[#2A3136] outline-none h-14 font-normal text-xs sm:text-sm md:text-sm lg:text-sm xl:text-sm placeholder:text-gray-400 placeholder:font-light"
+            className={`
+              flex-1 px-3 py-2 text-[#2A3136] outline-none h-14 font-normal 
+              text-xs sm:text-sm md:text-sm lg:text-sm xl:text-sm 
+              placeholder:text-gray-400 placeholder:font-light
+              ${
+                isAutofilled
+                  ? "bg-green-50"
+                  : shouldShowSuccess
+                  ? "bg-white"
+                  : "bg-gray-50"
+              }
+            `}
             placeholder="Enter phone number"
             value={localValue}
             onChange={handleInputChange}
@@ -477,7 +525,7 @@ const ContactPhoneInput: React.FC<ContactPhoneInputProps> = memo(
         </div>
 
         <AnimatePresence>
-          {isTouched && showValidation && !isValid && (
+          {shouldShowValidation && !isValid && (
             <motion.div
               initial={{ opacity: 0, y: -10, height: 0 }}
               animate={{ opacity: 1, y: 0, height: "auto" }}
@@ -489,7 +537,7 @@ const ContactPhoneInput: React.FC<ContactPhoneInputProps> = memo(
               className="overflow-hidden"
             >
               <p className="text-red-600 text-xs mt-1">
-                Please enter a valid phone number (7-15 digits)
+                Please enter a valid phone number!
               </p>
             </motion.div>
           )}
@@ -570,5 +618,4 @@ const ContactPhoneInput: React.FC<ContactPhoneInputProps> = memo(
   }
 );
 ContactPhoneInput.displayName = "ContactPhoneInput";
-
 export default ContactPhoneInput;

@@ -1,28 +1,33 @@
 "use client";
-import React, { useState, useMemo, useCallback, useEffect } from "react";
+import React, {
+  useState,
+  useMemo,
+  useCallback,
+  useEffect,
+  useRef,
+} from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useAuth } from "../AuthContext";
-
+import { useAuth } from "@/app/AuthContext";
 import useSidebarState from "@/app/hooks/useSidebarState";
 import {
-  FaHouse,
-  FaBullseye,
-  FaChartLine,
-  FaClipboard,
-  FaClockRotateLeft,
-  FaUsers,
-  FaAddressBook,
-  FaThumbtack,
-  FaUser,
-  FaSpinner,
-  FaArrowRight,
-  FaRightFromBracket,
-} from "react-icons/fa6";
-import { BsArrowRight } from "react-icons/bs";
+  Home,
+  ClipboardList,
+  Clock,
+  Users,
+  Pin,
+  User,
+  Loader2,
+  LogOut,
+  Shield,
+  ChevronDown,
+  Baby,
+  FlaskConical,
+  Stethoscope,
+  HeartPulse,
+} from "lucide-react";
 
-// List of users with profile images
 const usersWithImages = [
   "amelie",
   "amra",
@@ -36,27 +41,58 @@ const usersWithImages = [
   "tanvir",
 ];
 
-// Define collapse width for CSS variable
-const COLLAPSED_WIDTH = "5rem"; // 80px
+const COLLAPSED_WIDTH = "5rem";
+
+interface NavigationItem {
+  label: string;
+  href: string;
+  icon: React.ComponentType<any>;
+  admin?: boolean;
+}
+
+interface NavigationGroup {
+  id: string;
+  label: string;
+  icon: React.ComponentType<any>;
+  items: NavigationItem[];
+}
+type ExpandedSections = Record<string, boolean>;
 
 const Aside = ({
   isExpanded,
   setIsExpanded,
+  isPinned,
+  setPinnedState,
+  isAnimating,
+  expandedSections,
+  toggleSection,
 }: {
   isExpanded: boolean;
   setIsExpanded: (value: boolean) => void;
+  isPinned: boolean;
+  setPinnedState: (pinned: boolean) => void;
+  isAnimating: boolean;
+  expandedSections: ExpandedSections;
+  toggleSection: (sectionId: string) => void;
 }) => {
-  const { isPinned, isAnimating, setPinnedState } = useSidebarState();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const pathname = usePathname();
   const { user, logout } = useAuth();
+  const expandTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const collapseTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const animationFrameRef = useRef<number | null>(null);
 
-  // Set CSS variables for sidebar width that can be used by other components
   useEffect(() => {
     document.documentElement.style.setProperty(
       "--sidebar-collapsed-width",
       COLLAPSED_WIDTH
     );
+    return () => {
+      if (expandTimeoutRef.current) clearTimeout(expandTimeoutRef.current);
+      if (collapseTimeoutRef.current) clearTimeout(collapseTimeoutRef.current);
+      if (animationFrameRef.current)
+        cancelAnimationFrame(animationFrameRef.current);
+    };
   }, []);
 
   const handleLogout = useCallback(async () => {
@@ -67,22 +103,29 @@ const Aside = ({
 
   const handlePinToggle = useCallback(() => {
     setPinnedState(!isPinned);
-    // No need to manually set expanded here anymore
-    // The useSidebarState hook will handle this properly
   }, [isPinned, setPinnedState]);
 
-  // Handle mouse events with animation state considered
   const handleMouseEnter = useCallback(() => {
-    setIsExpanded(true);
+    if (expandTimeoutRef.current) clearTimeout(expandTimeoutRef.current);
+    if (collapseTimeoutRef.current) clearTimeout(collapseTimeoutRef.current);
+    animationFrameRef.current = requestAnimationFrame(() => {
+      setIsExpanded(true);
+    });
   }, [setIsExpanded]);
 
   const handleMouseLeave = useCallback(() => {
-    // Only check for isPinned, NOT isAnimating - this allows collapse during animation
     if (!isPinned) {
-      setIsExpanded(false);
+      if (expandTimeoutRef.current) clearTimeout(expandTimeoutRef.current);
+      collapseTimeoutRef.current = setTimeout(() => {
+        if (!isPinned) {
+          animationFrameRef.current = requestAnimationFrame(() => {
+            setIsExpanded(false);
+          });
+        }
+      }, 100);
     }
   }, [isPinned, setIsExpanded]);
-  // Determine if the user has a custom profile image
+
   const userProfileImage = useMemo(() => {
     if (user && usersWithImages.includes(user.username.toLowerCase())) {
       return `/${user.username.toLowerCase()}.jpg`;
@@ -90,228 +133,316 @@ const Aside = ({
     return null;
   }, [user]);
 
-  const listItems = useMemo(() => {
-    const items = [
-      { label: "Sales Dashboard", href: "/home", icon: FaHouse },
-      { label: "Goal Dashboard", href: "/goals", icon: FaBullseye },
+  const navigationGroups = useMemo((): NavigationGroup[] => {
+    const role = user?.role?.toLowerCase();
+
+    // Staff navigation for all normal staff
+    const staffItems: NavigationItem[] = [
+      { label: "Dashboard", href: "/home", icon: Home },
+      { label: "Infertility", href: "/infertility", icon: Baby },
+      { label: "Pathology", href: "/pathology", icon: FlaskConical },
+    ];
+
+    // Admin-only navigation
+    const adminItems: NavigationItem[] =
+      role === "admin" || role === "owner"
+        ? [
+            {
+              label: "Admin Dashboard",
+              href: "/admin-dashboard",
+              icon: Shield,
+            },
+            {
+              label: "User Management",
+              href: "/admin/user-management",
+              icon: Users,
+            },
+            {
+              label: "Activity Logs",
+              href: "/admin/activity-logs",
+              icon: Clock,
+            },
+          ]
+        : [];
+
+    const groups: NavigationGroup[] = [
       {
-        label: "Goal Analytics",
-        href: "/admin/goals-analytics",
-        icon: FaChartLine,
+        id: "staff",
+        label: "Staff Portal",
+        icon: Users ,
+        items: staffItems,
       },
     ];
 
-    if (user?.role === "admin") {
-      items.push(
-        {
-          label: "Goal Management",
-          href: "/admin/goals-management",
-          icon: FaClipboard,
-        },
-        {
-          label: "Activity Log",
-          href: "/admin/activity-logs",
-          icon: FaClockRotateLeft,
-        },
-        {
-          label: "User Management",
-          href: "/admin/user-management",
-          icon: FaUsers,
-        },
-        {
-          label: "Leads Management",
-          href: "/admin/leads-management",
-          icon: FaAddressBook,
-        }
-      );
+    if (adminItems.length > 0) {
+      groups.push({
+        id: "admin",
+        label: "Admin",
+        icon: Shield,
+        items: adminItems,
+      });
     }
-    return items;
-  }, [user]);
 
-  const activeItem = useMemo(() => {
-    return listItems.find((item) => pathname === item.href);
-  }, [pathname, listItems]);
+    return groups;
+  }, [user]);
 
   return (
     <div
       id="drawer-navigation"
-      className="hidden lg:flex fixed overflow-hidden top-0 left-0 bg-gradient-to-b from-[#0d1a2b] to-[#121d35] h-screen overflow-y-auto transition-all duration-300 ease-in-out flex-col justify-between"
+      className={`hidden lg:flex ${
+        isPinned ? "fixed" : "fixed"
+      } overflow-hidden top-0 left-0 bg-gradient-to-b from-[#0d1a2b] to-[#121d35] ${
+        isExpanded ? "w-64" : "w-20"
+      } h-screen overflow-y-auto transition-all duration-250 ease-[cubic-bezier(0.25,0.1,0.25,1)] flex-col justify-between will-change-[width]`}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
       style={{
-        width: isExpanded ? "16rem" : COLLAPSED_WIDTH,
         boxShadow: "0px 4px 12.8px 0px rgba(0, 0, 0, 0.25)",
-        zIndex: 50,
+        zIndex: isPinned ? 50 : 60, // Higher z-index when not pinned (overlay mode)
       }}
     >
       <div className="flex flex-col h-full">
-        {/* Header section */}
-        <div className="flex items-center justify-between p-4">
+        <div className="py-3 lg:py-4 ml-3 lg:ml-4 flex justify-between items-center">
           <Link className="flex items-center justify-start" href={"/home"}>
             <Image
               src="/mi-favicon-bw-copy.png"
               alt="Logo"
-              width={40}
-              height={40}
-              className="h-auto"
+              width={isExpanded ? 42 : 46}
+              height={isExpanded ? 42 : 46}
+              className="h-auto transition-[width,height] duration-250 ease-[cubic-bezier(0.25,0.1,0.25,1)]"
             />
+            <span
+              className={`ml-2 text-sm 2xl:text-base font-bold text-white whitespace-nowrap transition-opacity duration-250 ease-[cubic-bezier(0.25,0.1,0.25,1)] ${
+                isExpanded ? "opacity-100" : "opacity-0"
+              }`}
+            >
+              FNH-CONNECT
+            </span>
           </Link>
-          <div
-            className={`overflow-hidden transition-all duration-300 ease-in-out ${
-              isExpanded ? "w-8 opacity-100" : "w-0 opacity-0"
+          <button
+            onClick={handlePinToggle}
+            disabled={isAnimating}
+            className={`${
+              isExpanded ? "px-2.5 lg:px-3" : "px-0"
+            } rounded-full mb-6 hover:bg-[#1e293b]/30 transition-all duration-250 ease-[cubic-bezier(0.25,0.1,0.25,1)] cursor-pointer ${
+              isExpanded ? "opacity-100" : "opacity-0"
             }`}
+            title={isPinned ? "Unpin sidebar" : "Pin sidebar"}
           >
-            {isExpanded && (
-              <button
-                onClick={handlePinToggle}
-                className="p-2 rounded-full transition-all duration-300 flex items-center justify-center"
-                title={isPinned ? "Collapse sidebar" : "Keep sidebar expanded"}
-                disabled={isAnimating} // Disable during animation
-              >
-                <FaThumbtack
-                  size={20}
-                  className={`transform transition-all duration-500 ease-in-out ${
-                    isPinned
-                      ? "rotate-45 text-yellow-400"
-                      : "rotate-0 text-gray-300 hover:text-white"
-                  }`}
-                />
-              </button>
-            )}
-          </div>
+            <Pin
+              size={16}
+              className={`transition-transform duration-250 ease-[cubic-bezier(0.25,0.1,0.25,1)] 2xl:text-[14px] ${
+                isPinned ? "rotate-45 text-yellow-400" : "text-gray-300"
+              }`}
+            />
+          </button>
         </div>
+        <div className="flex-1 overflow-y-auto py-2 lg:py-3 pl-2 lg:pl-3">
+          <div className="space-y-1.5 lg:space-y-2.5">
+            {navigationGroups.map((group) => {
+              const isActive = group.items.some(
+                (item) => pathname === item.href
+              );
+              const isGroupExpanded = expandedSections[group.id] ?? isActive;
 
-        {/* Rest of component remains the same */}
-        {/* ... */}
-
-        <div className="py-6 overflow-hidden flex-1">
-          <ul className="space-y-2 font-medium">
-            {listItems.map((item) => {
-              const isActive = activeItem?.href === item.href;
               return (
-                <li key={item.label} className="relative">
-                  {isActive && (
-                    <div className="absolute right-0 top-0 h-full w-1 bg-[#E3E6EB]"></div>
-                  )}
-                  <Link
-                    href={item.href}
-                    className={`flex w-full p-3 ${
-                      isExpanded ? "" : "justify-center"
-                    } transition-all duration-300 ease-in-out relative overflow-hidden group ${
-                      isActive ? "font-bold" : "font-medium"
-                    }`}
+                <div key={group.id} className="mb-1 relative">
+                  <button
+                    onClick={() => toggleSection(group.id)}
+                    className={`flex items-center w-full p-2 lg:p-2.5 rounded-lg transition-all duration-250 ease-out cursor-pointer
+                    ${
+                      isActive
+                        ? "bg-[#1e293b]/30 backdrop-blur-sm"
+                        : "hover:bg-[#1e293b]/20"
+                    } group relative`}
                   >
-                    {isActive && (
-                      <div className="absolute inset-0 right-0 bg-[#E3E6EB] rounded-l-full opacity-10"></div>
-                    )}
-                    {/* Main content container - remove fixed height constraint */}
-                    <div className="relative flex items-center z-10 pl-3 w-full">
-                      {/* Icon container - adjust height */}
-                      <div className="flex-shrink-0 w-8 flex items-center justify-center">
-                        <item.icon
-                          size={24}
-                          className={`${
-                            isActive
-                              ? "text-yellow-400"
-                              : "text-gray-200 group-hover:text-yellow-300"
-                          } transition-colors duration-300`}
-                        />
-                      </div>
-
-                      {/* Text container - adjust for better vertical alignment */}
-                      <div
-                        className={`overflow-hidden transition-all duration-300 ease-in-out flex items-center ${
-                          isExpanded ? "w-[180px] ml-3" : "w-0 ml-0"
-                        }`}
-                      >
-                        <span
-                          className={`whitespace-nowrap transition-all duration-300 ease-in-out ${
-                            isActive
-                              ? "text-yellow-400"
-                              : "text-gray-200 group-hover:text-yellow-300"
-                          }`}
-                        >
-                          {item.label}
-                        </span>
-                      </div>
-
-                      {/* Arrow container - adjusted alignment */}
-                      <div
-                        className={`absolute right-0 top-1/2 -translate-y-1/2 mr-3 transition-all duration-300 ease-in-out ${
-                          isActive && isExpanded ? "opacity-100" : "opacity-0"
-                        }`}
-                      ></div>
+                    <div className={`relative ${isActive ? "z-10" : ""}`}>
+                      {isActive && (
+                        <div className="absolute inset-0 bg-yellow-400/20 rounded-full blur-[8px]"></div>
+                      )}
+                      <group.icon
+                        className={`w-6 h-6 2xl:w-8 2xl:h-8 relative ${
+                          isActive
+                            ? "text-yellow-400"
+                            : "text-white group-hover:text-yellow-300"
+                        } transition-colors duration-200`}
+                      />
                     </div>
-                  </Link>
-                  {isActive && (
+
+                    {isExpanded && (
+                      <>
+                        <span
+                          className={`ml-2 text-[13px] 2xl:text-[15px] font-medium tracking-wide transition-all duration-200 ${
+                            isActive
+                              ? "text-yellow-400"
+                              : "text-white group-hover:text-yellow-300"
+                          } whitespace-nowrap overflow-hidden`}
+                        >
+                          {group.label}
+                        </span>
+                        <div className="ml-auto">
+                          <ChevronDown
+                            className={`w-4 h-4 2xl:w-5 2xl:h-5 text-gray-300 group-hover:text-yellow-300 transition-transform duration-300 ${
+                              isGroupExpanded ? "rotate-180" : ""
+                            }`}
+                          />
+                        </div>
+                      </>
+                    )}
+                  </button>
+
+                  <div
+                    className={`overflow-hidden transition-all duration-300 ease-in-out relative ${
+                      isExpanded && isGroupExpanded
+                        ? "opacity-100"
+                        : "opacity-0"
+                    }`}
+                    style={{
+                      maxHeight:
+                        isExpanded && isGroupExpanded
+                          ? `${group.items.length * 40 + 16}px`
+                          : "0px",
+                      marginTop: isExpanded && isGroupExpanded ? "6px" : "0px",
+                      transitionProperty: "max-height, opacity, margin",
+                      transitionTimingFunction: "cubic-bezier(0.25, 1, 0.5, 1)",
+                      willChange: "max-height, opacity, margin",
+                    }}
+                  >
                     <div
-                      className="absolute right-0 top-0 h-full w-[3px] bg-yellow-400"
+                      className={`absolute left-[18px] 2xl:left-[22px] top-0 w-[2px] bg-blue-300/20 z-20 transition-opacity duration-200 ${
+                        isExpanded && isGroupExpanded
+                          ? "opacity-100"
+                          : "opacity-0"
+                      }`}
                       style={{
-                        boxShadow: "0 0 8px 1px rgba(250, 204, 21, 0.5)",
+                        height: "100%",
+                        transitionDelay:
+                          isExpanded && isGroupExpanded ? "100ms" : "0ms",
                       }}
                     ></div>
-                  )}
-                </li>
+
+                    <div
+                      className={`relative pl-8 2xl:pl-10 space-y-1.5 2xl:space-y-2 py-1 2xl:py-1.5 transition-opacity duration-300 ${
+                        isExpanded && isGroupExpanded
+                          ? "opacity-100"
+                          : "opacity-0"
+                      }`}
+                      style={{
+                        transitionDelay:
+                          isExpanded && isGroupExpanded ? "50ms" : "0ms",
+                      }}
+                    >
+                      {group.items.map((item, index) => {
+                        const isItemActive = pathname === item.href;
+                        return (
+                          <Link
+                            key={item.href}
+                            href={item.href}
+                            className={`flex items-center w-full py-1 2xl:py-1.5 px-2 2xl:px-2.5 transition-all duration-200 text-xs 2xl:text-sm 
+                              relative overflow-hidden rounded-l-full transform ${
+                                isItemActive
+                                  ? "bg-gradient-to-r from-yellow-500/20 to-[#1e293b]/40 text-yellow-400"
+                                  : "text-gray-200 hover:bg-[#1e293b]/20 hover:text-yellow-300"
+                              } group/link`}
+                            style={{
+                              transitionDelay:
+                                isExpanded && isGroupExpanded
+                                  ? `${50 + index * 30}ms`
+                                  : "0ms",
+                              opacity: isExpanded && isGroupExpanded ? 1 : 0,
+                              transform:
+                                isExpanded && isGroupExpanded
+                                  ? "translateY(0)"
+                                  : "translateY(-4px)",
+                            }}
+                          >
+                            {isItemActive && (
+                              <div className="absolute right-0 top-0 h-full w-1 bg-yellow-400"></div>
+                            )}
+
+                            <div
+                              className={`absolute top-1/2 h-[2px] transform -translate-y-1/2 transition-colors duration-200 z-10
+                                group-hover/link:bg-yellow-300/50`}
+                              style={{
+                                width: "14px",
+                                left: "-14px",
+                                backgroundImage: isItemActive
+                                  ? "linear-gradient(to right, transparent 0, transparent 1px, #facc15 1px)"
+                                  : "linear-gradient(to right, transparent 0, transparent 1px, rgba(147, 197, 253, 0.3) 1px)",
+                              }}
+                            ></div>
+
+                            <div className="relative">
+                              {isItemActive && (
+                                <div className="absolute inset-0 bg-yellow-400/30 rounded-full blur-[6px]"></div>
+                              )}
+                              <item.icon
+                                className={`w-4 h-4 2xl:w-5 2xl:h-5 min-w-[16px] relative ${
+                                  isItemActive
+                                    ? "text-yellow-400"
+                                    : "text-gray-300 group-hover/link:text-yellow-300"
+                                } transition-colors duration-200`}
+                              />
+                            </div>
+
+                            <span
+                              className={`ml-2 ${
+                                isItemActive
+                                  ? "text-yellow-400"
+                                  : "group-hover/link:text-yellow-300"
+                              } transition-colors duration-200 font-medium whitespace-nowrap overflow-hidden ${
+                                !isExpanded ? "hidden" : "block"
+                              }`}
+                              style={{ width: isExpanded ? "130px" : "0" }}
+                            >
+                              {item.label}
+                            </span>
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
               );
             })}
-          </ul>
+          </div>
         </div>
-
-        {/* Footer section - adjusted for better alignment */}
-        <div
-          className={`mt-auto p-4 ${
-            isExpanded ? "px-4" : "px-2"
-          } border-t border-gray-700/50`}
-        >
-          <div
-            className={`flex items-center ${
-              !isExpanded ? "justify-center" : ""
-            }`}
-          >
-            {/* User Avatar */}
-            {user && userProfileImage ? (
-              <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-gray-700 flex-shrink-0">
+        <div className="p-2 lg:p-3 mt-auto border-t border-blue-400/10">
+          <div className="flex items-center w-full p-2 lg:p-2.5 rounded-lg transition-all duration-200 group hover:bg-[#1e293b]/20">
+            <div className="relative flex items-center justify-center bg-blue-500/10 rounded-full p-1.5">
+              {user && userProfileImage ? (
                 <Image
                   src={userProfileImage}
                   alt={`${user.username}'s profile`}
-                  width={36}
-                  height={36}
-                  className="w-full h-full object-cover"
+                  width={28}
+                  height={28}
+                  className="w-7 h-7 rounded-full object-cover"
                 />
-              </div>
-            ) : (
-              <div className="w-10 h-10 rounded-full bg-gray-700/50 flex items-center justify-center flex-shrink-0">
-                <FaUser className="w-5 h-5 text-gray-300" />
-              </div>
-            )}
-            <div
-              className={`overflow-hidden transition-all duration-300 ease-in-out ${
-                isExpanded ? "w-[180px] ml-3" : "w-0 ml-0"
-              }`}
-            >
-              {user && (
-                <div className="flex flex-col justify-center">
-                  <span className="text-white text-sm font-semibold truncate">
-                    {user.fullName}
-                  </span>
-                  <span className="text-yellow-500 text-xs truncate">
-                    @{user.username}
-                  </span>
-                </div>
+              ) : (
+                <User className="w-5 h-5 2xl:w-7 2xl:h-7 min-w-[20px] text-white transition-colors duration-200" />
               )}
             </div>
-
+            {isExpanded && user && (
+              <div className="flex-1 ml-2 2xl:ml-3 overflow-hidden">
+                <p className="text-white text-xs 2xl:text-sm font-medium truncate group-hover:text-yellow-100 transition-colors duration-200">
+                  {user.fullName}
+                </p>
+                <p className="text-yellow-300 text-[11px] 2xl:text-xs font-medium truncate">
+                  @{user.username}
+                </p>
+              </div>
+            )}
             {isExpanded && (
               <button
-                className="flex items-center justify-center w-9 h-9 rounded-full bg-gray-800/50 hover:bg-red-600/80 transition-all duration-300 ml-2"
+                className="p-1.5 rounded-full hover:bg-red-600/70 transition-all duration-200 ml-1 cursor-pointer"
                 onClick={handleLogout}
                 disabled={isLoggingOut}
                 title="Logout"
               >
                 {isLoggingOut ? (
-                  <FaSpinner className="w-5 h-5 text-white animate-spin" />
+                  <Loader2 className="w-4 h-4 2xl:w-5 2xl:h-5 text-white animate-spin" />
                 ) : (
-                  <FaRightFromBracket className="w-5 h-5 text-white" />
+                  <LogOut className="w-4 h-4 2xl:w-5 2xl:h-5 text-white hover:text-yellow-300 transition-colors duration-200" />
                 )}
               </button>
             )}
@@ -321,5 +452,5 @@ const Aside = ({
     </div>
   );
 };
-
+Aside.displayName = "Aside";
 export default React.memo(Aside);

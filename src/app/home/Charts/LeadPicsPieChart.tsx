@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useCallback } from "react";
 import { ResponsivePie } from "@nivo/pie";
 import { useMediaQuery } from "react-responsive";
+import LeadPicsPieChartSkeleton from "./Skeletons/LeadPicsPieChartSkeleton";
 
 interface LeadPicsPieChartProps {
   data: {
@@ -12,16 +13,9 @@ interface LeadPicsPieChartProps {
       borderWidth?: number;
     }>;
   };
+  isLoading?: boolean;
 }
 
-interface PicData {
-  id: string;
-  label: string;
-  value: number;
-  color: string;
-}
-
-// Color palette as specified
 const colorPalette = [
   "#00876c",
   "#3d9a70",
@@ -39,13 +33,15 @@ const colorPalette = [
   "#b11f48",
 ];
 
-// Helper function to truncate strings
 const truncateString = (str: string, maxLength: number) => {
   if (str.length <= maxLength) return str;
   return str.substring(0, maxLength - 3) + "...";
 };
 
-const LeadPicsPieChart: React.FC<LeadPicsPieChartProps> = ({ data }) => {
+const LeadPicsPieChart: React.FC<LeadPicsPieChartProps> = ({
+  data,
+  isLoading = false,
+}) => {
   const isExtraSmallScreen = useMediaQuery({ query: "(max-width: 405px)" });
   const isSmallScreen = useMediaQuery({ query: "(max-width: 767px)" });
   const isMediumScreen = useMediaQuery({
@@ -54,33 +50,13 @@ const LeadPicsPieChart: React.FC<LeadPicsPieChartProps> = ({ data }) => {
   const isLargeScreen = useMediaQuery({
     query: "(min-width: 1280px) and (max-width: 1449px)",
   });
+  const isExtraLargeScreen = useMediaQuery({
+    query: "(min-width: 1450px) and (max-width: 1689px)",
+  });
 
-  // State to track which segment is being hovered
   const [hoveredSegment, setHoveredSegment] = useState<string | null>(null);
 
-  // Calculate chart height based on screen size - memoized
-  const chartHeight = useMemo(() => {
-    if (isExtraSmallScreen) return 200;
-    if (isSmallScreen) return 280;
-    if (isMediumScreen) return 250;
-    if (isLargeScreen) return 300;
-    return 340;
-  }, [isExtraSmallScreen, isSmallScreen, isMediumScreen, isLargeScreen]);
-
-  // Memoize chart margins
-  const chartMargin = useMemo(
-    () => ({
-      top: isSmallScreen ? 30 : 40,
-      right: isSmallScreen ? 80 : 120,
-      bottom: isSmallScreen ? 30 : 40,
-      left: isSmallScreen ? 80 : 120,
-    }),
-    [isSmallScreen]
-  );
-
-  // Memoize data processing to prevent unnecessary calculations
   const { nivoData, picsForDisplay, total } = useMemo(() => {
-    // Check if data is valid and properly formatted
     if (
       !data?.labels ||
       !data?.datasets?.[0]?.data ||
@@ -93,7 +69,6 @@ const LeadPicsPieChart: React.FC<LeadPicsPieChartProps> = ({ data }) => {
       };
     }
 
-    // Sort the data by value from largest to smallest for better visualization
     const picDataArray = data.labels
       .map((label, index) => ({
         id: label,
@@ -101,8 +76,8 @@ const LeadPicsPieChart: React.FC<LeadPicsPieChartProps> = ({ data }) => {
         value: data.datasets[0].data[index] || 0,
         color: colorPalette[index % colorPalette.length],
       }))
-      .filter((item) => item.value > 0) // Remove items with zero value
-      .sort((a, b) => b.value - a.value); // Sort by value in descending order
+      .filter((item) => item.value > 0)
+      .sort((a, b) => b.value - a.value);
 
     const total = picDataArray.reduce((sum, pic) => sum + pic.value, 0);
 
@@ -116,31 +91,129 @@ const LeadPicsPieChart: React.FC<LeadPicsPieChartProps> = ({ data }) => {
     return { nivoData: picDataArray, picsForDisplay, total };
   }, [data]);
 
-  // Memoize theme configuration
+  // Chart height based on number of segments
+  const chartHeight = useMemo(() => {
+    const count = nivoData.length;
+    if (isExtraSmallScreen) {
+      if (count > 6) return 240;
+      if (count > 4) return 250;
+      return 300;
+    }
+    if (isSmallScreen) {
+      if (count > 6) return 280;
+      if (count > 4) return 300;
+      return 320;
+    }
+    if (isMediumScreen) {
+      if (count > 6) return 280;
+      if (count > 4) return 280;
+      return 300;
+    }
+    if (isLargeScreen) {
+      if (count > 6) return 280;
+      if (count > 4) return 320;
+      return 340;
+    }
+
+    if (isExtraLargeScreen) {
+      if (count > 6) return 280;
+      if (count > 4) return 300;
+      return 320;
+    }
+    // Default for larger screens
+    if (count > 6) return 340;
+    if (count > 4) return 320;
+    return 400;
+  }, [
+    nivoData.length,
+    isExtraSmallScreen,
+    isSmallScreen,
+    isMediumScreen,
+    isLargeScreen,
+  ]);
+
+  const chartMargin = useMemo(
+    () => ({
+      top: 40,
+      right: 40,
+      bottom: 40,
+      left: 40,
+    }),
+    []
+  );
+
+  const arcLinkLabelConfig = useMemo(() => {
+    const count = nivoData.length;
+    if (isSmallScreen) {
+      if (count > 2)
+        return { diagonal: 0, straight: 0, offset: 0, show: false };
+      if (count > 1)
+        return { diagonal: 10, straight: 16, offset: 3, show: true };
+      return { diagonal: 16, straight: 24, offset: 6, show: true };
+    }
+    if (isMediumScreen) {
+      if (count > 8) return { diagonal: 12, straight: 18, offset: 3 };
+      if (count > 4) return { diagonal: 18, straight: 26, offset: 6 };
+      return { diagonal: 24, straight: 36, offset: 10 };
+    }
+    // Large screens
+    if (count > 8) return { diagonal: 10, straight: 10, offset: 3 };
+    if (count > 4) return { diagonal: 24, straight: 32, offset: 10 };
+    return { diagonal: 32, straight: 44, offset: 14 };
+  }, [nivoData.length, isSmallScreen, isMediumScreen]);
+
   const chartTheme = useMemo(
     () => ({
       labels: {
         text: {
-          fontSize: isSmallScreen ? 10 : 12,
+          fontSize: isLargeScreen
+            ? nivoData.length > 6
+              ? 8
+              : nivoData.length > 4
+              ? 10
+              : 14
+            : isSmallScreen
+            ? 10
+            : 11,
           fontWeight: 700,
         },
       },
       tooltip: {
         container: {
           background: "#ffffff",
-          fontSize: isSmallScreen ? 10 : 12,
+          fontSize: isLargeScreen
+            ? nivoData.length > 6
+              ? 10
+              : nivoData.length > 4
+              ? 12
+              : 14
+            : isSmallScreen
+            ? 10
+            : 12,
+        },
+      },
+      arcLinkLabels: {
+        text: {
+          fontSize: isLargeScreen
+            ? nivoData.length > 6
+              ? 8
+              : nivoData.length > 4
+              ? 10
+              : 12
+            : isSmallScreen
+            ? 7
+            : 12,
+          fontWeight: 600,
         },
       },
     }),
-    [isSmallScreen]
+    [isSmallScreen, isLargeScreen, nivoData.length]
   );
 
-  // Handle hover with useCallback
   const handleSegmentHover = useCallback((id: string | null) => {
     setHoveredSegment(id);
   }, []);
 
-  // Memoized callbacks for pie interactions
   const handleMouseEnter = useCallback(
     (node: any) => {
       if (node && node.id) {
@@ -155,35 +228,28 @@ const LeadPicsPieChart: React.FC<LeadPicsPieChartProps> = ({ data }) => {
   }, [handleSegmentHover]);
 
   const angleThreshold = useMemo(() => {
-    return Math.round(360 * 0.05); // 2% of a full circle (360 degrees)
+    return Math.round(360 * 0.05);
   }, []);
 
-  // Memoize the arc label callback - showing VALUE inside the slices
   const arcLabelCallback = useCallback(
     (d: any) => {
       if (!d || typeof d.value !== "number") return "";
-
       const percentage = Math.round((d.value / total) * 100);
-      // Show values for segments >= 2%
       return percentage >= 5 ? `${d.value}` : "";
     },
     [total]
   );
 
-  // Memoize the arc link label callback - showing labels with percentages
   const arcLinkLabelCallback = useCallback(
     (d: any) => {
       if (!d || typeof d.value !== "number") return "";
-
       const percentage = Math.round((d.value / total) * 100);
-      if (percentage < 5) return ""; // Don't show very small segments' labels
-
+      if (percentage < 5) return "";
       const label =
         typeof d.label === "string" ? d.label : String(d.label || "");
       const trimmedLabel = isSmallScreen
         ? truncateString(label, 8)
         : truncateString(label, 16);
-
       return `${trimmedLabel} (${percentage}%)`;
     },
     [total, isSmallScreen]
@@ -192,7 +258,6 @@ const LeadPicsPieChart: React.FC<LeadPicsPieChartProps> = ({ data }) => {
   const CustomTooltip = useMemo(() => {
     const TooltipComponent = ({ datum }: { datum: any }) => {
       if (!datum || typeof datum.value !== "number") return null;
-
       const percentage = Math.round((datum.value / total) * 100);
       return (
         <div
@@ -209,12 +274,13 @@ const LeadPicsPieChart: React.FC<LeadPicsPieChartProps> = ({ data }) => {
         </div>
       );
     };
-
     TooltipComponent.displayName = "LeadPicsTooltip";
     return TooltipComponent;
   }, [total, isSmallScreen]);
 
-  // Early return for empty data
+  if (isLoading) {
+    return <LeadPicsPieChartSkeleton />;
+  }
   if (!nivoData.length) {
     return (
       <div
@@ -238,18 +304,19 @@ const LeadPicsPieChart: React.FC<LeadPicsPieChartProps> = ({ data }) => {
       <div
         style={{
           textAlign: "center",
-          marginBottom: "1rem",
+          marginBottom: "0.5rem",
+          marginTop: "1rem",
           fontWeight: "bold",
           fontSize: isSmallScreen ? "12px" : "14px",
           color: "#333",
         }}
       >
-        Total Number of Leads: <b>{total}</b>
+        Total: <b>{total}</b>
       </div>
       <div
         style={{
           height: chartHeight,
-          background: "#F4F8FC",
+          background: "#fff",
           position: "relative",
         }}
       >
@@ -257,38 +324,32 @@ const LeadPicsPieChart: React.FC<LeadPicsPieChartProps> = ({ data }) => {
           data={nivoData}
           colors={{ datum: "data.color" }}
           margin={chartMargin}
-          innerRadius={0.6}
+          innerRadius={isSmallScreen || isMediumScreen ? 0.5 : 0.6}
           padAngle={1.2}
           cornerRadius={isSmallScreen ? 4 : 12}
-          activeOuterRadiusOffset={8}
+          activeOuterRadiusOffset={10}
           borderWidth={1}
           borderColor="#FFFFFF"
-          // Inner labels (values)
           arcLabelsSkipAngle={angleThreshold}
           arcLabelsTextColor="#333333"
           arcLabelsRadiusOffset={0.5}
           arcLabel={isSmallScreen ? () => "" : arcLabelCallback}
-          // External labels with lines
-          enableArcLinkLabels={!isSmallScreen}
+          enableArcLinkLabels={isSmallScreen ? arcLinkLabelConfig.show : true}
           arcLinkLabelsSkipAngle={angleThreshold}
           arcLinkLabelsTextColor="#333333"
-          arcLinkLabelsThickness={3}
+          arcLinkLabelsThickness={2}
           arcLinkLabelsColor={{ from: "color" }}
           arcLinkLabel={arcLinkLabelCallback}
-          arcLinkLabelsDiagonalLength={isSmallScreen ? 6 : 16}
-          arcLinkLabelsStraightLength={isSmallScreen ? 12 : 24}
-          arcLinkLabelsTextOffset={isSmallScreen ? 2 : 6}
+          arcLinkLabelsDiagonalLength={arcLinkLabelConfig.diagonal}
+          arcLinkLabelsStraightLength={arcLinkLabelConfig.straight}
+          arcLinkLabelsTextOffset={arcLinkLabelConfig.offset}
           tooltip={CustomTooltip}
-          // Interactions
           onMouseEnter={handleMouseEnter}
           onMouseLeave={handleMouseLeave}
-          // Animations
           animate={true}
           motionConfig="gentle"
           transitionMode="innerRadius"
-          // Custom colors to match
           theme={chartTheme}
-          // Handle active elements highlight
           activeId={hoveredSegment}
         />
       </div>
@@ -300,10 +361,15 @@ const LeadPicsPieChart: React.FC<LeadPicsPieChartProps> = ({ data }) => {
               padding: isSmallScreen ? "2px 4px" : "3px 6px",
               border: `1px solid ${pic.color}`,
               borderLeft: `3px solid ${pic.color}`,
-              borderRadius: "4px",
+              borderRadius: "16px",
               backgroundColor:
                 hoveredSegment === pic.id ? `${pic.color}30` : `${pic.color}10`,
-              fontSize: isSmallScreen ? "8px" : "12px",
+              fontSize:
+                isSmallScreen || isExtraSmallScreen
+                  ? "8px"
+                  : isMediumScreen || isLargeScreen
+                  ? "10px"
+                  : "12px",
               boxShadow:
                 hoveredSegment === pic.id
                   ? "0 2px 4px rgba(0,0,0,0.15)"

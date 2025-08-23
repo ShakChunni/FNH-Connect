@@ -1,15 +1,18 @@
 import { Metadata } from "next";
 
 const siteConfig = {
-  title: "Sales Reporting Dashboard",
-  description: "Sales performance reporting and analytics dashboard",
+  title: "Dashboard",
+  description: "Patient and pathology management dashboard",
 };
 
 export const getMetadata = (path: string): Metadata => {
   const titleMap: { [key: string]: string } = {
-    "/login": siteConfig.title,
-    "/home": "Performance Overview",
-    "/admin": "Admin Dashboard",
+    "/home": "Dashboard",
+    "/infertility": "Infertility",
+    "/pathology": "Pathology",
+    "/admin-dashboard": "Admin Dashboard",
+    "/admin/user-management": "User Management",
+    "/admin/activity-logs": "Activity Logs",
   };
 
   return {

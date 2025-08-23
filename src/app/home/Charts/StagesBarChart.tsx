@@ -2,12 +2,13 @@ import React, { useMemo, useRef, useEffect } from "react";
 import { Chart, registerables } from "chart.js";
 import { useMediaQuery } from "react-responsive";
 import ChartDataLabels from "chartjs-plugin-datalabels";
-
+import StagesBarChartSkeleton from "./Skeletons/StagesBarChartSkeleton";
 // Register Chart.js components and plugins
 Chart.register(...registerables, ChartDataLabels);
 
 interface StagesBarChartProps {
   data: any;
+  isLoading?: boolean;
 }
 
 // Add the color shade generator from IndustryBarChart
@@ -29,7 +30,10 @@ const generateShades = (
 // Example: teal-blue gradient, from dark (20%) to light (75%)
 const colorPalette = generateShades(190, 60, 25, 95, 15);
 
-const StagesBarChart: React.FC<StagesBarChartProps> = ({ data }) => {
+const StagesBarChart: React.FC<StagesBarChartProps> = ({
+  data,
+  isLoading = false,
+}) => {
   const chartRef = useRef<HTMLCanvasElement | null>(null);
   const chartInstance = useRef<Chart | null>(null);
   const chartContainerRef = useRef<HTMLDivElement | null>(null);
@@ -221,6 +225,10 @@ const StagesBarChart: React.FC<StagesBarChartProps> = ({ data }) => {
       }
     };
   }, [labels, datasets, isSmallScreen, isMediumScreen, barColors]);
+
+  if (isLoading) {
+    return <StagesBarChartSkeleton />;
+  }
 
   if (!datasets[0]?.data?.length) {
     return <div>No stage data available</div>;

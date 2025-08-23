@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
-import { FaFileCsv, FaFilePdf, FaEllipsisV } from "react-icons/fa";
+import { FileSpreadsheet, MoreVertical } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface ExportDropdownProps {
   onExportCSV: () => void;
@@ -11,7 +12,7 @@ const ExportDropdown = ({ onExportCSV }: ExportDropdownProps) => {
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const handleToggle = () => {
-    setIsOpen(!isOpen);
+    setIsOpen((prev) => !prev);
   };
 
   const handleClickOutside = (event: MouseEvent) => {
@@ -26,38 +27,60 @@ const ExportDropdown = ({ onExportCSV }: ExportDropdownProps) => {
   };
 
   useEffect(() => {
-    document.addEventListener("mousedown", handleClickOutside);
+    if (isOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    } else {
+      document.removeEventListener("mousedown", handleClickOutside);
+    }
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, []);
+  }, [isOpen]);
 
   return (
     <div className="relative inline-block text-left">
       <button
         ref={buttonRef}
         onClick={handleToggle}
-        className="inline-flex justify-center w-full text-gray-700 hover:text-gray-900 focus:outline-none"
+        className="flex items-center justify-center w-8 h-8 focus:outline-none transition-colors duration-200"
+        aria-label="Export"
+        type="button"
       >
-        <FaEllipsisV />
+        <MoreVertical
+          size={22}
+          className={`transition-colors duration-300 ${
+            isOpen ? "text-blue-900" : "text-gray-500"
+          } hover:text-blue-900`}
+        />
       </button>
 
-      {isOpen && (
-        <div
-          ref={dropdownRef}
-          className="origin-top-right absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-50"
-        >
-          <div className="py-1">
-            <button
-              onClick={onExportCSV}
-              className="group flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full"
-            >
-              <FaFileCsv className="mr-3 h-5 w-5 text-green-500 group-hover:text-green-700" />
-              Export as CSV
-            </button>
-          </div>
-        </div>
-      )}
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            ref={dropdownRef}
+            initial={{ opacity: 0, y: -8, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -8, scale: 0.98 }}
+            transition={{ duration: 0.22, ease: "easeOut" }}
+            className="origin-top-right absolute -right-2 mt-4 w-48 shadow-lg bg-white ring-opacity-5 focus:outline-none z-50"
+            style={{ borderRadius: "1rem" }}
+          >
+            <div className="py-2">
+              <button
+                onClick={() => {
+                  setIsOpen(false);
+                  onExportCSV();
+                }}
+                className="group flex items-center px-4 py-2 text-sm rounded-xl text-gray-700 w-full transition-all
+                  hover:bg-green-50 hover:text-green-800"
+              >
+                <FileSpreadsheet className="mr-3 h-5 w-5 text-green-600 group-hover:text-green-800" />
+                <span className="text-xs font-medium">Export as Excel</span>
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

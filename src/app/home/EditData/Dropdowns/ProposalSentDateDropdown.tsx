@@ -1,9 +1,8 @@
 import React, { useState, useEffect, useCallback, useRef, FC } from "react";
-import { DayPicker } from "react-day-picker";
-import "react-day-picker/dist/style.css";
 import { format } from "date-fns";
 import { motion, AnimatePresence } from "framer-motion";
 import { createPortal } from "react-dom";
+import CustomCalendar from "./CustomCalendar";
 
 interface ProposalSentDateDropdownProps {
   onSelect: (value: Date) => void;
@@ -19,6 +18,20 @@ interface ProposalSentDateDropdownProps {
   messagePopupRef: React.RefObject<HTMLDivElement>;
 }
 
+// Helper function to create a timezone-safe date at noon
+const createSafeDate = (year: number, month: number, day: number): Date => {
+  return new Date(year, month, day, 12, 0, 0, 0);
+};
+
+const normalizeDateToNoon = (date: Date): Date => {
+  return createSafeDate(date.getFullYear(), date.getMonth(), date.getDate());
+};
+
+const getTodayAtNoon = (): Date => {
+  const today = new Date();
+  return createSafeDate(today.getFullYear(), today.getMonth(), today.getDate());
+};
+
 const ProposalSentDateDropdown: FC<ProposalSentDateDropdownProps> = ({
   onSelect,
   defaultValue = null,
@@ -32,7 +45,9 @@ const ProposalSentDateDropdown: FC<ProposalSentDateDropdownProps> = ({
   onMessage,
   messagePopupRef,
 }) => {
-  const [selectedDate, setSelectedDate] = useState<Date | null>(defaultValue);
+  const [selectedDate, setSelectedDate] = useState<Date | null>(
+    defaultValue ? normalizeDateToNoon(defaultValue) : null
+  );
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -44,7 +59,7 @@ const ProposalSentDateDropdown: FC<ProposalSentDateDropdownProps> = ({
 
   useEffect(() => {
     if (defaultValue) {
-      setSelectedDate(defaultValue);
+      setSelectedDate(normalizeDateToNoon(defaultValue));
     }
   }, [defaultValue]);
 
@@ -54,33 +69,44 @@ const ProposalSentDateDropdown: FC<ProposalSentDateDropdownProps> = ({
     onDropdownOpenStateChange(false);
   }, [onDropdownToggle, onDropdownOpenStateChange]);
 
-  const handleDayClick = useCallback(
+  const handleDateSelect = useCallback(
     (day: Date) => {
-      if (day > new Date()) {
+      const normalizedDate = normalizeDateToNoon(day);
+      const todayAtNoon = getTodayAtNoon();
+
+      if (normalizedDate > todayAtNoon) {
         onMessage("error", "Selected date cannot be in the future.");
         return;
-      } else if (prospectDate && day < prospectDate) {
+      } else if (
+        prospectDate &&
+        normalizedDate < normalizeDateToNoon(prospectDate)
+      ) {
         onMessage(
           "error",
           "Proposal sent date cannot be older than prospect date."
         );
         return;
-      } else if (meetingDate && day < meetingDate) {
+      } else if (
+        meetingDate &&
+        normalizedDate < normalizeDateToNoon(meetingDate)
+      ) {
         onMessage(
           "error",
           "Proposal sent date cannot be older than meeting date."
         );
         return;
-      } else if (proposalInProgressDate && day < proposalInProgressDate) {
+      } else if (
+        proposalInProgressDate &&
+        normalizedDate < normalizeDateToNoon(proposalInProgressDate)
+      ) {
         onMessage(
           "error",
           "Proposal sent date cannot be older than proposal in progress date."
         );
         return;
       }
-
-      setSelectedDate(day);
-      onSelect(day);
+      setSelectedDate(normalizedDate);
+      onSelect(normalizedDate);
       closeDropdown();
     },
     [
@@ -96,10 +122,25 @@ const ProposalSentDateDropdown: FC<ProposalSentDateDropdownProps> = ({
   const updatePortalPosition = useCallback(() => {
     if (buttonRef.current) {
       const rect = buttonRef.current.getBoundingClientRect();
-      setPortalPosition({
-        top: rect.bottom,
-        left: rect.left,
-      });
+      const viewportHeight = window.innerHeight;
+      const viewportWidth = window.innerWidth;
+      const calendarHeight = 360;
+      const calendarWidth = 300;
+
+      let top = rect.bottom + 4;
+      let left = rect.left;
+
+      if (top + calendarHeight > viewportHeight) {
+        top = rect.top - calendarHeight - 4;
+      }
+      if (left + calendarWidth > viewportWidth) {
+        left = viewportWidth - calendarWidth - 16;
+      }
+      if (left < 16) {
+        left = 16;
+      }
+
+      setPortalPosition({ top, left });
     }
   }, []);
 
@@ -117,6 +158,11 @@ const ProposalSentDateDropdown: FC<ProposalSentDateDropdownProps> = ({
 
   const handleClickOutside = useCallback(
     (event: MouseEvent) => {
+      const target = event.target as Element;
+      const isYearDropdownClick =
+        target.closest("[data-year-dropdown]") !== null ||
+        target.hasAttribute("data-year-dropdown");
+
       if (
         isOpen &&
         calendarRef.current &&
@@ -126,7 +172,8 @@ const ProposalSentDateDropdown: FC<ProposalSentDateDropdownProps> = ({
         !(
           messagePopupRef.current &&
           messagePopupRef.current.contains(event.target as Node)
-        )
+        ) &&
+        !isYearDropdownClick
       ) {
         closeDropdown();
       }
@@ -135,10 +182,17 @@ const ProposalSentDateDropdown: FC<ProposalSentDateDropdownProps> = ({
   );
 
   useEffect(() => {
-    document.addEventListener("mousedown", handleClickOutside);
-
     if (isOpen) {
-      const handleScroll = () => {
+      document.addEventListener("mousedown", handleClickOutside);
+
+      const handleScroll = (event: Event) => {
+        const target = event.target as Element;
+        if (
+          target.hasAttribute?.("data-year-dropdown") ||
+          target.closest?.("[data-year-dropdown]")
+        ) {
+          return;
+        }
         closeDropdown();
       };
 
@@ -151,23 +205,15 @@ const ProposalSentDateDropdown: FC<ProposalSentDateDropdownProps> = ({
         capture: true,
         passive: true,
       });
-      document.addEventListener("scroll", handleScroll, {
-        capture: true,
-        passive: true,
-      });
-
-      updatePortalPosition();
 
       return () => {
+        document.removeEventListener("mousedown", handleClickOutside);
         window.removeEventListener("resize", handleResize);
         window.removeEventListener("scroll", handleScroll, { capture: true });
-        document.removeEventListener("scroll", handleScroll, { capture: true });
       };
-    }
-
-    return () => {
+    } else {
       document.removeEventListener("mousedown", handleClickOutside);
-    };
+    }
   }, [isOpen, handleClickOutside, updatePortalPosition, closeDropdown]);
 
   const getButtonClassName = useCallback(() => {
@@ -175,13 +221,11 @@ const ProposalSentDateDropdown: FC<ProposalSentDateDropdownProps> = ({
       "text-[#2A3136] font-normal rounded-lg flex justify-between items-center w-full cursor-pointer px-4 py-2 h-14 focus:border-blue-950 focus:ring-2 focus:ring-blue-950 outline-none shadow-sm hover:shadow-md transition-shadow duration-300";
 
     if (!selectedDate) {
-      return `bg-gray-50 border border-red-700 ring-2 ring-red-500 ${baseClasses}`;
-    } else if (hasChanged) {
-      return `bg-white border-2 border-green-700 ${baseClasses}`;
-    } else {
       return `bg-gray-50 border border-gray-300 ${baseClasses}`;
+    } else {
+      return `bg-white border-2 border-green-700 ${baseClasses}`;
     }
-  }, [hasChanged, selectedDate]);
+  }, [selectedDate]);
 
   return (
     <div ref={dropdownRef} onClick={(e) => e.stopPropagation()} style={style}>
@@ -207,32 +251,28 @@ const ProposalSentDateDropdown: FC<ProposalSentDateDropdownProps> = ({
         createPortal(
           <AnimatePresence>
             {isOpen && (
-              <motion.div
+              <div
                 ref={calendarRef}
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                transition={{ duration: 0.2 }}
                 style={{
                   position: "fixed",
                   top: portalPosition.top,
                   left: portalPosition.left,
                   zIndex: 99999,
-                  backgroundColor: "white",
-                  border: "1px solid #00000040",
-                  borderRadius: "8px",
-                  boxShadow: "0 4px 20px rgba(0, 0, 0, 0.2)",
-                  width: "auto",
                 }}
-                onClick={(e) => e.stopPropagation()}
               >
-                <DayPicker
-                  selected={selectedDate ?? undefined}
-                  onDayClick={handleDayClick}
-                  mode="single"
-                  className="custom-calendar"
-                />
-              </motion.div>
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <CustomCalendar
+                    selectedDisplayDate={selectedDate}
+                    handleDateSelect={handleDateSelect}
+                    colorScheme="rose"
+                  />
+                </motion.div>
+              </div>
             )}
           </AnimatePresence>,
           document.body

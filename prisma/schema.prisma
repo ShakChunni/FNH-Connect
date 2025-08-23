@@ -4,7 +4,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("TEMP_DATABASE")
+  url      = env("DATABASE_URL")
 }
 
 // Core Models
@@ -28,6 +28,7 @@ model Patient {
   // Relations
   admissions     Admission[]
   pathologyTests PathologyTest[]
+  account        PatientAccount? // Central account for all charges/payments
 
   @@index([fullName])
   @@index([phoneNumber])
@@ -43,6 +44,7 @@ model Department {
   staffAssignments StaffDepartment[]
   admissions       Admission[]
   pathologyTests   PathologyTest[]
+  serviceCharges   ServiceCharge[] // New relation
 }
 
 model Staff {
@@ -64,6 +66,7 @@ model Staff {
   collectedPayments     Payment[]
   pathologyOrderedBy    PathologyTest[]   @relation("OrderedBy")
   pathologyDoneBy       PathologyTest[]   @relation("DoneBy")
+  shifts                Shift[] // New relation for cash management
 
   // Login credentials
   user User?
@@ -145,8 +148,8 @@ model Admission {
   patient        Patient         @relation(fields: [patientId], references: [id])
   department     Department      @relation(fields: [departmentId], references: [id])
   doctor         Staff           @relation("AdmittingDoctor", fields: [doctorId], references: [id])
-  payments       Payment[]
   pathologyTests PathologyTest[]
+  serviceCharges ServiceCharge[] // Link to new payment system
 
   @@index([patientId])
   @@index([departmentId])
@@ -188,12 +191,12 @@ model PathologyTest {
   lastModifiedBy Int
 
   // Relations
-  patient    Patient    @relation(fields: [patientId], references: [id])
-  department Department @relation(fields: [departmentId], references: [id])
-  admission  Admission? @relation(fields: [admissionId], references: [id])
-  orderedBy  Staff      @relation("OrderedBy", fields: [orderedById], references: [id])
-  doneBy     Staff?     @relation("DoneBy", fields: [doneById], references: [id])
-  payments   Payment[]
+  patient        Patient         @relation(fields: [patientId], references: [id])
+  department     Department      @relation(fields: [departmentId], references: [id])
+  admission      Admission?      @relation(fields: [admissionId], references: [id])
+  orderedBy      Staff           @relation("OrderedBy", fields: [orderedById], references: [id])
+  doneBy         Staff?          @relation("DoneBy", fields: [doneById], references: [id])
+  serviceCharges ServiceCharge[] // Link to new payment system
 
   @@index([patientId])
   @@index([departmentId])
@@ -202,18 +205,118 @@ model PathologyTest {
   @@index([testDate])
 }
 
-// Payment Tracking
-model Payment {
-  id            Int      @id @default(autoincrement())
-  amount        Decimal
-  paymentMethod String // Cash, Card, etc.
-  paymentDate   DateTime @default(now())
-  collectedById Int
-  shiftInfo     String? // Morning, Evening, Night shift
+// Enhanced Payment & Cash Management System
 
-  // Source of payment - relation to one of these services
+// Staff Shift Management
+model Shift {
+  id        Int       @id @default(autoincrement())
+  staffId   Int
+  startTime DateTime
+  endTime   DateTime?
+  isActive  Boolean   @default(true)
+
+  // Cash reconciliation
+  openingCash Decimal @default(0) // Cash at start of shift
+  closingCash Decimal @default(0) // Physical cash at end
+  systemCash  Decimal @default(0) // What system says they should have
+  variance    Decimal @default(0) // Difference between closing and system
+
+  notes        String?
+  reconciledAt DateTime?
+  reconciledBy Int?
+
+  // Relations
+  staff         Staff          @relation(fields: [staffId], references: [id])
+  payments      Payment[]
+  cashMovements CashMovement[]
+
+  @@index([staffId])
+  @@index([startTime])
+  @@index([isActive])
+}
+
+// Track all cash movements for accountability
+model CashMovement {
+  id           Int      @id @default(autoincrement())
+  shiftId      Int
+  amount       Decimal
+  movementType String // "PAYMENT_RECEIVED", "CHANGE_GIVEN", "CASH_FLOAT", "REFUND"
+  description  String?
+  timestamp    DateTime @default(now())
+  paymentId    Int? // Link to payment if applicable
+
+  shift   Shift    @relation(fields: [shiftId], references: [id])
+  payment Payment? @relation(fields: [paymentId], references: [id])
+
+  @@index([shiftId])
+  @@index([timestamp])
+}
+
+// Central Patient Account for all charges across departments
+model PatientAccount {
+  id             Int     @id @default(autoincrement())
+  patientId      Int     @unique
+  totalCharges   Decimal @default(0) // Sum of all service charges
+  totalPaid      Decimal @default(0) // Sum of all payments
+  totalDue       Decimal @default(0) // Calculated: totalCharges - totalPaid
+  advanceBalance Decimal @default(0) // If patient pays in advance
+
+  // Relations
+  patient        Patient         @relation(fields: [patientId], references: [id])
+  serviceCharges ServiceCharge[]
+  payments       Payment[]
+
+  @@index([patientId])
+}
+
+// Individual service charges (more granular than admission/pathology)
+model ServiceCharge {
+  id               Int    @id @default(autoincrement())
+  patientAccountId Int
+  serviceType      String // "ADMISSION_FEE", "PATHOLOGY_TEST", "OPERATION", "MEDICINE", etc.
+  serviceName      String // Specific name like "LUCS Operation", "Blood Test"
+  departmentId     Int
+
+  // Financial details
+  originalAmount Decimal
+  discountAmount Decimal @default(0)
+  finalAmount    Decimal // originalAmount - discountAmount
+
+  // Service details
+  serviceDate DateTime @default(now())
+  description String?
+
+  // Links to specific services if needed
   admissionId     Int?
   pathologyTestId Int?
+
+  // Tracking
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  createdBy Int
+
+  // Relations
+  patientAccount     PatientAccount      @relation(fields: [patientAccountId], references: [id])
+  department         Department          @relation(fields: [departmentId], references: [id])
+  admission          Admission?          @relation(fields: [admissionId], references: [id])
+  pathologyTest      PathologyTest?      @relation(fields: [pathologyTestId], references: [id])
+  paymentAllocations PaymentAllocation[]
+
+  @@index([patientAccountId])
+  @@index([departmentId])
+  @@index([serviceType])
+  @@index([serviceDate])
+}
+
+// Enhanced Payment Model
+model Payment {
+  id               Int      @id @default(autoincrement())
+  patientAccountId Int // Always linked to patient account
+  amount           Decimal
+  paymentMethod    String // Cash, Card, etc.
+  paymentDate      DateTime @default(now())
+  collectedById    Int
+  shiftId          Int // Which shift collected this
 
   receiptNumber String  @unique
   notes         String?
@@ -223,15 +326,30 @@ model Payment {
   updatedAt DateTime @updatedAt
 
   // Relations
-  collector     Staff          @relation(fields: [collectedById], references: [id])
-  admission     Admission?     @relation(fields: [admissionId], references: [id])
-  pathologyTest PathologyTest? @relation(fields: [pathologyTestId], references: [id])
+  patientAccount     PatientAccount      @relation(fields: [patientAccountId], references: [id])
+  collector          Staff               @relation(fields: [collectedById], references: [id])
+  shift              Shift               @relation(fields: [shiftId], references: [id])
+  paymentAllocations PaymentAllocation[] // How this payment is split across services
+  cashMovements      CashMovement[]
 
+  @@index([patientAccountId])
   @@index([collectedById])
+  @@index([shiftId])
   @@index([paymentDate])
-  @@index([admissionId])
-  @@index([pathologyTestId])
-  @@index([shiftInfo])
+}
+
+// Track how payments are allocated to specific charges
+model PaymentAllocation {
+  id              Int     @id @default(autoincrement())
+  paymentId       Int
+  serviceChargeId Int
+  allocatedAmount Decimal
+
+  payment       Payment       @relation(fields: [paymentId], references: [id])
+  serviceCharge ServiceCharge @relation(fields: [serviceChargeId], references: [id])
+
+  @@index([paymentId])
+  @@index([serviceChargeId])
 }
 
 // Session & Activity Tracking
@@ -304,36 +422,96 @@ model HospitalConfig {
   updatedBy   Int
 }
 
+// Hospital/Medical Institution Model
+model Hospital {
+  id          Int     @id @default(autoincrement())
+  name        String  @unique
+  address     String?
+  phoneNumber String?
+  email       String?
+  website     String?
+  type        String? // "Government", "Private", "Clinic", etc.
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  createdBy Int // Staff ID who created the record
+
+  // Relations
+  infertilityPatients InfertilityPatient[]
+
+  @@index([name])
+}
+
 model InfertilityPatient {
-  id               Int       @id @default(autoincrement())
-  hospitalName     String? // Name of referring hospital if applicable
+  id Int @id @default(autoincrement())
+
+  // Hospital Information
+  hospitalId   Int?
+  hospitalName String? // For cases where hospital is not in our system
+
+  // Patient Information
   patientFirstName String
   patientLastName  String?
   patientFullName  String // Computed for easier querying
   patientAge       Int?
   patientDOB       DateTime?
+  patientGender    String? // Usually "Female" for primary patient
 
-  husbandName String?
-  husbandAge  Int?
-  husbandDOB  DateTime?
+  // Spouse Information
+  spouseName   String?
+  spouseAge    Int?
+  spouseDOB    DateTime?
+  spouseGender String? // Usually "Male"
 
+  // Contact Information
   mobileNumber String?
+  email        String?
   address      String?
-  yearsMarried Int? // How many years married
-  yearsTrying  Int? // How many years trying to conceive
+
+  // Marriage & Fertility History
+  yearsMarried    Int? // How many years married
+  yearsTrying     Int? // How many years trying to conceive
+  infertilityType String? // "Primary" or "Secondary"
 
   // Medical Information
-  para            String? // Obstetric history notation (e.g., "0+1ab, 2c/s")
-  alc             String? // Could be Absolute Lymphocyte Count or other value
-  weight          Decimal? // Patient's weight
-  bp              String? // Blood pressure
-  infertilityType String? // "Primary" or "Secondary"
+  para          String? // Obstetric history notation (e.g., "0+1ab, 2c/s")
+  gravida       String? // Number of pregnancies
+  weight        Decimal? // Patient's weight
+  height        Decimal? // Patient's height in cm
+  bmi           Decimal? // Body Mass Index
+  bloodPressure String? // Blood pressure reading
+  bloodGroup    String? // Blood type
+
+  // Medical History
+  medicalHistory       String? // Previous medical conditions
+  surgicalHistory      String? // Previous surgeries
+  menstrualHistory     String? // Menstrual cycle details
+  contraceptiveHistory String? // Previous contraceptive use
+
+  // Current Visit Information
+  referralSource String? // How patient was referred
+  chiefComplaint String? // Main reason for visit
+
+  // Treatment Information
+  treatmentPlan String? // Proposed treatment approach
+  medications   String? // Current medications
+
+  // Follow-up
+  nextAppointment DateTime?
+  status          String? // "Active", "Completed", "Discontinued"
 
   // Additional fields
   notes     String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  createdBy Int // Staff ID who created the record
+
+  // Relations
+  hospital Hospital? @relation(fields: [hospitalId], references: [id])
 
   @@index([patientFullName])
   @@index([mobileNumber])
+  @@index([hospitalId])
+  @@index([createdAt])
+  @@index([status])
 }

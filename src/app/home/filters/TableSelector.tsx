@@ -5,10 +5,10 @@ import React, {
   useRef,
   useCallback,
 } from "react";
-import { Button, Flex, Text, DropdownMenu } from "@radix-ui/themes";
-import { PiCaretDownBold } from "react-icons/pi";
+import { ChevronDown, Check } from "lucide-react";
 import { useTableSelector } from "../../context/TableSelectorContext";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
+import { useMediaQuery } from "react-responsive";
 
 interface TableSelectorProps {
   defaultValue: string;
@@ -16,114 +16,190 @@ interface TableSelectorProps {
 }
 
 const TableSelector: React.FC<TableSelectorProps> = ({ defaultValue }) => {
-  const { handleTableSelectorChange } = useTableSelector(); // Get from context
+  const { handleTableSelectorChange } = useTableSelector();
   const [value, setValue] = useState(defaultValue);
   const [isOpen, setIsOpen] = useState(false);
-  const [buttonWidth, setButtonWidth] = useState<number | null>(null);
+  const contentRef = useRef<HTMLDivElement | null>(null);
+  const isSmallMobile = useMediaQuery({ maxWidth: 399 });
+  const isMobile = useMediaQuery({ maxWidth: 639 });
+  const isXsScreen = useMediaQuery({ maxWidth: 479 });
 
   const buttonRef = useRef<HTMLButtonElement>(null);
   const spanRef = useRef<HTMLSpanElement>(null);
   const iconRef = useRef<HTMLSpanElement>(null);
 
+  const values = useMemo(() => ["All", "MAVN", "Moving Image"], []);
+
   useEffect(() => {
     setValue(defaultValue);
   }, [defaultValue]);
 
-  const values = useMemo(() => ["All", "MAVN", "Moving Image"], []);
-
   useEffect(() => {
-    const updateButtonWidth = () => {
-      if (buttonRef.current && spanRef.current && iconRef.current) {
-        const newWidth =
-          spanRef.current.scrollWidth + iconRef.current.scrollWidth + 40;
-        setButtonWidth(newWidth);
-      }
-    };
-
-    updateButtonWidth();
-
-    // Use ResizeObserver to detect changes in span content
-    const resizeObserver = new ResizeObserver(updateButtonWidth);
-    if (spanRef.current) {
-      resizeObserver.observe(spanRef.current);
+    if (buttonRef.current && spanRef.current && iconRef.current) {
+      buttonRef.current.style.width = `${
+        spanRef.current.scrollWidth + iconRef.current.scrollWidth + 40
+      }px`;
     }
-
-    return () => {
-      if (spanRef.current) {
-        resizeObserver.unobserve(spanRef.current);
-      }
-    };
   }, [value]);
+
+  const handleOpenChange = useCallback((open: boolean) => {
+    setIsOpen(open);
+  }, []);
 
   const handleSelect = useCallback(
     (newValue: string) => {
       setValue(newValue);
-      handleTableSelectorChange(newValue); // Use context function instead of onSelect
+      handleTableSelectorChange(newValue);
       setIsOpen(false);
     },
     [handleTableSelectorChange]
   );
 
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (!isOpen) return;
+      const target = event.target as Node;
+      const isButtonClick = buttonRef.current?.contains(target);
+      const isContentClick =
+        contentRef.current && contentRef.current.contains(target);
+      if (!isButtonClick && !isContentClick) {
+        setIsOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [isOpen]);
+
   return (
-    <DropdownMenu.Root open={isOpen} onOpenChange={setIsOpen}>
-      <DropdownMenu.Trigger>
-        <motion.div
-          whileHover={{ scale: 1.02, transition: { duration: 0.3 } }}
-          className="w-full"
-        >
-          <Button
-            ref={buttonRef}
-            variant="soft"
-            className={`dropdown-trigger-button flex justify-between items-center text-white px-5 py-2.5 whitespace-nowrap transition-all duration-300 ease-in-out overflow-hidden text-ellipsis cursor-pointer h-[40px] rounded-xl ${
-              isOpen
-                ? "bg-gradient-to-l from-blue-900 to-blue-950"
-                : "bg-gradient-to-r from-blue-900 to-blue-950"
-            }`}
-            style={{
-              width: buttonWidth ? `${buttonWidth}px` : "auto",
-              transition: "width 0.2s ease-in-out",
-            }}
-          >
-            <span ref={spanRef} className="text-white">
-              Organization: {value}
-            </span>
-            <span ref={iconRef} className="text-white">
-              <PiCaretDownBold
-                size={20}
-                className={`transition-transform duration-150 ${
-                  isOpen ? "rotate-180" : ""
-                }`}
-              />
-            </span>
-          </Button>
-        </motion.div>
-      </DropdownMenu.Trigger>
-      <DropdownMenu.Content
-        className={`${
-          isOpen ? "animate-dropdown-open" : "animate-dropdown-close"
-        } w-52`}
+    <div className="relative">
+      <motion.button
+        ref={buttonRef}
+        onClick={() => handleOpenChange(!isOpen)}
+        className="dropdown-trigger-button rounded-2xl"
+        initial={false}
+        animate={{
+          background: isOpen
+            ? "linear-gradient(to left, #172554, #1e3a8a)"
+            : "linear-gradient(to right, #172554, #1e3a8a)",
+          boxShadow:
+            "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
+        }}
+        whileHover={{
+          background: "linear-gradient(to right, #1e40af, #1e3a8a)",
+          boxShadow:
+            "0 4px 8px -1px rgba(0, 0, 0, 0.2), 0 2px 6px -1px rgba(0, 0, 0, 0.1)",
+        }}
+        transition={{
+          duration: 0.35,
+          ease: [0.25, 0.1, 0.35, 1],
+          background: {
+            duration: 0.5,
+            ease: "easeOut",
+          },
+        }}
         style={{
-          transition: "height 0.2s ease-in-out, opacity 0.2s ease-in-out",
+          color: "white",
+          border: "none",
+          borderRadius: "14px",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          textWrap: "nowrap",
+          padding: "8px 16px",
+          whiteSpace: "nowrap",
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+          cursor: "pointer",
+          height: "40px",
+          fontSize: isMobile ? "14px" : "15px",
         }}
       >
-        {values.map((item) => (
-          <DropdownMenu.Item
-            key={item}
-            onSelect={() => handleSelect(item)}
-            className="cursor-pointer"
+        <span ref={spanRef}>Organization: {value}</span>
+        <span ref={iconRef} className="flex items-center ml-2">
+          <motion.div
+            animate={{ rotate: isOpen ? 180 : 0 }}
+            transition={{
+              duration: 0.3,
+              ease: [0.25, 0.1, 0.25, 1],
+            }}
           >
-            <Flex
-              justify="start"
-              align="center"
-              gap="10px"
-              className="cursor-pointer"
-            >
-              <Text>{item}</Text>
-            </Flex>
-          </DropdownMenu.Item>
-        ))}
-      </DropdownMenu.Content>
-    </DropdownMenu.Root>
+            <ChevronDown size={18} />
+          </motion.div>
+        </span>
+      </motion.button>
+
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            ref={contentRef}
+            initial={{ opacity: 0, y: -20, scale: 0.95 }}
+            animate={{
+              opacity: 1,
+              y: 0,
+              scale: 1,
+              transition: {
+                type: "spring",
+                stiffness: 300,
+                damping: 20,
+              },
+            }}
+            exit={{
+              opacity: 0,
+              y: -10,
+              scale: 0.95,
+              transition: {
+                duration: 0.2,
+                ease: "easeOut",
+              },
+            }}
+            className="absolute top-full left-0 mt-1 z-[9999] bg-white border border-gray-300 rounded-2xl overflow-hidden shadow-xl"
+            style={{
+              width: "100%",
+              maxHeight: isMobile ? "80vh" : "90vh",
+              boxShadow:
+                "0 10px 25px -5px rgba(0, 0, 0, 0.2), 0 8px 10px -6px rgba(0, 0, 0, 0.2)",
+            }}
+            data-dropdown="table"
+            data-dropdown-content="true"
+          >
+            <div className="flex flex-col p-2">
+              <div className="flex flex-col gap-1">
+                {values.map((item) => (
+                  <div
+                    key={item}
+                    onClick={() => handleSelect(item)}
+                    className={`flex items-center px-3 py-2 ${
+                      item === value ? "bg-blue-50" : "hover:bg-blue-50"
+                    } rounded-2xl cursor-pointer transition-colors`}
+                  >
+                    <span
+                      className={`${
+                        item === value
+                          ? "text-blue-900 font-medium"
+                          : "text-gray-600"
+                      } ${isMobile ? "text-xs" : "text-sm"}`}
+                    >
+                      {item}
+                    </span>
+                    {item === value && (
+                      <div className="ml-auto">
+                        <div className="w-4 h-4 rounded-2xl bg-blue-900 flex items-center justify-center">
+                          <Check size={12} color="white" />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
   );
 };
 

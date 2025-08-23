@@ -1,6 +1,5 @@
 import { FC } from "react";
-import { Button, Flex } from "@radix-ui/themes";
-import { FaArrowLeft, FaArrowRight } from "react-icons/fa"; // Import icons
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 interface PaginationControlsProps {
   currentPage: number;
@@ -44,57 +43,57 @@ const PaginationControls: FC<PaginationControlsProps> = ({
     return pages.map((page, index) => {
       if (page === "...") {
         return (
-          <span key={index} className="px-2">
+          <span key={index} className="px-2 text-gray-500">
             ...
           </span>
         );
       }
 
       return (
-        <Button
+        <button
           key={index}
           onClick={() => onPageChange(page as number)}
-          className={`flex items-center justify-center w-8 h-8 rounded-full transition-colors duration-300 ease-in-out ${
+          className={`flex items-center justify-center w-10 h-10 rounded-full transition-all duration-300 ease-in-out font-medium ${
             page === currentPage
-              ? "bg-gray-400 cursor-not-allowed"
-              : "bg-blue-950 hover:bg-blue-900 cursor-pointer"
-          } text-white`}
+              ? "bg-gray-400 cursor-not-allowed text-white shadow-sm"
+              : "bg-blue-950 hover:bg-blue-900 cursor-pointer text-white shadow-lg hover:shadow-xl transform hover:scale-105"
+          }`}
+          disabled={page === currentPage}
         >
           {page}
-        </Button>
+        </button>
       );
     });
   };
 
   return (
-    <Flex justify={"center"} gap={"8px"} align={"center"} className="flex-wrap">
-      <Button
+    <div className="flex justify-center items-center gap-3 flex-wrap w-full">
+      <button
         disabled={currentPage === 1}
         onClick={onPreviousPage}
-        className={`py-2 px-4 rounded-2xl transition-colors duration-300 ease-in-out ${
+        className={`flex items-center justify-center w-10 h-10 rounded-full transition-all duration-300 ease-in-out ${
           currentPage === 1
-            ? "bg-gray-400 cursor-not-allowed"
-            : "bg-blue-950 hover:bg-blue-900 cursor-pointer"
-        } text-white`}
+            ? "bg-gray-400 cursor-not-allowed text-white shadow-sm"
+            : "bg-blue-950 hover:bg-blue-900 cursor-pointer text-white shadow-lg hover:shadow-xl transform hover:scale-105"
+        }`}
       >
-        <FaArrowLeft /> {/* Use icon */}
-      </Button>
+        <ChevronLeft size={18} />
+      </button>
 
       {renderPageNumbers()}
 
-      <Button
+      <button
         disabled={currentPage === totalPages}
         onClick={onNextPage}
-        className={`py-2 px-4 rounded-2xl transition-colors duration-300 ease-in-out ${
+        className={`flex items-center justify-center w-10 h-10 rounded-full transition-all duration-300 ease-in-out ${
           currentPage === totalPages
-            ? "bg-gray-400 cursor-not-allowed"
-            : "bg-blue-950 hover:bg-blue-900 cursor-pointer"
-        } text-white`}
+            ? "bg-gray-400 cursor-not-allowed text-white shadow-sm"
+            : "bg-blue-950 hover:bg-blue-900 cursor-pointer text-white shadow-lg hover:shadow-xl transform hover:scale-105"
+        }`}
       >
-        <FaArrowRight /> {/* Use icon */}
-      </Button>
-    </Flex>
+        <ChevronRight size={18} />
+      </button>
+    </div>
   );
 };
-
 export default PaginationControls;

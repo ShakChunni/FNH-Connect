@@ -3,13 +3,15 @@ import { format } from "date-fns";
 import AddNewData from "../AddNewData/AddNewData";
 import EditData from "../EditData/EditData";
 import ExportDropdown from "./components/ExportDropdown";
-import useCSVExport from "./hooks/useCSVExport";
+import useCSVExport from "./hooks/useExcelExport";
 import SearchBar from "./components/SearchBar";
 import AddDataButton from "./components/AddDataButton";
 import TableHeader from "./components/TableHeader";
 import TableRow from "./components/TableRow";
+import TableRowSkeleton from "./components/TableRowSkeleton";
 import Pagination from "./components/Pagination";
 import { useAuth } from "../../AuthContext";
+import { createPortal } from "react-dom";
 
 interface RecentLeadsTableProps {
   tableData: {
@@ -51,7 +53,12 @@ interface RecentLeadsTableProps {
   messagePopupRef: React.RefObject<HTMLDivElement>;
   customOptions?: any;
   tableSelectorValue?: string;
-  onSearch?: (searchTerm: string, searchField: string) => void; // New search handler prop
+  onSearch?: (searchTerm: string) => void;
+  isLoading?: boolean;
+  picList?: string[];
+  enableAutoSearch?: boolean;
+  debounceMs?: number;
+  minSearchLength?: number;
 }
 
 const RecentLeadsTable: React.FC<RecentLeadsTableProps> = ({
@@ -61,14 +68,21 @@ const RecentLeadsTable: React.FC<RecentLeadsTableProps> = ({
   customOptions,
   tableSelectorValue,
   onSearch,
+  isLoading = false,
+  picList,
+  enableAutoSearch = true,
+  debounceMs = 500,
+  minSearchLength = 2,
 }) => {
   const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
-  const [searchField, setSearchField] = useState("organization");
   const [isPopupOpen, setIsPopupOpen] = useState(false);
+  const [isPopupClosing, setIsPopupClosing] = useState(false);
   const [isEditPopupOpen, setIsEditPopupOpen] = useState(false);
+  const [isEditPopupClosing, setIsEditPopupClosing] = useState(false);
   const [editData, setEditData] = useState<any>(null);
   const tableContainerRef = useRef<HTMLDivElement>(null);
+  const searchBarRef = useRef<{ search: () => void }>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [startX, setStartX] = useState(0);
   const [scrollLeft, setScrollLeft] = useState(0);
@@ -81,7 +95,7 @@ const RecentLeadsTable: React.FC<RecentLeadsTableProps> = ({
   const itemsPerPage = 50;
 
   const formatDate = (date: string | null) => {
-    return date ? format(new Date(date), "dd/MM/yyyy") : "";
+    return date ? date.slice(0, 10).split("-").reverse().join("/") : "";
   };
 
   const sortedData = useMemo(() => {
@@ -172,7 +186,6 @@ const RecentLeadsTable: React.FC<RecentLeadsTableProps> = ({
     return sortableData;
   }, [tableData, sortConfig]);
 
-  // The filteredData now ignores searchTerm and just returns sortedData
   const filteredData = sortedData;
 
   const totalPages = Math.ceil(filteredData.length / itemsPerPage);
@@ -198,8 +211,7 @@ const RecentLeadsTable: React.FC<RecentLeadsTableProps> = ({
     onMessage("success", "Data marked as inactive successfully!");
   };
 
-  const { exportTableAsCSV } = useCSVExport(tableData);
-
+  const { exportTableAsExcel } = useCSVExport(tableData);
   const handleMouseDown = (e: React.MouseEvent) => {
     e.preventDefault();
     if (tableContainerRef.current) {
@@ -226,6 +238,16 @@ const RecentLeadsTable: React.FC<RecentLeadsTableProps> = ({
   const handleEditButtonClick = (row: any) => {
     setEditData(row);
     setIsEditPopupOpen(true);
+  };
+
+  const handleCloseEditPopup = () => {
+    setIsEditPopupClosing(true);
+    // Allow animation to complete before actually closing
+    setTimeout(() => {
+      setIsEditPopupOpen(false);
+      setIsEditPopupClosing(false);
+      setEditData(null);
+    }, 300); // Match the exit animation duration
   };
 
   const requestSort = (key: string) => {
@@ -280,6 +302,7 @@ const RecentLeadsTable: React.FC<RecentLeadsTableProps> = ({
   const headers = [
     { key: "id", label: "#" },
     { key: "organization_name", label: "Organization Name" },
+    { key: "campaign_name", label: "Campaign Name" },
     { key: "client_name", label: "Client's Name" },
     { key: "client_contact_number", label: "Contact Phone" },
     { key: "client_contact_email", label: "Contact Email" },
@@ -310,34 +333,49 @@ const RecentLeadsTable: React.FC<RecentLeadsTableProps> = ({
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
-
-  // This function is now empty since we're not using the search functionality
-  const handleSearch = () => {
-    if (onSearch && searchTerm.trim() !== "") {
-      onSearch(searchTerm, searchField);
+  const handleClearSearch = () => {
+    setSearchTerm("");
+    if (onSearch) {
+      onSearch("");
     }
   };
-  useEffect(() => {
-    if (searchTerm.trim() !== "" && searchField && onSearch) {
-      // Optional: Add debounce here for better UX
-      const timer = setTimeout(() => {
-        handleSearch();
-      }, 500);
-      return () => clearTimeout(timer);
+
+  const handleSearch = () => {
+    if (onSearch) {
+      onSearch(searchTerm);
     }
-  }, [searchTerm, searchField]);
+  };
+
+  const handleCloseAddPopup = () => {
+    setIsPopupClosing(true);
+    // Allow animation to complete before actually closing
+    setTimeout(() => {
+      setIsPopupOpen(false);
+      setIsPopupClosing(false);
+    }, 300); // Match the exit animation duration
+  };
+
   return (
-    <div className="bg-[#F4F8FC] rounded-2xl shadow-lg p-6 mb-8">
-      <div className="flex justify-end items-center mb-4">
-        <div className="flex items-center space-x-2">
-          <AddDataButton onClick={() => setIsPopupOpen(true)} />
-          {user?.role === "admin" && (
-            <ExportDropdown onExportCSV={exportTableAsCSV} />
-          )}
+    <div className="bg-white border border-slate-200 rounded-3xl shadow-md p-6">
+      <div className="flex justify-end items-center mb-4 space-x-2">
+        <div className="justify-end">
+          <SearchBar
+            searchTerm={searchTerm}
+            setSearchTerm={setSearchTerm}
+            onSearch={handleSearch}
+            onClear={handleClearSearch}
+            ref={searchBarRef}
+            enableAutoSearch={enableAutoSearch}
+            debounceMs={debounceMs}
+            minSearchLength={minSearchLength}
+          />
         </div>
+        {user?.role === "admin" && (
+          <ExportDropdown onExportCSV={exportTableAsExcel} />
+        )}
       </div>
       <div
-        className="overflow-x-auto overflow-y-auto w-full"
+        className="overflow-x-auto shadow-sm rounded-2xl overflow-y-auto w-full"
         ref={tableContainerRef}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
@@ -359,21 +397,25 @@ const RecentLeadsTable: React.FC<RecentLeadsTableProps> = ({
             totalRows={filteredData.length + 1}
           />
           <tbody className="bg-white divide-y divide-gray-200">
-            {paginatedData.map((row, index) => (
-              <TableRow
-                key={`${row.source_table}-${row.id}`}
-                row={row}
-                index={index + 1 + (currentPage - 1) * itemsPerPage}
-                totalRows={filteredData.length + 1}
-                formatDate={formatDate}
-                onEditClick={handleEditButtonClick}
-                currentPage={currentPage}
-              />
-            ))}
+            {isLoading
+              ? Array.from({ length: 10 }).map((_, index) => (
+                  <TableRowSkeleton key={index} />
+                ))
+              : paginatedData.map((row, index) => (
+                  <TableRow
+                    key={`${row.source_table}-${row.id}`}
+                    row={row}
+                    index={index + 1 + (currentPage - 1) * itemsPerPage}
+                    totalRows={filteredData.length + 1}
+                    formatDate={formatDate}
+                    onEditClick={handleEditButtonClick}
+                    currentPage={currentPage}
+                  />
+                ))}
           </tbody>
         </table>
       </div>
-      {totalPages > 1 && (
+      {!isLoading && totalPages > 1 && (
         <div className="mt-6">
           <Pagination
             currentPage={currentPage}
@@ -385,28 +427,27 @@ const RecentLeadsTable: React.FC<RecentLeadsTableProps> = ({
           />
         </div>
       )}
-      <AddNewData
-        isOpen={isPopupOpen}
-        onClose={() => setIsPopupOpen(false)}
-        onSubmit={handleAddData}
-        onMessage={onMessage}
-        messagePopupRef={messagePopupRef}
-        customOptions={customOptions}
-        tableSelectorValue={tableSelectorValue || ""}
-      />
-      {editData && (
-        <EditData
-          isOpen={isEditPopupOpen}
-          onClose={() => setIsEditPopupOpen(false)}
-          onUpdate={handleEditData}
-          onDelete={handleDeleteData}
-          onInactive={handleInactive}
-          data={editData}
-          onMessage={onMessage}
-          messagePopupRef={messagePopupRef}
-          customOptions={customOptions}
-        />
-      )}
+
+      {/* Use createPortal for AddNewData - similar to Overview */}
+
+      {editData &&
+        (isEditPopupOpen || isEditPopupClosing) &&
+        typeof window !== "undefined" &&
+        createPortal(
+          <EditData
+            isOpen={isEditPopupOpen && !isEditPopupClosing}
+            onClose={handleCloseEditPopup}
+            onUpdate={handleEditData}
+            onDelete={handleDeleteData}
+            onInactive={handleInactive}
+            data={editData}
+            onMessage={onMessage}
+            messagePopupRef={messagePopupRef}
+            customOptions={customOptions}
+            picList={picList}
+          />,
+          document.body
+        )}
     </div>
   );
 };

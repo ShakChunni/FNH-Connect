@@ -1,6 +1,5 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+@config "../../tailwind.config.ts";
 
 :root {
   --foreground-rgb: 0, 0, 0;
@@ -18,11 +17,22 @@ body {
 
 @layer utilities {
   .nav-link {
-    @apply text-zinc-500 hover:text-zinc-800 transition-colors;
+    color: #6b7280; /* text-zinc-500 */
+    transition-property: color;
+    transition-duration: 150ms;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .nav-link:hover {
+    color: #27272a; /* text-zinc-800 */
   }
 
   .dropdown-group {
-    @apply px-3 py-2 text-sm text-violet-900;
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+    font-size: 0.875rem;
+    color: #6d28d9;
   }
 
   #drawer-navigation:hover .aside-list-item {
@@ -39,6 +49,26 @@ body {
 }
 
 @layer base {
+  /* Remove arrows for Chrome, Safari, Edge, Opera */
+  input[type="number"]::-webkit-outer-spin-button,
+  input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
+  /* Remove arrows for Firefox */
+  input[type="number"] {
+    appearance: textfield;
+    -moz-appearance: textfield;
+  }
+  button:not(:disabled) {
+    cursor: pointer;
+  }
+
+  button:disabled {
+    cursor: not-allowed;
+  }
+
   /* Remove arrows for Chrome, Safari, Edge, Opera */
   input[type="number"]::-webkit-outer-spin-button,
   input[type="number"]::-webkit-inner-spin-button {
@@ -87,16 +117,15 @@ body {
   background-size: 1000px 100%;
   animation: shimmer 2s infinite linear;
 }
-
 @keyframes dropdown-open {
   0% {
     opacity: 0;
-    transform: translateY(-12px) scale(0.95);
+    transform: translateY(-8px);
     pointer-events: none;
   }
   100% {
     opacity: 1;
-    transform: translateY(0) scale(1);
+    transform: translateY(0);
     pointer-events: auto;
   }
 }
@@ -104,31 +133,32 @@ body {
 @keyframes dropdown-close {
   0% {
     opacity: 1;
-    transform: translateY(0) scale(1);
+    transform: translateY(0);
     pointer-events: auto;
   }
   100% {
     opacity: 0;
-    transform: translateY(-12px) scale(0.95);
+    transform: translateY(-8px);
     pointer-events: none;
   }
 }
 
 .animate-dropdown-open {
-  animation: dropdown-open 0.35s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  animation: dropdown-open 0.22s ease-out forwards;
   transform-origin: top center;
   backface-visibility: hidden;
   will-change: transform, opacity;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
+    0 4px 6px -2px rgba(0, 0, 0, 0.05);
 }
 
 .animate-dropdown-close {
-  animation: dropdown-close 0.25s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  animation: dropdown-close 0.18s ease-out forwards;
   transform-origin: top center;
   backface-visibility: hidden;
   will-change: transform, opacity;
   display: block !important; /* Ensures the element remains visible during the close animation */
 }
-
 @keyframes slideDown {
   0% {
     opacity: 0;
@@ -296,6 +326,23 @@ body {
   border-radius: 50%; /* Make selected date circle thinner */
   border: 2px solid #000; /* Adjusted to make the circle thinner */
   background-color: #e0e0e0; /* Subtle background to show selection */
+}
+
+.rt-Button.bg-blue-950 {
+  background-color: #1e3a8a !important; /* blue-950 */
+  color: #fff !important;
+  border: none !important;
+  border-radius: 0.75rem !important; /* matches rounded-xl */
+  box-shadow: none !important;
+  padding: 0.5rem 1.25rem !important; /* Add padding for a rounded look */
+}
+
+.rt-Button.bg-blue-950:hover,
+.rt-Button.bg-blue-950:focus {
+  background-color: #172554 !important; /* blue-900 */
+  color: #fff !important;
+  border-radius: 0.75rem !important;
+  padding: 0.5rem 1.25rem !important;
 }
 
 .custom-calendar .rdp-day {
@@ -470,6 +517,7 @@ input:checked + .slider:before {
 }
 
 input[type="number"] {
+  appearance: textfield;
   -moz-appearance: textfield;
 }
 
@@ -479,6 +527,7 @@ input::-webkit-inner-spin-button {
   margin: 0;
 }
 .rdrStaticRange {
+  white-space: nowrap !important;
   position: relative !important;
   background: #ffffff !important;
   border: 0 !important;
@@ -523,6 +572,7 @@ input::-webkit-inner-spin-button {
 }
 
 .rdrStaticRangeLabel {
+  white-space: nowrap !important;
   color: #4a5568 !important;
   transition: color 0.2s ease !important;
   pointer-events: none !important;
@@ -576,6 +626,46 @@ input::-webkit-inner-spin-button {
   color: #1e3a8a !important; /* blue-950 */
 }
 
+/* Add these DateRangePicker customizations to your globals.css */
+.rdrDefinedRangesWrapper {
+  max-height: 400px !important;
+  overflow-y: auto !important;
+  min-width: 185px !important;
+}
+
+.rdrStaticRange {
+  min-width: 185px !important;
+  white-space: nowrap !important;
+}
+
+.rdrStaticRangeLabel {
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+.rdrDateRangePickerWrapper {
+  position: relative !important;
+  padding-bottom: 16px !important;
+}
+
+.rdrMonthAndYearWrapper {
+  padding-top: 10px !important;
+}
+
+.rdrMonth {
+  padding-bottom: 0 !important;
+}
+
+/* Add this to your globals.css file, merge with your existing date picker styles */
+.custom-date-range-picker .rdrStaticRanges {
+  margin-top: 8px; /* Increase top margin for the static ranges container */
+}
+
+.custom-date-range-picker .rdrStaticRange {
+  margin-bottom: 8px; /* Add spacing between each range option */
+}
+
 /* Media Queries */
 @media (max-width: 640px) {
   .rdrMonth {
@@ -618,5 +708,30 @@ input::-webkit-inner-spin-button {
   }
   .custom-date-range-picker .rdrDay {
     font-size: 12px;
+  }
+}
+
+/* Add to your global CSS or component styles */
+.overflow-y-auto {
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch; /* For iOS smooth scrolling */
+  /* Add these for better Android support */
+  overscroll-behavior: contain;
+  scroll-snap-type: y proximity;
+}
+
+/* Android-specific optimizations */
+@supports (-webkit-touch-callout: none) {
+  .overflow-y-auto {
+    -webkit-overflow-scrolling: touch;
+    -webkit-transform: translate3d(0, 0, 0);
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+/* Better Android Chrome support */
+@media screen and (-webkit-min-device-pixel-ratio: 0) {
+  .overflow-y-auto {
+    scroll-behavior: auto; /* Disable native smooth scroll on Android Chrome */
   }
 }

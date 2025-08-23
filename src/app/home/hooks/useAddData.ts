@@ -3,11 +3,15 @@ import { useAuth } from "../../AuthContext";
 import { useQueryClient } from "@tanstack/react-query";
 
 interface AddDataProps {
+  organizationId: number | null;
   organizationName: string;
+  campaignName: string;
   organizationWebsite: string;
   organizationLocation: string;
   industryName: string;
+  clientId: number | null;
   clientName: string;
+  clientPosition: string;
   clientPhone: string;
   clientEmail: string;
   leadSource: string;
@@ -44,16 +48,23 @@ const useAddData = (onClose: () => void) => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
+  const formatDateOnly = (date: Date | null | undefined) =>
+    date ? date.toISOString().slice(0, 10) : null;
+
   const handleSubmit = useCallback(
     async (data: AddDataProps) => {
       // Trim all string inputs
       const convertedData = {
         ...data,
+        organizationId: data.organizationId,
+        clientId: data.clientId,
         organizationName: data.organizationName.trim(),
+        campaignName: data.campaignName.trim(),
         organizationWebsite: data.organizationWebsite.trim(),
         organizationLocation: data.organizationLocation.trim(),
         industryName: data.industryName.trim(),
         clientName: data.clientName.trim(),
+        clientPosition: data.clientPosition.trim(),
         clientPhone: data.clientPhone.trim(),
         clientEmail: data.clientEmail.trim(),
         leadSource: data.leadSource.trim(),
@@ -67,10 +78,11 @@ const useAddData = (onClose: () => void) => {
         proposalInProgress: data.proposalInProgress.toLowerCase() === "yes",
         proposalSigned: data.proposalSigned?.toLowerCase() === "yes",
         // Handle dates
-        meetingDate: data.meetingDate ?? undefined,
-        proposalSentDate: data.proposalSentDate ?? undefined,
-        proposalInProgressDate: data.proposalInProgressDate ?? undefined,
-        proposalSignedDate: data.proposalSignedDate ?? undefined,
+        prospectDate: formatDateOnly(data.prospectDate),
+        meetingDate: formatDateOnly(data.meetingDate),
+        proposalSentDate: formatDateOnly(data.proposalSentDate),
+        proposalInProgressDate: formatDateOnly(data.proposalInProgressDate),
+        proposalSignedDate: formatDateOnly(data.proposalSignedDate),
         // Handle numeric values
         proposedValue: Number(data.proposedValue) || 0,
         closedSale: Number(data.closedSale) || 0,
@@ -78,6 +90,8 @@ const useAddData = (onClose: () => void) => {
         username: user?.username,
         userId: user?.id,
       };
+
+      console.log("Submitting data:", convertedData); // Debug log
 
       // Check for custom options
       const customOptions = [];
@@ -93,6 +107,13 @@ const useAddData = (onClose: () => void) => {
           value: convertedData.leadSource,
         });
       }
+      // Add industry to custom options if it doesn't exist
+      if (convertedData.industryName) {
+        customOptions.push({
+          type: "industry",
+          value: convertedData.industryName,
+        });
+      }
 
       try {
         const response = await fetch("/api/add/newData", {
@@ -104,7 +125,8 @@ const useAddData = (onClose: () => void) => {
         });
 
         if (!response.ok) {
-          throw new Error(`Error: ${response.statusText}`);
+          const errorData = await response.json();
+          throw new Error(errorData.message || `Error: ${response.statusText}`);
         }
 
         // If there are custom options, send them to the customData endpoint
@@ -118,7 +140,9 @@ const useAddData = (onClose: () => void) => {
           });
 
           if (!customResponse.ok) {
-            throw new Error(`Error: ${customResponse.statusText}`);
+            console.warn(
+              "Failed to save custom options, but main data was saved"
+            );
           }
         }
 
