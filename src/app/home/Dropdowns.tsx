@@ -148,7 +148,7 @@ const Dropdowns: FC<DropdownsProps> = ({
   const motionTransition = useMemo(
     () => ({
       duration: 0.3,
-      type: "spring",
+      type: "spring" as const,
       stiffness: 300,
       damping: 30,
     }),
@@ -170,8 +170,6 @@ const Dropdowns: FC<DropdownsProps> = ({
     [filters]
   );
 
-  console.log("Dropdowns rendered", filters);
-
   return (
     <Flex direction="column" gap="4">
       <LayoutGroup>
@@ -191,7 +189,11 @@ const Dropdowns: FC<DropdownsProps> = ({
             />
           </motion.div>
 
-          <motion.div layoutId="dateSelector" transition={motionTransition}>
+          <motion.div
+            layoutId="dateSelector"
+            transition={motionTransition}
+            style={{ maxWidth: "100%" }}
+          >
             <DateSelector
               onSelect={handleDateSelectorSelect}
               defaultValue={safeFilters.dateSelector}

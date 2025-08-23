@@ -72,7 +72,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             };
             setUser(validatedUser);
             if (window.location.pathname === "/login") {
-              await router.push("/home");
+              await router.push("/infertility");
             }
           } else {
             setUser(null);
@@ -135,7 +135,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       };
 
       setUser(validatedUser);
-      await router.push("/home");
+      await router.push("/infertility");
     } catch (error) {
       console.error("Login failed:", error);
       throw error; // Re-throw to be handled by the login page

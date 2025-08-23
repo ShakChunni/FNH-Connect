@@ -4,33 +4,36 @@ import { useQueryClient } from "@tanstack/react-query";
 
 interface UpdateDataProps {
   id: number;
-  oldSourceTable: string;
-  clientName: string;
+  organizationId: number | null;
+  organizationName: string;
+  campaignName: string;
+  organizationWebsite: string;
+  organizationLocation: string;
   industryName: string;
+  clientId: number | null;
+  clientName: string;
+  clientPosition: string;
+  clientPhone: string;
+  clientEmail: string;
   leadSource: string;
   pic: string;
   meetingsConducted: string;
   lostLead: string;
   proposalSent: string;
   proposalInProgress: string;
-  clientLocation: string;
   prospectDate: Date | null;
-  meetingDate?: Date | null;
-  proposalSentDate?: Date | null;
-  proposalInProgressDate?: Date | null;
-  proposalSigned?: string;
-  proposalSignedDate?: Date | null;
-  proposedValue?: number;
-  closedSale?: number;
+  meetingDate: Date | null;
+  proposalSentDate: Date | null;
+  proposalInProgressDate: Date | null;
+  proposalSigned: string;
+  proposalSignedDate: Date | null;
+  proposedValue: number;
+  closedSale: number;
   sourceTable: string;
   sourceOrganization: string;
   notes: string;
   quotationNumber: string;
   type: string;
-  organizationName: string;
-  organizationWebsite: string;
-  clientPhone: string;
-  clientEmail: string;
 }
 
 const defaultCountryValues = ["Malaysia", "Singapore"];
@@ -48,57 +51,75 @@ const useUpdateData = (onClose: () => void) => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
+  const formatDateOnly = (date: Date | null | undefined) =>
+    date ? date.toISOString().slice(0, 10) : null;
+
   const handleSubmit = useCallback(
     async (data: UpdateDataProps) => {
       // Trim all string inputs and convert values
       const convertedData = {
         ...data,
-        // Trim all string values
-        clientName: data.clientName.trim(),
+        organizationId: data.organizationId,
+        clientId: data.clientId,
+        organizationName: data.organizationName.trim(),
+        campaignName: data.campaignName.trim(),
+        organizationWebsite: data.organizationWebsite.trim(),
+        organizationLocation: data.organizationLocation.trim(),
         industryName: data.industryName.trim(),
+        clientName: data.clientName.trim(),
+        clientPosition: data.clientPosition.trim(),
+        clientPhone: data.clientPhone.trim(),
+        clientEmail: data.clientEmail.trim(),
         leadSource: data.leadSource.trim(),
         pic: data.pic.trim(),
-        clientLocation: data.clientLocation.trim(),
         notes: data.notes.trim(),
         quotationNumber: data.quotationNumber.trim(),
         type: data.type.trim(),
-        organizationName: data.organizationName.trim(),
-        organizationWebsite: data.organizationWebsite.trim(),
-        clientPhone: data.clientPhone.trim(),
-        clientEmail: data.clientEmail.trim(),
-        sourceOrganization: data.sourceOrganization.trim(),
+        sourceOrganization: data.sourceOrganization?.trim() ?? "",
         // Convert boolean strings to actual booleans
         meetingsConducted: data.meetingsConducted.toLowerCase() === "yes",
         proposalSent: data.proposalSent.toLowerCase() === "yes",
         proposalInProgress: data.proposalInProgress.toLowerCase() === "yes",
         proposalSigned: data.proposalSigned?.toLowerCase() === "yes",
-        lostLead: data.lostLead.toLowerCase() === "yes",
+        lostLead: data.lostLead?.toLowerCase() === "yes",
         // Handle dates
-        meetingDate: data.meetingDate ?? undefined,
-        proposalSentDate: data.proposalSentDate ?? undefined,
-        proposalInProgressDate: data.proposalInProgressDate ?? undefined,
-        proposalSignedDate: data.proposalSignedDate ?? undefined,
+        prospectDate: formatDateOnly(data.prospectDate),
+        meetingDate: formatDateOnly(data.meetingDate),
+        proposalSentDate: formatDateOnly(data.proposalSentDate),
+        proposalInProgressDate: formatDateOnly(data.proposalInProgressDate),
+        proposalSignedDate: formatDateOnly(data.proposalSignedDate),
         // Handle numeric values
         proposedValue: Number(data.proposedValue) || 0,
         closedSale: Number(data.closedSale) || 0,
         // Add user info
         username: user?.username,
         userId: user?.id,
-
       };
 
       // Check for custom options
       const customOptions = [];
-      if (!defaultCountryValues.includes(convertedData.clientLocation)) {
+      if (
+        convertedData.organizationLocation &&
+        !defaultCountryValues.includes(convertedData.organizationLocation)
+      ) {
         customOptions.push({
           type: "country",
-          value: convertedData.clientLocation,
+          value: convertedData.organizationLocation,
         });
       }
-      if (!defaultLeadSources.includes(convertedData.leadSource)) {
+      if (
+        convertedData.leadSource &&
+        !defaultLeadSources.includes(convertedData.leadSource)
+      ) {
         customOptions.push({
           type: "leadSource",
           value: convertedData.leadSource,
+        });
+      }
+      if (convertedData.industryName) {
+        customOptions.push({
+          type: "industry",
+          value: convertedData.industryName,
         });
       }
 
@@ -112,7 +133,25 @@ const useUpdateData = (onClose: () => void) => {
         });
 
         if (!response.ok) {
-          throw new Error(`Error: ${response.statusText}`);
+          const errorData = await response.json();
+          throw new Error(errorData.message || `Error: ${response.statusText}`);
+        }
+
+        // If there are custom options, send them to the customData endpoint
+        if (customOptions.length > 0) {
+          const customResponse = await fetch("/api/add/customData", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ customOptions }),
+          });
+
+          if (!customResponse.ok) {
+            console.warn(
+              "Failed to save custom options, but main data was updated"
+            );
+          }
         }
 
         // Invalidate and refetch the dashboard data query

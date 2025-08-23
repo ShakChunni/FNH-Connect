@@ -6,71 +6,34 @@ export async function generateMetadata(): Promise<Metadata> {
   const pathname = headersList.get("x-pathname") || "/";
 
   switch (pathname) {
-    case "/login":
-      return {
-        title: "Login | Sales Reporting Dashboard",
-        robots: {
-          index: false,
-          follow: false,
-          nocache: true,
-          googleBot: {
-            index: false,
-            follow: false,
-          },
-        },
-      };
     case "/home":
       return {
-        title: "Performance Overview | Sales Reporting Dashboard",
-        robots: {
-          index: false,
-          follow: false,
-          nocache: true,
-          googleBot: {
-            index: false,
-            follow: false,
-          },
-        },
+        title: "Dashboard",
       };
-    case "/admin":
+    case "/infertility":
       return {
-        title: "Admin | Sales Reporting Dashboard",
-        robots: {
-          index: false,
-          follow: false,
-          nocache: true,
-          googleBot: {
-            index: false,
-            follow: false,
-          },
-        },
+        title: "Infertility",
       };
-    case "/goals":
+    case "/pathology":
       return {
-        title: "Goal Tracking | Sales Reporting Dashboard",
-        robots: {
-          index: false,
-          follow: false,
-          nocache: true,
-          googleBot: {
-            index: false,
-            follow: false,
-          },
-        },
+        title: "Pathology",
+      };
+    case "/admin-dashboard":
+      return {
+        title: "Admin Dashboard",
+      };
+    case "/admin/user-management":
+      return {
+        title: "User Management",
+      };
+    case "/admin/activity-logs":
+      return {
+        title: "Activity Logs",
       };
     default:
       return {
-        title: "Sales Reporting Dashboard",
-        description: "Monthly Sales Performance Reporting System",
-        robots: {
-          index: false,
-          follow: false,
-          nocache: true,
-          googleBot: {
-            index: false,
-            follow: false,
-          },
-        },
+        title: "Dashboard",
+        description: "Patient management dashboard",
       };
   }
 }

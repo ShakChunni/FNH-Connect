@@ -4,22 +4,37 @@ import { motion, AnimatePresence } from "framer-motion";
 
 interface WhatsappMessagingProps {
   phoneNumber: string;
+  source?: "table" | "overview" | "input";
 }
 
 const WhatsappMessaging: React.FC<WhatsappMessagingProps> = ({
   phoneNumber,
+  source = "table",
 }) => {
   const [showOptions, setShowOptions] = useState(false);
-  const menuRef = useRef<HTMLDivElement>(null);
+  const iconRef = useRef<HTMLDivElement>(null);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Format phone number for WhatsApp
   const formatPhoneForWhatsApp = (phone: string) => {
     if (!phone) return "";
-    // Remove all non-numeric characters except the plus at the beginning
+
     const cleaned = phone.trim().replace(/[^0-9+]/g, "");
-    // Remove plus sign if present (WhatsApp API doesn't need it)
-    return cleaned.startsWith("+") ? cleaned.substring(1) : cleaned;
+
+    if (cleaned.startsWith("+")) {
+      return cleaned.substring(1);
+    }
+
+    if (cleaned.startsWith("0")) {
+      return "60" + cleaned.substring(1);
+    }
+
+    const hasCountryCode = cleaned.length > 11;
+
+    if (!hasCountryCode) {
+      return "60" + cleaned;
+    }
+
+    return cleaned;
   };
 
   const formattedNumber = formatPhoneForWhatsApp(phoneNumber);
@@ -28,16 +43,12 @@ const WhatsappMessaging: React.FC<WhatsappMessagingProps> = ({
     e.stopPropagation();
     if (!formattedNumber) return;
 
-    // Base URL for WhatsApp
     const baseUrl =
       platform === "web"
         ? "https://web.whatsapp.com/send?phone="
         : "https://api.whatsapp.com/send?phone=";
 
-    // Construct the URL
     const whatsappUrl = `${baseUrl}${formattedNumber}`;
-
-    // Open in new tab
     window.open(whatsappUrl, "_blank");
   };
 
@@ -52,7 +63,7 @@ const WhatsappMessaging: React.FC<WhatsappMessagingProps> = ({
   const handleMouseLeave = () => {
     timeoutRef.current = setTimeout(() => {
       setShowOptions(false);
-    }, 400); // Slightly longer timeout for smoother UX
+    }, 500);
   };
 
   useEffect(() => {
@@ -63,16 +74,18 @@ const WhatsappMessaging: React.FC<WhatsappMessagingProps> = ({
     };
   }, []);
 
+  let rightPosition = "-right-12";
+  if (source === "overview") rightPosition = "-right-4";
+  if (source === "input") rightPosition = "-right-20";
+
   return (
-    <div
-      className="relative inline-block"
-      ref={menuRef}
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
-    >
+    <div className="relative inline-block">
       <motion.div
+        ref={iconRef}
         whileHover={{}}
         transition={{ type: "spring", stiffness: 400, damping: 10 }}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
       >
         <FaWhatsapp className="ml-2 w-3.5 h-3.5 text-green-600 cursor-pointer hover:text-green-900 transition-colors duration-300" />
       </motion.div>
@@ -80,11 +93,11 @@ const WhatsappMessaging: React.FC<WhatsappMessagingProps> = ({
       <AnimatePresence>
         {showOptions && (
           <motion.div
-            initial={{ opacity: 0, y: -10, scale: 0.95 }}
+            initial={{ opacity: 0, y: 10, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -10, scale: 0.95 }}
+            exit={{ opacity: 0, y: 10, scale: 0.95 }}
             transition={{ duration: 0.2 }}
-            className="absolute z-20 bg-white border border-gray-200 shadow-lg rounded-lg mt-2 -right-12 w-28 overflow-hidden"
+            className={`absolute z-[100] bg-white border border-gray-200 shadow-lg rounded-lg -top-14 ${rightPosition} w-28 overflow-hidden`}
             onMouseEnter={handleMouseEnter}
             onMouseLeave={handleMouseLeave}
           >
@@ -93,17 +106,17 @@ const WhatsappMessaging: React.FC<WhatsappMessagingProps> = ({
                 whileHover={{ backgroundColor: "#25D366", color: "#FFFFFF" }}
                 transition={{ duration: 0.2 }}
                 className="px-3 py-1.5 cursor-pointer text-xs font-medium flex-1 text-center text-gray-700 rounded-l-md flex items-center justify-center space-x-1"
-                onClick={(e) => openWhatsApp("web", e)}
+                onClick={(e) => openWhatsApp("app", e)}
               >
-                <span>Web</span>
+                <span>App</span>
               </motion.div>
               <motion.div
                 whileHover={{ backgroundColor: "#25D366", color: "#FFFFFF" }}
                 transition={{ duration: 0.2 }}
                 className="px-3 py-1.5 cursor-pointer text-xs font-medium flex-1 text-center text-gray-700 rounded-r-md flex items-center justify-center space-x-1"
-                onClick={(e) => openWhatsApp("app", e)}
+                onClick={(e) => openWhatsApp("web", e)}
               >
-                <span>App</span>
+                <span>Web</span>
               </motion.div>
             </div>
           </motion.div>

@@ -4,9 +4,12 @@ import { useEffect } from "react";
 import { usePathname } from "next/navigation";
 
 const titleMap: { [key: string]: string } = {
-  "/login": "Sales Reporting Dashboard",
-  "/Home": "Performance Overview",
-  "/Admin": "Admin",
+  "/home": "Dashboard",
+  "/infertility": "Infertility",
+  "/pathology": "Pathology",
+  "/admin-dashboard": "Admin Dashboard",
+  "/admin/user-management": "User Management",
+  "/admin/activity-logs": "Activity Logs",
 };
 
 export default function PageTitle() {
@@ -14,7 +17,7 @@ export default function PageTitle() {
 
   useEffect(() => {
     if (pathname) {
-      document.title = titleMap[pathname] || "Sales Reporting Dashboard";
+      document.title = titleMap[pathname] || "Dashboard";
     }
   }, [pathname]);
 

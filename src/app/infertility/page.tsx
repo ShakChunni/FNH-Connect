@@ -1,16 +1,22 @@
 "use client";
-import React, { useState, useRef, useCallback } from "react";
+import React, { useState, useRef, useCallback, useMemo } from "react";
 import { AnimatePresence, motion } from "framer-motion";
+import { createPortal } from "react-dom";
+import AddNewDataInfertility from "./components/AddNewData/AddNewDataInfertility";
 import PatientTable from "./components/PatientTable/PatientTable";
-import SkeletonPatientTable from "./components/SkeletonPatientTable";
-import useFetchData from "./hooks/useFetchData";
+import SkeletonPatientTable from "./components/PatientTable/components/SkeletonPatientTable";
+import useFetchData from "./hooks/useFetchInfertilityData";
+import Dropdowns from "./components/Filters/Dropdowns";
+import ButtonContainer from "./components/ButtonContainer";
 import { useAuth } from "../AuthContext";
 
 interface FilterState {
   dateSelector: {
     start: string | null;
     end: string | null;
+    option: string[];
   };
+  leadsFilter: string;
 }
 
 interface SearchParams {
@@ -21,9 +27,19 @@ interface SearchParams {
 const InfertilityManagement = React.memo(() => {
   const { user } = useAuth();
 
+  // Only leadsFilter and dateSelector for this page
   const [filters, setFilters] = useState<FilterState>({
-    dateSelector: { start: null, end: null },
+    dateSelector: { start: null, end: null, option: [] },
+    leadsFilter: "All",
   });
+
+  // UI state for dropdowns
+  const [showDropdowns, setShowDropdowns] = useState(false);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
+
+  // AddNewData popup state (open/closing) to match dashboard behavior
+  const [isPopupOpen, setIsPopupOpen] = useState(false);
+  const [isPopupClosing, setIsPopupClosing] = useState(false);
 
   const [shouldFetchData, setShouldFetchData] = useState(true);
   const [searchParams, setSearchParams] = useState<SearchParams | undefined>(
@@ -37,30 +53,60 @@ const InfertilityManagement = React.memo(() => {
     refetch,
   } = useFetchData(filters, shouldFetchData, searchParams);
 
+  // FIX 1: Use correct ref type
+  const messagePopupRef = useRef<HTMLDivElement>(null);
+
+  // FIX 2: Update handleTableSearch to match PatientTable's expected prop
   const handleTableSearch = useCallback(
-    (searchTerm: string, searchField: string) => {
-      setSearchParams({ searchTerm, searchField });
+    (searchTerm: string) => {
+      setSearchParams({ searchTerm, searchField: "patientFullName" }); // Default field
       setShouldFetchData(true);
       refetch();
     },
     [refetch]
   );
 
+  // Handle dropdown toggle
+  const handleToggleDropdowns = useCallback((isExpanded: boolean) => {
+    setShowDropdowns(isExpanded);
+  }, []);
+
+  // Handle add data popup (open/close with closing animation)
+  const handleOpenAddPopup = useCallback(() => {
+    setIsPopupOpen(true);
+  }, []);
+
+  const handleCloseAddPopup = useCallback(() => {
+    setIsPopupClosing(true);
+    setTimeout(() => {
+      setIsPopupOpen(false);
+      setIsPopupClosing(false);
+    }, 300);
+  }, []);
+
+  // Update filters and trigger fetch (hook logic for new filters to be implemented later)
   const handleFilterUpdate = useCallback(
     (key: string, value: any) => {
       setFilters((prevFilters) => ({ ...prevFilters, [key]: value }));
-      setShouldFetchData(true);
+      setIsInitialLoad(false);
 
+      // Reset search params if filter changes
       if (searchParams) {
         setSearchParams(undefined);
       }
 
-      refetch().catch((error: unknown) => {
-        console.error("Error refetching data:", error);
-      });
+      // Only refetch for dateSelector for now; other filters' hook logic to be implemented later
+      if (key === "dateSelector") {
+        refetch().catch((error: unknown) => {
+          console.error("Error refetching data:", error);
+        });
+      }
     },
     [refetch, searchParams]
   );
+
+  // Ref for search bar (stub)
+  const searchBarRef = useRef<{ search: () => void }>({ search: () => {} });
 
   const [messageType, setMessageType] = useState<"success" | "error" | null>(
     null
@@ -73,12 +119,6 @@ const InfertilityManagement = React.memo(() => {
       setMessageContent(content);
       setShouldFetchData(true);
 
-      setNotification({
-        message: content,
-        type: type,
-        visible: true,
-      });
-
       refetch();
       setTimeout(() => {
         setMessageType(null);
@@ -89,108 +129,146 @@ const InfertilityManagement = React.memo(() => {
     [refetch]
   );
 
+  // Optional: parent callback when AddNewData calls onSubmit
+  const handleAddData = useCallback(
+    async (data: any) => {
+      // Ensure page fetches updated data after a new patient is added
+      setShouldFetchData(true);
+      try {
+        await refetch();
+      } catch (error) {
+        console.error("Error refetching after add:", error);
+      } finally {
+        setShouldFetchData(false);
+      }
+    },
+    [refetch]
+  );
+
   const dismissMessage = useCallback(() => {
     setMessageType(null);
     setMessageContent("");
   }, []);
 
-  const messagePopupRef = useRef<HTMLDivElement>(null);
-
-  const [notification, setNotification] = useState<{
-    message: string;
-    type: "success" | "error" | "info";
-    visible: boolean;
-  }>({
-    message: "",
-    type: "success",
-    visible: false,
-  });
-
-  const DateFilterDropdown = React.memo(() => (
-    <div className="flex justify-center items-center mb-6 py-4">
-      <div className="flex items-center space-x-4">
-        <div className="flex items-center space-x-2">
-          <label className="text-sm font-medium">Start Date:</label>
-          <input
-            type="date"
-            value={filters.dateSelector.start || ""}
-            onChange={(e) =>
-              handleFilterUpdate("dateSelector", {
-                ...filters.dateSelector,
-                start: e.target.value,
-              })
-            }
-            className="px-3 py-2 border border-gray-300 rounded-md text-sm"
-          />
-        </div>
-        <div className="flex items-center space-x-2">
-          <label className="text-sm font-medium">End Date:</label>
-          <input
-            type="date"
-            value={filters.dateSelector.end || ""}
-            onChange={(e) =>
-              handleFilterUpdate("dateSelector", {
-                ...filters.dateSelector,
-                end: e.target.value,
-              })
-            }
-            className="px-3 py-2 border border-gray-300 rounded-md text-sm"
-          />
-        </div>
-      </div>
-    </div>
-  ));
-
-  DateFilterDropdown.displayName = "DateFilterDropdown";
+  const normalizedPatientData = (patientData || []).map((row) => ({
+    ...row,
+    patientDOB:
+      row.patientDOB instanceof Date
+        ? row.patientDOB.toISOString()
+        : row.patientDOB,
+    husbandDOB:
+      row.husbandDOB instanceof Date
+        ? row.husbandDOB.toISOString()
+        : row.husbandDOB,
+    createdAt:
+      row.createdAt instanceof Date
+        ? row.createdAt.toISOString()
+        : row.createdAt,
+    updatedAt:
+      row.updatedAt instanceof Date
+        ? row.updatedAt.toISOString()
+        : row.updatedAt,
+  }));
 
   return (
-    <div className="bg-[#E3E6EB] min-h-screen pt-6">
+    <div className="bg-[#f6f9fd] min-h-screen pt-6">
+      <ButtonContainer
+        onToggleExpand={handleToggleDropdowns}
+        isExpanded={showDropdowns}
+        onAddData={handleOpenAddPopup}
+      />
+
+      {/* Animated dropdown filter section */}
+      <AnimatePresence>
+        {showDropdowns && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.2 }}
+            className="overflow-hidden"
+          >
+            <div className="flex justify-center items-center mb-4 py-4">
+              <Dropdowns
+                filters={filters}
+                onFilterChange={handleFilterUpdate}
+                searchBarRef={searchBarRef}
+                isInitialLoad={isInitialLoad}
+              />
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <div className="px-4 lg:px-12 mx-auto">
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold text-gray-800 mb-4">
-            Infertility Management
-          </h1>
-        </div>
-
-        <DateFilterDropdown />
-
-        <AnimatePresence>
-          {messageType && (
-            <motion.div
-              ref={messagePopupRef}
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.8 }}
-              transition={{ duration: 0.2 }}
-              className="fixed inset-0 flex items-center justify-center z-[9999]"
-            >
-              <div className="bg-white p-6 rounded-lg shadow-lg max-w-sm w-full mx-4 text-center">
-                <div className="mb-4">{messageContent}</div>
-                <button
-                  onClick={dismissMessage}
-                  className="bg-blue-950 hover:bg-blue-900 text-white font-bold py-2 px-4 rounded-lg w-full"
-                >
-                  Dismiss
-                </button>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto rounded-3xl shadow-lg mb-16 md:mb-8">
           {isLoading ? (
             <SkeletonPatientTable />
           ) : (
             <PatientTable
-              tableData={patientData || []}
+              tableData={normalizedPatientData}
               customOptions={customOptions}
               onMessage={handleMessage}
-              messagePopupRef={messagePopupRef}
+              messagePopupRef={
+                messagePopupRef as React.RefObject<HTMLDivElement>
+              }
               onSearch={handleTableSearch}
             />
           )}
         </div>
       </div>
+
+      {/* Message Popup */}
+      <AnimatePresence>
+        {messageType && (
+          <motion.div
+            ref={messagePopupRef}
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.8 }}
+            transition={{ duration: 0.3, ease: "easeOut" }}
+            className="fixed inset-0 flex items-center justify-center z-[99999]"
+          >
+            <div className="bg-white p-8 rounded-2xl shadow-xl max-w-md w-full mx-4 text-center border border-gray-100">
+              {/* Title */}
+              <h3
+                className={`text-lg font-semibold mb-3 ${
+                  messageType === "success" ? "text-green-700" : "text-red-700"
+                }`}
+              >
+                {messageType === "success" ? "Success!" : "Error!"}
+              </h3>
+              {/* Message */}
+              <div className="mb-6 text-gray-600 leading-relaxed">
+                {messageContent}
+              </div>
+              <button
+                onClick={dismissMessage}
+                className={`w-full py-3 px-6 rounded-xl font-semibold transition-all duration-200 ${
+                  messageType === "success"
+                    ? "bg-green-500 hover:bg-green-600 text-white"
+                    : "bg-red-500 hover:bg-red-600 text-white"
+                }`}
+              >
+                Got it
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+      {/* Add New Data Portal (open while opening or closing) */}
+      {(isPopupOpen || isPopupClosing) &&
+        typeof window !== "undefined" &&
+        createPortal(
+          <AddNewDataInfertility
+            isOpen={isPopupOpen && !isPopupClosing}
+            onClose={handleCloseAddPopup}
+            onSubmit={handleAddData}
+            onMessage={handleMessage}
+            messagePopupRef={messagePopupRef as React.RefObject<HTMLDivElement>}
+          />,
+          document.body
+        )}
     </div>
   );
 });

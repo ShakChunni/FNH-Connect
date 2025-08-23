@@ -13,6 +13,7 @@ import {
 } from "chart.js";
 import ChartDataLabels from "chartjs-plugin-datalabels";
 import { useMediaQuery } from "react-responsive";
+import IndustryBarChartSkeleton from "./Skeletons/IndustryBarChartSkeleton";
 
 // Register the required Chart.js components
 ChartJS.register(
@@ -35,6 +36,7 @@ interface IndustryBarChartProps {
       borderWidth?: number;
     }>;
   };
+  isLoading?: boolean;
 }
 
 const generateShades = (
@@ -60,7 +62,10 @@ interface ProcessedData {
   sortedColors: string[];
 }
 
-const IndustryBarChart: React.FC<IndustryBarChartProps> = ({ data }) => {
+const IndustryBarChart: React.FC<IndustryBarChartProps> = ({
+  data,
+  isLoading = false,
+}) => {
   const chartRef = useRef<HTMLCanvasElement | null>(null);
   const chartInstance = useRef<ChartJS<"bar", number[], string> | null>(null);
   const chartContainerRef = useRef<HTMLDivElement | null>(null);
@@ -89,7 +94,7 @@ const IndustryBarChart: React.FC<IndustryBarChartProps> = ({ data }) => {
     }));
 
     dataPoints.sort((a, b) => b.value - a.value);
-    const topDataPoints = dataPoints.slice(0, 15);
+    const topDataPoints = dataPoints.slice(0, 10);
 
     return {
       sortedLabels: topDataPoints.map((dp) => dp.label),
@@ -125,7 +130,13 @@ const IndustryBarChart: React.FC<IndustryBarChartProps> = ({ data }) => {
     if (!ctx) return;
 
     const fontSize = isSmallScreen ? 10 : isMediumScreen ? 12 : 14;
-    const barThickness = isSmallScreen ? 16 : isMediumScreen ? 22 : isLargeScreen ? 22 : 28;
+    const barThickness = isSmallScreen
+      ? 16
+      : isMediumScreen
+      ? 22
+      : isLargeScreen
+      ? 22
+      : 28;
 
     // Create chart data with proper typing
     const chartData: ChartData<"bar", number[], string> = {
@@ -290,6 +301,10 @@ const IndustryBarChart: React.FC<IndustryBarChartProps> = ({ data }) => {
     isExtraSmallScreen,
   ]);
 
+  if (isLoading) {
+    return <IndustryBarChartSkeleton />;
+  }
+
   if (!sortedData.length) {
     return <div>No industry data available</div>;
   }
@@ -309,6 +324,7 @@ const IndustryBarChart: React.FC<IndustryBarChartProps> = ({ data }) => {
       <canvas ref={chartRef} style={{ width: "100%", height: "100%" }}></canvas>
     </div>
   );
+  
 };
 
 // Add React.memo to prevent unnecessary re-renders

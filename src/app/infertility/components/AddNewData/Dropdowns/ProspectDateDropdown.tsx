@@ -1,9 +1,8 @@
 import React, { useState, useEffect, useCallback, useRef, FC } from "react";
-import { DayPicker } from "react-day-picker";
-import "react-day-picker/dist/style.css";
 import { format } from "date-fns";
 import { motion, AnimatePresence } from "framer-motion";
 import { createPortal } from "react-dom";
+import CustomCalendar from "./CustomCalendar";
 
 interface ProspectDateDropdownProps {
   onSelect: (value: Date) => void;
@@ -16,6 +15,20 @@ interface ProspectDateDropdownProps {
   messagePopupRef: React.RefObject<HTMLDivElement>;
 }
 
+// Helper function to create a timezone-safe date at noon
+const createSafeDate = (year: number, month: number, day: number): Date => {
+  return new Date(year, month, day, 12, 0, 0, 0);
+};
+
+const normalizeDateToNoon = (date: Date): Date => {
+  return createSafeDate(date.getFullYear(), date.getMonth(), date.getDate());
+};
+
+const getTodayAtNoon = (): Date => {
+  const today = new Date();
+  return createSafeDate(today.getFullYear(), today.getMonth(), today.getDate());
+};
+
 const ProspectDateDropdown: FC<ProspectDateDropdownProps> = ({
   onSelect,
   defaultValue = null,
@@ -26,7 +39,9 @@ const ProspectDateDropdown: FC<ProspectDateDropdownProps> = ({
   onMessage,
   messagePopupRef,
 }) => {
-  const [selectedDate, setSelectedDate] = useState<Date | null>(defaultValue);
+  const [selectedDate, setSelectedDate] = useState<Date | null>(
+    defaultValue ? normalizeDateToNoon(defaultValue) : null
+  );
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -38,7 +53,7 @@ const ProspectDateDropdown: FC<ProspectDateDropdownProps> = ({
 
   useEffect(() => {
     if (defaultValue) {
-      setSelectedDate(defaultValue);
+      setSelectedDate(normalizeDateToNoon(defaultValue));
     }
   }, [defaultValue]);
 
@@ -48,15 +63,16 @@ const ProspectDateDropdown: FC<ProspectDateDropdownProps> = ({
     onDropdownOpenStateChange(false);
   }, [onDropdownToggle, onDropdownOpenStateChange]);
 
-  const handleDayClick = useCallback(
+  const handleDateSelect = useCallback(
     (day: Date) => {
-      if (day > new Date()) {
+      const normalizedDate = normalizeDateToNoon(day);
+      const todayAtNoon = getTodayAtNoon();
+      if (normalizedDate > todayAtNoon) {
         onMessage("error", "Selected date cannot be in the future.");
         return;
       }
-
-      setSelectedDate(day);
-      onSelect(day);
+      setSelectedDate(normalizedDate);
+      onSelect(normalizedDate);
       closeDropdown();
     },
     [onSelect, closeDropdown, onMessage]
@@ -65,10 +81,28 @@ const ProspectDateDropdown: FC<ProspectDateDropdownProps> = ({
   const updatePortalPosition = useCallback(() => {
     if (buttonRef.current) {
       const rect = buttonRef.current.getBoundingClientRect();
-      setPortalPosition({
-        top: rect.bottom,
-        left: rect.left,
-      });
+      const viewportHeight = window.innerHeight;
+      const viewportWidth = window.innerWidth;
+      const calendarHeight = 360; // Approximate calendar height
+      const calendarWidth = 300; // Calendar width
+
+      let top = rect.bottom + 4;
+      let left = rect.left;
+
+      // Adjust if calendar would go below viewport
+      if (top + calendarHeight > viewportHeight) {
+        top = rect.top - calendarHeight - 4;
+      }
+
+      // Adjust if calendar would go outside viewport horizontally
+      if (left + calendarWidth > viewportWidth) {
+        left = viewportWidth - calendarWidth - 16;
+      }
+      if (left < 16) {
+        left = 16;
+      }
+
+      setPortalPosition({ top, left });
     }
   }, []);
 
@@ -86,6 +120,13 @@ const ProspectDateDropdown: FC<ProspectDateDropdownProps> = ({
 
   const handleClickOutside = useCallback(
     (event: MouseEvent) => {
+      const target = event.target as Element;
+
+      // Check if click is on year dropdown elements
+      const isYearDropdownClick =
+        target.closest("[data-year-dropdown]") !== null ||
+        target.hasAttribute("data-year-dropdown");
+
       if (
         isOpen &&
         calendarRef.current &&
@@ -95,7 +136,8 @@ const ProspectDateDropdown: FC<ProspectDateDropdownProps> = ({
         !(
           messagePopupRef.current &&
           messagePopupRef.current.contains(event.target as Node)
-        )
+        ) &&
+        !isYearDropdownClick
       ) {
         closeDropdown();
       }
@@ -104,10 +146,19 @@ const ProspectDateDropdown: FC<ProspectDateDropdownProps> = ({
   );
 
   useEffect(() => {
-    document.addEventListener("mousedown", handleClickOutside);
-
     if (isOpen) {
-      const handleScroll = () => {
+      document.addEventListener("mousedown", handleClickOutside);
+
+      // Handle scroll to close calendar (but not year dropdown scroll)
+      const handleScroll = (event: Event) => {
+        const target = event.target as Element;
+        // Don't close if scrolling within year dropdown
+        if (
+          target.hasAttribute?.("data-year-dropdown") ||
+          target.closest?.("[data-year-dropdown]")
+        ) {
+          return;
+        }
         closeDropdown();
       };
 
@@ -120,23 +171,15 @@ const ProspectDateDropdown: FC<ProspectDateDropdownProps> = ({
         capture: true,
         passive: true,
       });
-      document.addEventListener("scroll", handleScroll, {
-        capture: true,
-        passive: true,
-      });
-
-      updatePortalPosition();
 
       return () => {
+        document.removeEventListener("mousedown", handleClickOutside);
         window.removeEventListener("resize", handleResize);
         window.removeEventListener("scroll", handleScroll, { capture: true });
-        document.removeEventListener("scroll", handleScroll, { capture: true });
       };
-    }
-
-    return () => {
+    } else {
       document.removeEventListener("mousedown", handleClickOutside);
-    };
+    }
   }, [isOpen, handleClickOutside, updatePortalPosition, closeDropdown]);
 
   const getButtonClassName = useCallback(() => {
@@ -174,32 +217,28 @@ const ProspectDateDropdown: FC<ProspectDateDropdownProps> = ({
         createPortal(
           <AnimatePresence>
             {isOpen && (
-              <motion.div
+              <div
                 ref={calendarRef}
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                transition={{ duration: 0.2 }}
                 style={{
                   position: "fixed",
                   top: portalPosition.top,
                   left: portalPosition.left,
                   zIndex: 99999,
-                  backgroundColor: "white",
-                  border: "1px solid #00000040",
-                  borderRadius: "8px",
-                  boxShadow: "0 4px 20px rgba(0, 0, 0, 0.2)",
-                  width: "auto",
                 }}
-                onClick={(e) => e.stopPropagation()}
               >
-                <DayPicker
-                  selected={selectedDate ?? undefined}
-                  onDayClick={handleDayClick}
-                  mode="single"
-                  className="custom-calendar"
-                />
-              </motion.div>
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <CustomCalendar
+                    selectedDisplayDate={selectedDate}
+                    handleDateSelect={handleDateSelect}
+                    colorScheme="indigo"
+                  />
+                </motion.div>
+              </div>
             )}
           </AnimatePresence>,
           document.body

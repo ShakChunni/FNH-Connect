@@ -7,6 +7,7 @@ import React, {
   useMemo,
 } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { createPortal } from "react-dom";
 import { Text } from "@radix-ui/themes";
 
 interface ProposalSentDropdownProps {
@@ -30,13 +31,32 @@ const ProposalSentDropdown: FC<ProposalSentDropdownProps> = ({
 }) => {
   const [selectedValue, setSelectedValue] = useState<string>(defaultValue);
   const [isOpen, setIsOpen] = useState(false);
+  const [isDropdownReady, setIsDropdownReady] = useState<boolean>(false);
+  const [dropdownPosition, setDropdownPosition] = useState<{
+    top: number;
+    left: number;
+    width: number;
+  }>({ top: 0, left: 0, width: 0 });
+
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     if (defaultValue) {
       setSelectedValue(defaultValue);
     }
   }, [defaultValue]);
+
+  const updateDropdownPosition = useCallback(() => {
+    if (buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      setDropdownPosition({
+        top: rect.bottom + window.scrollY + 4,
+        left: rect.left + window.scrollX,
+        width: rect.width,
+      });
+    }
+  }, []);
 
   const handleSelect = useCallback(
     (value: string) => {
@@ -51,18 +71,28 @@ const ProposalSentDropdown: FC<ProposalSentDropdownProps> = ({
 
   const handleOpenChange = useCallback(
     (open: boolean) => {
-      setIsOpen(open);
+      if (open) {
+        setIsDropdownReady(true);
+        updateDropdownPosition();
+        requestAnimationFrame(() => {
+          setIsOpen(true);
+        });
+      } else {
+        setIsOpen(false);
+      }
       onDropdownToggle(open);
       onDropdownOpenStateChange(open);
     },
-    [onDropdownToggle, onDropdownOpenStateChange]
+    [onDropdownToggle, onDropdownOpenStateChange, updateDropdownPosition]
   );
 
   const handleClickOutside = useCallback(
     (event: MouseEvent) => {
       if (
         dropdownRef.current &&
-        !dropdownRef.current.contains(event.target as Node)
+        !dropdownRef.current.contains(event.target as Node) &&
+        buttonRef.current &&
+        !buttonRef.current.contains(event.target as Node)
       ) {
         setIsOpen(false);
         onDropdownToggle(false);
@@ -72,69 +102,128 @@ const ProposalSentDropdown: FC<ProposalSentDropdownProps> = ({
     [onDropdownToggle, onDropdownOpenStateChange]
   );
 
+  const handleScroll = useCallback(
+    (event: Event) => {
+      if (isOpen) {
+        const target = event.target as Element;
+
+        if (dropdownRef.current && dropdownRef.current.contains(target)) {
+          return;
+        }
+
+        if (buttonRef.current && buttonRef.current.contains(target)) {
+          return;
+        }
+
+        setIsOpen(false);
+        onDropdownToggle(false);
+        onDropdownOpenStateChange(false);
+      }
+    },
+    [isOpen, onDropdownToggle, onDropdownOpenStateChange]
+  );
+
   useEffect(() => {
     if (isOpen) {
       document.addEventListener("mousedown", handleClickOutside);
+      document.addEventListener("scroll", handleScroll, { capture: true });
+      window.addEventListener("scroll", handleScroll);
+      window.addEventListener("resize", updateDropdownPosition);
     } else {
       document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("scroll", handleScroll, { capture: true });
+      window.removeEventListener("scroll", handleScroll);
+      window.removeEventListener("resize", updateDropdownPosition);
     }
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("scroll", handleScroll, { capture: true });
+      window.removeEventListener("scroll", handleScroll);
+      window.removeEventListener("resize", updateDropdownPosition);
     };
-  }, [isOpen, handleClickOutside]);
+  }, [isOpen, handleClickOutside, handleScroll, updateDropdownPosition]);
 
   const buttonClassName = useMemo(() => {
     const baseClasses =
-      "text-[#2A3136] font-normal rounded-lg flex justify-between items-center w-full cursor-pointer px-4 py-2 h-14 focus:border-blue-950 focus:ring-2 focus:ring-blue-950 outline-none shadow-sm hover:shadow-md transition-shadow duration-300";
+      "text-gray-700 font-normal rounded-lg flex justify-between items-center w-full cursor-pointer px-4 py-2 h-12 md:h-14 focus:border-blue-900 focus:ring-2 focus:ring-blue-950 outline-none shadow-sm hover:shadow-md transition-all duration-300";
 
     if (selectedValue === "No") {
       return `bg-gray-50 border border-gray-300 ${baseClasses}`;
     } else if (hasChanged) {
       return `bg-white border-2 border-green-700 ${baseClasses}`;
     } else {
-      return `bg-gray-50 border border-gray-300 ${baseClasses}`;
+      return `bg-gray-50 border-2 border-green-700 ${baseClasses}`;
     }
   }, [hasChanged, selectedValue]);
 
-  return (
-    <div ref={dropdownRef} onClick={(e) => e.stopPropagation()} style={style}>
-      <button
-        onClick={() => handleOpenChange(!isOpen)}
-        className={buttonClassName}
-      >
-        <span
-          className={`${
-            selectedValue
-              ? "text-[#2A3136] font-normal"
-              : "text-gray-400 font-light"
-          } text-xs sm:text-sm md:text-sm lg:text-sm xl:text-sm`}
+  const dropdownItems = useMemo(
+    () =>
+      proposalSentValues.map((value) => (
+        <div
+          key={value}
+          onClick={() => handleSelect(value)}
+          className="cursor-pointer px-4 py-3 hover:bg-blue-900 hover:text-white transition-colors duration-200 rounded-md mx-1"
         >
-          {selectedValue ? selectedValue : "Is Proposal Sent?"}
-        </span>
-      </button>
-      <AnimatePresence>
-        {isOpen && (
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.25 }}
-            className="absolute z-50 bg-white border border-gray-300 rounded-lg shadow-lg mt-1 w-[calc(100%-48px)] p-2"
+          <Text>{value}</Text>
+        </div>
+      )),
+    [handleSelect]
+  );
+
+  const dropdownContent = (
+    <AnimatePresence>
+      {(isOpen || isDropdownReady) && (
+        <motion.div
+          ref={dropdownRef}
+          initial={{ opacity: 0, height: 0 }}
+          animate={
+            isOpen ? { opacity: 1, height: "auto" } : { opacity: 0, height: 0 }
+          }
+          exit={{ opacity: 0, height: 0 }}
+          transition={{ duration: 0.25, ease: "easeOut" }}
+          className="bg-white border border-gray-300 rounded-lg shadow-lg overflow-hidden z-[60]"
+          style={{
+            position: "absolute",
+            top: dropdownPosition.top,
+            left: dropdownPosition.left,
+            width: dropdownPosition.width,
+            boxShadow:
+              "0 10px 25px -5px rgba(0, 0, 0, 0.2), 0 8px 10px -6px rgba(0, 0, 0, 0.2)",
+          }}
+          onAnimationComplete={() => {
+            if (!isOpen) setIsDropdownReady(false);
+          }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="p-2">{dropdownItems}</div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+
+  return (
+    <>
+      <div onClick={(e) => e.stopPropagation()} style={style}>
+        <button
+          ref={buttonRef}
+          onClick={() => handleOpenChange(!isOpen)}
+          className={buttonClassName}
+        >
+          <span
+            className={`${
+              selectedValue
+                ? "text-gray-700 font-normal"
+                : "text-gray-400 font-light"
+            } text-xs sm:text-sm md:text-sm lg:text-sm xl:text-sm`}
           >
-            {proposalSentValues.map((value) => (
-              <div
-                key={value}
-                onClick={() => handleSelect(value)}
-                className="cursor-pointer px-4 py-3 hover:bg-blue-900 hover:text-white hover:rounded-lg"
-                style={{ borderBottom: "none" }}
-              >
-                <Text>{value}</Text>
-              </div>
-            ))}
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
+            {selectedValue ? selectedValue : "Is Proposal Sent?"}
+          </span>
+        </button>
+      </div>
+
+      {typeof window !== "undefined" &&
+        createPortal(dropdownContent, document.body)}
+    </>
   );
 };
 

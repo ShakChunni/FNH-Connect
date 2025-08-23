@@ -7,6 +7,7 @@ import React, {
   useMemo,
 } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { createPortal } from "react-dom";
 import { Text } from "@radix-ui/themes";
 import countriesData from "world-countries/countries.json";
 import { FixedSizeList } from "react-window";
@@ -19,6 +20,7 @@ interface CountryDropdownProps {
   onDropdownToggle: (isOpen: boolean) => void;
   onDropdownOpenStateChange: (isOpen: boolean) => void;
   options: string[];
+  disabled?: boolean;
 }
 
 const CountryDropdown: FC<CountryDropdownProps> = ({
@@ -28,45 +30,90 @@ const CountryDropdown: FC<CountryDropdownProps> = ({
   onDropdownToggle,
   onDropdownOpenStateChange,
   options,
+  disabled = false,
 }) => {
   const [selectedValue, setSelectedValue] = useState<string>(defaultValue);
   const [isOpen, setIsOpen] = useState(false);
+  const [isDropdownReady, setIsDropdownReady] = useState<boolean>(false);
   const [searchTerm, setSearchTerm] = useState<string>("");
+  const [dropdownPosition, setDropdownPosition] = useState<{
+    top: number;
+    left: number;
+    width: number;
+  }>({ top: 0, left: 0, width: 0 });
+
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
-    if (defaultValue) {
-      setSelectedValue(defaultValue);
-    }
+    setSelectedValue(defaultValue);
   }, [defaultValue]);
+
+  const updateDropdownPosition = useCallback(() => {
+    if (buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      setDropdownPosition({
+        top: rect.bottom + window.scrollY + 4,
+        left: rect.left + window.scrollX,
+        width: rect.width,
+      });
+    }
+  }, []);
 
   const handleSelect = useCallback(
     (value: string) => {
-      setSelectedValue(value);
-      onSelect(value);
+      // Always close the dropdown with animation, regardless of disabled state
       setIsOpen(false);
+      setSearchTerm("");
       onDropdownToggle(false);
       onDropdownOpenStateChange(false);
+
+      // Only update value and call onSelect if not disabled
+      if (!disabled) {
+        setSelectedValue(value);
+        onSelect(value);
+      }
     },
-    [onSelect, onDropdownToggle, onDropdownOpenStateChange]
+    [onSelect, onDropdownToggle, onDropdownOpenStateChange, disabled]
   );
 
   const handleOpenChange = useCallback(
     (open: boolean) => {
-      setIsOpen(open);
+      // Prevent opening when disabled, but allow closing
+      if (disabled && open) return;
+
+      if (open) {
+        setIsDropdownReady(true);
+        setSearchTerm("");
+        updateDropdownPosition();
+        requestAnimationFrame(() => {
+          setIsOpen(true);
+        });
+      } else {
+        setIsOpen(false);
+        setSearchTerm("");
+      }
       onDropdownToggle(open);
       onDropdownOpenStateChange(open);
     },
-    [onDropdownToggle, onDropdownOpenStateChange]
+    [
+      onDropdownToggle,
+      onDropdownOpenStateChange,
+      updateDropdownPosition,
+      disabled,
+    ]
   );
 
   const handleClickOutside = useCallback(
     (event: MouseEvent) => {
       if (
         dropdownRef.current &&
-        !dropdownRef.current.contains(event.target as Node)
+        !dropdownRef.current.contains(event.target as Node) &&
+        buttonRef.current &&
+        !buttonRef.current.contains(event.target as Node)
       ) {
         setIsOpen(false);
+        setSearchTerm("");
         onDropdownToggle(false);
         onDropdownOpenStateChange(false);
       }
@@ -74,16 +121,47 @@ const CountryDropdown: FC<CountryDropdownProps> = ({
     [onDropdownToggle, onDropdownOpenStateChange]
   );
 
+  const handleScroll = useCallback(
+    (event: Event) => {
+      if (isOpen) {
+        const target = event.target as Element;
+
+        if (dropdownRef.current && dropdownRef.current.contains(target)) {
+          return;
+        }
+
+        if (buttonRef.current && buttonRef.current.contains(target)) {
+          return;
+        }
+
+        setIsOpen(false);
+        setSearchTerm("");
+        onDropdownToggle(false);
+        onDropdownOpenStateChange(false);
+      }
+    },
+    [isOpen, onDropdownToggle, onDropdownOpenStateChange]
+  );
+
   useEffect(() => {
     if (isOpen) {
       document.addEventListener("mousedown", handleClickOutside);
+      document.addEventListener("scroll", handleScroll, { capture: true });
+      window.addEventListener("scroll", handleScroll);
+      window.addEventListener("resize", updateDropdownPosition);
     } else {
       document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("scroll", handleScroll, { capture: true });
+      window.removeEventListener("scroll", handleScroll);
+      window.removeEventListener("resize", updateDropdownPosition);
     }
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("scroll", handleScroll, { capture: true });
+      window.removeEventListener("scroll", handleScroll);
+      window.removeEventListener("resize", updateDropdownPosition);
     };
-  }, [isOpen, handleClickOutside]);
+  }, [isOpen, handleClickOutside, handleScroll, updateDropdownPosition]);
 
   const clearSearch = useCallback(() => {
     setSearchTerm("");
@@ -117,116 +195,133 @@ const CountryDropdown: FC<CountryDropdownProps> = ({
         <div
           key={country}
           onClick={() => handleSelect(country)}
-          className={`cursor-pointer px-4 hover:bg-blue-900 hover:text-white hover:rounded-lg flex items-center `}
+          className={`px-4 py-3 transition-colors duration-200 rounded-md mx-1 flex items-center overflow-hidden ${
+            disabled
+              ? "cursor-not-allowed text-gray-400"
+              : "cursor-pointer hover:bg-blue-900 hover:text-white"
+          }`}
           style={{
             ...style,
             height: isLastPreferred ? "56px" : "48px",
             paddingBottom: isLastPreferred ? "11px" : "auto",
+            width: "calc(100% - 8px)",
           }}
         >
-          <Text className="text-xs sm:text-sm md:text-sm lg:text-sm xl:text-sm 2xl:text-sm">
+          <Text className="text-xs sm:text-sm md:text-sm lg:text-sm xl:text-sm 2xl:text-sm truncate">
             {country}
           </Text>
         </div>
       );
     },
-    [filteredCountries, handleSelect, preferredCountries]
+    [filteredCountries, handleSelect, preferredCountries, disabled]
+  );
+
+  const dropdownContent = (
+    <AnimatePresence>
+      {(isOpen || isDropdownReady) && (
+        <motion.div
+          ref={dropdownRef}
+          initial={{ opacity: 0, height: 0 }}
+          animate={
+            isOpen ? { opacity: 1, height: "auto" } : { opacity: 0, height: 0 }
+          }
+          exit={{ opacity: 0, height: 0 }}
+          transition={{ duration: 0.25, ease: "easeOut" }}
+          className="bg-white border border-gray-300 rounded-lg shadow-lg overflow-hidden z-[60]"
+          style={{
+            position: "absolute",
+            top: dropdownPosition.top,
+            left: dropdownPosition.left,
+            width: dropdownPosition.width,
+            maxHeight: window.innerWidth < 640 ? "350px" : "450px",
+            boxShadow:
+              "0 10px 25px -5px rgba(0, 0, 0, 0.2), 0 8px 10px -6px rgba(0, 0, 0, 0.2)",
+          }}
+          onAnimationComplete={() => {
+            if (!isOpen) setIsDropdownReady(false);
+          }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* Search Input */}
+          <div className="sticky top-0 bg-gray-50 z-10 p-3 border-b border-gray-200 shadow-sm">
+            <div className="relative flex items-center">
+              <input
+                type="text"
+                placeholder="Search countries..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full p-2 rounded-xl border-2 border-gray-200 focus:border-blue-950 focus:ring-2 focus:ring-blue-950 focus:outline-none text-xs sm:text-sm bg-white pr-10 transition-all duration-150 ease-in-out"
+              />
+              {searchTerm && (
+                <button
+                  onClick={clearSearch}
+                  className="absolute right-3 text-gray-400 hover:text-gray-600"
+                  aria-label="Clear search"
+                >
+                  <IoCloseCircle className="w-4 h-4 sm:w-5 sm:h-5" />
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Virtualized list for countries */}
+          <div className="p-2">
+            {filteredCountries.length > 0 ? (
+              <FixedSizeList
+                height={Math.min(
+                  window.innerWidth < 640 ? 200 : 280,
+                  filteredCountries.length * 48
+                )}
+                width="100%"
+                itemCount={filteredCountries.length}
+                itemSize={48}
+                overscanCount={5}
+                className="scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent"
+                style={{ overflowX: "hidden" }}
+              >
+                {CountryItemRenderer}
+              </FixedSizeList>
+            ) : (
+              <div className="p-4 text-center text-gray-500 text-xs sm:text-sm">
+                No countries found
+              </div>
+            )}
+          </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 
   return (
-    <div ref={dropdownRef} onClick={(e) => e.stopPropagation()} style={style}>
-      <button
-        onClick={() => handleOpenChange(!isOpen)}
-        className={`${
-          selectedValue
-            ? "bg-white border-2 border-green-600"
-            : "bg-gray-50 border border-gray-300"
-        } text-[#2A3136] font-normal rounded-lg flex justify-between items-center w-full cursor-pointer px-4 py-2 h-14 focus:border-blue-950 focus:ring-2 focus:ring-blue-950 outline-none shadow-sm hover:shadow-md transition-shadow duration-300`}
-      >
-        <span
-          className={`${
-            selectedValue
-              ? "text-[#2A3136] font-normal"
-              : "text-gray-400 font-light "
-          } text-xs sm:text-sm md:text-sm lg:text-sm xl:text-sm`}
+    <>
+      <div onClick={(e) => e.stopPropagation()} style={style}>
+        <button
+          ref={buttonRef}
+          onClick={() => handleOpenChange(!isOpen)}
+          disabled={disabled}
+          className={`text-gray-700 font-normal rounded-lg flex justify-between items-center w-full px-3 sm:px-4 py-2 h-12 md:h-14 outline-none transition-all duration-300 border-2 ${
+            disabled
+              ? "bg-gray-200 border-gray-300 cursor-not-allowed"
+              : selectedValue
+              ? "bg-white border-green-700 cursor-pointer focus:border-blue-950 focus:ring-2 focus:ring-blue-950 shadow-sm hover:shadow-md"
+              : "bg-gray-50 border-gray-300 cursor-pointer focus:border-blue-950 focus:ring-2 focus:ring-blue-950 shadow-sm hover:shadow-md"
+          }`}
         >
-          {selectedValue || "Select Country"}
-        </span>
-      </button>
-      <AnimatePresence>
-        {isOpen && (
-          <motion.div
-            initial={{ opacity: 0, y: -20, scale: 0.95 }}
-            animate={{
-              opacity: 1,
-              y: 0,
-              scale: 1,
-              transition: {
-                type: "spring",
-                stiffness: 300,
-                damping: 20,
-              },
-            }}
-            exit={{
-              opacity: 0,
-              y: -10,
-              scale: 0.95,
-              transition: {
-                duration: 0.2,
-                ease: "easeOut",
-              },
-            }}
-            className="absolute z-50 bg-white border border-gray-300 rounded-lg mt-1 w-[calc(100%-48px)] overflow-hidden"
-            style={{
-              maxHeight: "400px",
-              boxShadow:
-                "0 10px 25px -5px rgba(0, 0, 0, 0.2), 0 8px 10px -6px rgba(0, 0, 0, 0.2)",
-            }}
+          <span
+            className={`${
+              selectedValue
+                ? "text-gray-700 font-normal"
+                : "text-gray-400 font-light"
+            } text-xs sm:text-sm md:text-sm lg:text-sm xl:text-sm`}
           >
-            <div className="sticky top-0 bg-gray-50 z-10 p-3 border-b border-gray-200 shadow-sm">
-              <div className="relative flex items-center">
-                <input
-                  type="text"
-                  placeholder="Search countries..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full p-2 sm:p-2 md:p-2 lg:p-2.5 rounded-xl border-2 border-gray-200 focus:border-blue-950 focus:ring-2 focus:ring-blue-950 focus:outline-none text-xs sm:text-sm md:text-sm lg:text-sm xl:text-sm bg-white pr-10 transition-all duration-150 ease-in-out"
-                  autoFocus
-                />
-                {searchTerm && (
-                  <button
-                    onClick={clearSearch}
-                    className="absolute right-3 text-gray-400 hover:text-gray-600"
-                    aria-label="Clear search"
-                  >
-                    <IoCloseCircle className="w-4 h-4 sm:w-5 sm:h-5" />
-                  </button>
-                )}
-              </div>
-            </div>
+            {selectedValue || "Select Country"}
+          </span>
+        </button>
+      </div>
 
-            <div className="p-2">
-              {filteredCountries.length > 0 ? (
-                <FixedSizeList
-                  height={Math.min(48 * filteredCountries.length, 280)}
-                  width="100%"
-                  itemCount={filteredCountries.length}
-                  itemSize={48}
-                  overscanCount={5}
-                  className="scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent"
-                >
-                  {CountryItemRenderer}
-                </FixedSizeList>
-              ) : (
-                <div className="p-4 text-center text-gray-500 text-xs sm:text-sm md:text-sm">
-                  No countries found
-                </div>
-              )}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
+      {typeof window !== "undefined" &&
+        createPortal(dropdownContent, document.body)}
+    </>
   );
 };
 

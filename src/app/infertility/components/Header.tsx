@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from "react";
+import React, { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/app/AuthContext";
 import HeaderNavigation from "@/app/components/HeaderNavigation";
@@ -10,7 +10,6 @@ const Header: React.FC = () => {
   const { user, logout } = useAuth();
   const isMobile = useMediaQuery("(max-width: 1023px)");
 
-  // Memoize handlers
   const handleLogout = useCallback(async () => {
     setIsLoggingOut(true);
     try {
@@ -23,27 +22,17 @@ const Header: React.FC = () => {
     }
   }, [logout, router]);
 
-  // Memoize utility functions
-  const capitalizeFirstLetter = useCallback((string: string) => {
-    return string.charAt(0).toUpperCase() + string.slice(1);
-  }, []);
-
-  // Memoize computed values
-  const headerText = useMemo(() => {
-    return <span className="text-blue-950 font-extrabold">Goal Dashboard</span>;
-  }, []);
-
   return (
-    <div className="border-b border-b-[#C2C8D6] w-full h-16 flex-grow-0 bg-[#E3E6EB]">
-      <nav className="px-4 md:px-8 lg:px-12 py-3 w-full">
-        <div className="flex justify-between items-center gap-2">
-          <h1 className="hidden sm:block text-xl md:text-2xl font-bold text-gray-800">
-            {headerText}
-          </h1>
-          <div className="flex items-center gap-2 md:gap-4 ml-auto">
-            {isMobile && <HeaderNavigation />}{" "}
-            {/* Show HeaderNavigation on mobile */}
-          </div>
+    <div className="sticky top-0 z-40 border-b border-b-[#e5eaf3] w-full h-16 flex-shrink-0 bg-[#f6f9fd] shadow-sm">
+      <nav className="px-4 md:px-8 lg:px-12 py-3 w-full h-full">
+        <div className="flex justify-between items-center gap-2 h-full">
+          {isMobile ? (
+            <HeaderNavigation />
+          ) : (
+            <h1 className="text-xl lg:text-2xl font-bold text-gray-800">
+              Infertility Management
+            </h1>
+          )}
         </div>
       </nav>
     </div>
