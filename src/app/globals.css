@@ -735,3 +735,128 @@ input::-webkit-inner-spin-button {
     scroll-behavior: auto; /* Disable native smooth scroll on Android Chrome */
   }
 }
+
+.flatpickr-calendar {
+  background: #ffffff !important;
+}
+
+/* Add these selectors after the flatpickr-months section */
+
+/* Month selection button */
+.flatpickr-months .flatpickr-month .flatpickr-monthDropdown-months {
+  background: #1a3b66 !important;
+  color: #ffffff !important;
+}
+
+/* Month button hover state */
+.flatpickr-months .flatpickr-month .flatpickr-monthDropdown-months:hover {
+  background: #3b5998 !important;
+  color: #ffffff !important;
+}
+
+/* Ensure the arrow keeps the right color */
+.flatpickr-months .flatpickr-prev-month,
+.flatpickr-months .flatpickr-next-month {
+  fill: #ffffff !important;
+}
+
+/* Month header background and text */
+.flatpickr-months .flatpickr-month {
+  background: #1a3b66 !important;
+  color: #ffffff !important;
+}
+
+/* Month dropdown container and items */
+.flatpickr-monthDropdown-months .flatpickr-monthDropdown-month {
+  background: #1a3b66 !important;
+  color: #ffffff !important;
+}
+
+.flatpickr-monthDropdown-months .flatpickr-monthDropdown-month:hover,
+.flatpickr-monthDropdown-months .flatpickr-monthDropdown-month:focus {
+  background: #3b5998 !important; /* Lighter shade for hover */
+  color: #ffffff !important;
+}
+
+/* Selected month in the dropdown */
+.flatpickr-monthDropdown-month.selected {
+  background: #1a3b66 !important;
+  color: #ffffff !important;
+  font-weight: bold; /* Highlights the selected month */
+}
+
+/* Current month input field */
+.flatpickr-current-month {
+  background: #1a3b66 !important;
+  color: #ffffff !important;
+}
+
+.flatpickr-current-month:hover,
+.flatpickr-current-month:focus {
+  background: #1a3b66 !important;
+  color: #ffffff !important;
+}
+
+/* Current year input field */
+.flatpickr-current-month input.cur-year {
+  background: #1a3b66 !important;
+  color: #ffffff !important;
+  border: none !important; /* Removes default border */
+}
+
+.flatpickr-current-month input.cur-year:focus {
+  outline: none; /* Removes the default focus outline */
+}
+
+/* Hover effect for year input */
+.flatpickr-current-month input.cur-year:hover {
+  background: #3b5998 !important;
+  color: #ffffff !important;
+}
+
+/* Weekday headers */
+.flatpickr-weekday {
+  background: #1a3b66 !important;
+  color: #ffffff !important;
+}
+
+.flatpickr-weekdays {
+  background: #1a3b66 !important;
+  color: #ffffff !important;
+}
+
+/* Days of the month */
+.flatpickr-days .flatpickr-day {
+  color: #224e82;
+}
+
+/* Hover effect for days */
+.flatpickr-days .flatpickr-day:hover {
+  background: #3b5998 !important; /* Lighter shade of blue */
+  color: #ffffff !important;
+}
+
+/* Today and selected day - Updated to remove blue border */
+.flatpickr-day.today,
+.flatpickr-day.selected,
+.flatpickr-day.selected:focus,
+.flatpickr-day.selected:hover {
+  background: #1a3b66 !important;
+  color: #ffffff !important;
+  border: none !important;
+  box-shadow: none !important;
+  border-radius: 50% !important;
+}
+
+/* Disabled days */
+.flatpickr-day.disabled,
+.flatpickr-day.disabled:hover {
+  color: #cccccc !important;
+  background: #f8f8f8 !important;
+  cursor: not-allowed !important;
+  pointer-events: none;
+}
+
+.flatpickr-calendar:after {
+  border-bottom-color: #1a3b66 !important;
+}

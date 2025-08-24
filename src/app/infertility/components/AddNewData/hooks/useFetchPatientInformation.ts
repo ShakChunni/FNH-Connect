@@ -14,11 +14,16 @@ export interface InfertilityPatientBasic {
 
 const useFetchPatientInformation = () => {
   const { user } = useAuth();
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQueryState] = useState("");
   const [patients, setPatients] = useState<InfertilityPatientBasic[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
+
+  // Memoized setSearchQuery to prevent infinite re-renders
+  const setSearchQuery = useCallback((query: string) => {
+    setSearchQueryState(query);
+  }, []);
 
   const fetchPatients = useCallback(
     async (query: string) => {
@@ -57,8 +62,23 @@ const useFetchPatientInformation = () => {
       } catch (err) {
         if (axios.isCancel(err)) return;
 
-        setError("Failed to fetch patients.");
-        console.error(err);
+        // Handle specific error cases
+        if (axios.isAxiosError(err)) {
+          if (err.response?.status === 404) {
+            setError("Patient search API not found. Please contact support.");
+            console.warn("Patient search API endpoint not implemented");
+          } else if (err.response && err.response.status >= 500) {
+            setError("Server error. Please try again later.");
+          } else if (err.code === "ECONNABORTED") {
+            setError("Request timeout. Please try again.");
+          } else {
+            setError("Failed to fetch patients. Please try again.");
+          }
+        } else {
+          setError("Network error. Please check your connection.");
+        }
+
+        console.error("Patient fetch error:", err);
         setPatients([]);
       } finally {
         setLoading(false);

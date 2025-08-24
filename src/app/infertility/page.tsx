@@ -97,9 +97,12 @@ const InfertilityManagement = React.memo(() => {
 
       // Only refetch for dateSelector for now; other filters' hook logic to be implemented later
       if (key === "dateSelector") {
-        refetch().catch((error: unknown) => {
-          console.error("Error refetching data:", error);
-        });
+        // Use a timeout to prevent rapid successive calls
+        setTimeout(() => {
+          refetch().catch((error: unknown) => {
+            console.error("Error refetching data:", error);
+          });
+        }, 100);
       }
     },
     [refetch, searchParams]
@@ -117,58 +120,112 @@ const InfertilityManagement = React.memo(() => {
     (type: "success" | "error", content: string) => {
       setMessageType(type);
       setMessageContent(content);
-      setShouldFetchData(true);
 
-      refetch();
+      // Don't trigger immediate refetch to avoid infinite loops
       setTimeout(() => {
         setMessageType(null);
         setMessageContent("");
-        setShouldFetchData(false);
       }, 2500);
     },
-    [refetch]
+    [] // Empty dependencies to prevent infinite loops
   );
 
-  // Optional: parent callback when AddNewData calls onSubmit
-  const handleAddData = useCallback(
-    async (data: any) => {
-      // Ensure page fetches updated data after a new patient is added
-      setShouldFetchData(true);
-      try {
-        await refetch();
-      } catch (error) {
-        console.error("Error refetching after add:", error);
-      } finally {
-        setShouldFetchData(false);
-      }
-    },
-    [refetch]
-  );
-
+  // Memoized dismiss message callback
   const dismissMessage = useCallback(() => {
     setMessageType(null);
     setMessageContent("");
   }, []);
 
-  const normalizedPatientData = (patientData || []).map((row) => ({
-    ...row,
-    patientDOB:
-      row.patientDOB instanceof Date
-        ? row.patientDOB.toISOString()
-        : row.patientDOB,
-    husbandDOB:
-      row.husbandDOB instanceof Date
-        ? row.husbandDOB.toISOString()
-        : row.husbandDOB,
-    createdAt:
-      row.createdAt instanceof Date
-        ? row.createdAt.toISOString()
-        : row.createdAt,
-    updatedAt:
-      row.updatedAt instanceof Date
-        ? row.updatedAt.toISOString()
-        : row.updatedAt,
-  }));
+  // Optional: parent callback when AddNewData calls onSubmit
+  const handleAddData = useCallback(
+    async (data: any) => {
+      try {
+        // Call the actual onSubmit logic here if needed
+        // For now, just show success and close
+        setMessageType("success");
+        setMessageContent("Patient data saved successfully!");
+
+        // Close popup first
+        handleCloseAddPopup();
+
+        // Refresh data after a delay
+        setTimeout(() => {
+          setShouldFetchData(true);
+          refetch().finally(() => setShouldFetchData(false));
+        }, 500);
+      } catch (error) {
+        console.error("Error in handleAddData:", error);
+        setMessageType("error");
+        setMessageContent("Failed to save patient data.");
+      }
+    },
+    [handleCloseAddPopup, refetch]
+  );
+
+  // Memoized message popup content
+  const messagePopupContent = useMemo(() => {
+    if (!messageType) return null;
+
+    return (
+      <motion.div
+        ref={messagePopupRef}
+        initial={{ opacity: 0, scale: 0.8 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.8 }}
+        transition={{ duration: 0.3, ease: "easeOut" }}
+        className="fixed inset-0 flex items-center justify-center z-[99999]"
+      >
+        <div className="bg-white p-8 rounded-2xl shadow-xl max-w-md w-full mx-4 text-center border border-gray-100">
+          {/* Title */}
+          <h3
+            className={`text-lg font-semibold mb-3 ${
+              messageType === "success" ? "text-green-700" : "text-red-700"
+            }`}
+          >
+            {messageType === "success" ? "Success!" : "Error!"}
+          </h3>
+          {/* Message */}
+          <div className="mb-6 text-gray-600 leading-relaxed">
+            {messageContent}
+          </div>
+          <button
+            onClick={dismissMessage}
+            className={`w-full py-3 px-6 rounded-xl font-semibold transition-all duration-200 ${
+              messageType === "success"
+                ? "bg-green-500 hover:bg-green-600 text-white"
+                : "bg-red-500 hover:bg-red-600 text-white"
+            }`}
+          >
+            Got it
+          </button>
+        </div>
+      </motion.div>
+    );
+  }, [messageType, messageContent, dismissMessage]);
+
+  const normalizedPatientData = useMemo(
+    () =>
+      (patientData || []).map((row) => ({
+        ...row,
+        patientDOB:
+          row.patientDOB instanceof Date
+            ? row.patientDOB.toISOString()
+            : row.patientDOB,
+        husbandDOB:
+          row.husbandDOB instanceof Date
+            ? row.husbandDOB.toISOString()
+            : row.husbandDOB,
+        createdAt:
+          row.createdAt instanceof Date
+            ? row.createdAt.toISOString()
+            : row.createdAt,
+        updatedAt:
+          row.updatedAt instanceof Date
+            ? row.updatedAt.toISOString()
+            : row.updatedAt,
+      })),
+    [patientData]
+  );
 
   return (
     <div className="bg-[#f6f9fd] min-h-screen pt-6">
@@ -219,43 +276,7 @@ const InfertilityManagement = React.memo(() => {
       </div>
 
       {/* Message Popup */}
-      <AnimatePresence>
-        {messageType && (
-          <motion.div
-            ref={messagePopupRef}
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.8 }}
-            transition={{ duration: 0.3, ease: "easeOut" }}
-            className="fixed inset-0 flex items-center justify-center z-[99999]"
-          >
-            <div className="bg-white p-8 rounded-2xl shadow-xl max-w-md w-full mx-4 text-center border border-gray-100">
-              {/* Title */}
-              <h3
-                className={`text-lg font-semibold mb-3 ${
-                  messageType === "success" ? "text-green-700" : "text-red-700"
-                }`}
-              >
-                {messageType === "success" ? "Success!" : "Error!"}
-              </h3>
-              {/* Message */}
-              <div className="mb-6 text-gray-600 leading-relaxed">
-                {messageContent}
-              </div>
-              <button
-                onClick={dismissMessage}
-                className={`w-full py-3 px-6 rounded-xl font-semibold transition-all duration-200 ${
-                  messageType === "success"
-                    ? "bg-green-500 hover:bg-green-600 text-white"
-                    : "bg-red-500 hover:bg-red-600 text-white"
-                }`}
-              >
-                Got it
-              </button>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <AnimatePresence>{messagePopupContent}</AnimatePresence>
       {/* Add New Data Portal (open while opening or closing) */}
       {(isPopupOpen || isPopupClosing) &&
         typeof window !== "undefined" &&
@@ -265,7 +286,7 @@ const InfertilityManagement = React.memo(() => {
             onClose={handleCloseAddPopup}
             onSubmit={handleAddData}
             onMessage={handleMessage}
-            messagePopupRef={messagePopupRef as React.RefObject<HTMLDivElement>}
+            messagePopupRef={messagePopupRef}
           />,
           document.body
         )}

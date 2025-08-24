@@ -1,209 +1,341 @@
-import React, { useState, useEffect, useCallback } from "react";
-import CustomCalendar from "./CustomCalendar";
-import {
-  differenceInYears,
-  differenceInMonths,
-  differenceInDays,
-  addYears,
-  addMonths,
-  addDays,
-  isAfter,
-  isValid,
-  subYears,
-  subMonths,
-  subDays,
-} from "date-fns";
+import React, {
+  useState,
+  useEffect,
+  useCallback,
+  useMemo,
+  useRef,
+} from "react";
+import Flatpickr from "react-flatpickr";
+import { X } from "lucide-react";
+import "flatpickr/dist/flatpickr.min.css";
+
+interface AgeObject {
+  years: number;
+  months: number;
+  days: number;
+}
 
 interface DateOfBirthDropdownProps {
-  value?: Date | null;
-  onChange: (date: Date | null) => void;
-  minDate?: Date;
-  maxDate?: Date;
-  colorScheme?: "indigo" | "emerald" | "amber" | "purple" | "rose";
+  value: Date | null;
+  onChange: (date: Date | null, age?: AgeObject) => void;
+  placeholder?: string;
+  style?: React.CSSProperties;
 }
 
-function clampDate(date: Date, min?: Date, max?: Date): Date {
-  let d = date;
-  if (min && isAfter(min, d)) d = min;
-  if (max && isAfter(d, max)) d = max;
-  return d;
-}
+const daysInMonth = (year: number, month: number) =>
+  new Date(year, month + 1, 0).getDate();
 
-function getAgeFromDate(date: Date, today: Date) {
-  if (!date || !isValid(date)) return { years: "", months: "", days: "" };
-  let years = differenceInYears(today, date);
-  let months = differenceInMonths(today, addYears(date, years));
-  let days = differenceInDays(today, addYears(addMonths(date, months), years));
-  // Adjust for negative values
-  if (months < 0) months = 0;
-  if (days < 0) days = 0;
-  return {
-    years: years.toString(),
-    months: months.toString(),
-    days: days.toString(),
-  };
-}
+const calculateAge = (dob: Date): AgeObject => {
+  const now = new Date();
+  let years = now.getFullYear() - dob.getFullYear();
+  let months = now.getMonth() - dob.getMonth();
+  let days = now.getDate() - dob.getDate();
 
-function getDateFromAge(
-  { years, months, days }: { years: string; months: string; days: string },
-  today: Date
-) {
-  let y = parseInt(years) || 0;
-  let m = parseInt(months) || 0;
-  let d = parseInt(days) || 0;
-  let date = subYears(today, y);
-  date = subMonths(date, m);
-  date = subDays(date, d);
-  return date;
-}
+  if (days < 0) {
+    const prevMonth = (now.getMonth() - 1 + 12) % 12;
+    const prevMonthYear =
+      prevMonth === 11 ? now.getFullYear() - 1 : now.getFullYear();
+    days += daysInMonth(prevMonthYear, prevMonth);
+    months--;
+  }
+  if (months < 0) {
+    months += 12;
+    years--;
+  }
 
-const today = new Date();
+  return { years, months, days };
+};
+
+const clampNumberInput = (v: number) =>
+  Number.isFinite(v) && v >= 0 ? Math.floor(v) : 0;
 
 const DateOfBirthDropdown: React.FC<DateOfBirthDropdownProps> = ({
   value,
   onChange,
-  minDate,
-  maxDate,
-  colorScheme = "indigo",
+  placeholder = "Select date of birth",
+  style,
 }) => {
-  const [selectedDate, setSelectedDate] = useState<Date | null>(value ?? null);
-  const [age, setAge] = useState<{
-    years: string;
-    months: string;
-    days: string;
-  }>({
-    years: "",
-    months: "",
-    days: "",
-  });
+  const flatpickrRef = useRef<any>(null);
+  const [selectedDate, setSelectedDate] = useState<Date | null>(value);
+  const [years, setYears] = useState<number | "">(() =>
+    value ? calculateAge(value).years : ""
+  );
+  const [months, setMonths] = useState<number | "">(() =>
+    value ? calculateAge(value).months : ""
+  );
+  const [days, setDays] = useState<number | "">(() =>
+    value ? calculateAge(value).days : ""
+  );
 
-  // Sync age fields when date changes
+  // sync from parent value
   useEffect(() => {
-    if (selectedDate && isValid(selectedDate)) {
-      setAge(getAgeFromDate(selectedDate, today));
+    setSelectedDate(value);
+    if (value) {
+      const a = calculateAge(value);
+      setYears(a.years);
+      setMonths(a.months);
+      setDays(a.days);
     } else {
-      setAge({ years: "", months: "", days: "" });
-    }
-  }, [selectedDate]);
-
-  // Sync date when age fields change
-  useEffect(() => {
-    // Only update if at least one field is filled
-    if (age.years || age.months || age.days) {
-      const date = getDateFromAge(age, today);
-      if (isValid(date) && !isAfter(date, today)) {
-        setSelectedDate(date);
-        onChange(date);
+      setYears("");
+      setMonths("");
+      setDays("");
+      // Force clear the Flatpickr input when value is null
+      if (flatpickrRef.current && flatpickrRef.current.flatpickr) {
+        flatpickrRef.current.flatpickr.clear();
       }
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [age.years, age.months, age.days]);
-
-  // Sync with parent value
-  useEffect(() => {
-    if (
-      value &&
-      (!selectedDate || value.getTime() !== selectedDate.getTime())
-    ) {
-      setSelectedDate(value);
     }
   }, [value]);
 
-  const handleCalendarSelect = useCallback(
-    (date: Date) => {
+  const flatpickrOptions = useMemo(
+    () => ({
+      dateFormat: "F j, Y",
+      maxDate: "today",
+      allowInput: true,
+      onOpen: (_selectedDates: Date[], _dateStr: string, instance: any) => {
+        if (!selectedDate && instance && instance.input) {
+          // leave blank
+        }
+      },
+    }),
+    [selectedDate]
+  );
+
+  const handleDateChange = useCallback(
+    (dates: Date[]) => {
+      const date = dates && dates[0] ? dates[0] : null;
       setSelectedDate(date);
-      onChange(date);
-      setAge(getAgeFromDate(date, today));
+      if (date) {
+        const age = calculateAge(date);
+        setYears(age.years);
+        setMonths(age.months);
+        setDays(age.days);
+        onChange(date, age);
+      } else {
+        setYears("");
+        setMonths("");
+        setDays("");
+        onChange(null);
+      }
     },
     [onChange]
   );
 
-  const handleAgeInput = (field: "years" | "months" | "days", val: string) => {
-    // Only allow numbers and empty string
-    if (/^\d*$/.test(val)) {
-      setAge((prev) => ({
-        ...prev,
-        [field]: val,
-      }));
-    }
-  };
+  const composeDateFromAge = useCallback(
+    (y: number | "", m: number | "", d: number | "") => {
+      const anyFilled = !(y === "" && m === "" && d === "");
+      if (!anyFilled) {
+        setSelectedDate(null);
+        // Force clear Flatpickr
+        if (flatpickrRef.current && flatpickrRef.current.flatpickr) {
+          flatpickrRef.current.flatpickr.clear();
+        }
+        onChange(null);
+        return;
+      }
 
-  // Prevent future dates
-  const calendarMaxDate = maxDate ?? today;
+      const yearsNum = clampNumberInput(Number(y || 0));
+      const monthsNum = clampNumberInput(Number(m || 0));
+      const daysNum = clampNumberInput(Number(d || 0));
+
+      const now = new Date();
+      // start with today then subtract
+      const composed = new Date(now.getTime());
+      composed.setFullYear(composed.getFullYear() - yearsNum);
+      // subtract months
+      composed.setMonth(composed.getMonth() - monthsNum);
+      // subtract days
+      composed.setDate(composed.getDate() - daysNum);
+
+      // normalize and compute accurate age
+      const age = calculateAge(composed);
+      setSelectedDate(composed);
+      setYears(age.years);
+      setMonths(age.months);
+      setDays(age.days);
+      onChange(composed, age);
+    },
+    [onChange]
+  );
+
+  const handleYearsChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const raw = e.target.value;
+      const parsed = raw === "" ? "" : parseInt(raw, 10);
+      const val =
+        parsed === "" || Number.isNaN(parsed) ? "" : Math.max(0, parsed);
+      setYears(val);
+      composeDateFromAge(val, months, days);
+    },
+    [composeDateFromAge, months, days]
+  );
+
+  const handleMonthsChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const raw = e.target.value;
+      const parsed = raw === "" ? "" : parseInt(raw, 10);
+      // clamp months to 0-11 for input UX
+      const val =
+        parsed === "" || Number.isNaN(parsed)
+          ? ""
+          : Math.max(0, Math.min(11, parsed));
+      setMonths(val);
+      composeDateFromAge(years, val, days);
+    },
+    [composeDateFromAge, years, days]
+  );
+
+  const handleDaysChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const raw = e.target.value;
+      const parsed = raw === "" ? "" : parseInt(raw, 10);
+      const val =
+        parsed === "" || Number.isNaN(parsed)
+          ? ""
+          : Math.max(0, Math.min(31, parsed));
+      setDays(val);
+      composeDateFromAge(years, months, val);
+    },
+    [composeDateFromAge, years, months]
+  );
+
+  const clearAll = useCallback(() => {
+    setSelectedDate(null);
+    setYears("");
+    setMonths("");
+    setDays("");
+    // Force clear Flatpickr
+    if (flatpickrRef.current && flatpickrRef.current.flatpickr) {
+      flatpickrRef.current.flatpickr.clear();
+    }
+    onChange(null);
+  }, [onChange]);
+
+  // Check if any age input has a meaningful value (not 0 and not empty)
+  const hasValidYears = years !== "" && years !== 0;
+  const hasValidMonths = months !== "" && months !== 0;
+  const hasValidDays = days !== "" && days !== 0;
+  const hasAnyValidAge = hasValidYears || hasValidMonths || hasValidDays;
+
+  const hasAnyValue = selectedDate || hasAnyValidAge;
+
+  // Input styling function matching PatientInformation
+  const inputClassName = useMemo(() => {
+    const baseStyle =
+      "text-gray-700 font-normal rounded-lg h-12 md:h-14 py-2 px-4 w-full focus:border-blue-900 focus:ring-2 focus:ring-blue-950 outline-none shadow-sm hover:shadow-md transition-all duration-300 placeholder:text-gray-400 placeholder:font-light text-xs sm:text-sm";
+
+    return (hasValue: boolean) => {
+      if (hasValue) {
+        return `bg-white border-2 border-green-700 ${baseStyle}`;
+      } else {
+        return `bg-gray-50 border-2 border-gray-300 ${baseStyle}`;
+      }
+    };
+  }, []);
+
+  const ageInputClassName = useMemo(() => {
+    const baseStyle =
+      "text-gray-700 font-normal rounded-lg h-12 md:h-14 py-2 px-3 w-full focus:border-blue-900 focus:ring-2 focus:ring-blue-950 outline-none shadow-sm hover:shadow-md transition-all duration-300 placeholder:text-gray-400 placeholder:font-light text-xs sm:text-sm [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none";
+
+    return (hasValue: boolean) => {
+      if (hasValue) {
+        return `bg-white border-2 border-green-700 pr-8 ${baseStyle}`;
+      } else {
+        return `bg-gray-50 border-2 border-gray-300 ${baseStyle}`;
+      }
+    };
+  }, []);
 
   return (
-    <div className="flex flex-col md:flex-row gap-4 w-full">
-      {/* Calendar Side */}
-      <div className="flex-1 min-w-[260px]">
-        <CustomCalendar
-          selectedDisplayDate={selectedDate}
-          handleDateSelect={handleCalendarSelect}
-          colorScheme={colorScheme}
-          minDate={minDate}
-          maxDate={calendarMaxDate}
+    <div
+      style={style}
+      className="flex flex-col md:flex-row space-y-4 md:space-y-0 md:space-x-4"
+    >
+      {/* Date Picker */}
+      <div className="w-full md:w-1/2 relative">
+        <Flatpickr
+          ref={flatpickrRef}
+          value={selectedDate ? [selectedDate] : []}
+          onChange={handleDateChange}
+          options={flatpickrOptions}
+          placeholder={placeholder}
+          className={`${inputClassName(!!selectedDate)} pr-10 cursor-pointer`}
         />
+        {selectedDate && (
+          <button
+            type="button"
+            onClick={clearAll}
+            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-red-500 transition-colors"
+          >
+            <X size={16} />
+          </button>
+        )}
       </div>
-      {/* Age Input Side */}
-      <div className="flex-1 flex flex-col justify-center items-center bg-white border border-gray-200 rounded-3xl shadow-lg p-6 min-w-[220px]">
-        <div className="w-full flex flex-col gap-4">
-          <label className="block text-gray-700 text-sm font-semibold mb-2 text-center">
-            Enter Age
-          </label>
-          <div className="flex flex-row gap-2 justify-center">
-            <div className="flex flex-col items-center">
-              <input
-                type="number"
-                min={0}
-                max={150}
-                inputMode="numeric"
-                pattern="[0-9]*"
-                className="w-16 px-2 py-2 border border-gray-300 rounded-lg text-center text-base focus:ring-2 focus:ring-indigo-400"
-                value={age.years}
-                onChange={(e) => handleAgeInput("years", e.target.value)}
-                aria-label="Years"
-              />
-              <span className="text-xs text-gray-500 mt-1">Years</span>
-            </div>
-            <div className="flex flex-col items-center">
-              <input
-                type="number"
-                min={0}
-                max={11}
-                inputMode="numeric"
-                pattern="[0-9]*"
-                className="w-14 px-2 py-2 border border-gray-300 rounded-lg text-center text-base focus:ring-2 focus:ring-indigo-400"
-                value={age.months}
-                onChange={(e) => handleAgeInput("months", e.target.value)}
-                aria-label="Months"
-              />
-              <span className="text-xs text-gray-500 mt-1">Months</span>
-            </div>
-            <div className="flex flex-col items-center">
-              <input
-                type="number"
-                min={0}
-                max={31}
-                inputMode="numeric"
-                pattern="[0-9]*"
-                className="w-14 px-2 py-2 border border-gray-300 rounded-lg text-center text-base focus:ring-2 focus:ring-indigo-400"
-                value={age.days}
-                onChange={(e) => handleAgeInput("days", e.target.value)}
-                aria-label="Days"
-              />
-              <span className="text-xs text-gray-500 mt-1">Days</span>
-            </div>
+
+      {/* Age Inputs */}
+      <div className="w-full md:w-1/2 relative">
+        <div className="grid grid-cols-3 gap-2">
+          <div className="relative">
+            <input
+              type="number"
+              inputMode="numeric"
+              min={0}
+              className={ageInputClassName(hasValidYears)}
+              value={years === "" ? "" : years}
+              onChange={handleYearsChange}
+              onWheel={(e) => (e.target as HTMLElement).blur()}
+              placeholder="Years"
+              aria-label="Years"
+            />
+            {hasValidYears && (
+              <span className="absolute right-2 top-1/2 transform -translate-y-1/2 text-xs text-gray-500 pointer-events-none">
+                {years === 1 ? "yr" : "yrs"}
+              </span>
+            )}
           </div>
-        </div>
-        <div className="mt-4 text-xs text-gray-400 text-center">
-          <span>
-            {selectedDate
-              ? `DOB: ${selectedDate.toLocaleDateString()}`
-              : "Select date or enter age"}
-          </span>
+
+          <div className="relative">
+            <input
+              type="number"
+              inputMode="numeric"
+              min={0}
+              max={11}
+              className={ageInputClassName(hasValidMonths)}
+              value={months === "" ? "" : months}
+              onChange={handleMonthsChange}
+              onWheel={(e) => (e.target as HTMLElement).blur()}
+              placeholder="Months"
+              aria-label="Months"
+            />
+            {hasValidMonths && (
+              <span className="absolute right-2 top-1/2 transform -translate-y-1/2 text-xs text-gray-500 pointer-events-none">
+                {months === 1 ? "mo" : "mos"}
+              </span>
+            )}
+          </div>
+
+          <div className="relative">
+            <input
+              type="number"
+              inputMode="numeric"
+              min={0}
+              max={31}
+              className={ageInputClassName(hasValidDays)}
+              value={days === "" ? "" : days}
+              onChange={handleDaysChange}
+              onWheel={(e) => (e.target as HTMLElement).blur()}
+              placeholder="Days"
+              aria-label="Days"
+            />
+            {hasValidDays && (
+              <span className="absolute right-2 top-1/2 transform -translate-y-1/2 text-xs text-gray-500 pointer-events-none">
+                {days === 1 ? "day" : "days"}
+              </span>
+            )}
+          </div>
         </div>
       </div>
     </div>
   );
 };
 
-export default DateOfBirthDropdown;
+export default React.memo(DateOfBirthDropdown);

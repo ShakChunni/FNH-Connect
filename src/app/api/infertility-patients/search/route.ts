@@ -1,12 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
+import { prisma } from "@/lib/prisma";
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const query = searchParams.get("query");
+    const searchBy = searchParams.get("searchBy") || "both";
     const username = searchParams.get("username");
     const userRole = searchParams.get("userRole");
 
@@ -21,18 +20,29 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Search infertility patients with case-insensitive partial matching
-    const patients = await prisma.infertilityPatient.findMany({
-      where: {
+    // Build search conditions based on searchBy parameter
+    let whereCondition: any = {};
+
+    if (searchBy === "name") {
+      whereCondition = {
+        patientFullName: {
+          contains: query,
+          mode: "insensitive",
+        },
+      };
+    } else if (searchBy === "mobile") {
+      whereCondition = {
+        mobileNumber: {
+          contains: query,
+          mode: "insensitive",
+        },
+      };
+    } else {
+      // Default: search both name and mobile
+      whereCondition = {
         OR: [
           {
             patientFullName: {
-              contains: query,
-              mode: "insensitive",
-            },
-          },
-          {
-            patientFirstName: {
               contains: query,
               mode: "insensitive",
             },
@@ -44,31 +54,31 @@ export async function GET(request: NextRequest) {
             },
           },
         ],
-      },
+      };
+    }
+
+    // Search infertility patients from the database
+    const patients = await prisma.infertilityPatient.findMany({
+      where: whereCondition,
       select: {
         id: true,
         patientFullName: true,
         mobileNumber: true,
-        email: true,
         patientAge: true,
         hospitalName: true,
       },
-      orderBy: [
-        {
-          patientFullName: "asc",
-        },
-      ],
-      take: 10, // Limit results for performance
+      take: 10, // Limit results
+      orderBy: {
+        patientFullName: "asc",
+      },
     });
 
     return NextResponse.json(patients);
   } catch (error) {
     console.error("Patient search error:", error);
     return NextResponse.json(
-      { error: "Failed to search patients" },
+      { error: "Internal server error" },
       { status: 500 }
     );
-  } finally {
-    await prisma.$disconnect();
   }
 }

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
 
 export async function GET(request: NextRequest) {
   try {
@@ -18,51 +19,44 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // For now, return a mock list of common hospitals
-    // This will be replaced with actual database queries after migration
-    const mockHospitals = [
-      {
-        id: 1,
-        name: "General Hospital",
-        address: "123 Main Street",
-        phoneNumber: "+1234567890",
-        email: "info@generalhospital.com",
-        website: "https://generalhospital.com",
-        type: "Government Hospital",
+    // Search hospitals from the database
+    const hospitals = await prisma.hospital.findMany({
+      where: {
+        OR: [
+          {
+            name: {
+              contains: query,
+              mode: "insensitive",
+            },
+          },
+          {
+            address: {
+              contains: query,
+              mode: "insensitive",
+            },
+          },
+        ],
       },
-      {
-        id: 2,
-        name: "City Medical Center",
-        address: "456 Health Avenue",
-        phoneNumber: "+1234567891",
-        email: "contact@citymedical.com",
-        website: "https://citymedical.com",
-        type: "Private Hospital",
+      select: {
+        id: true,
+        name: true,
+        address: true,
+        phoneNumber: true,
+        email: true,
+        website: true,
+        type: true,
       },
-      {
-        id: 3,
-        name: "Women's Health Clinic",
-        address: "789 Care Boulevard",
-        phoneNumber: "+1234567892",
-        email: "info@womenshealth.com",
-        website: "https://womenshealth.com",
-        type: "Specialty Center",
+      take: 10, // Limit results
+      orderBy: {
+        name: "asc",
       },
-    ];
+    });
 
-    // Filter based on query
-    const filteredHospitals = mockHospitals.filter(
-      (hospital) =>
-        hospital.name.toLowerCase().includes(query.toLowerCase()) ||
-        hospital.type.toLowerCase().includes(query.toLowerCase()) ||
-        hospital.address.toLowerCase().includes(query.toLowerCase())
-    );
-
-    return NextResponse.json(filteredHospitals);
+    return NextResponse.json(hospitals);
   } catch (error) {
     console.error("Hospital search error:", error);
     return NextResponse.json(
-      { error: "Failed to search hospitals" },
+      { error: "Internal server error" },
       { status: 500 }
     );
   }
