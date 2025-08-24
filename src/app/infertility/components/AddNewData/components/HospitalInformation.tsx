@@ -12,6 +12,9 @@ import useFetchHospitalInformation, {
   Hospital,
 } from "../hooks/useFetchHospitalInformation";
 import { Tooltip as ReactTooltip } from "react-tooltip";
+import HospitalTypeDropdown from "../Dropdowns/HospitalTypeDropdown";
+import ContactPhoneInput from "./ContactPhoneInput";
+import ContactEmailInput from "./ContactEmailInput";
 
 export interface HospitalData {
   id: number | null;
@@ -74,6 +77,10 @@ const HospitalInformation: React.FC<HospitalInformationProps> = ({
     type: false,
   });
 
+  // Add validation states for phone and email
+  const [isPhoneValid, setIsPhoneValid] = useState(true);
+  const [isEmailValid, setIsEmailValid] = useState(true);
+
   const dropdownRef = useRef<HTMLDivElement>(null);
   const hospitalInputRef = useRef<HTMLInputElement>(null);
   const [dropdownPosition, setDropdownPosition] = useState<{
@@ -96,17 +103,26 @@ const HospitalInformation: React.FC<HospitalInformationProps> = ({
     "Other",
   ];
 
+  // Updated input styling to match PatientInformation
   const inputClassName = useMemo(() => {
     const baseStyle =
       "text-gray-700 font-normal rounded-lg h-12 md:h-14 py-2 px-4 w-full focus:border-blue-900 focus:ring-2 focus:ring-blue-950 outline-none shadow-sm hover:shadow-md transition-all duration-300 placeholder:text-gray-400 placeholder:font-light text-xs sm:text-sm";
-    return (value: string, disabled: boolean = false) => {
+    return (
+      value: string,
+      isValid: boolean = true,
+      disabled: boolean = false
+    ) => {
       let style = disabled
         ? `bg-gray-200 border-2 border-gray-300 cursor-not-allowed ${baseStyle}`
         : baseStyle;
       if (!disabled) {
-        style += value
-          ? ` bg-white border-2 border-green-700`
-          : ` bg-gray-50 border-2 border-gray-300`;
+        if (!isValid && value) {
+          style = `bg-red-50 border-2 border-red-500 ${baseStyle}`;
+        } else {
+          style += value
+            ? ` bg-white border-2 border-green-700`
+            : ` bg-gray-50 border-2 border-gray-300`;
+        }
       }
       return style;
     };
@@ -344,13 +360,11 @@ const HospitalInformation: React.FC<HospitalInformationProps> = ({
 
   // Status message and dynamic header styling
   const getHeaderBg = () => {
-    if (hospitalStatus === "existing") {
-      return "from-purple-50 to-purple-100 border-purple-200";
-    }
+    // Use blue theme for Hospital section (matches parent tab color)
     if (hospitalStatus === "new") {
-      return "from-teal-50 to-teal-100 border-teal-200";
+      return "from-blue-50 to-blue-100 border-blue-200";
     }
-    return "from-purple-50 to-purple-100 border-purple-200";
+    return "from-blue-50 to-blue-100 border-blue-200";
   };
 
   const getStatusBadge = () => {
@@ -429,7 +443,7 @@ const HospitalInformation: React.FC<HospitalInformationProps> = ({
                     e.stopPropagation();
                     handleSelectHospital(hospital);
                   }}
-                  className="px-4 py-3 cursor-pointer hover:bg-purple-50 flex items-center gap-3 border-b border-gray-100 last:border-b-0"
+                  className="px-4 py-3 cursor-pointer hover:bg-blue-50 flex items-center gap-3 border-b border-gray-100 last:border-b-0"
                 >
                   <Building2 className="w-5 h-5 text-gray-400 flex-shrink-0" />
                   <div className="min-w-0 flex-1">
@@ -456,10 +470,10 @@ const HospitalInformation: React.FC<HospitalInformationProps> = ({
                   e.stopPropagation();
                   handleAddNew();
                 }}
-                className="px-4 py-3 cursor-pointer hover:bg-teal-50 flex items-center gap-3 border-t border-gray-200"
+                className="px-4 py-3 cursor-pointer hover:bg-blue-50 flex items-center gap-3 border-t border-gray-200"
               >
-                <PlusCircle className="w-5 h-5 text-teal-600 flex-shrink-0" />
-                <p className="font-medium text-teal-700 text-sm">
+                <PlusCircle className="w-5 h-5 text-blue-600 flex-shrink-0" />
+                <p className="font-medium text-blue-700 text-sm">
                   Add &quot;{searchQuery}&quot; as a new hospital
                 </p>
               </div>
@@ -477,12 +491,7 @@ const HospitalInformation: React.FC<HospitalInformationProps> = ({
       >
         <div className="flex items-center gap-3 sm:gap-4">
           <div className="p-2 sm:p-2.5 md:p-3 bg-white rounded-lg sm:rounded-xl shadow-md flex-shrink-0">
-            <Building2
-              className={
-                hospitalStatus === "new" ? "text-teal-600" : "text-purple-600"
-              }
-              size={28}
-            />
+            <Building2 className={"text-blue-600"} size={28} />
           </div>
           <div className="flex flex-col">
             <div className="flex items-center">
@@ -491,13 +500,9 @@ const HospitalInformation: React.FC<HospitalInformationProps> = ({
               </h3>
             </div>
             <p
-              className={`${
-                hospitalStatus === "new"
-                  ? "text-teal-700"
-                  : hospitalStatus === "existing"
-                  ? "text-purple-700"
-                  : "text-purple-700"
-              } text-xs sm:text-sm font-medium leading-tight transition-colors duration-300 mt-1`}
+              className={
+                "text-blue-700 text-xs sm:text-sm font-medium leading-tight transition-colors duration-300 mt-1"
+              }
             >
               {getDescription()}
             </p>
@@ -514,14 +519,14 @@ const HospitalInformation: React.FC<HospitalInformationProps> = ({
           {/* Mobile status badge next to label */}
           <div className="sm:hidden">
             {hospitalStatus === "new" && (
-              <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-teal-100 text-teal-700 text-xs font-semibold border border-teal-200 shadow-sm">
-                <PlusCircle className="w-3 h-3 mr-1 text-teal-500" />
+              <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 text-xs font-semibold border border-blue-200 shadow-sm">
+                <PlusCircle className="w-3 h-3 mr-1 text-blue-500" />
                 New
               </span>
             )}
             {hospitalStatus === "existing" && (
-              <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 text-xs font-semibold border border-purple-200 shadow-sm">
-                <Building2 className="w-3 h-3 mr-1 text-purple-500" />
+              <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 text-xs font-semibold border border-blue-200 shadow-sm">
+                <Building2 className="w-3 h-3 mr-1 text-blue-500" />
                 Auto-filled
               </span>
             )}
@@ -552,19 +557,19 @@ const HospitalInformation: React.FC<HospitalInformationProps> = ({
           <div className="hidden sm:flex absolute right-3 top-1/2 -translate-y-1/2 flex-row gap-2 items-center max-w-[70vw] sm:max-w-none">
             {hospitalStatus === "new" && (
               <span
-                className="inline-flex items-center px-2 py-0.5 rounded-full bg-teal-100 text-teal-700 text-xs font-semibold border border-teal-200 shadow-sm pointer-events-none whitespace-nowrap"
+                className="inline-flex items-center px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 text-xs font-semibold border border-blue-200 shadow-sm pointer-events-none whitespace-nowrap"
                 style={{ zIndex: 2 }}
               >
-                <PlusCircle className="w-3 h-3 mr-1 text-teal-500" />
+                <PlusCircle className="w-3 h-3 mr-1 text-blue-500" />
                 Adding as a new hospital
               </span>
             )}
             {hospitalStatus === "existing" && (
               <span
-                className="inline-flex items-center px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 text-xs font-semibold border border-purple-200 shadow-sm pointer-events-none whitespace-nowrap"
+                className="inline-flex items-center px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 text-xs font-semibold border border-blue-200 shadow-sm pointer-events-none whitespace-nowrap"
                 style={{ zIndex: 2 }}
               >
-                <Building2 className="w-3 h-3 mr-1 text-purple-500" />
+                <Building2 className="w-3 h-3 mr-1 text-blue-500" />
                 Auto-filled from database
               </span>
             )}
@@ -602,35 +607,28 @@ const HospitalInformation: React.FC<HospitalInformationProps> = ({
           <label className="block text-gray-700 text-sm sm:text-base font-semibold">
             Hospital Type<span className="text-red-500">*</span>
           </label>
-          {/* Mobile auto-filled badge next to label */}
-          {isHospitalSelected && autofilledFields.type && (
+          {autofilledFields.type && (
             <div className="sm:hidden">
-              <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 text-xs font-semibold border border-purple-200 shadow-sm">
-                <Building2 className="w-3 h-3 mr-1 text-purple-500" />
+              <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 text-xs font-semibold border border-blue-200 shadow-sm">
+                <Building2 className="w-3 h-3 mr-1 text-blue-500" />
                 Auto-filled
               </span>
             </div>
           )}
         </div>
         <div className="relative">
-          <select
+          <HospitalTypeDropdown
             value={localData.type}
-            onChange={(e) => handleLocalDataChange("type", e.target.value)}
-            className={inputClassName(
+            onSelect={(v) => handleLocalDataChange("type", v)}
+            options={hospitalTypes}
+            disabled={autofilledFields.type}
+            inputClassName={inputClassName(
               localData.type,
-              isHospitalSelected && autofilledFields.type
+              true,
+              autofilledFields.type
             )}
-            disabled={isHospitalSelected && autofilledFields.type}
-          >
-            <option value="">Select hospital type</option>
-            {hospitalTypes.map((type) => (
-              <option key={type} value={type}>
-                {type}
-              </option>
-            ))}
-          </select>
-          {/* Desktop auto-filled badge inside dropdown */}
-          {isHospitalSelected && autofilledFields.type && (
+          />
+          {autofilledFields.type && (
             <div className="hidden sm:flex absolute right-3 top-1/2 -translate-y-1/2">
               <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 text-xs font-semibold border border-purple-200 shadow-sm pointer-events-none">
                 <Building2 className="w-3 h-3 mr-1 text-purple-500" />
@@ -647,32 +645,23 @@ const HospitalInformation: React.FC<HospitalInformationProps> = ({
           <label className="block text-gray-700 text-sm sm:text-base font-semibold">
             Phone Number
           </label>
-          {/* Mobile auto-filled badge next to label */}
-          {isHospitalSelected && autofilledFields.phoneNumber && (
+          {autofilledFields.phoneNumber && (
             <div className="sm:hidden">
-              <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 text-xs font-semibold border border-purple-200 shadow-sm">
-                <Building2 className="w-3 h-3 mr-1 text-purple-500" />
+              <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 text-xs font-semibold border border-blue-200 shadow-sm">
+                <Building2 className="w-3 h-3 mr-1 text-blue-500" />
                 Auto-filled
               </span>
             </div>
           )}
         </div>
         <div className="relative">
-          <input
-            type="tel"
-            className={inputClassName(
-              localData.phoneNumber,
-              isHospitalSelected && autofilledFields.phoneNumber
-            )}
+          <ContactPhoneInput
             value={localData.phoneNumber}
-            onChange={(e) =>
-              handleLocalDataChange("phoneNumber", e.target.value)
-            }
-            placeholder="Hospital contact number"
-            disabled={isHospitalSelected && autofilledFields.phoneNumber}
+            onChange={(val) => handleLocalDataChange("phoneNumber", val)}
+            onValidationChange={setIsPhoneValid}
+            isAutofilled={autofilledFields.phoneNumber}
           />
-          {/* Desktop auto-filled badge inside input */}
-          {isHospitalSelected && autofilledFields.phoneNumber && (
+          {autofilledFields.phoneNumber && (
             <div className="hidden sm:flex absolute right-3 top-1/2 -translate-y-1/2">
               <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 text-xs font-semibold border border-purple-200 shadow-sm pointer-events-none">
                 <Building2 className="w-3 h-3 mr-1 text-purple-500" />
@@ -689,8 +678,7 @@ const HospitalInformation: React.FC<HospitalInformationProps> = ({
           <label className="block text-gray-700 text-sm sm:text-base font-semibold">
             Address
           </label>
-          {/* Mobile auto-filled badge next to label */}
-          {isHospitalSelected && autofilledFields.address && (
+          {autofilledFields.address && (
             <div className="sm:hidden">
               <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 text-xs font-semibold border border-purple-200 shadow-sm">
                 <Building2 className="w-3 h-3 mr-1 text-purple-500" />
@@ -703,16 +691,16 @@ const HospitalInformation: React.FC<HospitalInformationProps> = ({
           <textarea
             className={`${inputClassName(
               localData.address,
-              isHospitalSelected && autofilledFields.address
+              true,
+              autofilledFields.address
             )} resize-none`}
             value={localData.address}
             onChange={(e) => handleLocalDataChange("address", e.target.value)}
             placeholder="Hospital address"
             rows={2}
-            disabled={isHospitalSelected && autofilledFields.address}
+            disabled={autofilledFields.address}
           />
-          {/* Desktop auto-filled badge inside textarea */}
-          {isHospitalSelected && autofilledFields.address && (
+          {autofilledFields.address && (
             <div className="hidden sm:flex absolute right-3 top-3">
               <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 text-xs font-semibold border border-purple-200 shadow-sm pointer-events-none">
                 <Building2 className="w-3 h-3 mr-1 text-purple-500" />
@@ -731,8 +719,7 @@ const HospitalInformation: React.FC<HospitalInformationProps> = ({
             <label className="block text-gray-700 text-sm sm:text-base font-semibold">
               Email
             </label>
-            {/* Mobile auto-filled badge next to label */}
-            {isHospitalSelected && autofilledFields.email && (
+            {autofilledFields.email && (
               <div className="sm:hidden">
                 <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 text-xs font-semibold border border-purple-200 shadow-sm">
                   <Building2 className="w-3 h-3 mr-1 text-purple-500" />
@@ -742,19 +729,14 @@ const HospitalInformation: React.FC<HospitalInformationProps> = ({
             )}
           </div>
           <div className="relative">
-            <input
-              type="email"
-              className={inputClassName(
-                localData.email,
-                isHospitalSelected && autofilledFields.email
-              )}
+            <ContactEmailInput
               value={localData.email}
-              onChange={(e) => handleLocalDataChange("email", e.target.value)}
+              onChange={(val) => handleLocalDataChange("email", val)}
+              onValidationChange={setIsEmailValid}
               placeholder="Hospital email"
-              disabled={isHospitalSelected && autofilledFields.email}
+              isAutofilled={autofilledFields.email}
             />
-            {/* Desktop auto-filled badge inside input */}
-            {isHospitalSelected && autofilledFields.email && (
+            {autofilledFields.email && (
               <div className="hidden sm:flex absolute right-3 top-1/2 -translate-y-1/2">
                 <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 text-xs font-semibold border border-purple-200 shadow-sm pointer-events-none">
                   <Building2 className="w-3 h-3 mr-1 text-purple-500" />
@@ -771,8 +753,7 @@ const HospitalInformation: React.FC<HospitalInformationProps> = ({
             <label className="block text-gray-700 text-sm sm:text-base font-semibold">
               Website
             </label>
-            {/* Mobile auto-filled badge next to label */}
-            {isHospitalSelected && autofilledFields.website && (
+            {autofilledFields.website && (
               <div className="sm:hidden">
                 <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 text-xs font-semibold border border-purple-200 shadow-sm">
                   <Building2 className="w-3 h-3 mr-1 text-purple-500" />
@@ -786,15 +767,15 @@ const HospitalInformation: React.FC<HospitalInformationProps> = ({
               type="url"
               className={inputClassName(
                 localData.website,
-                isHospitalSelected && autofilledFields.website
+                true,
+                autofilledFields.website
               )}
               value={localData.website}
               onChange={(e) => handleLocalDataChange("website", e.target.value)}
               placeholder="Hospital website"
-              disabled={isHospitalSelected && autofilledFields.website}
+              disabled={autofilledFields.website}
             />
-            {/* Desktop auto-filled badge inside input */}
-            {isHospitalSelected && autofilledFields.website && (
+            {autofilledFields.website && (
               <div className="hidden sm:flex absolute right-3 top-1/2 -translate-y-1/2">
                 <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 text-xs font-semibold border border-purple-200 shadow-sm pointer-events-none">
                   <Building2 className="w-3 h-3 mr-1 text-purple-500" />

@@ -131,6 +131,7 @@ const ContactPhoneInput: React.FC<ContactPhoneInputProps> = memo(
     defaultCountry = "MY",
     isAutofilled = false,
   }) => {
+    const effectiveDefaultCountry = defaultCountry || "BD";
     const sortedCountries = useSortedCountries();
     const [isDropdownOpen, setIsDropdownOpen] = useState<boolean>(false);
     const [isDropdownReady, setIsDropdownReady] = useState<boolean>(false);
@@ -193,14 +194,14 @@ const ContactPhoneInput: React.FC<ContactPhoneInputProps> = memo(
     );
 
     useEffect(() => {
-      const defaultCountryData = findCountryByCode(defaultCountry);
+      const defaultCountryData = findCountryByCode(effectiveDefaultCountry);
       if (defaultCountryData) {
         setSelectedCountry(defaultCountryData);
       } else {
-        const malaysia = findCountryByCode("MY");
-        if (malaysia) setSelectedCountry(malaysia);
+        const bangladesh = findCountryByCode("BD");
+        if (bangladesh) setSelectedCountry(bangladesh);
       }
-    }, [defaultCountry, findCountryByCode]);
+    }, [effectiveDefaultCountry, findCountryByCode]);
 
     const handleSelectCountry = useCallback(
       (country: Country) => {

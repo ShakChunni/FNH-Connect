@@ -25,7 +25,9 @@ import useFetchPatientInformation, {
   InfertilityPatientBasic,
 } from "../hooks/useFetchPatientInformation";
 import DateOfBirthDropdown from "../Dropdowns/DateOfBirthDropdown";
-import GenderDropdown from "../Dropdowns/GenderDropdown"; // add near other imports
+import GenderDropdown from "../Dropdowns/GenderDropdown";
+import ContactEmailInput from "./ContactEmailInput";
+import ContactPhoneInput from "./ContactPhoneInput";
 
 export interface PatientData {
   id: number | null;
@@ -69,10 +71,8 @@ const PatientInformation: React.FC<PatientInformationProps> = ({
     error,
   } = useFetchPatientInformation();
 
-  // Display error to user when API fails
   useEffect(() => {
     if (error) {
-      // We can't call onMessage here since it's not available, but we can log the error
       console.error("Patient search error:", error);
     }
   }, [error]);
@@ -124,20 +124,7 @@ const PatientInformation: React.FC<PatientInformationProps> = ({
   const dropdownRef = useRef<HTMLDivElement>(null);
   const nameInputRef = useRef<HTMLInputElement>(null);
 
-  // Validation functions
-  const validatePhone = (phone: string) => {
-    if (!phone) return false; // Required field
-    const phoneRegex = /^[+]?[\d\s\-\(\)]{10,}$/;
-    return phoneRegex.test(phone);
-  };
-
-  const validateEmail = (email: string) => {
-    if (!email) return true; // Optional field
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
-  };
-
-  // Reset patient form when hospital changes (only when availablePatients length changes)
+  // Reset patient form when hospital changes
   const availablePatientsLength = availablePatients.length;
   useEffect(() => {
     setLocalData({
@@ -168,7 +155,7 @@ const PatientInformation: React.FC<PatientInformationProps> = ({
       patientDOB: false,
     });
     onDropdownToggle(false);
-  }, [availablePatientsLength, onDropdownToggle, setSearchQuery]); // Use length instead of the array
+  }, [availablePatientsLength, onDropdownToggle, setSearchQuery]);
 
   // Update full name when first/last name changes
   useEffect(() => {
@@ -212,12 +199,12 @@ const PatientInformation: React.FC<PatientInformationProps> = ({
       patientLastName:
         patient.patientFullName.split(" ").slice(1).join(" ") || "",
       patientFullName: patient.patientFullName,
-      patientGender: "Female", // Default, can be updated
+      patientGender: "Female",
       patientAge: patient.patientAge,
-      patientDOB: null, // Would need to be fetched with full patient data
+      patientDOB: null,
       mobileNumber: patient.mobileNumber || "",
       email: patient.email || "",
-      address: "", // Would need to be fetched
+      address: "",
       spouseName: "",
       spouseAge: null,
       spouseDOB: null,
@@ -244,12 +231,12 @@ const PatientInformation: React.FC<PatientInformationProps> = ({
       patientLastName:
         patient.patientFullName.split(" ").slice(1).join(" ") || "",
       patientFullName: patient.patientFullName,
-      patientGender: "Female", // Default, can be updated
+      patientGender: "Female",
       patientAge: patient.patientAge,
-      patientDOB: null, // Would need to be fetched
+      patientDOB: null,
       mobileNumber: patient.mobileNumber || "",
       email: patient.email || "",
-      address: "", // Would need to be fetched
+      address: "",
       spouseName: "",
       spouseAge: null,
       spouseDOB: null,
@@ -325,11 +312,7 @@ const PatientInformation: React.FC<PatientInformationProps> = ({
   // Handle name change
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newQuery = e.target.value;
-
-    // Always allow typing and update immediately
     setSearchQuery(newQuery);
-
-    // Update local data to reflect typing immediately
     const names = newQuery.trim().split(" ");
     setLocalData((prev) => ({
       ...prev,
@@ -337,10 +320,7 @@ const PatientInformation: React.FC<PatientInformationProps> = ({
       patientLastName: names.slice(1).join(" ") || "",
       patientFullName: newQuery,
     }));
-
     setPatientTouched(true);
-
-    // If previously autofilled and now name is changed, clear autofilled fields
     if (
       (patientStatus === "hospital-filled" ||
         patientStatus === "global-filled") &&
@@ -364,8 +344,6 @@ const PatientInformation: React.FC<PatientInformationProps> = ({
         patientDOB: false,
       });
     }
-
-    // Show dropdown for search results
     if (newQuery.length >= 1) {
       updateDropdownPosition();
       setIsDropdownOpen(true);
@@ -388,7 +366,6 @@ const PatientInformation: React.FC<PatientInformationProps> = ({
       setPatientStatus("");
       return;
     }
-
     if (localData.id) {
       // Keep existing status
     } else if (searchQuery.length > 1) {
@@ -398,7 +375,7 @@ const PatientInformation: React.FC<PatientInformationProps> = ({
     }
   };
 
-  // Handle field changes with validation
+  // Handle field changes
   const handleFieldChange = (
     field: keyof PatientData,
     value: string | number | Date | null
@@ -407,8 +384,6 @@ const PatientInformation: React.FC<PatientInformationProps> = ({
       ...prev,
       [field]: value,
     }));
-
-    // Remove autofill status when user manually edits
     if (
       field in autofilledFields &&
       autofilledFields[field as keyof typeof autofilledFields]
@@ -417,13 +392,6 @@ const PatientInformation: React.FC<PatientInformationProps> = ({
         ...prev,
         [field]: false,
       }));
-    }
-
-    // Validate phone and email
-    if (field === "mobileNumber") {
-      setIsPhoneValid(validatePhone(value as string));
-    } else if (field === "email") {
-      setIsEmailValid(validateEmail(value as string));
     }
   };
 
@@ -493,46 +461,8 @@ const PatientInformation: React.FC<PatientInformationProps> = ({
 
   // Status message and dynamic header styling
   const getHeaderBg = () => {
-    if (patientStatus === "hospital-filled") {
-      return "from-rose-50 to-rose-100 border-rose-200";
-    }
-    if (patientStatus === "global-filled") {
-      return "from-pink-50 to-pink-100 border-pink-200";
-    }
-    if (patientStatus === "new") {
-      return "from-red-50 to-red-100 border-red-200";
-    }
-    return "from-rose-50 to-rose-100 border-rose-200";
-  };
-
-  const getStatusBadge = () => {
-    if (!patientStatus) return null;
-
-    if (patientStatus === "hospital-filled") {
-      return (
-        <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-rose-100 text-rose-700 text-xs font-semibold border border-rose-200 shadow-sm">
-          <Building2 className="w-3 h-3 mr-1 text-rose-500" />
-          From {hospitalName}
-        </span>
-      );
-    }
-    if (patientStatus === "global-filled") {
-      return (
-        <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-pink-100 text-pink-700 text-xs font-semibold border border-pink-200 shadow-sm">
-          <User className="w-3 h-3 mr-1 text-pink-500" />
-          Existing Patient
-        </span>
-      );
-    }
-    if (patientStatus === "new") {
-      return (
-        <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-red-100 text-red-700 text-xs font-semibold border border-red-200 shadow-sm">
-          <PlusCircle className="w-3 h-3 mr-1 text-red-500" />
-          New Patient
-        </span>
-      );
-    }
-    return null;
+    // Use indigo theme for Patient section (matches parent tab color)
+    return "from-indigo-50 to-indigo-100 border-indigo-200";
   };
 
   const getDescription = () => {
@@ -616,9 +546,9 @@ const PatientInformation: React.FC<PatientInformationProps> = ({
 
             {!loading && showHospitalPatients && (
               <>
-                <div className="px-4 py-2 bg-rose-50 border-b border-rose-100">
-                  <p className="text-xs font-medium text-rose-700 flex items-center gap-1">
-                    <Building2 className="w-3 h-3" />
+                <div className="px-4 py-2 bg-indigo-50 border-b border-indigo-100">
+                  <p className="text-xs font-medium text-indigo-700 flex items-center gap-1">
+                    <Building2 className="w-3 h-3 text-indigo-500" />
                     Patients from {hospitalName}
                   </p>
                 </div>
@@ -630,7 +560,7 @@ const PatientInformation: React.FC<PatientInformationProps> = ({
                       e.stopPropagation();
                       handleSelectHospitalPatient(patient);
                     }}
-                    className="px-4 py-3 cursor-pointer hover:bg-rose-50 flex items-center gap-3 border-b border-gray-100 last:border-b-0"
+                    className="px-4 py-3 cursor-pointer hover:bg-indigo-50 flex items-center gap-3 border-b border-gray-100 last:border-b-0"
                   >
                     <User className="w-5 h-5 text-gray-400 flex-shrink-0" />
                     <div className="min-w-0 flex-1">
@@ -651,9 +581,9 @@ const PatientInformation: React.FC<PatientInformationProps> = ({
 
             {!loading && showGlobalPatients && (
               <>
-                <div className="px-4 py-2 bg-pink-50 border-b border-pink-100">
-                  <p className="text-xs font-medium text-pink-700 flex items-center gap-1">
-                    <User className="w-3 h-3" />
+                <div className="px-4 py-2 bg-indigo-50 border-b border-indigo-100">
+                  <p className="text-xs font-medium text-indigo-700 flex items-center gap-1">
+                    <User className="w-3 h-3 text-indigo-500" />
                     Other patients in system
                   </p>
                 </div>
@@ -665,7 +595,7 @@ const PatientInformation: React.FC<PatientInformationProps> = ({
                       e.stopPropagation();
                       handleSelectGlobalPatient(patient);
                     }}
-                    className="px-4 py-3 cursor-pointer hover:bg-pink-50 flex items-center gap-3 border-b border-gray-100 last:border-b-0"
+                    className="px-4 py-3 cursor-pointer hover:bg-indigo-50 flex items-center gap-3 border-b border-gray-100 last:border-b-0"
                   >
                     <User className="w-5 h-5 text-gray-400 flex-shrink-0" />
                     <div className="min-w-0 flex-1">
@@ -698,10 +628,10 @@ const PatientInformation: React.FC<PatientInformationProps> = ({
                   e.stopPropagation();
                   handleAddNew();
                 }}
-                className="px-4 py-3 cursor-pointer hover:bg-red-50 flex items-center gap-3 border-t border-gray-200"
+                className="px-4 py-3 cursor-pointer hover:bg-indigo-50 flex items-center gap-3 border-t border-gray-200"
               >
-                <PlusCircle className="w-5 h-5 text-red-600 flex-shrink-0" />
-                <p className="font-medium text-red-700 text-sm">
+                <PlusCircle className="w-5 h-5 text-indigo-600 flex-shrink-0" />
+                <p className="font-medium text-indigo-700 text-sm">
                   Add &quot;{searchQuery}&quot; as a new patient
                 </p>
               </div>
@@ -720,18 +650,7 @@ const PatientInformation: React.FC<PatientInformationProps> = ({
       >
         <div className="flex items-center gap-3 sm:gap-4">
           <div className="p-2 sm:p-2.5 md:p-3 bg-white rounded-lg sm:rounded-xl shadow-md flex-shrink-0">
-            <User
-              className={
-                patientStatus === "new"
-                  ? "text-red-600"
-                  : patientStatus === "hospital-filled"
-                  ? "text-rose-600"
-                  : patientStatus === "global-filled"
-                  ? "text-pink-600"
-                  : "text-rose-600"
-              }
-              size={28}
-            />
+            <User className={"text-indigo-600"} size={28} />
           </div>
           <div className="flex flex-col">
             <div className="flex items-center">
@@ -740,15 +659,9 @@ const PatientInformation: React.FC<PatientInformationProps> = ({
               </h3>
             </div>
             <p
-              className={`${
-                patientStatus === "new"
-                  ? "text-red-700"
-                  : patientStatus === "hospital-filled"
-                  ? "text-rose-700"
-                  : patientStatus === "global-filled"
-                  ? "text-pink-700"
-                  : "text-rose-700"
-              } text-xs sm:text-sm font-medium leading-tight transition-colors duration-300 mt-1`}
+              className={
+                "text-indigo-700 text-xs sm:text-sm font-medium leading-tight transition-colors duration-300 mt-1"
+              }
             >
               {getDescription()}
             </p>
@@ -762,23 +675,22 @@ const PatientInformation: React.FC<PatientInformationProps> = ({
           <label className="block text-gray-700 text-sm sm:text-base font-semibold">
             Patient Full Name<span className="text-red-500">*</span>
           </label>
-          {/* Mobile status badge next to label */}
           <div className="sm:hidden">
             {patientStatus === "new" && (
-              <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-red-100 text-red-700 text-xs font-semibold border border-red-200 shadow-sm">
-                <PlusCircle className="w-3 h-3 mr-1 text-red-500" />
+              <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 text-xs font-semibold border border-indigo-200 shadow-sm">
+                <PlusCircle className="w-3 h-3 mr-1 text-indigo-500" />
                 New
               </span>
             )}
             {patientStatus === "hospital-filled" && (
-              <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-rose-100 text-rose-700 text-xs font-semibold border border-rose-200 shadow-sm">
-                <Building2 className="w-3 h-3 mr-1 text-rose-500" />
+              <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 text-xs font-semibold border border-indigo-200 shadow-sm">
+                <Building2 className="w-3 h-3 mr-1 text-indigo-500" />
                 Auto-filled
               </span>
             )}
             {patientStatus === "global-filled" && (
-              <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-pink-100 text-pink-700 text-xs font-semibold border border-pink-200 shadow-sm">
-                <User className="w-3 h-3 mr-1 text-pink-500" />
+              <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 text-xs font-semibold border border-indigo-200 shadow-sm">
+                <User className="w-3 h-3 mr-1 text-indigo-500" />
                 Auto-filled
               </span>
             )}
@@ -803,32 +715,31 @@ const PatientInformation: React.FC<PatientInformationProps> = ({
             readOnly={isPatientSelected}
             autoComplete="off"
           />
-          {/* Desktop badge container: only show on sm and up */}
           <div className="hidden sm:flex absolute right-3 top-1/2 -translate-y-1/2 flex-row gap-2 items-center max-w-[70vw] sm:max-w-none">
             {patientStatus === "new" && (
               <span
-                className="inline-flex items-center px-2 py-0.5 rounded-full bg-red-100 text-red-700 text-xs font-semibold border border-red-200 shadow-sm pointer-events-none whitespace-nowrap"
+                className="inline-flex items-center px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 text-xs font-semibold border border-indigo-200 shadow-sm pointer-events-none whitespace-nowrap"
                 style={{ zIndex: 2 }}
               >
-                <PlusCircle className="w-3 h-3 mr-1 text-red-500" />
+                <PlusCircle className="w-3 h-3 mr-1 text-indigo-500" />
                 Adding as a new patient
               </span>
             )}
             {patientStatus === "hospital-filled" && (
               <span
-                className="inline-flex items-center px-2 py-0.5 rounded-full bg-rose-100 text-rose-700 text-xs font-semibold border border-rose-200 shadow-sm pointer-events-none whitespace-nowrap"
+                className="inline-flex items-center px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 text-xs font-semibold border border-indigo-200 shadow-sm pointer-events-none whitespace-nowrap"
                 style={{ zIndex: 2 }}
               >
-                <Building2 className="w-3 h-3 mr-1 text-rose-500" />
+                <Building2 className="w-3 h-3 mr-1 text-indigo-500" />
                 Auto-filled from hospital
               </span>
             )}
             {patientStatus === "global-filled" && (
               <span
-                className="inline-flex items-center px-2 py-0.5 rounded-full bg-pink-100 text-pink-700 text-xs font-semibold border border-pink-200 shadow-sm pointer-events-none whitespace-nowrap"
+                className="inline-flex items-center px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 text-xs font-semibold border border-indigo-200 shadow-sm pointer-events-none whitespace-nowrap"
                 style={{ zIndex: 2 }}
               >
-                <User className="w-3 h-3 mr-1 text-pink-500" />
+                <User className="w-3 h-3 mr-1 text-indigo-500" />
                 Auto-filled from database
               </span>
             )}
@@ -843,7 +754,6 @@ const PatientInformation: React.FC<PatientInformationProps> = ({
               </button>
             )}
           </div>
-          {/* Mobile clear button: only show on mobile when patient is selected */}
           {isPatientSelected && (
             <button
               onClick={handleClearSelection}
@@ -865,7 +775,6 @@ const PatientInformation: React.FC<PatientInformationProps> = ({
         <label className="block text-gray-700 text-sm sm:text-base font-semibold mb-1.5 sm:mb-2">
           Patient Gender<span className="text-red-500">*</span>
         </label>
-
         <GenderDropdown
           value={localData.patientGender || "Female"}
           onSelect={(v) => handleFieldChange("patientGender", v)}
@@ -880,7 +789,6 @@ const PatientInformation: React.FC<PatientInformationProps> = ({
           <label className="block text-gray-700 text-sm sm:text-base font-semibold">
             Patient Date of Birth
           </label>
-          {/* Mobile auto-filled badge next to label */}
           {autofilledFields.patientDOB && (
             <div className="sm:hidden">
               <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-rose-100 text-rose-700 text-xs font-semibold border border-rose-200 shadow-sm">
@@ -896,11 +804,10 @@ const PatientInformation: React.FC<PatientInformationProps> = ({
             onChange={handleDOBChange}
             placeholder="Select date of birth"
           />
-          {/* Desktop auto-filled badge inside input */}
           {autofilledFields.patientDOB && (
             <div className="hidden sm:flex absolute right-3 top-1/2 -translate-y-1/2">
-              <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-rose-100 text-rose-700 text-xs font-semibold border border-rose-200 shadow-sm pointer-events-none">
-                <User className="w-3 h-3 mr-1 text-rose-500" />
+              <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 text-xs font-semibold border border-indigo-200 shadow-sm pointer-events-none">
+                <User className="w-3 h-3 mr-1 text-indigo-500" />
                 Auto-filled
               </span>
             </div>
@@ -914,7 +821,6 @@ const PatientInformation: React.FC<PatientInformationProps> = ({
           <label className="block text-gray-700 text-sm sm:text-base font-semibold">
             Mobile Number<span className="text-red-500">*</span>
           </label>
-          {/* Mobile auto-filled badge next to label */}
           {autofilledFields.mobileNumber && (
             <div className="sm:hidden">
               <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-rose-100 text-rose-700 text-xs font-semibold border border-rose-200 shadow-sm">
@@ -925,33 +831,22 @@ const PatientInformation: React.FC<PatientInformationProps> = ({
           )}
         </div>
         <div className="relative">
-          <input
-            type="tel"
-            className={inputClassName(
-              localData.mobileNumber,
-              isPhoneValid,
-              autofilledFields.mobileNumber
-            )}
+          <ContactPhoneInput
             value={localData.mobileNumber}
-            onChange={(e) => handleFieldChange("mobileNumber", e.target.value)}
-            placeholder="Enter mobile number"
-            disabled={autofilledFields.mobileNumber}
+            onChange={(val) => handleFieldChange("mobileNumber", val)}
+            onValidationChange={setIsPhoneValid}
+            defaultCountry="BD"
+            isAutofilled={autofilledFields.mobileNumber}
           />
-          {/* Desktop auto-filled badge inside input */}
           {autofilledFields.mobileNumber && (
             <div className="hidden sm:flex absolute right-3 top-1/2 -translate-y-1/2">
-              <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-rose-100 text-rose-700 text-xs font-semibold border border-rose-200 shadow-sm pointer-events-none">
-                <User className="w-3 h-3 mr-1 text-rose-500" />
+              <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 text-xs font-semibold border border-indigo-200 shadow-sm pointer-events-none">
+                <User className="w-3 h-3 mr-1 text-indigo-500" />
                 Auto-filled
               </span>
             </div>
           )}
         </div>
-        {!isPhoneValid && localData.mobileNumber && (
-          <p className="text-red-500 text-xs mt-1">
-            Please enter a valid phone number
-          </p>
-        )}
       </div>
 
       {/* Email */}
@@ -960,7 +855,6 @@ const PatientInformation: React.FC<PatientInformationProps> = ({
           <label className="block text-gray-700 text-sm sm:text-base font-semibold">
             Email
           </label>
-          {/* Mobile auto-filled badge next to label */}
           {autofilledFields.email && (
             <div className="sm:hidden">
               <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-rose-100 text-rose-700 text-xs font-semibold border border-rose-200 shadow-sm">
@@ -971,33 +865,21 @@ const PatientInformation: React.FC<PatientInformationProps> = ({
           )}
         </div>
         <div className="relative">
-          <input
-            type="email"
-            className={inputClassName(
-              localData.email,
-              isEmailValid,
-              autofilledFields.email
-            )}
+          <ContactEmailInput
             value={localData.email}
-            onChange={(e) => handleFieldChange("email", e.target.value)}
-            placeholder="Enter email address"
-            disabled={autofilledFields.email}
+            onChange={(val) => handleFieldChange("email", val)}
+            onValidationChange={setIsEmailValid}
+            isAutofilled={autofilledFields.email}
           />
-          {/* Desktop auto-filled badge inside input */}
           {autofilledFields.email && (
             <div className="hidden sm:flex absolute right-3 top-1/2 -translate-y-1/2">
-              <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-rose-100 text-rose-700 text-xs font-semibold border border-rose-200 shadow-sm pointer-events-none">
-                <User className="w-3 h-3 mr-1 text-rose-500" />
+              <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 text-xs font-semibold border border-indigo-200 shadow-sm pointer-events-none">
+                <User className="w-3 h-3 mr-1 text-indigo-500" />
                 Auto-filled
               </span>
             </div>
           )}
         </div>
-        {!isEmailValid && localData.email && (
-          <p className="text-red-500 text-xs mt-1">
-            Please enter a valid email address
-          </p>
-        )}
       </div>
 
       {/* Address */}
@@ -1006,7 +888,6 @@ const PatientInformation: React.FC<PatientInformationProps> = ({
           <label className="block text-gray-700 text-sm sm:text-base font-semibold">
             Address
           </label>
-          {/* Mobile auto-filled badge next to label */}
           {autofilledFields.address && (
             <div className="sm:hidden">
               <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-rose-100 text-rose-700 text-xs font-semibold border border-rose-200 shadow-sm">
@@ -1029,11 +910,10 @@ const PatientInformation: React.FC<PatientInformationProps> = ({
             rows={2}
             disabled={autofilledFields.address}
           />
-          {/* Desktop auto-filled badge inside textarea */}
           {autofilledFields.address && (
             <div className="hidden sm:flex absolute right-3 top-3">
-              <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-rose-100 text-rose-700 text-xs font-semibold border border-rose-200 shadow-sm pointer-events-none">
-                <User className="w-3 h-3 mr-1 text-rose-500" />
+              <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 text-xs font-semibold border border-indigo-200 shadow-sm pointer-events-none">
+                <User className="w-3 h-3 mr-1 text-indigo-500" />
                 Auto-filled
               </span>
             </div>
@@ -1044,7 +924,7 @@ const PatientInformation: React.FC<PatientInformationProps> = ({
       {/* Spouse Information */}
       <div className="border-t border-gray-200 pt-4 mt-6">
         <div className="flex items-center gap-2 mb-4">
-          <Heart className="w-5 h-5 text-rose-600" />
+          <Heart className="w-5 h-5 text-indigo-600" />
           <h4 className="text-lg font-semibold text-gray-800">
             Spouse Information
           </h4>

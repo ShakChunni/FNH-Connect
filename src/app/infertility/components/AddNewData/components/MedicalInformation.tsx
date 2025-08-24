@@ -177,7 +177,7 @@ const MedicalInformation: React.FC<MedicalInformationProps> = ({
       </div>
 
       {/* Obstetric History */}
-      <div className="mb-6">
+      <div className="mb-6 border-t border-gray-200 pt-6 mt-6">
         <div className="flex items-center gap-2 mb-2">
           <HeartPulse size={20} className="text-purple-500" />
           <span className="text-md font-semibold text-gray-800">
@@ -213,7 +213,7 @@ const MedicalInformation: React.FC<MedicalInformationProps> = ({
       </div>
 
       {/* Physical Measurements */}
-      <div className="mb-6">
+      <div className="mb-6 border-t border-gray-200 pt-6 mt-6">
         <div className="flex items-center gap-2 mb-2">
           <Ruler size={20} className="text-purple-500" />
           <span className="text-md font-semibold text-gray-800">
@@ -292,7 +292,7 @@ const MedicalInformation: React.FC<MedicalInformationProps> = ({
       </div>
 
       {/* Blood Pressure */}
-      <div className="mb-6">
+      <div className="mb-6 border-t border-gray-200 pt-6 mt-6">
         <div className="flex items-center gap-2 mb-2">
           <Droplets size={20} className="text-purple-500" />
           <span className="text-md font-semibold text-gray-800">
@@ -309,7 +309,7 @@ const MedicalInformation: React.FC<MedicalInformationProps> = ({
       </div>
 
       {/* Medical & Surgical History */}
-      <div className="mb-6">
+      <div className="mb-6 border-t border-gray-200 pt-6 mt-6">
         <div className="flex items-center gap-2 mb-2">
           <ClipboardList size={20} className="text-purple-500" />
           <span className="text-md font-semibold text-gray-800">
@@ -381,7 +381,7 @@ const MedicalInformation: React.FC<MedicalInformationProps> = ({
       </div>
 
       {/* Current Visit */}
-      <div className="mb-6">
+      <div className="mb-6 border-t border-gray-200 pt-6 mt-6">
         <div className="flex items-center gap-2 mb-2">
           <UserCheck size={20} className="text-purple-500" />
           <span className="text-md font-semibold text-gray-800">
@@ -418,6 +418,7 @@ const MedicalInformation: React.FC<MedicalInformationProps> = ({
           </label>
           <textarea
             value={medicalInfo.chiefComplaint}
+            style={{ minHeight: isMobile ? "80px" : "100px" }}
             onChange={(e) =>
               updateMedicalInfo("chiefComplaint", e.target.value)
             }
@@ -430,7 +431,7 @@ const MedicalInformation: React.FC<MedicalInformationProps> = ({
       </div>
 
       {/* Treatment & Medications */}
-      <div className="mb-6">
+      <div className="mb-6 border-t border-gray-200 pt-6 mt-6">
         <div className="flex items-center gap-2 mb-2">
           <Pill size={20} className="text-purple-500" />
           <span className="text-md font-semibold text-gray-800">
@@ -470,7 +471,7 @@ const MedicalInformation: React.FC<MedicalInformationProps> = ({
       </div>
 
       {/* Additional Notes */}
-      <div className="mb-2">
+      <div className="mb-2 border-t border-gray-200 pt-6 mt-6">
         <div className="flex items-center gap-2 mb-2">
           <FileText size={20} className="text-purple-500" />
           <span className="text-md font-semibold text-gray-800">
