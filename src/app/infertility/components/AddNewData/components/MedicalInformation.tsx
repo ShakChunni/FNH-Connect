@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import {
   Stethoscope,
   HeartPulse,
@@ -43,7 +43,6 @@ interface MedicalInfo {
 interface MedicalInformationProps {
   medicalInfo: MedicalInfo;
   updateMedicalInfo: (field: keyof MedicalInfo, value: any) => void;
-  inputClassName: string;
   isMobile: boolean;
   isMd: boolean;
   bloodGroups: string[];
@@ -52,49 +51,75 @@ interface MedicalInformationProps {
   referralSources: string[];
 }
 
-const sectionIconClass =
-  "text-purple-500 bg-white rounded-md shadow p-1 mr-2 inline-block align-middle";
-const sectionTitleClass =
-  "flex items-center gap-2 text-md font-semibold text-gray-800 mb-4";
-
 const MedicalInformation: React.FC<MedicalInformationProps> = ({
   medicalInfo,
   updateMedicalInfo,
-  inputClassName,
   isMobile,
   isMd,
   bloodGroups,
   infertilityTypes,
   statusOptions,
   referralSources,
-}) => (
-  <div id="medical" className="mb-6 sm:mb-8 md:mb-10">
-    {/* Main Header */}
-    <div className="bg-gradient-to-r from-purple-50 to-purple-100 rounded-lg sm:rounded-xl p-4 sm:p-5 md:p-6 mb-4 sm:mb-5 md:mb-6 shadow-sm border border-purple-200">
-      <div className="flex items-center gap-3 sm:gap-4">
-        <div className="p-2 sm:p-2.5 md:p-3 bg-white rounded-lg sm:rounded-xl shadow-md flex-shrink-0">
-          <Stethoscope
-            className="text-purple-600"
-            size={isMobile ? 20 : isMd ? 24 : 28}
-          />
-        </div>
-        <div className="min-w-0 flex-1">
-          <h3 className="text-base sm:text-lg md:text-xl lg:text-2xl font-bold text-purple-900 leading-tight mb-0.5 sm:mb-1">
-            Medical Information
-          </h3>
-          <p className="text-purple-700/80 text-xs sm:text-sm font-medium leading-tight">
-            Fertility and medical history details
-          </p>
+}) => {
+  // Dynamic input styling function (copied from PatientInformation)
+  const inputClassName = useMemo(() => {
+    const baseStyle =
+      "text-gray-700 font-normal rounded-lg h-12 md:h-14 py-2 px-4 w-full focus:border-blue-900 focus:ring-2 focus:ring-blue-950 outline-none shadow-sm hover:shadow-md transition-all duration-300 placeholder:text-gray-400 placeholder:font-light text-xs sm:text-sm";
+    return (
+      value: string | number | null,
+      isValid: boolean = true,
+      disabled: boolean = false
+    ) => {
+      let style = disabled
+        ? `bg-gray-200 border-2 border-gray-300 cursor-not-allowed ${baseStyle}`
+        : baseStyle;
+      if (!disabled) {
+        if (!isValid && value !== "" && value !== null) {
+          style = `bg-red-50 border-2 border-red-500 ${baseStyle}`;
+        } else {
+          style +=
+            value !== "" && value !== null
+              ? ` bg-white border-2 border-green-700`
+              : ` bg-gray-50 border-2 border-gray-300`;
+        }
+      }
+      return style;
+    };
+  }, []);
+
+  // Simple validation for numbers (years, weight, height, bmi)
+  const isNumberValid = (v: number | null) =>
+    v === null || (!isNaN(Number(v)) && Number(v) >= 0);
+
+  return (
+    <div id="medical" className="mb-4 sm:mb-4 md:mb-2">
+      {/* Main Header */}
+      <div className="bg-gradient-to-r from-purple-50 to-purple-100 rounded-lg sm:rounded-xl p-4 sm:p-5 md:p-6 mb-4 sm:mb-5 md:mb-6 shadow-sm border border-purple-200">
+        <div className="flex items-center gap-3 sm:gap-4">
+          <div className="p-2 bg-white rounded-lg shadow flex items-center justify-center border border-purple-200">
+            <Stethoscope
+              className="text-purple-600"
+              size={isMobile ? 20 : isMd ? 24 : 28}
+            />
+          </div>
+          <div className="min-w-0 flex-1">
+            <h3 className="text-base sm:text-lg md:text-xl lg:text-2xl font-bold text-purple-900 leading-tight mb-0.5 sm:mb-1">
+              Medical Information
+            </h3>
+            <p className="text-purple-700/80 text-xs sm:text-sm font-medium leading-tight">
+              Fertility and medical history details
+            </p>
+          </div>
         </div>
       </div>
-    </div>
 
-    <div className="space-y-8">
       {/* Marriage & Fertility History */}
-      <div>
-        <div className={sectionTitleClass}>
-          <Baby size={18} className={sectionIconClass} />
-          Marriage & Fertility History
+      <div className="mb-6">
+        <div className="flex items-center gap-2 mb-2">
+          <Baby size={20} className="text-purple-500" />
+          <span className="text-md font-semibold text-gray-800">
+            Marriage & Fertility History
+          </span>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
@@ -103,14 +128,17 @@ const MedicalInformation: React.FC<MedicalInformationProps> = ({
             </label>
             <input
               type="number"
-              value={medicalInfo.yearsMarried || ""}
+              value={medicalInfo.yearsMarried ?? ""}
               onChange={(e) =>
                 updateMedicalInfo(
                   "yearsMarried",
                   e.target.value ? parseInt(e.target.value) : null
                 )
               }
-              className={inputClassName}
+              className={inputClassName(
+                medicalInfo.yearsMarried,
+                isNumberValid(medicalInfo.yearsMarried)
+              )}
               placeholder="Enter years married"
             />
           </div>
@@ -120,14 +148,17 @@ const MedicalInformation: React.FC<MedicalInformationProps> = ({
             </label>
             <input
               type="number"
-              value={medicalInfo.yearsTrying || ""}
+              value={medicalInfo.yearsTrying ?? ""}
               onChange={(e) =>
                 updateMedicalInfo(
                   "yearsTrying",
                   e.target.value ? parseInt(e.target.value) : null
                 )
               }
-              className={inputClassName}
+              className={inputClassName(
+                medicalInfo.yearsTrying,
+                isNumberValid(medicalInfo.yearsTrying)
+              )}
               placeholder="Enter years trying"
             />
           </div>
@@ -139,17 +170,19 @@ const MedicalInformation: React.FC<MedicalInformationProps> = ({
               value={medicalInfo.infertilityType}
               onSelect={(v) => updateMedicalInfo("infertilityType", v)}
               options={infertilityTypes}
-              inputClassName={inputClassName}
+              inputClassName={inputClassName(medicalInfo.infertilityType)}
             />
           </div>
         </div>
       </div>
 
       {/* Obstetric History */}
-      <div>
-        <div className={sectionTitleClass}>
-          <HeartPulse size={18} className={sectionIconClass} />
-          Obstetric History
+      <div className="mb-6">
+        <div className="flex items-center gap-2 mb-2">
+          <HeartPulse size={20} className="text-purple-500" />
+          <span className="text-md font-semibold text-gray-800">
+            Obstetric History
+          </span>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
@@ -160,7 +193,7 @@ const MedicalInformation: React.FC<MedicalInformationProps> = ({
               type="text"
               value={medicalInfo.para}
               onChange={(e) => updateMedicalInfo("para", e.target.value)}
-              className={inputClassName}
+              className={inputClassName(medicalInfo.para)}
               placeholder="Enter para"
             />
           </div>
@@ -172,7 +205,7 @@ const MedicalInformation: React.FC<MedicalInformationProps> = ({
               type="text"
               value={medicalInfo.gravida}
               onChange={(e) => updateMedicalInfo("gravida", e.target.value)}
-              className={inputClassName}
+              className={inputClassName(medicalInfo.gravida)}
               placeholder="Enter gravida"
             />
           </div>
@@ -180,10 +213,12 @@ const MedicalInformation: React.FC<MedicalInformationProps> = ({
       </div>
 
       {/* Physical Measurements */}
-      <div>
-        <div className={sectionTitleClass}>
-          <Ruler size={18} className={sectionIconClass} />
-          Physical Measurements
+      <div className="mb-6">
+        <div className="flex items-center gap-2 mb-2">
+          <Ruler size={20} className="text-purple-500" />
+          <span className="text-md font-semibold text-gray-800">
+            Physical Measurements
+          </span>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div>
@@ -192,14 +227,17 @@ const MedicalInformation: React.FC<MedicalInformationProps> = ({
             </label>
             <input
               type="number"
-              value={medicalInfo.weight || ""}
+              value={medicalInfo.weight ?? ""}
               onChange={(e) =>
                 updateMedicalInfo(
                   "weight",
                   e.target.value ? parseFloat(e.target.value) : null
                 )
               }
-              className={inputClassName}
+              className={inputClassName(
+                medicalInfo.weight,
+                isNumberValid(medicalInfo.weight)
+              )}
               placeholder="Enter weight"
             />
           </div>
@@ -209,14 +247,17 @@ const MedicalInformation: React.FC<MedicalInformationProps> = ({
             </label>
             <input
               type="number"
-              value={medicalInfo.height || ""}
+              value={medicalInfo.height ?? ""}
               onChange={(e) =>
                 updateMedicalInfo(
                   "height",
                   e.target.value ? parseFloat(e.target.value) : null
                 )
               }
-              className={inputClassName}
+              className={inputClassName(
+                medicalInfo.height,
+                isNumberValid(medicalInfo.height)
+              )}
               placeholder="Enter height"
             />
           </div>
@@ -226,9 +267,13 @@ const MedicalInformation: React.FC<MedicalInformationProps> = ({
             </label>
             <input
               type="number"
-              value={medicalInfo.bmi || ""}
+              value={medicalInfo.bmi ?? ""}
               readOnly
-              className={`${inputClassName} bg-gray-100 cursor-not-allowed`}
+              className={`${inputClassName(
+                medicalInfo.bmi,
+                true,
+                true
+              )} bg-gray-100 cursor-not-allowed`}
               placeholder="Auto-calculated"
             />
           </div>
@@ -240,32 +285,36 @@ const MedicalInformation: React.FC<MedicalInformationProps> = ({
               value={medicalInfo.bloodGroup}
               onSelect={(v) => updateMedicalInfo("bloodGroup", v)}
               options={bloodGroups}
-              inputClassName={inputClassName}
+              inputClassName={inputClassName(medicalInfo.bloodGroup)}
             />
           </div>
         </div>
       </div>
 
       {/* Blood Pressure */}
-      <div>
-        <div className={sectionTitleClass}>
-          <Droplets size={18} className={sectionIconClass} />
-          Blood Pressure
+      <div className="mb-6">
+        <div className="flex items-center gap-2 mb-2">
+          <Droplets size={20} className="text-purple-500" />
+          <span className="text-md font-semibold text-gray-800">
+            Blood Pressure
+          </span>
         </div>
         <input
           type="text"
           value={medicalInfo.bloodPressure}
           onChange={(e) => updateMedicalInfo("bloodPressure", e.target.value)}
           placeholder="e.g., 120/80"
-          className={inputClassName}
+          className={inputClassName(medicalInfo.bloodPressure)}
         />
       </div>
 
-      {/* Medical History */}
-      <div>
-        <div className={sectionTitleClass}>
-          <ClipboardList size={18} className={sectionIconClass} />
-          Medical & Surgical History
+      {/* Medical & Surgical History */}
+      <div className="mb-6">
+        <div className="flex items-center gap-2 mb-2">
+          <ClipboardList size={20} className="text-purple-500" />
+          <span className="text-md font-semibold text-gray-800">
+            Medical & Surgical History
+          </span>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
@@ -277,7 +326,9 @@ const MedicalInformation: React.FC<MedicalInformationProps> = ({
               onChange={(e) =>
                 updateMedicalInfo("medicalHistory", e.target.value)
               }
-              className={`${inputClassName} h-24 resize-none`}
+              className={`${inputClassName(
+                medicalInfo.medicalHistory
+              )} h-24 resize-none`}
               placeholder="Enter medical history..."
             />
           </div>
@@ -290,7 +341,9 @@ const MedicalInformation: React.FC<MedicalInformationProps> = ({
               onChange={(e) =>
                 updateMedicalInfo("surgicalHistory", e.target.value)
               }
-              className={`${inputClassName} h-24 resize-none`}
+              className={`${inputClassName(
+                medicalInfo.surgicalHistory
+              )} h-24 resize-none`}
               placeholder="Enter surgical history..."
             />
           </div>
@@ -303,7 +356,9 @@ const MedicalInformation: React.FC<MedicalInformationProps> = ({
               onChange={(e) =>
                 updateMedicalInfo("menstrualHistory", e.target.value)
               }
-              className={`${inputClassName} h-24 resize-none`}
+              className={`${inputClassName(
+                medicalInfo.menstrualHistory
+              )} h-24 resize-none`}
               placeholder="Enter menstrual history..."
             />
           </div>
@@ -316,18 +371,22 @@ const MedicalInformation: React.FC<MedicalInformationProps> = ({
               onChange={(e) =>
                 updateMedicalInfo("contraceptiveHistory", e.target.value)
               }
-              className={`${inputClassName} h-24 resize-none`}
+              className={`${inputClassName(
+                medicalInfo.contraceptiveHistory
+              )} h-24 resize-none`}
               placeholder="Enter contraceptive history..."
             />
           </div>
         </div>
       </div>
 
-      {/* Visit Information */}
-      <div>
-        <div className={sectionTitleClass}>
-          <UserCheck size={18} className={sectionIconClass} />
-          Current Visit
+      {/* Current Visit */}
+      <div className="mb-6">
+        <div className="flex items-center gap-2 mb-2">
+          <UserCheck size={20} className="text-purple-500" />
+          <span className="text-md font-semibold text-gray-800">
+            Current Visit
+          </span>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
           <div>
@@ -338,7 +397,7 @@ const MedicalInformation: React.FC<MedicalInformationProps> = ({
               value={medicalInfo.referralSource}
               onSelect={(v) => updateMedicalInfo("referralSource", v)}
               options={referralSources}
-              inputClassName={inputClassName}
+              inputClassName={inputClassName(medicalInfo.referralSource)}
             />
           </div>
           <div>
@@ -349,7 +408,7 @@ const MedicalInformation: React.FC<MedicalInformationProps> = ({
               value={medicalInfo.status}
               onSelect={(v) => updateMedicalInfo("status", v)}
               options={statusOptions}
-              inputClassName={inputClassName}
+              inputClassName={inputClassName(medicalInfo.status)}
             />
           </div>
         </div>
@@ -363,16 +422,20 @@ const MedicalInformation: React.FC<MedicalInformationProps> = ({
               updateMedicalInfo("chiefComplaint", e.target.value)
             }
             placeholder="Primary reason for visit..."
-            className={`${inputClassName} h-24 resize-none`}
+            className={`${inputClassName(
+              medicalInfo.chiefComplaint
+            )} h-24 resize-none`}
           />
         </div>
       </div>
 
-      {/* Treatment Information */}
-      <div>
-        <div className={sectionTitleClass}>
-          <Pill size={18} className={sectionIconClass} />
-          Treatment & Medications
+      {/* Treatment & Medications */}
+      <div className="mb-6">
+        <div className="flex items-center gap-2 mb-2">
+          <Pill size={20} className="text-purple-500" />
+          <span className="text-md font-semibold text-gray-800">
+            Treatment & Medications
+          </span>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
@@ -384,7 +447,9 @@ const MedicalInformation: React.FC<MedicalInformationProps> = ({
               onChange={(e) =>
                 updateMedicalInfo("treatmentPlan", e.target.value)
               }
-              className={`${inputClassName} h-24 resize-none`}
+              className={`${inputClassName(
+                medicalInfo.treatmentPlan
+              )} h-24 resize-none`}
               placeholder="Enter treatment plan..."
             />
           </div>
@@ -395,28 +460,33 @@ const MedicalInformation: React.FC<MedicalInformationProps> = ({
             <textarea
               value={medicalInfo.medications}
               onChange={(e) => updateMedicalInfo("medications", e.target.value)}
-              className={`${inputClassName} h-24 resize-none`}
+              className={`${inputClassName(
+                medicalInfo.medications
+              )} h-24 resize-none`}
               placeholder="Enter current medications..."
             />
           </div>
         </div>
       </div>
 
-      {/* Notes */}
-      <div>
-        <div className={sectionTitleClass}>
-          <FileText size={18} className={sectionIconClass} />
-          Additional Notes
+      {/* Additional Notes */}
+      <div className="mb-2">
+        <div className="flex items-center gap-2 mb-2">
+          <FileText size={20} className="text-purple-500" />
+          <span className="text-md font-semibold text-gray-800">
+            Additional Notes
+          </span>
         </div>
         <textarea
           value={medicalInfo.notes}
           onChange={(e) => updateMedicalInfo("notes", e.target.value)}
           placeholder="Any additional notes..."
-          className={`${inputClassName} h-32 resize-none`}
+          className={`${inputClassName(medicalInfo.notes)} h-32 resize-none`}
+          style={{ minHeight: isMobile ? "80px" : "100px" }}
         />
       </div>
     </div>
-  </div>
-);
+  );
+};
 
 export default MedicalInformation;
