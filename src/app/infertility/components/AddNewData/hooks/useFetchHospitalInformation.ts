@@ -15,11 +15,16 @@ export interface Hospital {
 
 const useFetchHospitalInformation = () => {
   const { user } = useAuth();
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQueryState] = useState("");
   const [hospitals, setHospitals] = useState<Hospital[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
+
+  // Memoized setSearchQuery to prevent infinite re-renders
+  const setSearchQuery = useCallback((query: string) => {
+    setSearchQueryState(query);
+  }, []);
 
   const fetchHospitals = useCallback(
     async (query: string) => {
@@ -51,12 +56,27 @@ const useFetchHospitalInformation = () => {
           timeout: 5000,
         });
 
-        setHospitals(response.data);
+        setHospitals(response.data || []);
       } catch (err) {
         if (axios.isCancel(err)) return;
 
-        setError("Failed to fetch hospitals.");
-        console.error(err);
+        // Handle specific error cases
+        if (axios.isAxiosError(err)) {
+          if (err.response?.status === 404) {
+            setError("Hospital search API not found. Please contact support.");
+            console.warn("Hospital search API endpoint not implemented");
+          } else if (err.response && err.response.status >= 500) {
+            setError("Server error. Please try again later.");
+          } else if (err.code === "ECONNABORTED") {
+            setError("Request timeout. Please try again.");
+          } else {
+            setError("Failed to fetch hospitals. Please try again.");
+          }
+        } else {
+          setError("Network error. Please check your connection.");
+        }
+
+        console.error("Hospital fetch error:", err);
         setHospitals([]);
       } finally {
         setLoading(false);

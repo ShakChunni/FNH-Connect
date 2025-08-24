@@ -24,7 +24,8 @@ import {
 import useFetchPatientInformation, {
   InfertilityPatientBasic,
 } from "../hooks/useFetchPatientInformation";
-import EnhancedDateOfBirth from "./EnhancedDateOfBirth";
+import DateOfBirthDropdown from "../Dropdowns/DateOfBirthDropdown";
+import GenderDropdown from "../Dropdowns/GenderDropdown"; // add near other imports
 
 export interface PatientData {
   id: number | null;
@@ -65,7 +66,16 @@ const PatientInformation: React.FC<PatientInformationProps> = ({
     setSearchQuery,
     patients: globalPatients,
     loading,
+    error,
   } = useFetchPatientInformation();
+
+  // Display error to user when API fails
+  useEffect(() => {
+    if (error) {
+      // We can't call onMessage here since it's not available, but we can log the error
+      console.error("Patient search error:", error);
+    }
+  }, [error]);
 
   const [localData, setLocalData] = useState<PatientData>({
     id: null,
@@ -127,7 +137,8 @@ const PatientInformation: React.FC<PatientInformationProps> = ({
     return emailRegex.test(email);
   };
 
-  // Reset patient form when hospital changes
+  // Reset patient form when hospital changes (only when availablePatients length changes)
+  const availablePatientsLength = availablePatients.length;
   useEffect(() => {
     setLocalData({
       id: null,
@@ -157,7 +168,7 @@ const PatientInformation: React.FC<PatientInformationProps> = ({
       patientDOB: false,
     });
     onDropdownToggle(false);
-  }, [availablePatients, onDropdownToggle, setSearchQuery]);
+  }, [availablePatientsLength, onDropdownToggle, setSearchQuery]); // Use length instead of the array
 
   // Update full name when first/last name changes
   useEffect(() => {
@@ -166,7 +177,11 @@ const PatientInformation: React.FC<PatientInformationProps> = ({
     if (fullName !== localData.patientFullName) {
       setLocalData((prev) => ({ ...prev, patientFullName: fullName }));
     }
-  }, [localData.patientFirstName, localData.patientLastName]);
+  }, [
+    localData.patientFirstName,
+    localData.patientLastName,
+    localData.patientFullName,
+  ]);
 
   // Lift state up when local data changes
   useEffect(() => {
@@ -850,15 +865,13 @@ const PatientInformation: React.FC<PatientInformationProps> = ({
         <label className="block text-gray-700 text-sm sm:text-base font-semibold mb-1.5 sm:mb-2">
           Patient Gender<span className="text-red-500">*</span>
         </label>
-        <select
-          value={localData.patientGender}
-          onChange={(e) => handleFieldChange("patientGender", e.target.value)}
-          className={inputClassName(localData.patientGender)}
-        >
-          <option value="Female">Female</option>
-          <option value="Male">Male</option>
-          <option value="Other">Other</option>
-        </select>
+
+        <GenderDropdown
+          value={localData.patientGender || "Female"}
+          onSelect={(v) => handleFieldChange("patientGender", v)}
+          style={{ width: "100%" }}
+          autofilled={false}
+        />
       </div>
 
       {/* Patient Age/DOB */}
@@ -878,7 +891,7 @@ const PatientInformation: React.FC<PatientInformationProps> = ({
           )}
         </div>
         <div className="relative">
-          <EnhancedDateOfBirth
+          <DateOfBirthDropdown
             value={localData.patientDOB}
             onChange={handleDOBChange}
             placeholder="Select date of birth"
@@ -1056,15 +1069,12 @@ const PatientInformation: React.FC<PatientInformationProps> = ({
           <label className="block text-gray-700 text-sm sm:text-base font-semibold mb-1.5 sm:mb-2">
             Spouse Gender
           </label>
-          <select
+          <GenderDropdown
             value={localData.spouseGender}
-            onChange={(e) => handleFieldChange("spouseGender", e.target.value)}
-            className={inputClassName(localData.spouseGender)}
-          >
-            <option value="Male">Male</option>
-            <option value="Female">Female</option>
-            <option value="Other">Other</option>
-          </select>
+            onSelect={(v) => handleFieldChange("spouseGender", v)}
+            style={{ width: "100%" }}
+            autofilled={false}
+          />
         </div>
 
         {/* Spouse Age/DOB */}
@@ -1072,7 +1082,7 @@ const PatientInformation: React.FC<PatientInformationProps> = ({
           <label className="block text-gray-700 text-sm sm:text-base font-semibold mb-1.5 sm:mb-2">
             Spouse Date of Birth
           </label>
-          <EnhancedDateOfBirth
+          <DateOfBirthDropdown
             value={localData.spouseDOB}
             onChange={handleSpouseDOBChange}
             placeholder="Select spouse date of birth"

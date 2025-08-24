@@ -6,7 +6,15 @@ import React, {
   useState,
   useMemo,
 } from "react";
-import { X, Save, Loader2, Building2, User, Stethoscope } from "lucide-react";
+import {
+  X,
+  Save,
+  Loader2,
+  Building2,
+  User,
+  Stethoscope,
+  Users,
+} from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/app/AuthContext";
 import { useMediaQuery } from "react-responsive";
@@ -16,6 +24,7 @@ import HospitalInformation, {
 import PatientInformation, {
   PatientData,
 } from "./components/PatientInformation";
+import MedicalInformation from "./components/MedicalInformation";
 
 interface AddNewDataProps {
   isOpen: boolean;
@@ -49,7 +58,7 @@ interface AddNewDataProps {
     };
   }) => void;
   onMessage: (type: "success" | "error", content: string) => void;
-  messagePopupRef: React.RefObject<HTMLDivElement>;
+  messagePopupRef: React.RefObject<HTMLDivElement | null>;
 }
 
 const AddNewDataInfertility: React.FC<AddNewDataProps> = ({
@@ -147,14 +156,20 @@ const AddNewDataInfertility: React.FC<AddNewDataProps> = ({
     if (medicalInfo.weight && medicalInfo.height) {
       const heightInMeters = medicalInfo.height / 100;
       const bmi = medicalInfo.weight / (heightInMeters * heightInMeters);
-      setMedicalInfo((prev) => ({
-        ...prev,
-        bmi: Math.round(bmi * 10) / 10,
-      }));
-    } else {
+      const calculatedBmi = Math.round(bmi * 10) / 10;
+
+      // Only update if BMI has actually changed to avoid infinite loops
+      if (medicalInfo.bmi !== calculatedBmi) {
+        setMedicalInfo((prev) => ({
+          ...prev,
+          bmi: calculatedBmi,
+        }));
+      }
+    } else if (medicalInfo.bmi !== null) {
+      // Clear BMI if weight or height is missing
       setMedicalInfo((prev) => ({ ...prev, bmi: null }));
     }
-  }, [medicalInfo.weight, medicalInfo.height]);
+  }, [medicalInfo.weight, medicalInfo.height, medicalInfo.bmi]);
 
   // Close modal function
   const handleClose = useCallback(() => {
@@ -163,7 +178,7 @@ const AddNewDataInfertility: React.FC<AddNewDataProps> = ({
   }, [isLoading, onClose]);
 
   // Handle form submission
-  const handleSubmit = async () => {
+  const handleSubmit = useCallback(async () => {
     if (!isFormValid) {
       onMessage("error", "Please fill in all required fields.");
       return;
@@ -182,12 +197,40 @@ const AddNewDataInfertility: React.FC<AddNewDataProps> = ({
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [
+    isFormValid,
+    onMessage,
+    onSubmit,
+    user,
+    hospitalData,
+    patientData,
+    medicalInfo,
+  ]);
 
   // Update medical info field
-  const updateMedicalInfo = (field: string, value: any) => {
+  const updateMedicalInfo = useCallback((field: string, value: any) => {
     setMedicalInfo((prev) => ({ ...prev, [field]: value }));
-  };
+  }, []);
+
+  // Memoized callback functions to prevent infinite re-renders
+  const handlePatientDataChange = useCallback((data: PatientData) => {
+    setPatientData(data);
+  }, []);
+
+  const handleValidationChange = useCallback(
+    (validation: { phone: boolean; email: boolean }) => {
+      setValidationStatus(validation);
+    },
+    []
+  );
+
+  const handleDropdownToggle = useCallback((isOpen: boolean) => {
+    setIsDropdownOpen(isOpen);
+  }, []);
+
+  const handleHospitalDataChange = useCallback((data: HospitalData) => {
+    setHospitalData(data);
+  }, []);
 
   // Handle keyboard events
   useEffect(() => {
@@ -220,27 +263,39 @@ const AddNewDataInfertility: React.FC<AddNewDataProps> = ({
       id: "patient",
       label: "Patient Information",
       icon: User,
-      color: "blue",
+      color: "indigo",
     },
     {
       id: "medical",
       label: "Medical Information",
       icon: Stethoscope,
-      color: "blue",
+      color: "purple",
     },
   ];
 
   // Tab styling functions
   const getTabColors = (color: string, isActive: boolean) => {
-    const baseColors = {
-      blue: {
-        active: "bg-blue-600 text-white border-blue-600",
-        inactive:
-          "bg-gray-50 text-gray-600 border-gray-200 hover:bg-blue-50 hover:text-blue-600",
-        icon: isActive ? "text-white" : "text-gray-500",
-      },
+    const colorMap = {
+      blue: isActive
+        ? "bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg"
+        : "bg-blue-50 text-blue-700 hover:bg-blue-100 hover:text-blue-800",
+      indigo: isActive
+        ? "bg-gradient-to-r from-indigo-500 to-indigo-600 text-white shadow-lg"
+        : "bg-indigo-50 text-indigo-700 hover:bg-indigo-100 hover:text-indigo-800",
+      purple: isActive
+        ? "bg-gradient-to-r from-purple-500 to-purple-600 text-white shadow-lg"
+        : "bg-purple-50 text-purple-700 hover:bg-purple-100 hover:text-purple-800",
+      pink: isActive
+        ? "bg-gradient-to-r from-pink-500 to-pink-600 text-white shadow-lg"
+        : "bg-pink-50 text-pink-700 hover:bg-pink-100 hover:text-pink-800",
+      emerald: isActive
+        ? "bg-gradient-to-r from-emerald-500 to-emerald-600 text-white shadow-lg"
+        : "bg-emerald-50 text-emerald-700 hover:bg-emerald-100 hover:text-emerald-800",
+      amber: isActive
+        ? "bg-gradient-to-r from-amber-500 to-amber-600 text-white shadow-lg"
+        : "bg-amber-50 text-amber-700 hover:bg-amber-100 hover:text-amber-800",
     };
-    return baseColors[color as keyof typeof baseColors] || baseColors.blue;
+    return colorMap[color as keyof typeof colorMap] || colorMap.blue;
   };
 
   const scrollToSection = (sectionId: string) => {
@@ -268,8 +323,6 @@ const AddNewDataInfertility: React.FC<AddNewDataProps> = ({
     "Other Hospital",
     "Other",
   ];
-
-  if (!isOpen) return null;
 
   const modalVariants = {
     hidden: {
@@ -300,517 +353,185 @@ const AddNewDataInfertility: React.FC<AddNewDataProps> = ({
   };
 
   return (
-    <AnimatePresence>
-      <motion.div
-        className="fixed inset-0 bg-slate-900/70 flex items-center justify-center z-50"
-        onClick={onClose}
-        variants={overlayVariants}
-        initial="hidden"
-        animate="visible"
-        exit="hidden"
-      >
+    <AnimatePresence mode="wait">
+      {isOpen && (
         <motion.div
-          ref={popupRef}
-          className="bg-white rounded-3xl shadow-xl w-full max-w-[95%] sm:max-w-[90%] md:max-w-[80%] lg:max-w-[75%] xl:max-w-[70%] h-[95%] sm:h-[90%] flex flex-col"
-          onClick={(e) => e.stopPropagation()}
-          variants={modalVariants}
+          className="fixed inset-0 bg-slate-900/70 flex items-center justify-center z-50"
+          onClick={onClose}
+          variants={overlayVariants}
           initial="hidden"
           animate="visible"
           exit="hidden"
+          style={{
+            isolation: "isolate",
+            willChange: "opacity",
+            backfaceVisibility: "hidden",
+            perspective: 1000,
+          }}
         >
-          {/* Header */}
-          <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-6 py-5 rounded-t-3xl">
-            <div className="flex justify-between items-center">
-              <div className="flex items-center gap-3">
-                <Stethoscope className="w-6 h-6 text-blue-100" />
-                <h2 className="font-bold text-white text-xl">
-                  Add New Infertility Patient
-                </h2>
-              </div>
-              <button
-                onClick={handleClose}
-                disabled={isLoading}
-                className="p-2 hover:bg-blue-600 rounded-full transition-colors duration-200"
-              >
-                <X className="w-6 h-6" />
-              </button>
-            </div>
-            <p className="text-blue-100 text-sm mt-2">
-              Complete patient and medical information for infertility
-              management
-            </p>
-          </div>
-
-          {/* Tab Navigation */}
-          <div className="border-b border-gray-200 bg-gray-50 px-6">
-            <div className="flex space-x-2">
-              {sections.map((section) => {
-                const isActive = activeSection === section.id;
-                const colors = getTabColors(section.color, isActive);
-                const IconComponent = section.icon;
-
-                return (
+          <motion.div
+            ref={popupRef}
+            className="bg-white rounded-3xl shadow-lg w-full max-w-[95%] sm:max-w-[90%] md:max-w-[80%] lg:max-w-[75%] xl:max-w-[75%] h-[95%] sm:h-[90%] popup-content flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+            variants={modalVariants}
+            initial="hidden"
+            animate="visible"
+            exit="hidden"
+            style={{
+              willChange: "transform, opacity",
+              backfaceVisibility: "hidden",
+              transformStyle: "preserve-3d",
+            }}
+          >
+            {/* Header */}
+            <div className="sticky top-0 bg-gradient-to-br from-slate-50/90 via-white/85 to-slate-100/90 border-b border-gray-100 rounded-t-3xl z-10 overflow-hidden">
+              <div className="flex justify-between items-center p-3 sm:p-4 md:p-6 pb-2 sm:pb-3 md:pb-4 relative z-10">
+                <div className="flex items-center gap-3 sm:gap-4">
+                  <div className="p-2 sm:p-2.5 md:p-3 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-lg flex-shrink-0">
+                    <Stethoscope
+                      className="text-white"
+                      size={isMobile ? 18 : isMd ? 24 : 32}
+                    />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <h2 className="text-base sm:text-xl md:text-2xl lg:text-3xl font-bold text-blue-900 leading-tight mb-0.5 sm:mb-1">
+                      <span className="hidden sm:inline">Add New Patient</span>
+                      <span className="sm:hidden">New Patient</span>
+                    </h2>
+                    <p className="text-blue-700/80 text-xs sm:text-sm font-medium leading-tight hidden lg:block">
+                      Complete patient and medical information for infertility
+                      management
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 sm:gap-3">
+                  {/* Close Button */}
                   <button
-                    key={section.id}
-                    onClick={() => scrollToSection(section.id)}
-                    className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-all duration-200 ${
-                      colors.active || colors.inactive
-                    }`}
+                    onClick={handleClose}
+                    disabled={isLoading}
+                    className="bg-red-100 hover:bg-red-200 text-red-500 p-1.5 sm:p-2 rounded-full flex items-center justify-center transition-all duration-200 flex-shrink-0 hover:scale-110 hover:shadow-md group disabled:opacity-50"
+                    aria-label="Close"
                   >
-                    <IconComponent className={`w-4 h-4 ${colors.icon}`} />
-                    <span className="hidden sm:block">{section.label}</span>
-                    <span className="sm:hidden">
-                      {section.label.split(" ")[0]}
-                    </span>
+                    <motion.div
+                      transition={{ duration: 0.2 }}
+                      whileHover={{
+                        rotate: 90,
+                        scale: 1.1,
+                      }}
+                      whileTap={{
+                        scale: 0.5,
+                      }}
+                    >
+                      <X className="text-base sm:text-lg group-hover:text-red-600 transition-colors duration-200" />
+                    </motion.div>
                   </button>
-                );
-              })}
+                </div>
+              </div>
+
+              {/* Sticky Navigation Tabs */}
+              <div className="flex flex-wrap gap-2 sm:gap-4 px-3 sm:px-4 md:px-6 pb-2 sm:pb-3 md:pb-4">
+                {sections.map((section) => {
+                  const Icon = section.icon;
+                  const isActive = activeSection === section.id;
+                  return (
+                    <button
+                      key={section.id}
+                      onClick={() => scrollToSection(section.id)}
+                      className={`flex items-center gap-1 sm:gap-2 px-2 sm:px-3 md:px-4 py-2 sm:py-2.5 md:py-3 rounded-lg sm:rounded-xl text-xs sm:text-sm font-semibold transition-all duration-300 shadow-sm ${getTabColors(
+                        section.color,
+                        isActive
+                      )} ${
+                        isActive ? "transform scale-110" : "hover:shadow-md"
+                      }`}
+                    >
+                      <Icon
+                        size={isMobile ? 14 : isMd ? 16 : 18}
+                        className="flex-shrink-0"
+                      />
+                      <span className="hidden xs:inline sm:inline whitespace-nowrap">
+                        {isMobile ? section.label.split(" ")[0] : section.label}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
-          </div>
 
-          {/* Content */}
-          <div className="flex-1 overflow-y-auto">
-            <div className="p-6 space-y-8">
-              {/* Hospital Information */}
-              <div id="hospital">
-                <HospitalInformation
-                  onDataChange={setHospitalData}
-                  onDropdownToggle={setIsDropdownOpen}
-                  onMessage={onMessage}
-                  isMobile={isMobile}
-                  titleTooltipStyle={{}}
-                />
-              </div>
-
-              {/* Patient Information */}
-              <div id="patient">
-                <PatientInformation
-                  onDataChange={setPatientData}
-                  availablePatients={[]}
-                  onDropdownToggle={setIsDropdownOpen}
-                  isMobile={isMobile}
-                  onValidationChange={setValidationStatus}
-                  hospitalName={hospitalData.name}
-                />
-              </div>
-
-              {/* Medical Information */}
-              <div
-                id="medical"
-                className="bg-gradient-to-r from-blue-50 to-blue-100 rounded-xl border border-blue-200 p-6"
-              >
-                <div className="mb-6">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Stethoscope className="w-5 h-5 text-blue-600" />
-                    <h3 className="text-lg font-semibold text-gray-800">
-                      Medical Information
-                    </h3>
-                  </div>
-                  <p className="text-sm text-gray-600">
-                    Fertility and medical history details
-                  </p>
+            {/* Content */}
+            <div className="flex-1 overflow-y-auto p-3 sm:p-4 md:p-6">
+              <div className="space-y-6 sm:space-y-8 md:space-y-10">
+                {/* Hospital Information */}
+                <div id="hospital">
+                  <HospitalInformation
+                    onDataChange={handleHospitalDataChange}
+                    onDropdownToggle={handleDropdownToggle}
+                    onMessage={onMessage}
+                    isMobile={isMobile}
+                    titleTooltipStyle={{}}
+                  />
                 </div>
 
-                <div className="space-y-6">
-                  {/* Marriage & Fertility History */}
-                  <div>
-                    <h4 className="text-md font-semibold text-gray-800 mb-4">
-                      Marriage & Fertility History
-                    </h4>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Years Married
-                        </label>
-                        <input
-                          type="number"
-                          value={medicalInfo.yearsMarried || ""}
-                          onChange={(e) =>
-                            updateMedicalInfo(
-                              "yearsMarried",
-                              e.target.value ? parseInt(e.target.value) : null
-                            )
-                          }
-                          className={inputClassName}
-                          placeholder="Enter years married"
-                        />
-                      </div>
+                {/* Patient Information */}
+                <div id="patient">
+                  <PatientInformation
+                    onDataChange={handlePatientDataChange}
+                    availablePatients={[]}
+                    onDropdownToggle={handleDropdownToggle}
+                    isMobile={isMobile}
+                    onValidationChange={handleValidationChange}
+                    hospitalName={hospitalData.name}
+                  />
+                </div>
 
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Years Trying to Conceive
-                        </label>
-                        <input
-                          type="number"
-                          value={medicalInfo.yearsTrying || ""}
-                          onChange={(e) =>
-                            updateMedicalInfo(
-                              "yearsTrying",
-                              e.target.value ? parseInt(e.target.value) : null
-                            )
-                          }
-                          className={inputClassName}
-                          placeholder="Enter years trying"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Infertility Type
-                        </label>
-                        <select
-                          value={medicalInfo.infertilityType}
-                          onChange={(e) =>
-                            updateMedicalInfo("infertilityType", e.target.value)
-                          }
-                          className={inputClassName}
-                        >
-                          <option value="">Select type</option>
-                          {infertilityTypes.map((type) => (
-                            <option key={type} value={type}>
-                              {type}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Obstetric History */}
-                  <div>
-                    <h4 className="text-md font-semibold text-gray-800 mb-4">
-                      Obstetric History
-                    </h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Para
-                        </label>
-                        <input
-                          type="text"
-                          value={medicalInfo.para}
-                          onChange={(e) =>
-                            updateMedicalInfo("para", e.target.value)
-                          }
-                          className={inputClassName}
-                          placeholder="Enter para"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Gravida
-                        </label>
-                        <input
-                          type="text"
-                          value={medicalInfo.gravida}
-                          onChange={(e) =>
-                            updateMedicalInfo("gravida", e.target.value)
-                          }
-                          className={inputClassName}
-                          placeholder="Enter gravida"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Physical Measurements */}
-                  <div>
-                    <h4 className="text-md font-semibold text-gray-800 mb-4">
-                      Physical Measurements
-                    </h4>
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Weight (kg)
-                        </label>
-                        <input
-                          type="number"
-                          value={medicalInfo.weight || ""}
-                          onChange={(e) =>
-                            updateMedicalInfo(
-                              "weight",
-                              e.target.value ? parseFloat(e.target.value) : null
-                            )
-                          }
-                          className={inputClassName}
-                          placeholder="Enter weight"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Height (cm)
-                        </label>
-                        <input
-                          type="number"
-                          value={medicalInfo.height || ""}
-                          onChange={(e) =>
-                            updateMedicalInfo(
-                              "height",
-                              e.target.value ? parseFloat(e.target.value) : null
-                            )
-                          }
-                          className={inputClassName}
-                          placeholder="Enter height"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          BMI
-                        </label>
-                        <input
-                          type="number"
-                          value={medicalInfo.bmi || ""}
-                          readOnly
-                          className={`${inputClassName} bg-gray-100 cursor-not-allowed`}
-                          placeholder="Auto-calculated"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Blood Group
-                        </label>
-                        <select
-                          value={medicalInfo.bloodGroup}
-                          onChange={(e) =>
-                            updateMedicalInfo("bloodGroup", e.target.value)
-                          }
-                          className={inputClassName}
-                        >
-                          <option value="">Select blood group</option>
-                          {bloodGroups.map((group) => (
-                            <option key={group} value={group}>
-                              {group}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Blood Pressure */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Blood Pressure
-                    </label>
-                    <input
-                      type="text"
-                      value={medicalInfo.bloodPressure}
-                      onChange={(e) =>
-                        updateMedicalInfo("bloodPressure", e.target.value)
-                      }
-                      placeholder="e.g., 120/80"
-                      className={inputClassName}
-                    />
-                  </div>
-
-                  {/* Medical History */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Medical History
-                      </label>
-                      <textarea
-                        value={medicalInfo.medicalHistory}
-                        onChange={(e) =>
-                          updateMedicalInfo("medicalHistory", e.target.value)
-                        }
-                        className={`${inputClassName} h-24 resize-none`}
-                        placeholder="Enter medical history..."
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Surgical History
-                      </label>
-                      <textarea
-                        value={medicalInfo.surgicalHistory}
-                        onChange={(e) =>
-                          updateMedicalInfo("surgicalHistory", e.target.value)
-                        }
-                        className={`${inputClassName} h-24 resize-none`}
-                        placeholder="Enter surgical history..."
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Menstrual History
-                      </label>
-                      <textarea
-                        value={medicalInfo.menstrualHistory}
-                        onChange={(e) =>
-                          updateMedicalInfo("menstrualHistory", e.target.value)
-                        }
-                        className={`${inputClassName} h-24 resize-none`}
-                        placeholder="Enter menstrual history..."
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Contraceptive History
-                      </label>
-                      <textarea
-                        value={medicalInfo.contraceptiveHistory}
-                        onChange={(e) =>
-                          updateMedicalInfo(
-                            "contraceptiveHistory",
-                            e.target.value
-                          )
-                        }
-                        className={`${inputClassName} h-24 resize-none`}
-                        placeholder="Enter contraceptive history..."
-                      />
-                    </div>
-                  </div>
-
-                  {/* Visit Information */}
-                  <div>
-                    <h4 className="text-md font-semibold text-gray-800 mb-4">
-                      Current Visit
-                    </h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Referral Source
-                        </label>
-                        <select
-                          value={medicalInfo.referralSource}
-                          onChange={(e) =>
-                            updateMedicalInfo("referralSource", e.target.value)
-                          }
-                          className={inputClassName}
-                        >
-                          <option value="">Select referral source</option>
-                          {referralSources.map((source) => (
-                            <option key={source} value={source}>
-                              {source}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Status
-                        </label>
-                        <select
-                          value={medicalInfo.status}
-                          onChange={(e) =>
-                            updateMedicalInfo("status", e.target.value)
-                          }
-                          className={inputClassName}
-                        >
-                          {statusOptions.map((status) => (
-                            <option key={status} value={status}>
-                              {status}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Chief Complaint
-                      </label>
-                      <textarea
-                        value={medicalInfo.chiefComplaint}
-                        onChange={(e) =>
-                          updateMedicalInfo("chiefComplaint", e.target.value)
-                        }
-                        placeholder="Primary reason for visit..."
-                        className={`${inputClassName} h-24 resize-none`}
-                      />
-                    </div>
-                  </div>
-
-                  {/* Treatment Information */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Treatment Plan
-                      </label>
-                      <textarea
-                        value={medicalInfo.treatmentPlan}
-                        onChange={(e) =>
-                          updateMedicalInfo("treatmentPlan", e.target.value)
-                        }
-                        className={`${inputClassName} h-24 resize-none`}
-                        placeholder="Enter treatment plan..."
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Medications
-                      </label>
-                      <textarea
-                        value={medicalInfo.medications}
-                        onChange={(e) =>
-                          updateMedicalInfo("medications", e.target.value)
-                        }
-                        className={`${inputClassName} h-24 resize-none`}
-                        placeholder="Enter current medications..."
-                      />
-                    </div>
-                  </div>
-
-                  {/* Notes */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Additional Notes
-                    </label>
-                    <textarea
-                      value={medicalInfo.notes}
-                      onChange={(e) =>
-                        updateMedicalInfo("notes", e.target.value)
-                      }
-                      placeholder="Any additional notes..."
-                      className={`${inputClassName} h-32 resize-none`}
-                    />
-                  </div>
+                {/* Medical Information */}
+                <div id="medicalInformation">
+                  <MedicalInformation
+                    medicalInfo={medicalInfo}
+                    updateMedicalInfo={updateMedicalInfo}
+                    inputClassName={inputClassName}
+                    isMobile={isMobile}
+                    isMd={isMd}
+                    bloodGroups={bloodGroups}
+                    infertilityTypes={infertilityTypes}
+                    statusOptions={statusOptions}
+                    referralSources={referralSources}
+                  />
                 </div>
               </div>
             </div>
-          </div>
 
-          {/* Footer */}
-          <div className="border-t bg-gray-50 px-6 py-4 rounded-b-3xl">
-            <div className="flex justify-end gap-3">
-              <button
-                onClick={handleClose}
-                disabled={isLoading}
-                className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors duration-200 disabled:opacity-50"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleSubmit}
-                disabled={isLoading || !isFormValid}
-                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 disabled:opacity-50 flex items-center gap-2"
-              >
-                {isLoading ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    Saving...
-                  </>
-                ) : (
-                  <>
-                    <Save className="w-4 h-4" />
-                    Save Patient
-                  </>
-                )}
-              </button>
+            {/* Footer */}
+            <div className="border-t border-gray-200 bg-gray-50 px-4 sm:px-6 py-3 sm:py-4 rounded-b-3xl">
+              <div className="flex justify-end gap-2 sm:gap-3">
+                <button
+                  onClick={handleClose}
+                  disabled={isLoading}
+                  className="px-4 sm:px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors duration-200 disabled:opacity-50 text-sm font-medium"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSubmit}
+                  disabled={isLoading || !isFormValid}
+                  className="px-4 sm:px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 disabled:opacity-50 flex items-center gap-2 text-sm font-medium"
+                >
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="w-4 h-4" />
+                      Save Patient
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
-          </div>
+          </motion.div>
         </motion.div>
-      </motion.div>
+      )}
     </AnimatePresence>
   );
 };

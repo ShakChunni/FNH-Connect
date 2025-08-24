@@ -8,17 +8,10 @@ import React, {
 import { motion, AnimatePresence } from "framer-motion";
 import { createPortal } from "react-dom";
 import { Building2, PlusCircle, Loader2, Info, X } from "lucide-react";
+import useFetchHospitalInformation, {
+  Hospital,
+} from "../hooks/useFetchHospitalInformation";
 import { Tooltip as ReactTooltip } from "react-tooltip";
-
-export interface Hospital {
-  id: number;
-  name: string;
-  address: string | null;
-  phoneNumber: string | null;
-  email: string | null;
-  website: string | null;
-  type: string | null;
-}
 
 export interface HospitalData {
   id: number | null;
@@ -45,10 +38,16 @@ const HospitalInformation: React.FC<HospitalInformationProps> = ({
   isMobile,
   titleTooltipStyle,
 }) => {
-  // Temporarily using mock data instead of hook for visual testing
-  const [searchQuery, setSearchQuery] = useState("");
-  const [hospitals, setHospitals] = useState<Hospital[]>([]);
-  const [loading, setLoading] = useState(false);
+  // Use the hook for fetching hospitals
+  const { searchQuery, setSearchQuery, hospitals, loading, error } =
+    useFetchHospitalInformation();
+
+  // Display error to user when API fails
+  useEffect(() => {
+    if (error) {
+      onMessage("error", error);
+    }
+  }, [error, onMessage]);
 
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [localData, setLocalData] = useState<HospitalData>({
