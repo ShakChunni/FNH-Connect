@@ -206,6 +206,92 @@ const AddNewDataInfertility: React.FC<AddNewDataProps> = ({
     patientData,
     medicalInfo,
   ]);
+  const [userClickedSection, setUserClickedSection] = useState<string | null>(
+    null
+  );
+  const [userClickTimeout, setUserClickTimeout] =
+    useState<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    const observerOptions = {
+      root: null,
+      rootMargin: "-30% 0px -30% 0px",
+      threshold: 0.2,
+    };
+
+    const observerCallback = (entries: IntersectionObserverEntry[]) => {
+      if (userClickedSection) return; // Don't update if user just clicked a tab
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          setActiveSection(entry.target.id);
+        }
+      });
+    };
+
+    const handleScroll = (e: Event) => {
+      if (userClickedSection) return;
+      // Optionally, you can add logic here for bottom-of-scroll edge cases
+    };
+
+    const observer = new IntersectionObserver(
+      observerCallback,
+      observerOptions
+    );
+
+    // Section IDs must match your rendered sections
+    const sectionIds = ["hospital", "patient", "medical"];
+    const sectionElements = sectionIds
+      .map((id) => document.getElementById(id))
+      .filter(Boolean);
+
+    sectionElements.forEach((el) => {
+      if (el) observer.observe(el);
+    });
+
+    // Attach scroll listener to the scrollable container
+    const scrollContainer = document.querySelector(".overflow-y-auto");
+    if (scrollContainer) {
+      scrollContainer.addEventListener("scroll", handleScroll);
+    }
+
+    return () => {
+      sectionElements.forEach((el) => {
+        if (el) observer.unobserve(el);
+      });
+      if (scrollContainer) {
+        scrollContainer.removeEventListener("scroll", handleScroll);
+      }
+    };
+  }, [isOpen, userClickedSection]);
+
+  // Update scrollToSection to set userClickedSection and timeout
+  const scrollToSection = (sectionId: string) => {
+    setActiveSection(sectionId);
+    setUserClickedSection(sectionId);
+
+    if (userClickTimeout) {
+      clearTimeout(userClickTimeout);
+    }
+    const timeout = setTimeout(() => {
+      setUserClickedSection(null);
+    }, 1000);
+    setUserClickTimeout(timeout);
+
+    const element = document.getElementById(sectionId);
+    const scrollContainer = document.querySelector(".overflow-y-auto");
+
+    if (element && scrollContainer) {
+      element.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  };
+
+  useEffect(() => {
+    return () => {
+      if (userClickTimeout) {
+        clearTimeout(userClickTimeout);
+      }
+    };
+  }, [userClickTimeout]);
 
   // Update medical info field
   const updateMedicalInfo = useCallback((field: string, value: any) => {
@@ -296,14 +382,6 @@ const AddNewDataInfertility: React.FC<AddNewDataProps> = ({
         : "bg-amber-50 text-amber-700 hover:bg-amber-100 hover:text-amber-800",
     };
     return colorMap[color as keyof typeof colorMap] || colorMap.blue;
-  };
-
-  const scrollToSection = (sectionId: string) => {
-    setActiveSection(sectionId);
-    const element = document.getElementById(sectionId);
-    if (element) {
-      element.scrollIntoView({ behavior: "smooth", block: "start" });
-    }
   };
 
   // Input styling
@@ -399,8 +477,8 @@ const AddNewDataInfertility: React.FC<AddNewDataProps> = ({
                       <span className="sm:hidden">New Patient</span>
                     </h2>
                     <p className="text-blue-700/80 text-xs sm:text-sm font-medium leading-tight hidden lg:block">
-                      Complete patient and medical information for infertility
-                      management
+                      Enter all required hospital, patient, and medical details
+                      to register a new infertility case.
                     </p>
                   </div>
                 </div>
@@ -484,11 +562,10 @@ const AddNewDataInfertility: React.FC<AddNewDataProps> = ({
                 </div>
 
                 {/* Medical Information */}
-                <div id="medicalInformation">
+                <div id="medical">
                   <MedicalInformation
                     medicalInfo={medicalInfo}
                     updateMedicalInfo={updateMedicalInfo}
-                    inputClassName={inputClassName}
                     isMobile={isMobile}
                     isMd={isMd}
                     bloodGroups={bloodGroups}
