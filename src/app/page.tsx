@@ -1,6 +1,11 @@
 "use client";
-import Authenticating from "./Authenticating";
+import { Suspense } from "react";
+import LoadingState from "./LoadingState";
 
 export default function RootPage() {
-  return <Authenticating />;
+  return (
+    <Suspense fallback={<LoadingState type="loading" />}>
+      <LoadingState type="loading" />
+    </Suspense>
+  );
 }
