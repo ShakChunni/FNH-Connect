@@ -1,0 +1,299 @@
+"use client";
+import React, { useState, useRef, useCallback, useMemo } from "react";
+import { AnimatePresence, motion } from "framer-motion";
+import { createPortal } from "react-dom";
+import AddNewDataInfertility from "./components/AddNewData/AddNewDataInfertility";
+import PatientTable from "./components/PatientTable/PatientTable";
+import SkeletonPatientTable from "./components/PatientTable/components/SkeletonPatientTable";
+import useFetchData from "./hooks/useFetchInfertilityData";
+import Dropdowns from "./components/Filters/Dropdowns";
+import ButtonContainer from "./components/ButtonContainer";
+import { useAuth } from "../AuthContext";
+
+interface FilterState {
+  dateSelector: {
+    start: string | null;
+    end: string | null;
+    option: string[];
+  };
+  leadsFilter: string;
+}
+
+interface SearchParams {
+  searchTerm: string;
+  searchField: string;
+}
+
+const InfertilityManagement = React.memo(() => {
+  const { user } = useAuth();
+
+  // Only leadsFilter and dateSelector for this page
+  const [filters, setFilters] = useState<FilterState>({
+    dateSelector: { start: null, end: null, option: [] },
+    leadsFilter: "All",
+  });
+
+  // UI state for dropdowns
+  const [showDropdowns, setShowDropdowns] = useState(false);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
+
+  // AddNewData popup state (open/closing) to match dashboard behavior
+  const [isPopupOpen, setIsPopupOpen] = useState(false);
+  const [isPopupClosing, setIsPopupClosing] = useState(false);
+
+  const [shouldFetchData, setShouldFetchData] = useState(true);
+  const [searchParams, setSearchParams] = useState<SearchParams | undefined>(
+    undefined
+  );
+
+  const {
+    data: patientData,
+    isLoading,
+    customOptions,
+    refetch,
+  } = useFetchData(filters, shouldFetchData, searchParams);
+
+  // FIX 1: Use correct ref type
+  const messagePopupRef = useRef<HTMLDivElement>(null);
+
+  // FIX 2: Update handleTableSearch to match PatientTable's expected prop
+  const handleTableSearch = useCallback(
+    (searchTerm: string) => {
+      setSearchParams({ searchTerm, searchField: "patientFullName" }); // Default field
+      setShouldFetchData(true);
+      refetch();
+    },
+    [refetch]
+  );
+
+  // Handle dropdown toggle
+  const handleToggleDropdowns = useCallback((isExpanded: boolean) => {
+    setShowDropdowns(isExpanded);
+  }, []);
+
+  // Handle add data popup (open/close with closing animation)
+  const handleOpenAddPopup = useCallback(() => {
+    setIsPopupOpen(true);
+  }, []);
+
+  const handleCloseAddPopup = useCallback(() => {
+    setIsPopupClosing(true);
+    setTimeout(() => {
+      setIsPopupOpen(false);
+      setIsPopupClosing(false);
+    }, 300);
+  }, []);
+
+  // Update filters and trigger fetch (hook logic for new filters to be implemented later)
+  const handleFilterUpdate = useCallback(
+    (key: string, value: any) => {
+      setFilters((prevFilters) => ({ ...prevFilters, [key]: value }));
+      setIsInitialLoad(false);
+
+      // Reset search params if filter changes
+      if (searchParams) {
+        setSearchParams(undefined);
+      }
+
+      // Only refetch for dateSelector for now; other filters' hook logic to be implemented later
+      if (key === "dateSelector") {
+        // Use a timeout to prevent rapid successive calls
+        setTimeout(() => {
+          refetch().catch((error: unknown) => {
+            console.error("Error refetching data:", error);
+          });
+        }, 100);
+      }
+    },
+    [refetch, searchParams]
+  );
+
+  // Ref for search bar (stub)
+  const searchBarRef = useRef<{ search: () => void }>({ search: () => {} });
+
+  const [messageType, setMessageType] = useState<"success" | "error" | null>(
+    null
+  );
+  const [messageContent, setMessageContent] = useState<string>("");
+
+  const handleMessage = useCallback(
+    (type: "success" | "error", content: string) => {
+      setMessageType(type);
+      setMessageContent(content);
+
+      // Don't trigger immediate refetch to avoid infinite loops
+      setTimeout(() => {
+        setMessageType(null);
+        setMessageContent("");
+      }, 2500);
+    },
+    [] // Empty dependencies to prevent infinite loops
+  );
+
+  // Memoized dismiss message callback
+  const dismissMessage = useCallback(() => {
+    setMessageType(null);
+    setMessageContent("");
+  }, []);
+
+  // Optional: parent callback when AddNewData calls onSubmit
+  const handleAddData = useCallback(
+    async (data: any) => {
+      try {
+        // Call the actual onSubmit logic here if needed
+        // For now, just show success and close
+        setMessageType("success");
+        setMessageContent("Patient data saved successfully!");
+
+        // Close popup first
+        handleCloseAddPopup();
+
+        // Refresh data after a delay
+        setTimeout(() => {
+          setShouldFetchData(true);
+          refetch().finally(() => setShouldFetchData(false));
+        }, 500);
+      } catch (error) {
+        console.error("Error in handleAddData:", error);
+        setMessageType("error");
+        setMessageContent("Failed to save patient data.");
+      }
+    },
+    [handleCloseAddPopup, refetch]
+  );
+
+  // Memoized message popup content
+  const messagePopupContent = useMemo(() => {
+    if (!messageType) return null;
+
+    return (
+      <motion.div
+        ref={messagePopupRef}
+        initial={{ opacity: 0, scale: 0.8 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.8 }}
+        transition={{ duration: 0.3, ease: "easeOut" }}
+        className="fixed inset-0 flex items-center justify-center z-[99999]"
+      >
+        <div className="bg-white p-8 rounded-2xl shadow-xl max-w-md w-full mx-4 text-center border border-gray-100">
+          {/* Title */}
+          <h3
+            className={`text-lg font-semibold mb-3 ${
+              messageType === "success" ? "text-green-700" : "text-red-700"
+            }`}
+          >
+            {messageType === "success" ? "Success!" : "Error!"}
+          </h3>
+          {/* Message */}
+          <div className="mb-6 text-gray-600 leading-relaxed">
+            {messageContent}
+          </div>
+          <button
+            onClick={dismissMessage}
+            className={`w-full py-3 px-6 rounded-xl font-semibold transition-all duration-200 ${
+              messageType === "success"
+                ? "bg-green-500 hover:bg-green-600 text-white"
+                : "bg-red-500 hover:bg-red-600 text-white"
+            }`}
+          >
+            Got it
+          </button>
+        </div>
+      </motion.div>
+    );
+  }, [messageType, messageContent, dismissMessage]);
+
+  const normalizedPatientData = useMemo(
+    () =>
+      (patientData || []).map((row) => ({
+        ...row,
+        patientDOB:
+          row.patientDOB instanceof Date
+            ? row.patientDOB.toISOString()
+            : row.patientDOB,
+        husbandDOB:
+          row.husbandDOB instanceof Date
+            ? row.husbandDOB.toISOString()
+            : row.husbandDOB,
+        createdAt:
+          row.createdAt instanceof Date
+            ? row.createdAt.toISOString()
+            : row.createdAt,
+        updatedAt:
+          row.updatedAt instanceof Date
+            ? row.updatedAt.toISOString()
+            : row.updatedAt,
+      })),
+    [patientData]
+  );
+
+  return (
+    <div className="bg-[#f6f9fd] min-h-screen pt-6">
+      <ButtonContainer
+        onToggleExpand={handleToggleDropdowns}
+        isExpanded={showDropdowns}
+        onAddData={handleOpenAddPopup}
+      />
+
+      {/* Animated dropdown filter section */}
+      <AnimatePresence>
+        {showDropdowns && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.2 }}
+            className="overflow-hidden"
+          >
+            <div className="flex justify-center items-center mb-4 py-4">
+              <Dropdowns
+                filters={filters}
+                onFilterChange={handleFilterUpdate}
+                searchBarRef={searchBarRef}
+                isInitialLoad={isInitialLoad}
+              />
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <div className="px-4 lg:px-12 mx-auto">
+        <div className="overflow-x-auto rounded-3xl shadow-lg mb-16 md:mb-8">
+          {isLoading ? (
+            <SkeletonPatientTable />
+          ) : (
+            <PatientTable
+              tableData={normalizedPatientData}
+              customOptions={customOptions}
+              onMessage={handleMessage}
+              messagePopupRef={
+                messagePopupRef as React.RefObject<HTMLDivElement>
+              }
+              onSearch={handleTableSearch}
+            />
+          )}
+        </div>
+      </div>
+
+      {/* Message Popup */}
+      <AnimatePresence>{messagePopupContent}</AnimatePresence>
+      {/* Add New Data Portal (open while opening or closing) */}
+      {(isPopupOpen || isPopupClosing) &&
+        typeof window !== "undefined" &&
+        createPortal(
+          <AddNewDataInfertility
+            isOpen={isPopupOpen && !isPopupClosing}
+            onClose={handleCloseAddPopup}
+            onSubmit={handleAddData}
+            onMessage={handleMessage}
+            messagePopupRef={messagePopupRef}
+          />,
+          document.body
+        )}
+    </div>
+  );
+});
+
+InfertilityManagement.displayName = "InfertilityManagement";
+
+export default InfertilityManagement;

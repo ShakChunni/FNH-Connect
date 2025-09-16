@@ -10,22 +10,25 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/app/AuthContext";
-import useSidebarState from "@/app/hooks/useSidebarState";
 import {
   Home,
+  Target,
+  LineChart,
   ClipboardList,
   Clock,
   Users,
   Pin,
   User,
   Loader2,
+  Phone,
   LogOut,
-  Shield,
+  Building2,
+  Contact2,
+  NotebookPen,
   ChevronDown,
-  Baby,
-  FlaskConical,
-  Stethoscope,
-  HeartPulse,
+  Shield,
+  MailCheck,
+  UserCheck,
 } from "lucide-react";
 
 const usersWithImages = [
@@ -48,6 +51,7 @@ interface NavigationItem {
   href: string;
   icon: React.ComponentType<any>;
   admin?: boolean;
+  subItems?: NavigationItem[];
 }
 
 interface NavigationGroup {
@@ -135,53 +139,114 @@ const Aside = ({
 
   const navigationGroups = useMemo((): NavigationGroup[] => {
     const role = user?.role?.toLowerCase();
+    if (role === "leadsmanager") {
+      return [
+        {
+          id: "directory",
+          label: "Directory",
+          icon: Users,
+          items: [
+            {
+              label: "Leads Management",
+              href: "/admin/leads-management",
+              icon: NotebookPen,
+            },
+            {
+              label: "Duplicate Checker",
+              href: "/admin/leads-management/duplicate-checker",
+              icon: UserCheck,
+            },
+          ],
+        },
+      ];
+    }
+    const dashboardsGroup: NavigationGroup = {
+      id: "dashboards",
+      label: "Dashboards",
+      icon: ClipboardList,
+      items: [
+        { label: "Sales Dashboard", href: "/home", icon: Home },
+        { label: "Goal Dashboard", href: "/goals", icon: Target },
+      ],
+    };
 
-    // Staff navigation for all normal staff
-    const staffItems: NavigationItem[] = [
-      { label: "Dashboard", href: "/home", icon: Home },
-      { label: "Infertility", href: "/infertility", icon: Baby },
-      { label: "Pathology", href: "/pathology", icon: FlaskConical },
-    ];
-
-    // Admin-only navigation
-    const adminItems: NavigationItem[] =
-      role === "admin" || role === "owner"
+    // Directory group logic (matches directoryGroup in HeaderNavigation)
+    const directoryItems: NavigationItem[] = [
+      { label: "Clients", href: "/clients", icon: Contact2 },
+      {
+        label: "Email Verification",
+        href: "/clients/email-verification",
+        icon: MailCheck,
+      },
+      { label: "Organizations", href: "/organizations", icon: Building2 },
+      ...(role === "admin"
         ? [
             {
-              label: "Admin Dashboard",
-              href: "/admin-dashboard",
-              icon: Shield,
+              label: "Leads Management",
+              href: "/admin/leads-management",
+              icon: NotebookPen,
             },
             {
-              label: "User Management",
-              href: "/admin/user-management",
-              icon: Users,
+              label: "Duplicate Checker",
+              href: "/admin/leads-management/duplicate-checker",
+              icon: UserCheck,
             },
-            {
-              label: "Activity Logs",
-              href: "/admin/activity-logs",
-              icon: Clock,
-            },
+            { label: "Call Reports", href: "/admin/call-reports", icon: Phone },
           ]
-        : [];
+        : []),
+    ];
+    const directoryGroup: NavigationGroup = {
+      id: "directory",
+      label: "Directory",
+      icon: Users,
+      items: directoryItems,
+    };
+
+    const analyticsGroup: NavigationGroup = {
+      id: "analytics",
+      label: "Analytics",
+      icon: LineChart,
+      items: [
+        {
+          label: "Goal Analytics",
+          href: "/admin/goals-analytics",
+          icon: LineChart,
+        },
+      ],
+    };
+
+    const adminGroup: NavigationGroup | null =
+      role === "admin"
+        ? {
+            id: "administration",
+            label: "Administration",
+            icon: Shield,
+            items: [
+              {
+                label: "Goal Management",
+                href: "/admin/goals-management",
+                icon: ClipboardList,
+              },
+              {
+                label: "User Management",
+                href: "/admin/user-management",
+                icon: Users,
+              },
+              {
+                label: "Activity Log",
+                href: "/admin/activity-logs",
+                icon: Clock,
+              },
+            ],
+          }
+        : null;
 
     const groups: NavigationGroup[] = [
-      {
-        id: "staff",
-        label: "Staff Portal",
-        icon: Users ,
-        items: staffItems,
-      },
+      dashboardsGroup,
+      directoryGroup,
+      analyticsGroup,
     ];
-
-    if (adminItems.length > 0) {
-      groups.push({
-        id: "admin",
-        label: "Admin",
-        icon: Shield,
-        items: adminItems,
-      });
-    }
+    if (adminGroup) groups.push(adminGroup);
 
     return groups;
   }, [user]);
@@ -191,13 +256,14 @@ const Aside = ({
       id="drawer-navigation"
       className={`hidden lg:flex ${
         isPinned ? "fixed" : "fixed"
-      } overflow-hidden top-0 left-0 bg-gradient-to-b from-[#0d1a2b] to-[#121d35] ${
+      } overflow-hidden top-0 left-0 bg-gradient-to-br from-[#0a1425] via-[#0f1b2e] to-[#1a2332] ${
         isExpanded ? "w-64" : "w-20"
-      } h-screen overflow-y-auto transition-all duration-250 ease-[cubic-bezier(0.25,0.1,0.25,1)] flex-col justify-between will-change-[width]`}
+      } h-screen overflow-y-auto transition-all duration-250 ease-[cubic-bezier(0.25,0.1,0.25,1)] flex-col justify-between will-change-[width] border-r border-blue-500/10`}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
       style={{
-        boxShadow: "0px 4px 12.8px 0px rgba(0, 0, 0, 0.25)",
+        boxShadow:
+          "0px 4px 24px 0px rgba(0, 0, 0, 0.35), inset 1px 0 0 rgba(59, 130, 246, 0.1)",
         zIndex: isPinned ? 50 : 60, // Higher z-index when not pinned (overlay mode)
       }}
     >
@@ -212,11 +278,11 @@ const Aside = ({
               className="h-auto transition-[width,height] duration-250 ease-[cubic-bezier(0.25,0.1,0.25,1)]"
             />
             <span
-              className={`ml-2 text-sm 2xl:text-base font-bold text-white whitespace-nowrap transition-opacity duration-250 ease-[cubic-bezier(0.25,0.1,0.25,1)] ${
+              className={`ml-2 text-sm 2xl:text-base font-bold text-white whitespace-nowrap transition-opacity duration-250 ease-[cubic-bezier(0.25,0.1,0.25,1)] 2xl:tracking-tight 2xl:font-extrabold text-shadow-sm ${
                 isExpanded ? "opacity-100" : "opacity-0"
               }`}
             >
-              FNH-CONNECT
+              Sales Platform
             </span>
           </Link>
           <button
@@ -224,15 +290,17 @@ const Aside = ({
             disabled={isAnimating}
             className={`${
               isExpanded ? "px-2.5 lg:px-3" : "px-0"
-            } rounded-full mb-6 hover:bg-[#1e293b]/30 transition-all duration-250 ease-[cubic-bezier(0.25,0.1,0.25,1)] cursor-pointer ${
+            } rounded-full mb-6 hover:bg-[#1e293b]/40 hover:shadow-lg transition-all duration-250 ease-[cubic-bezier(0.25,0.1,0.25,1)] cursor-pointer ${
               isExpanded ? "opacity-100" : "opacity-0"
-            }`}
+            } group`}
             title={isPinned ? "Unpin sidebar" : "Pin sidebar"}
           >
             <Pin
               size={16}
-              className={`transition-transform duration-250 ease-[cubic-bezier(0.25,0.1,0.25,1)] 2xl:text-[14px] ${
-                isPinned ? "rotate-45 text-yellow-400" : "text-gray-300"
+              className={`transition-all duration-250 ease-[cubic-bezier(0.25,0.1,0.25,1)] 2xl:text-[14px] ${
+                isPinned
+                  ? "rotate-45 text-yellow-400 drop-shadow-sm"
+                  : "text-gray-300 group-hover:text-yellow-300"
               }`}
             />
           </button>
@@ -249,32 +317,32 @@ const Aside = ({
                 <div key={group.id} className="mb-1 relative">
                   <button
                     onClick={() => toggleSection(group.id)}
-                    className={`flex items-center w-full p-2 lg:p-2.5 rounded-lg transition-all duration-250 ease-out cursor-pointer
+                    className={`flex items-center w-full p-2 lg:p-2.5 rounded-lg transition-all duration-250 ease-out cursor-pointer backdrop-blur-sm border border-transparent
                     ${
                       isActive
-                        ? "bg-[#1e293b]/30 backdrop-blur-sm"
-                        : "hover:bg-[#1e293b]/20"
-                    } group relative`}
+                        ? "bg-gradient-to-r from-[#1e293b]/40 to-[#1e293b]/20 shadow-inner border-blue-500/20"
+                        : "hover:bg-gradient-to-r hover:from-[#1e293b]/25 hover:to-[#1e293b]/10 hover:shadow-md hover:border-blue-500/10"
+                    } group relative overflow-hidden`}
                   >
                     <div className={`relative ${isActive ? "z-10" : ""}`}>
                       {isActive && (
-                        <div className="absolute inset-0 bg-yellow-400/20 rounded-full blur-[8px]"></div>
+                        <div className="absolute inset-0 bg-yellow-400/30 rounded-full blur-[10px] animate-pulse"></div>
                       )}
                       <group.icon
-                        className={`w-6 h-6 2xl:w-8 2xl:h-8 relative ${
+                        className={`w-6 h-6 2xl:w-8 2xl:h-8 relative transition-all duration-200 ${
                           isActive
-                            ? "text-yellow-400"
+                            ? "text-yellow-400 drop-shadow-lg"
                             : "text-white group-hover:text-yellow-300"
-                        } transition-colors duration-200`}
+                        }`}
                       />
                     </div>
 
                     {isExpanded && (
                       <>
                         <span
-                          className={`ml-2 text-[13px] 2xl:text-[15px] font-medium tracking-wide transition-all duration-200 ${
+                          className={`ml-2 text-[13px] 2xl:text-[15px] font-medium tracking-wide 2xl:tracking-tight 2xl:font-semibold transition-all duration-200 ${
                             isActive
-                              ? "text-yellow-400"
+                              ? "text-yellow-400 text-shadow-sm"
                               : "text-white group-hover:text-yellow-300"
                           } whitespace-nowrap overflow-hidden`}
                         >
@@ -282,7 +350,7 @@ const Aside = ({
                         </span>
                         <div className="ml-auto">
                           <ChevronDown
-                            className={`w-4 h-4 2xl:w-5 2xl:h-5 text-gray-300 group-hover:text-yellow-300 transition-transform duration-300 ${
+                            className={`w-4 h-4 2xl:w-5 2xl:h-5 text-gray-300 group-hover:text-yellow-300 transition-all duration-300 ${
                               isGroupExpanded ? "rotate-180" : ""
                             }`}
                           />
@@ -309,7 +377,7 @@ const Aside = ({
                     }}
                   >
                     <div
-                      className={`absolute left-[18px] 2xl:left-[22px] top-0 w-[2px] bg-blue-300/20 z-20 transition-opacity duration-200 ${
+                      className={`absolute left-[18px] 2xl:left-[22px] top-0 w-[2px] bg-gradient-to-b from-blue-400/30 to-blue-300/10 z-20 transition-opacity duration-200 shadow-sm ${
                         isExpanded && isGroupExpanded
                           ? "opacity-100"
                           : "opacity-0"
@@ -334,70 +402,136 @@ const Aside = ({
                     >
                       {group.items.map((item, index) => {
                         const isItemActive = pathname === item.href;
+                        const hasSubItems =
+                          item.subItems && item.subItems.length > 0;
+                        const isSubItemActive =
+                          hasSubItems &&
+                          item.subItems?.some(
+                            (subItem) => pathname === subItem.href
+                          );
+                        const shouldShowSubItems =
+                          isExpanded &&
+                          isGroupExpanded &&
+                          hasSubItems &&
+                          (isItemActive || isSubItemActive);
+
                         return (
-                          <Link
-                            key={item.href}
-                            href={item.href}
-                            className={`flex items-center w-full py-1 2xl:py-1.5 px-2 2xl:px-2.5 transition-all duration-200 text-xs 2xl:text-sm 
-                              relative overflow-hidden rounded-l-full transform ${
-                                isItemActive
-                                  ? "bg-gradient-to-r from-yellow-500/20 to-[#1e293b]/40 text-yellow-400"
-                                  : "text-gray-200 hover:bg-[#1e293b]/20 hover:text-yellow-300"
-                              } group/link`}
-                            style={{
-                              transitionDelay:
-                                isExpanded && isGroupExpanded
-                                  ? `${50 + index * 30}ms`
-                                  : "0ms",
-                              opacity: isExpanded && isGroupExpanded ? 1 : 0,
-                              transform:
-                                isExpanded && isGroupExpanded
-                                  ? "translateY(0)"
-                                  : "translateY(-4px)",
-                            }}
-                          >
-                            {isItemActive && (
-                              <div className="absolute right-0 top-0 h-full w-1 bg-yellow-400"></div>
-                            )}
-
-                            <div
-                              className={`absolute top-1/2 h-[2px] transform -translate-y-1/2 transition-colors duration-200 z-10
-                                group-hover/link:bg-yellow-300/50`}
+                          <div key={item.href}>
+                            <Link
+                              href={item.href}
+                              className={`flex items-center w-full py-1 2xl:py-1.5 px-2 2xl:px-2.5 transition-all duration-200 text-xs 2xl:text-sm 2xl:tracking-tight
+                                relative overflow-hidden rounded-l-full transform backdrop-blur-sm ${
+                                  isItemActive || isSubItemActive
+                                    ? "bg-gradient-to-r from-yellow-500/25 to-[#1e293b]/50 text-yellow-400 shadow-md border-r-2 border-yellow-400/60"
+                                    : "text-gray-200 hover:bg-gradient-to-r hover:from-[#1e293b]/30 hover:to-[#1e293b]/10 hover:text-yellow-300 hover:shadow-sm"
+                                } group/link`}
                               style={{
-                                width: "14px",
-                                left: "-14px",
-                                backgroundImage: isItemActive
-                                  ? "linear-gradient(to right, transparent 0, transparent 1px, #facc15 1px)"
-                                  : "linear-gradient(to right, transparent 0, transparent 1px, rgba(147, 197, 253, 0.3) 1px)",
+                                transitionDelay:
+                                  isExpanded && isGroupExpanded
+                                    ? `${50 + index * 30}ms`
+                                    : "0ms",
+                                opacity: isExpanded && isGroupExpanded ? 1 : 0,
+                                transform:
+                                  isExpanded && isGroupExpanded
+                                    ? "translateY(0)"
+                                    : "translateY(-4px)",
                               }}
-                            ></div>
-
-                            <div className="relative">
-                              {isItemActive && (
-                                <div className="absolute inset-0 bg-yellow-400/30 rounded-full blur-[6px]"></div>
-                              )}
-                              <item.icon
-                                className={`w-4 h-4 2xl:w-5 2xl:h-5 min-w-[16px] relative ${
-                                  isItemActive
-                                    ? "text-yellow-400"
-                                    : "text-gray-300 group-hover/link:text-yellow-300"
-                                } transition-colors duration-200`}
-                              />
-                            </div>
-
-                            <span
-                              className={`ml-2 ${
-                                isItemActive
-                                  ? "text-yellow-400"
-                                  : "group-hover/link:text-yellow-300"
-                              } transition-colors duration-200 font-medium whitespace-nowrap overflow-hidden ${
-                                !isExpanded ? "hidden" : "block"
-                              }`}
-                              style={{ width: isExpanded ? "130px" : "0" }}
                             >
-                              {item.label}
-                            </span>
-                          </Link>
+                              {(isItemActive || isSubItemActive) && (
+                                <div className="absolute right-0 top-0 h-full w-1 bg-gradient-to-b from-yellow-400 to-yellow-500 shadow-lg"></div>
+                              )}
+
+                              <div
+                                className={`absolute top-1/2 h-[2px] transform -translate-y-1/2 transition-all duration-200 z-10
+                                  group-hover/link:bg-yellow-300/60 group-hover/link:shadow-sm`}
+                                style={{
+                                  width: "14px",
+                                  left: "-14px",
+                                  backgroundImage:
+                                    isItemActive || isSubItemActive
+                                      ? "linear-gradient(to right, transparent 0, transparent 1px, #facc15 1px)"
+                                      : "linear-gradient(to right, transparent 0, transparent 1px, rgba(147, 197, 253, 0.3) 1px)",
+                                }}
+                              ></div>
+
+                              <div className="relative">
+                                {(isItemActive || isSubItemActive) && (
+                                  <div className="absolute inset-0 bg-yellow-400/40 rounded-full blur-[8px] animate-pulse"></div>
+                                )}
+                                <item.icon
+                                  className={`w-4 h-4 2xl:w-5 2xl:h-5 min-w-[16px] relative transition-all duration-200 group-hover/link:scale-110 ${
+                                    isItemActive || isSubItemActive
+                                      ? "text-yellow-400 drop-shadow-md"
+                                      : "text-gray-300 group-hover/link:text-yellow-300"
+                                  }`}
+                                />
+                              </div>
+
+                              <span
+                                className={`ml-2 ${
+                                  isItemActive || isSubItemActive
+                                    ? "text-yellow-400 text-shadow-sm"
+                                    : "group-hover/link:text-yellow-300"
+                                } transition-colors duration-200 font-medium 2xl:font-semibold 2xl:tracking-tight whitespace-nowrap overflow-hidden ${
+                                  !isExpanded ? "hidden" : "block"
+                                }`}
+                                style={{ width: isExpanded ? "130px" : "0" }}
+                              >
+                                {item.label}
+                              </span>
+                            </Link>
+
+                            {/* Sub-items */}
+                            {shouldShowSubItems && (
+                              <div className="ml-6 mt-1 space-y-1">
+                                {item.subItems!.map((subItem, subIndex) => {
+                                  const isSubActive = pathname === subItem.href;
+                                  return (
+                                    <Link
+                                      key={subItem.href}
+                                      href={subItem.href}
+                                      className={`flex items-center w-full py-1 px-2 transition-all duration-200 text-xs 2xl:tracking-tight
+                                        relative overflow-hidden rounded-l-full transform backdrop-blur-sm ${
+                                          isSubActive
+                                            ? "bg-gradient-to-r from-blue-500/25 to-[#1e293b]/50 text-blue-400 shadow-md border-r-2 border-blue-400/60"
+                                            : "text-gray-300 hover:bg-gradient-to-r hover:from-[#1e293b]/25 hover:to-[#1e293b]/10 hover:text-blue-300 hover:shadow-sm"
+                                        } group/sublink`}
+                                      style={{
+                                        transitionDelay: `${
+                                          100 + subIndex * 20
+                                        }ms`,
+                                        opacity: 1,
+                                      }}
+                                    >
+                                      {isSubActive && (
+                                        <div className="absolute right-0 top-0 h-full w-1 bg-gradient-to-b from-blue-400 to-blue-500 shadow-lg"></div>
+                                      )}
+
+                                      <div className="relative">
+                                        <subItem.icon
+                                          className={`w-3 h-3 min-w-[12px] relative transition-all duration-200 group-hover/sublink:scale-110 ${
+                                            isSubActive
+                                              ? "text-blue-400 drop-shadow-md"
+                                              : "text-gray-400 group-hover/sublink:text-blue-300"
+                                          }`}
+                                        />
+                                      </div>
+
+                                      <span
+                                        className={`ml-2 ${
+                                          isSubActive
+                                            ? "text-blue-400 text-shadow-sm"
+                                            : "group-hover/sublink:text-blue-300"
+                                        } transition-colors duration-200 font-medium 2xl:font-semibold 2xl:tracking-tight whitespace-nowrap overflow-hidden`}
+                                      >
+                                        {subItem.label}
+                                      </span>
+                                    </Link>
+                                  );
+                                })}
+                              </div>
+                            )}
+                          </div>
                         );
                       })}
                     </div>
@@ -407,34 +541,34 @@ const Aside = ({
             })}
           </div>
         </div>
-        <div className="p-2 lg:p-3 mt-auto border-t border-blue-400/10">
-          <div className="flex items-center w-full p-2 lg:p-2.5 rounded-lg transition-all duration-200 group hover:bg-[#1e293b]/20">
-            <div className="relative flex items-center justify-center bg-blue-500/10 rounded-full p-1.5">
+        <div className="p-2 lg:p-3 mt-auto border-t border-blue-400/20 bg-gradient-to-r from-[#0a1425]/50 to-[#1a2332]/30 backdrop-blur-sm">
+          <div className="flex items-center w-full p-2 lg:p-2.5 rounded-lg transition-all duration-200 group hover:bg-gradient-to-r hover:from-[#1e293b]/30 hover:to-[#1e293b]/10 hover:shadow-md hover:backdrop-blur-md">
+            <div className="relative flex items-center justify-center bg-gradient-to-br from-blue-500/20 to-blue-600/10 rounded-full p-1.5 shadow-inner border border-blue-500/20">
               {user && userProfileImage ? (
                 <Image
                   src={userProfileImage}
                   alt={`${user.username}'s profile`}
                   width={28}
                   height={28}
-                  className="w-7 h-7 rounded-full object-cover"
+                  className="w-7 h-7 rounded-full object-cover ring-2 ring-blue-400/30 group-hover:ring-yellow-400/50 transition-all duration-200"
                 />
               ) : (
-                <User className="w-5 h-5 2xl:w-7 2xl:h-7 min-w-[20px] text-white transition-colors duration-200" />
+                <User className="w-5 h-5 2xl:w-7 2xl:h-7 min-w-[20px] text-white transition-all duration-200 group-hover:text-yellow-300" />
               )}
             </div>
             {isExpanded && user && (
               <div className="flex-1 ml-2 2xl:ml-3 overflow-hidden">
-                <p className="text-white text-xs 2xl:text-sm font-medium truncate group-hover:text-yellow-100 transition-colors duration-200">
+                <p className="text-white text-xs 2xl:text-sm font-medium 2xl:font-semibold 2xl:tracking-tight truncate group-hover:text-yellow-100 transition-colors duration-200 text-shadow-sm">
                   {user.fullName}
                 </p>
-                <p className="text-yellow-300 text-[11px] 2xl:text-xs font-medium truncate">
+                <p className="text-yellow-300 text-[11px] 2xl:text-xs font-medium 2xl:font-semibold 2xl:tracking-tight truncate group-hover:text-yellow-200 transition-colors duration-200">
                   @{user.username}
                 </p>
               </div>
             )}
             {isExpanded && (
               <button
-                className="p-1.5 rounded-full hover:bg-red-600/70 transition-all duration-200 ml-1 cursor-pointer"
+                className="p-1.5 rounded-full hover:bg-gradient-to-r hover:from-red-600/70 hover:to-red-500/50 hover:shadow-lg transition-all duration-200 ml-1 cursor-pointer group/logout backdrop-blur-sm border border-transparent hover:border-red-400/30"
                 onClick={handleLogout}
                 disabled={isLoggingOut}
                 title="Logout"
@@ -442,7 +576,7 @@ const Aside = ({
                 {isLoggingOut ? (
                   <Loader2 className="w-4 h-4 2xl:w-5 2xl:h-5 text-white animate-spin" />
                 ) : (
-                  <LogOut className="w-4 h-4 2xl:w-5 2xl:h-5 text-white hover:text-yellow-300 transition-colors duration-200" />
+                  <LogOut className="w-4 h-4 2xl:w-5 2xl:h-5 text-white hover:text-yellow-300 group-hover/logout:scale-110 transition-all duration-200 drop-shadow-sm" />
                 )}
               </button>
             )}

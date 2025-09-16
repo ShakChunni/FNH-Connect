@@ -9,6 +9,7 @@ import MainContent from "./MainContent";
 import { metadata } from "./metadata";
 import PageTitle from "./PageTitle";
 import { initializeServer } from "@/lib/server-init";
+import Maintenance from "./Maintenance";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -25,6 +26,8 @@ if (
 
 export { metadata };
 
+const MAINTENANCE_MODE = process.env.NEXT_PUBLIC_MAINTENANCE === "true";
+
 export default function RootLayout({
   children,
 }: {
@@ -34,16 +37,26 @@ export default function RootLayout({
     <html lang="en" className={inter.variable}>
       <head>
         <meta name="robots" content="noindex, nofollow" />
+        <meta
+          name="format-detection"
+          content="telephone=no, date=no, email=no, address=no"
+        />
       </head>
       <body>
-        <PageTitle />
-        <QueryClientProvider>
-          <Theme accentColor="blue" radius="large">
-            <AuthProvider>
-              <MainContent>{children}</MainContent>
-            </AuthProvider>
-          </Theme>
-        </QueryClientProvider>
+        {MAINTENANCE_MODE ? (
+          <Maintenance />
+        ) : (
+          <>
+            <PageTitle />
+            <QueryClientProvider>
+              <Theme accentColor="blue" radius="large">
+                <AuthProvider>
+                  <MainContent>{children}</MainContent>
+                </AuthProvider>
+              </Theme>
+            </QueryClientProvider>
+          </>
+        )}
       </body>
     </html>
   );

@@ -1,9 +1,8 @@
 "use client";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import { motion, AnimatePresence } from "framer-motion";
-import { useAuth } from "../AuthContext";
+import { useAuth } from "@/app/AuthContext";
 
 export default function Login() {
   const [username, setUsername] = useState("");
