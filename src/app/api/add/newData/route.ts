@@ -1,14 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import DeviceDetector from "node-device-detector";
+import { cookies } from "next/headers";
 
 export async function POST(req: NextRequest) {
   const {
+    organizationId,
     organizationName,
+    campaignName,
     organizationWebsite,
     organizationLocation,
     industryName,
+    clientId,
     clientName,
+    clientPosition,
     clientPhone,
     clientEmail,
     leadSource,
@@ -35,37 +39,170 @@ export async function POST(req: NextRequest) {
   try {
     const klTime = new Date(new Date().getTime() + 8 * 60 * 60 * 1000);
 
-    // Prepare the data object
-    const data = {
-      organization_name: organizationName,
-      organization_website: organizationWebsite,
-      organization_location: organizationLocation,
-      industry_name: industryName,
-      client_name: clientName,
-      client_contact_number:
-        clientPhone && clientPhone.trim() !== "" ? clientPhone : null,
-      client_contact_email:
-        clientEmail && clientEmail.trim() !== "" ? clientEmail : null,
-      lead_source: leadSource,
-      prospect_date: prospectDate ? new Date(prospectDate) : null,
-      PIC: pic,
+    function toDateOnly(
+      dateInput: string | Date | null | undefined
+    ): Date | null {
+      if (!dateInput) return null;
+      if (typeof dateInput === "string")
+        return new Date(dateInput + "T00:00:00Z");
+      if (dateInput instanceof Date)
+        return new Date(
+          Date.UTC(
+            dateInput.getFullYear(),
+            dateInput.getMonth(),
+            dateInput.getDate()
+          )
+        );
+      return null;
+    }
+
+    // --- ORGANIZATION LOGIC ---
+    let organization;
+    if (organizationId) {
+      organization = await prisma.organization.findUnique({
+        where: { id: organizationId },
+      });
+      if (!organization) throw new Error("Selected organization not found");
+
+      const updateData: any = {};
+      if (
+        organization.website === null &&
+        organizationWebsite &&
+        organizationWebsite.trim() !== ""
+      ) {
+        updateData.website = organizationWebsite.trim();
+      }
+      if (
+        organization.location === null &&
+        organizationLocation &&
+        organizationLocation.trim() !== ""
+      ) {
+        updateData.location = organizationLocation.trim();
+      }
+      if (
+        organization.industry === null &&
+        industryName &&
+        industryName.trim() !== ""
+      ) {
+        updateData.industry = industryName.trim();
+      }
+      if (
+        (!organization.lead_source || organization.lead_source.trim() === "") &&
+        leadSource &&
+        leadSource.trim() !== ""
+      ) {
+        updateData.lead_source = leadSource.trim();
+      }
+      if (Object.keys(updateData).length > 0) {
+        updateData.updatedAt = klTime;
+        organization = await prisma.organization.update({
+          where: { id: organizationId },
+          data: updateData,
+        });
+      }
+    } else {
+      organization = await prisma.organization.create({
+        data: {
+          name: organizationName.trim(),
+          website: organizationWebsite?.trim() || null,
+          location: organizationLocation?.trim() || null,
+          industry: industryName?.trim() || null,
+          lead_source: leadSource?.trim() || null,
+          createdBy: pic?.trim().toLowerCase() || null, // <-- add this line
+          createdAt: klTime,
+          updatedAt: klTime,
+        },
+      });
+    }
+
+    // --- CLIENT LOGIC ---
+    let client = null;
+    if (clientName && clientName.trim() !== "") {
+      if (clientId) {
+        client = await prisma.client.findUnique({ where: { id: clientId } });
+        if (!client) throw new Error("Selected client not found");
+
+        if (client.organizationId !== organization.id) {
+          // Client exists but is not part of this org, create new client for this org
+          client = await prisma.client.create({
+            data: {
+              name: clientName.trim(),
+              position: clientPosition?.trim() || null,
+              contact_number: clientPhone?.trim() || null,
+              contact_email: clientEmail?.trim() || null,
+              organizationId: organization.id,
+              createdBy: pic?.trim().toLowerCase() || null,
+              createdAt: klTime,
+              updatedAt: klTime,
+            },
+          });
+        } else {
+          // Update fields only if empty/null
+          const updateData: any = {};
+          if (
+            (client.position === null || client.position.trim() === "") &&
+            clientPosition &&
+            clientPosition.trim() !== ""
+          ) {
+            updateData.position = clientPosition.trim();
+          }
+          if (
+            (client.contact_number === null ||
+              client.contact_number.trim() === "") &&
+            clientPhone &&
+            clientPhone.trim() !== ""
+          ) {
+            updateData.contact_number = clientPhone.trim();
+          }
+          if (
+            (client.contact_email === null ||
+              client.contact_email.trim() === "") &&
+            clientEmail &&
+            clientEmail.trim() !== ""
+          ) {
+            updateData.contact_email = clientEmail.trim();
+          }
+          if (Object.keys(updateData).length > 0) {
+            updateData.updatedAt = klTime;
+            client = await prisma.client.update({
+              where: { id: clientId },
+              data: updateData,
+            });
+          }
+        }
+      } else {
+        // New client: Create directly
+        client = await prisma.client.create({
+          data: {
+            name: clientName.trim(),
+            position: clientPosition?.trim() || null,
+            contact_number: clientPhone?.trim() || null,
+            contact_email: clientEmail?.trim() || null,
+            organizationId: organization.id,
+            createdBy: pic?.trim().toLowerCase() || null, // <-- add this line
+            createdAt: klTime,
+            updatedAt: klTime,
+          },
+        });
+      }
+    }
+
+    // --- REPORT LOGIC ---
+    const reportData = {
+      campaign_name: campaignName?.trim() || null,
+      prospect_date: toDateOnly(prospectDate),
+      PIC: pic?.trim() || null,
       meetings_conducted: meetingsConducted,
-      meeting_date: meetingDate ? new Date(meetingDate) : null,
+      meeting_date: toDateOnly(meetingDate),
       proposal_in_progress: proposalInProgress,
-      proposal_in_progress_date: proposalInProgressDate
-        ? new Date(proposalInProgressDate)
-        : null,
+      proposal_in_progress_date: toDateOnly(proposalInProgressDate),
       proposal_sent_out: proposalSent,
-      proposal_sent_out_date: proposalSentDate
-        ? new Date(proposalSentDate)
-        : null,
+      proposal_sent_out_date: toDateOnly(proposalSentDate),
       quotation_signed: proposalSigned,
-      quotation_signed_date: proposalSignedDate
-        ? new Date(proposalSignedDate)
-        : null,
-      quotation_number: quotationNumber,
-      type: type,
-      notes: notes,
+      quotation_signed_date: toDateOnly(proposalSignedDate),
+      quotation_number: quotationNumber?.trim() || null,
+      type: type?.trim() || null,
+      notes: notes?.trim() || null,
       total_proposal_value: proposedValue ?? 0,
       total_closed_sale: closedSale ?? 0,
       source_table: sourceTable,
@@ -73,48 +210,55 @@ export async function POST(req: NextRequest) {
       createdAt: klTime,
       updatedAt: null,
       createdBy: username,
+      organizationId: organization.id,
+      clientId: client?.id || null,
     };
 
-    // Create the record first without waiting for activity log
+    // --- CREATE REPORT ---
     let createdRecord;
     if (sourceTable === "MAVN") {
-      createdRecord = await prisma.mavn_monthly_report.create({ data });
+      createdRecord = await prisma.mavn_monthly_report.create({
+        data: reportData,
+        include: { organization: true, client: true },
+      });
     } else if (sourceTable === "MI") {
-      createdRecord = await prisma.mi_monthly_report.create({ data });
+      createdRecord = await prisma.mi_monthly_report.create({
+        data: reportData,
+        include: { organization: true, client: true },
+      });
     } else {
       throw new Error("Invalid source table");
     }
 
-    if (!createdRecord) {
-      throw new Error("Failed to create record");
-    }
+    if (!createdRecord) throw new Error("Failed to create record");
 
-    // Prepare display info for the response and activity log
+    // --- LOG ACTIVITY ---
     const displayId =
       sourceTable === "MI"
         ? `TMI-${createdRecord.id}`
         : `MV-${createdRecord.id}`;
     const organizationDisplayName = sourceTable === "MI" ? "TMI" : "MAVN";
-
-    // Log activity in the background
     logActivity(req, {
       userId: Number(userId),
       username,
       sourceTable,
       createdId: createdRecord.id,
-      clientName,
+      clientName: clientName || "No client specified",
       displayId,
       organizationName: organizationDisplayName,
       klTime,
     }).catch((err) => {
       console.error("Activity logging failed:", err);
-      // Don't throw - this is in background and shouldn't affect the response
     });
 
-    // Return response immediately
+    // --- RESPONSE ---
     return NextResponse.json({
       message: "Data added successfully",
-      result: createdRecord,
+      result: {
+        ...createdRecord,
+        organization: createdRecord.organization,
+        client: createdRecord.client,
+      },
       displayId,
     });
   } catch (error) {
@@ -155,247 +299,52 @@ async function logActivity(
   } = params;
 
   try {
-    const deviceDetails = getDeviceDetails(req);
+    const cookieStore = await cookies();
+    const sessionToken = cookieStore.get("session")?.value;
+
+    if (!sessionToken) {
+      throw new Error("No session token found");
+    }
+
+    // Get session with device details
+    const session = await prisma.session.findUnique({
+      where: { token: sessionToken },
+      select: {
+        id: true,
+        device_fingerprint: true,
+        readable_fingerprint: true,
+        browser_version: true,
+        ip_address: true,
+        device_type: true,
+        browser_name: true,
+        os_type: true,
+      },
+    });
+
+    if (!session) {
+      throw new Error("Session not found");
+    }
 
     await prisma.activityLog.create({
       data: {
         userId,
         username,
         action: "CREATE",
+        sessionId: session.id,
         source_table: sourceTable,
         source_id: createdId,
         description: `Created record ${clientName} (${displayId}) in ${organizationName}`,
-        ip_address: getClientIp(req),
-        device_type: getDeviceType(req),
-        // Device details
-        browser_name: deviceDetails.browser_name,
-        browser_version: deviceDetails.browser_version,
-        os_name: deviceDetails.os_name,
-        os_version: deviceDetails.os_version,
-        device_vendor: deviceDetails.device_vendor,
-        device_model: deviceDetails.device_model,
-        device_type_spec: deviceDetails.device_type,
+        ip_address: session.ip_address,
+        browser_version: session.browser_version,
+        device_type: session.device_type,
+        device_fingerprint: session.device_fingerprint,
+        readable_fingerprint: session.readable_fingerprint,
+        browser_name: session.browser_name,
+        os_type: session.os_type,
         timestamp: klTime,
       },
     });
   } catch (err) {
     console.error("Failed to log activity:", err);
-    // Don't rethrow - this is background processing
   }
-}
-
-function getClientIp(req: NextRequest): string {
-  let clientIp =
-    req.headers.get("x-forwarded-for")?.split(",")[0].trim() ||
-    req.headers.get("x-real-ip") ||
-    "Unknown";
-
-  if (clientIp.includes(",")) {
-    clientIp = clientIp.split(",")[0].trim();
-  }
-
-  if (clientIp === "::1" || clientIp === "127.0.0.1") {
-    clientIp = "localhost";
-  }
-
-  return clientIp;
-}
-
-function getDeviceType(req: NextRequest): string {
-  const userAgent = req.headers.get("user-agent") || "Unknown";
-  const deviceInfo = getDeviceInfo(userAgent);
-
-  // Format device display string
-  let deviceTypeDisplay = "Unknown Device";
-
-  if (deviceInfo.device.vendor || deviceInfo.device.model) {
-    deviceTypeDisplay =
-      [deviceInfo.device.vendor, deviceInfo.device.model]
-        .filter(Boolean)
-        .join(" ")
-        .trim() || "Unknown Device";
-
-    if (
-      deviceInfo.device.type &&
-      !deviceTypeDisplay
-        .toLowerCase()
-        .includes(deviceInfo.device.type.toLowerCase())
-    ) {
-      deviceTypeDisplay += ` (${deviceInfo.device.type})`;
-    }
-  } else if (deviceInfo.client.name) {
-    deviceTypeDisplay = `${deviceInfo.client.name} ${
-      deviceInfo.client.version || ""
-    }`.trim();
-  }
-
-  const osInfo = deviceInfo.os.name
-    ? `${deviceInfo.os.name} ${deviceInfo.os.version || ""}`.trim()
-    : "Unknown OS";
-
-  return `${deviceTypeDisplay} on ${osInfo}`;
-}
-
-function getDeviceDetails(req: NextRequest) {
-  const userAgent = req.headers.get("user-agent") || "Unknown";
-  const deviceInfo = getDeviceInfo(userAgent);
-
-  return {
-    browser_name: deviceInfo.client.name,
-    browser_version: deviceInfo.client.version,
-    os_name: deviceInfo.os.name,
-    os_version: deviceInfo.os.version,
-    device_vendor: deviceInfo.device.vendor,
-    device_model: deviceInfo.device.model,
-    device_type: deviceInfo.device.type,
-    raw_user_agent: userAgent,
-  };
-}
-
-// DeviceInfo interface and getDeviceInfo function
-interface DeviceInfo {
-  client: {
-    name: string | null;
-    version: string | null;
-    type: string | null;
-  };
-  os: {
-    name: string | null;
-    version: string | null;
-    platform: string | null;
-  };
-  device: {
-    type: string | null;
-    brand: string | null;
-    model: string | null;
-    vendor: string | null;
-  };
-  bot: boolean;
-}
-
-function getDeviceInfo(userAgent: string): DeviceInfo {
-  const detector = new DeviceDetector({
-    clientIndexes: true,
-    deviceIndexes: true,
-    deviceAliasCode: false,
-    deviceTrusted: true,
-    maxUserAgentSize: 500,
-  });
-
-  const result = detector.detect(userAgent);
-
-  // Get OS info
-  const osName = result.os?.name || null;
-  let osVersion = result.os?.version || null;
-
-  // Enhance macOS versions with marketing names
-  if (osName === "Mac OS" && osVersion) {
-    const macOSVersions: Record<string, string> = {
-      "10.15": "Catalina",
-      "11": "Big Sur",
-      "12": "Monterey",
-      "13": "Ventura",
-      "14": "Sonoma",
-      "15": "Sequoia",
-    };
-
-    const majorVersion = osVersion.split(".")[0];
-    const minorVersion = osVersion.split(".")[1];
-    const versionKey =
-      majorVersion === "10" ? `${majorVersion}.${minorVersion}` : majorVersion;
-
-    if (macOSVersions[versionKey]) {
-      osVersion = `${osVersion} (${macOSVersions[versionKey]})`;
-    }
-  }
-
-  // Get device info with fallbacks
-  let deviceVendor = result.device?.brand || null;
-  let deviceModel = result.device?.model || null;
-  let deviceType = result.device?.type || null;
-
-  // Capitalize device type
-  if (deviceType && typeof deviceType === "string") {
-    deviceType =
-      deviceType.charAt(0).toUpperCase() + deviceType.slice(1).toLowerCase();
-  }
-
-  // Set desktop type for desktop operating systems
-  if (
-    !deviceType &&
-    ((osName && ["Windows", "Mac OS", "Linux"].includes(osName)) ||
-      result.os?.platform === "x64" ||
-      result.os?.platform === "x86")
-  ) {
-    deviceType = "Desktop";
-  }
-
-  // Handle frozen Android user agent (Chrome 110+ shows "Android 10; K")
-  const isFrozenAndroidUA =
-    osName === "Android" &&
-    osVersion === "10" &&
-    (deviceModel === "K" || !deviceModel);
-
-  if (isFrozenAndroidUA) {
-    // Try to get better device info from user agent
-    const androidDeviceMatch = userAgent.match(/;\s*([^;)]+?)(?:\s+Build|\))/i);
-    if (androidDeviceMatch && androidDeviceMatch[1]) {
-      const deviceString = androidDeviceMatch[1].trim();
-      if (deviceString && deviceString !== "K") {
-        const knownVendors = [
-          { name: "Samsung", patterns: ["SM-", "SAMSUNG"] },
-          { name: "Xiaomi", patterns: ["MI ", "Redmi", "POCO"] },
-          { name: "Google", patterns: ["Pixel"] },
-          { name: "OnePlus", patterns: ["OnePlus"] },
-          { name: "OPPO", patterns: ["OPPO", "CPH"] },
-          { name: "Vivo", patterns: ["vivo"] },
-          { name: "Huawei", patterns: ["HUAWEI"] },
-          { name: "Motorola", patterns: ["moto", "Motorola"] },
-          { name: "Nokia", patterns: ["Nokia"] },
-          { name: "Sony", patterns: ["Sony", "Xperia"] },
-        ];
-
-        for (const vendor of knownVendors) {
-          if (vendor.patterns.some((p) => deviceString.includes(p))) {
-            deviceVendor = vendor.name;
-            deviceModel = deviceString;
-            break;
-          }
-        }
-
-        if (!deviceVendor && deviceString !== "K") {
-          deviceModel = deviceString;
-        }
-      }
-    }
-  }
-
-  // Bot detection
-  let isBot = false;
-  const botResult = detector.parseBot(userAgent);
-  if (botResult && Object.keys(botResult).length > 0) {
-    isBot = true;
-  } else if (result.client?.type === "bot") {
-    isBot = true;
-  }
-
-  return {
-    client: {
-      name: result.client?.name || null,
-      version: result.client?.version || null,
-      type: result.client?.type || null,
-    },
-    os: {
-      name: osName,
-      version: osVersion,
-      platform: result.os?.platform || null,
-    },
-    device: {
-      type: deviceType,
-      brand: deviceVendor,
-      model: deviceModel,
-      vendor: deviceVendor,
-    },
-    bot: isBot,
-  };
 }

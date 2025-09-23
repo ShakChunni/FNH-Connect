@@ -16,19 +16,26 @@ model Patient {
   gender       String
   age          Int?
   dateOfBirth  DateTime?
-  guardianName String?
+  guardianName String? // For infertility patients, this is spouse name
   address      String?
   phoneNumber  String?
   email        String?
   bloodGroup   String?
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
-  createdBy    Int // Staff ID who created the record
+
+  // Spouse information (primarily for infertility patients)
+  spouseAge    Int?
+  spouseDOB    DateTime?
+  spouseGender String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  createdBy Int // Staff ID who created the record
 
   // Relations
-  admissions     Admission[]
-  pathologyTests PathologyTest[]
-  account        PatientAccount? // Central account for all charges/payments
+  admissions         Admission[]
+  pathologyTests     PathologyTest[]
+  account            PatientAccount? // Central account for all charges/payments
+  infertilityRecords InfertilityPatient[] // Infertility department records
 
   @@index([fullName])
   @@index([phoneNumber])
@@ -67,6 +74,10 @@ model Staff {
   pathologyOrderedBy    PathologyTest[]   @relation("OrderedBy")
   pathologyDoneBy       PathologyTest[]   @relation("DoneBy")
   shifts                Shift[] // New relation for cash management
+
+  // Infertility relations
+  infertilityCreated  InfertilityPatient[] @relation("InfertilityCreatedBy")
+  infertilityModified InfertilityPatient[] @relation("InfertilityModifiedBy")
 
   // Login credentials
   user User?
@@ -445,35 +456,16 @@ model Hospital {
 model InfertilityPatient {
   id Int @id @default(autoincrement())
 
-  // Hospital Information
-  hospitalId   Int?
-  hospitalName String? // For cases where hospital is not in our system
-
-  // Patient Information
-  patientFirstName String
-  patientLastName  String?
-  patientFullName  String // Computed for easier querying
-  patientAge       Int?
-  patientDOB       DateTime?
-  patientGender    String? // Usually "Female" for primary patient
-
-  // Spouse Information
-  spouseName   String?
-  spouseAge    Int?
-  spouseDOB    DateTime?
-  spouseGender String? // Usually "Male"
-
-  // Contact Information
-  mobileNumber String?
-  email        String?
-  address      String?
+  // References to central tables
+  patientId  Int // Links to main Patient table
+  hospitalId Int // Hospital where treatment happens
 
   // Marriage & Fertility History
   yearsMarried    Int? // How many years married
   yearsTrying     Int? // How many years trying to conceive
   infertilityType String? // "Primary" or "Secondary"
 
-  // Medical Information
+  // Medical Information specific to infertility
   para          String? // Obstetric history notation (e.g., "0+1ab, 2c/s")
   gravida       String? // Number of pregnancies
   weight        Decimal? // Patient's weight
@@ -498,19 +490,23 @@ model InfertilityPatient {
 
   // Follow-up
   nextAppointment DateTime?
-  status          String? // "Active", "Completed", "Discontinued"
+  status          String?   @default("Active") // "Active", "Completed", "Discontinued"
 
   // Additional fields
-  notes     String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  createdBy Int // Staff ID who created the record
+  notes          String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  createdBy      Int // Staff ID who created the record
+  lastModifiedBy Int? // Staff ID who last modified
 
   // Relations
-  hospital Hospital? @relation(fields: [hospitalId], references: [id])
+  patient         Patient  @relation(fields: [patientId], references: [id])
+  hospital        Hospital @relation(fields: [hospitalId], references: [id])
+  createdByStaff  Staff    @relation("InfertilityCreatedBy", fields: [createdBy], references: [id])
+  modifiedByStaff Staff?   @relation("InfertilityModifiedBy", fields: [lastModifiedBy], references: [id])
 
-  @@index([patientFullName])
-  @@index([mobileNumber])
+  @@unique([patientId, hospitalId]) // One infertility record per patient per hospital
+  @@index([patientId])
   @@index([hospitalId])
   @@index([createdAt])
   @@index([status])
