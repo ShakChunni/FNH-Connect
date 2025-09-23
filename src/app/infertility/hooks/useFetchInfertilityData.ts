@@ -61,7 +61,7 @@ const useFetchInfertilityData = (
 
   const fetchInfertilityPatients =
     useCallback(async (): Promise<FetchDataResponse> => {
-      const response = await fetch("/api/infertility/fetch", {
+      const response = await fetch("/api/infertility-patients/fetch", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -131,7 +131,7 @@ const useFetchInfertilityData = (
       await queryClient.prefetchQuery({
         queryKey: ["infertilityPatients", newFilters, searchParams, true],
         queryFn: () =>
-          fetch("/api/infertility/fetch", {
+          fetch("/api/infertility-patients/fetch", {
             method: "POST",
             headers: {
               "Content-Type": "application/json",

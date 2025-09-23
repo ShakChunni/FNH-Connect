@@ -18,6 +18,7 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/app/AuthContext";
 import { useMediaQuery } from "react-responsive";
+import { useAddInfertilityData } from "../../hooks/useAddInfertilityData";
 import HospitalInformation, {
   HospitalData,
 } from "./components/HospitalInformation";
@@ -29,34 +30,6 @@ import MedicalInformation from "./components/MedicalInformation";
 interface AddNewDataProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (data: {
-    user: { username: string; role: string } | null;
-    hospital: HospitalData;
-    patient: PatientData;
-    medicalInfo: {
-      yearsMarried: number | null;
-      yearsTrying: number | null;
-      infertilityType: string;
-      para: string;
-      gravida: string;
-      weight: number | null;
-      height: number | null;
-      bmi: number | null;
-      bloodPressure: string;
-      bloodGroup: string;
-      medicalHistory: string;
-      surgicalHistory: string;
-      menstrualHistory: string;
-      contraceptiveHistory: string;
-      referralSource: string;
-      chiefComplaint: string;
-      treatmentPlan: string;
-      medications: string;
-      nextAppointment: Date | null;
-      status: string;
-      notes: string;
-    };
-  }) => void;
   onMessage: (type: "success" | "error", content: string) => void;
   messagePopupRef: React.RefObject<HTMLDivElement | null>;
 }
@@ -64,11 +37,85 @@ interface AddNewDataProps {
 const AddNewDataInfertility: React.FC<AddNewDataProps> = ({
   isOpen,
   onClose,
-  onSubmit,
   onMessage,
   messagePopupRef,
 }) => {
   const { user } = useAuth();
+
+  // Initialize our custom hook for adding infertility data
+  const {
+    addPatient,
+    isLoading: isSubmitting,
+    error: submitError,
+    reset: resetMutation,
+  } = useAddInfertilityData({
+    onSuccess: (data) => {
+      if (data) {
+        onMessage(
+          "success",
+          `Patient ${data.patient.fullName} has been successfully registered with ID: ${data.displayId}`
+        );
+      } else {
+        onMessage("success", "Patient has been successfully registered!");
+      }
+      onClose();
+      // Reset form data
+      setHospitalData({
+        id: null,
+        name: "",
+        address: "",
+        phoneNumber: "",
+        email: "",
+        website: "",
+        type: "",
+      });
+      setPatientData({
+        id: null,
+        patientFirstName: "",
+        patientLastName: "",
+        patientFullName: "",
+        patientGender: "Female",
+        patientAge: null,
+        patientDOB: null,
+        mobileNumber: "",
+        email: "",
+        address: "",
+        spouseName: "",
+        spouseAge: null,
+        spouseDOB: null,
+        spouseGender: "Male",
+      });
+      setMedicalInfo({
+        yearsMarried: null,
+        yearsTrying: null,
+        infertilityType: "",
+        para: "",
+        gravida: "",
+        weight: null,
+        height: null,
+        bmi: null,
+        bloodPressure: "",
+        bloodGroup: "",
+        medicalHistory: "",
+        surgicalHistory: "",
+        menstrualHistory: "",
+        contraceptiveHistory: "",
+        referralSource: "",
+        chiefComplaint: "",
+        treatmentPlan: "",
+        medications: "",
+        nextAppointment: null,
+        status: "Active",
+        notes: "",
+      });
+    },
+    onError: (error) => {
+      onMessage(
+        "error",
+        error.message || "Failed to save patient data. Please try again."
+      );
+    },
+  });
 
   // Main data states
   const [hospitalData, setHospitalData] = useState<HospitalData>({
@@ -124,7 +171,6 @@ const AddNewDataInfertility: React.FC<AddNewDataProps> = ({
   });
 
   // UI states
-  const [isLoading, setIsLoading] = useState(false);
   const [activeSection, setActiveSection] = useState("hospital");
   const [validationStatus, setValidationStatus] = useState({
     phone: true,
@@ -173,9 +219,9 @@ const AddNewDataInfertility: React.FC<AddNewDataProps> = ({
 
   // Close modal function
   const handleClose = useCallback(() => {
-    if (isLoading) return;
+    if (isSubmitting) return;
     onClose();
-  }, [isLoading, onClose]);
+  }, [isSubmitting, onClose]);
 
   // Handle form submission
   const handleSubmit = useCallback(async () => {
@@ -184,27 +230,74 @@ const AddNewDataInfertility: React.FC<AddNewDataProps> = ({
       return;
     }
 
-    setIsLoading(true);
     try {
-      onSubmit({
-        user,
-        hospital: hospitalData,
-        patient: patientData,
-        medicalInfo,
-      });
+      // Transform our component data to match the API request format
+      const apiData = {
+        hospital: {
+          id: hospitalData.id,
+          name: hospitalData.name,
+          address: hospitalData.address,
+          phoneNumber: hospitalData.phoneNumber,
+          email: hospitalData.email,
+          website: hospitalData.website,
+          type: hospitalData.type,
+        },
+        patient: {
+          id: patientData.id,
+          firstName: patientData.patientFirstName,
+          lastName: patientData.patientLastName || "",
+          fullName: patientData.patientFullName,
+          gender: patientData.patientGender,
+          age: patientData.patientAge,
+          dateOfBirth: patientData.patientDOB,
+          guardianName: patientData.spouseName, // Spouse name for infertility patients
+          address: patientData.address,
+          phoneNumber: patientData.mobileNumber,
+          email: patientData.email,
+          bloodGroup: medicalInfo.bloodGroup,
+        },
+        spouseInfo: {
+          name: patientData.spouseName,
+          age: patientData.spouseAge,
+          dateOfBirth: patientData.spouseDOB,
+          gender: patientData.spouseGender,
+        },
+        medicalInfo: {
+          yearsMarried: medicalInfo.yearsMarried,
+          yearsTrying: medicalInfo.yearsTrying,
+          infertilityType: medicalInfo.infertilityType,
+          para: medicalInfo.para,
+          gravida: medicalInfo.gravida,
+          weight: medicalInfo.weight,
+          height: medicalInfo.height,
+          bmi: medicalInfo.bmi,
+          bloodPressure: medicalInfo.bloodPressure,
+          medicalHistory: medicalInfo.medicalHistory,
+          surgicalHistory: medicalInfo.surgicalHistory,
+          menstrualHistory: medicalInfo.menstrualHistory,
+          contraceptiveHistory: medicalInfo.contraceptiveHistory,
+          referralSource: medicalInfo.referralSource,
+          chiefComplaint: medicalInfo.chiefComplaint,
+          treatmentPlan: medicalInfo.treatmentPlan,
+          medications: medicalInfo.medications,
+          nextAppointment: medicalInfo.nextAppointment,
+          status: medicalInfo.status,
+          notes: medicalInfo.notes,
+        },
+      };
+
+      await addPatient(apiData);
     } catch (error) {
-      onMessage("error", "Failed to save patient data. Please try again.");
-    } finally {
-      setIsLoading(false);
+      // Error is already handled by the hook's onError callback
+      console.error("Submit error:", error);
     }
   }, [
     isFormValid,
     onMessage,
-    onSubmit,
-    user,
     hospitalData,
     patientData,
     medicalInfo,
+    addPatient,
   ]);
   const [userClickedSection, setUserClickedSection] = useState<string | null>(
     null
@@ -486,7 +579,7 @@ const AddNewDataInfertility: React.FC<AddNewDataProps> = ({
                   {/* Close Button */}
                   <button
                     onClick={handleClose}
-                    disabled={isLoading}
+                    disabled={isSubmitting}
                     className="bg-red-100 hover:bg-red-200 text-red-500 p-1.5 sm:p-2 rounded-full flex items-center justify-center transition-all duration-200 flex-shrink-0 hover:scale-110 hover:shadow-md group disabled:opacity-50"
                     aria-label="Close"
                   >
@@ -582,17 +675,17 @@ const AddNewDataInfertility: React.FC<AddNewDataProps> = ({
               <div className="flex justify-end gap-2 sm:gap-3">
                 <button
                   onClick={handleClose}
-                  disabled={isLoading}
+                  disabled={isSubmitting}
                   className="px-4 sm:px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors duration-200 disabled:opacity-50 text-sm font-medium"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleSubmit}
-                  disabled={isLoading || !isFormValid}
+                  disabled={isSubmitting || !isFormValid}
                   className="px-4 sm:px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 disabled:opacity-50 flex items-center gap-2 text-sm font-medium"
                 >
-                  {isLoading ? (
+                  {isSubmitting ? (
                     <>
                       <Loader2 className="w-4 h-4 animate-spin" />
                       Saving...

@@ -24,7 +24,7 @@ import {
 import useFetchPatientInformation, {
   InfertilityPatientBasic,
 } from "../hooks/useFetchPatientInformation";
-import DateOfBirthDropdown from "../Dropdowns/DateOfBirthDropdown";
+import DateOfBirthDropdown from "../Dropdowns/DobDropdown";
 import GenderDropdown from "../Dropdowns/GenderDropdown";
 import ContactEmailInput from "./ContactEmailInput";
 import ContactPhoneInput from "./ContactPhoneInput";

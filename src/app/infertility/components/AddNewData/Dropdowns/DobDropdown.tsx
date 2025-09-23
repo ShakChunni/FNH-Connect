@@ -15,7 +15,7 @@ interface AgeObject {
   days: number;
 }
 
-interface DateOfBirthDropdownProps {
+interface DobDropdownProps {
   value: Date | null;
   onChange: (date: Date | null, age?: AgeObject) => void;
   placeholder?: string;
@@ -49,7 +49,7 @@ const calculateAge = (dob: Date): AgeObject => {
 const clampNumberInput = (v: number) =>
   Number.isFinite(v) && v >= 0 ? Math.floor(v) : 0;
 
-const DateOfBirthDropdown: React.FC<DateOfBirthDropdownProps> = ({
+const DobDropdown: React.FC<DobDropdownProps> = ({
   value,
   onChange,
   placeholder = "Select date of birth",
@@ -338,4 +338,4 @@ const DateOfBirthDropdown: React.FC<DateOfBirthDropdownProps> = ({
   );
 };
 
-export default React.memo(DateOfBirthDropdown);
+export default React.memo(DobDropdown);

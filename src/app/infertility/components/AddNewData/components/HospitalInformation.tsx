@@ -659,6 +659,7 @@ const HospitalInformation: React.FC<HospitalInformationProps> = ({
             value={localData.phoneNumber}
             onChange={(val) => handleLocalDataChange("phoneNumber", val)}
             onValidationChange={setIsPhoneValid}
+            defaultCountry="BD"
             isAutofilled={autofilledFields.phoneNumber}
           />
           {autofilledFields.phoneNumber && (
