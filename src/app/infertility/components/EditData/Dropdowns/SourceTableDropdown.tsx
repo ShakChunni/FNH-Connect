@@ -224,7 +224,12 @@ const SourceTableDropdown: FC<SourceTableDropdownProps> = ({
       >
         <Database className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2 text-current" />
         <span className="text-xs sm:text-sm font-medium whitespace-nowrap">
-          {formatDisplayValue() || "Organization"}
+          <span className="block sm:hidden">
+            {formatDisplayValue() || "Assigned Org"}
+          </span>
+          <span className="hidden sm:block">
+            {formatDisplayValue() || "Assigned Organization"}
+          </span>
         </span>
         <ChevronDown
           className={`ml-1 sm:ml-2 h-3 w-3 text-current transition-transform duration-200 ${

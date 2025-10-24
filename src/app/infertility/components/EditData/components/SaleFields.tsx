@@ -71,16 +71,25 @@ const SaleFields: React.FC<SaleFieldsProps> = memo(
       []
     );
 
-    const getContainerClassName = useCallback((value: number | null) => {
-      const baseClasses =
-        "flex items-center rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-300 h-12 sm:h-14";
+    const getContainerClassName = useCallback(
+      (value: number | null, touched: boolean) => `
+        flex items-center ${
+          isMobile ? "h-12" : "h-12 sm:h-14"
+        } rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-all duration-300
+        ${
+          touched && value !== null
+            ? "border border-green-700 ring-1 ring-green-700 focus-within:border-blue-950 focus-within:ring-2 focus-within:ring-blue-950"
+            : "border border-gray-300 focus-within:border-blue-950 focus-within:ring-2 focus-within:ring-blue-950"
+        }
+        ${
+          proposalSigned === "Yes" && value === null
+            ? "border-red-700 border ring-2 ring-red-700"
+            : ""
+        }
+      `,
+      [proposalSigned, isMobile]
+    );
 
-      if (value === null) {
-        return `bg-gray-50 border border-gray-300 ${baseClasses}`;
-      } else {
-        return `bg-white border-2 border-green-700 ${baseClasses}`;
-      }
-    }, []);
     return (
       <>
         <div className="mb-3 sm:mb-4 relative">
@@ -90,7 +99,12 @@ const SaleFields: React.FC<SaleFieldsProps> = memo(
           >
             Total Proposed Value
           </label>
-          <div className={getContainerClassName(proposedValue)}>
+          <div
+            className={getContainerClassName(
+              proposedValue,
+              proposedValueTouched
+            )}
+          >
             <div
               className={`bg-gray-100 h-full flex items-center justify-center ${
                 isMobile ? "px-2" : "px-3 sm:px-4"
@@ -132,7 +146,7 @@ const SaleFields: React.FC<SaleFieldsProps> = memo(
           >
             Total Closed Sale
           </label>
-          <div className={getContainerClassName(closedSale)}>
+          <div className={getContainerClassName(closedSale, closedSaleTouched)}>
             <div
               className={`bg-gray-100 h-full flex items-center justify-center ${
                 isMobile ? "px-2" : "px-3 sm:px-4"
