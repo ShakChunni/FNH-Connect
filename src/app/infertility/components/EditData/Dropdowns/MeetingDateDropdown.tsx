@@ -198,7 +198,7 @@ const MeetingDateDropdown: FC<MeetingDateDropdownProps> = ({
     if (!selectedDate) {
       return `bg-gray-50 border border-gray-300 ${baseClasses}`;
     } else {
-      return `bg-white border-2 border-green-700 ${baseClasses}`;
+      return `bg-white border-2 border-purple-700 ${baseClasses}`;
     }
   }, [selectedDate]);
 

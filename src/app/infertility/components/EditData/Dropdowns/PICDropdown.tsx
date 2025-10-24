@@ -122,6 +122,7 @@ const PicDropdown: FC<PicDropdownProps> = ({
       window.removeEventListener("resize", updateDropdownPosition);
       window.removeEventListener("scroll", updateDropdownPosition);
     }
+    
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
       window.removeEventListener("resize", updateDropdownPosition);

@@ -121,28 +121,36 @@ interface CustomCalendarProps {
   selectedDisplayDate: Date | null;
   handleDateSelect: (date: Date) => void;
   colorScheme?: ColorScheme;
+  minDate?: Date;
+  maxDate?: Date;
 }
 
-// Create a stable today reference outside the component
 const TODAY = new Date();
 
 const CustomCalendar: React.FC<CustomCalendarProps> = ({
   selectedDisplayDate,
   handleDateSelect,
   colorScheme = "indigo",
+  minDate,
+  maxDate,
 }) => {
-  const [currentDate, setCurrentDate] = useState(() => {
-    return selectedDisplayDate || new Date();
-  });
+  const [currentDate, setCurrentDate] = useState(
+    () => selectedDisplayDate || new Date()
+  );
   const [showYearDropdown, setShowYearDropdown] = useState(false);
-  const today = TODAY; // Use stable reference
+  const today = TODAY;
   const colors = colorClasses[colorScheme];
   const yearDropdownRef = useRef<HTMLDivElement>(null);
   const yearListRef = useRef<HTMLDivElement>(null);
 
-  // Generate year range (current year ± 50 years)
+  // Generate year range (current year ± 50 years, but clamp to min/max)
   const currentYear = new Date().getFullYear();
-  const yearRange = Array.from({ length: 101 }, (_, i) => currentYear - 50 + i);
+  const minYear = minDate ? minDate.getFullYear() : currentYear - 50;
+  const maxYear = maxDate ? maxDate.getFullYear() : currentYear + 50;
+  const yearRange = Array.from(
+    { length: maxYear - minYear + 1 },
+    (_, i) => minYear + i
+  );
 
   const daysInMonth = new Date(
     currentDate.getFullYear(),
@@ -157,7 +165,10 @@ const CustomCalendar: React.FC<CustomCalendarProps> = ({
   const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
   const emptyDays = Array.from({ length: firstDayOfMonth }, (_, i) => i);
 
-  // Close year dropdown when clicking outside
+  useEffect(() => {
+    setCurrentDate(selectedDisplayDate || new Date());
+  }, [selectedDisplayDate]);
+
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
@@ -172,7 +183,6 @@ const CustomCalendar: React.FC<CustomCalendarProps> = ({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Scroll to selected year when dropdown opens
   useEffect(() => {
     if (showYearDropdown && yearListRef.current) {
       const selectedYearIndex = yearRange.findIndex(
@@ -232,16 +242,16 @@ const CustomCalendar: React.FC<CustomCalendarProps> = ({
     );
   };
 
-  const isFutureDate = (day: number) => {
+  const isDisabled = (day: number) => {
     const dayDate = new Date(
       currentDate.getFullYear(),
       currentDate.getMonth(),
       day
     );
     dayDate.setHours(0, 0, 0, 0);
-    const todayReset = new Date(today);
-    todayReset.setHours(0, 0, 0, 0);
-    return dayDate > todayReset;
+    if (minDate && dayDate < minDate) return true;
+    if (maxDate && dayDate > maxDate) return true;
+    return false;
   };
 
   const handlePrevMonth = () => {
@@ -262,12 +272,12 @@ const CustomCalendar: React.FC<CustomCalendarProps> = ({
   };
 
   const handleMonthYearClick = (e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent bubbling to parent dropdown
+    e.stopPropagation();
     setShowYearDropdown(!showYearDropdown);
   };
 
   const handleDayClick = (day: number) => {
-    if (isFutureDate(day)) return;
+    if (isDisabled(day)) return;
     const newDate = new Date(
       currentDate.getFullYear(),
       currentDate.getMonth(),
@@ -276,13 +286,12 @@ const CustomCalendar: React.FC<CustomCalendarProps> = ({
     handleDateSelect(newDate);
   };
 
-  // Prevent year dropdown from closing on scroll within the dropdown
   const handleYearDropdownScroll = (e: React.UIEvent) => {
     e.stopPropagation();
   };
 
   const handleYearItemClick = (e: React.MouseEvent, year: number) => {
-    e.stopPropagation(); // Prevent bubbling to parent dropdown
+    e.stopPropagation();
     handleYearSelect(year);
   };
 
@@ -291,12 +300,12 @@ const CustomCalendar: React.FC<CustomCalendarProps> = ({
       className={`bg-white ${colors.border} border rounded-3xl ${colors.dropdownShadow} p-4 w-full max-w-[300px]`}
       onClick={(e) => e.stopPropagation()}
     >
-      {/* Calendar Header */}
       <div className="flex items-center justify-between mb-4">
         <button
           type="button"
           onClick={handlePrevMonth}
           className={`p-2 ${colors.chevronHover} rounded-3xl transition-colors`}
+          aria-label="Previous month"
         >
           <ChevronLeft className={`w-4 h-4 ${colors.chevron}`} />
         </button>
@@ -306,6 +315,8 @@ const CustomCalendar: React.FC<CustomCalendarProps> = ({
             type="button"
             onClick={handleMonthYearClick}
             className={`px-3 py-2 ${colors.monthYearHover} rounded-3xl transition-colors flex items-center gap-2`}
+            aria-haspopup="listbox"
+            aria-expanded={showYearDropdown}
           >
             <h3 className={`text-sm font-semibold ${colors.headerText}`}>
               {format(currentDate, "MMM yyyy")}
@@ -317,7 +328,6 @@ const CustomCalendar: React.FC<CustomCalendarProps> = ({
             />
           </button>
 
-          {/* Year Dropdown */}
           {showYearDropdown && (
             <div
               data-year-dropdown="true"
@@ -325,6 +335,7 @@ const CustomCalendar: React.FC<CustomCalendarProps> = ({
               onScroll={handleYearDropdownScroll}
               ref={yearListRef}
               onClick={(e) => e.stopPropagation()}
+              role="listbox"
             >
               {yearRange.map((year) => (
                 <button
@@ -339,6 +350,8 @@ const CustomCalendar: React.FC<CustomCalendarProps> = ({
                       ? `${colors.selectedBg} ${colors.selectedText}`
                       : colors.headerText
                   }`}
+                  role="option"
+                  aria-selected={year === currentDate.getFullYear()}
                 >
                   {year}
                 </button>
@@ -351,12 +364,12 @@ const CustomCalendar: React.FC<CustomCalendarProps> = ({
           type="button"
           onClick={handleNextMonth}
           className={`p-2 ${colors.chevronHover} rounded-3xl transition-colors`}
+          aria-label="Next month"
         >
           <ChevronRight className={`w-4 h-4 ${colors.chevron}`} />
         </button>
       </div>
 
-      {/* Days of week */}
       <div className="grid grid-cols-7 gap-1 mb-3">
         {["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"].map((day) => (
           <div
@@ -368,7 +381,6 @@ const CustomCalendar: React.FC<CustomCalendarProps> = ({
         ))}
       </div>
 
-      {/* Calendar days */}
       <div
         key={`${currentDate.getFullYear()}-${currentDate.getMonth()}`}
         className="grid grid-cols-7 gap-1"
@@ -381,10 +393,10 @@ const CustomCalendar: React.FC<CustomCalendarProps> = ({
             key={day}
             type="button"
             onClick={() => handleDayClick(day)}
-            disabled={isFutureDate(day)}
+            disabled={isDisabled(day)}
             className={[
               "w-9 h-9 text-sm rounded-3xl font-medium flex items-center justify-center",
-              isFutureDate(day)
+              isDisabled(day)
                 ? `${colors.disabledText} cursor-not-allowed`
                 : isSelected(day)
                 ? `${colors.selectedBg} ${colors.selectedText} ${colors.selectedShadow}`
@@ -392,13 +404,16 @@ const CustomCalendar: React.FC<CustomCalendarProps> = ({
                 ? `${colors.todayBg} ${colors.todayText} border ${colors.todayBorder} font-semibold`
                 : `${colors.dayText} ${colors.dayHoverBg} ${colors.dayHoverText}`,
             ].join(" ")}
+            aria-label={`Select ${format(
+              new Date(currentDate.getFullYear(), currentDate.getMonth(), day),
+              "dd MMM yyyy"
+            )}`}
           >
             {day}
           </button>
         ))}
       </div>
 
-      {/* Footer info */}
       <div className="mt-3 pt-3 border-t border-gray-100">
         <p className="text-xs text-gray-500 text-center">
           {selectedDisplayDate
