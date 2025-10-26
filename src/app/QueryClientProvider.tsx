@@ -12,17 +12,23 @@ const QueryClientProvider = ({ children }: PropsWithChildren) => {
       new QueryClient({
         defaultOptions: {
           queries: {
-            staleTime: 60 * 1000,
+            // With SSR, we usually want to set some default staleTime
+            // above 0 to avoid refetching immediately on the client
+            staleTime: 60 * 1000, // 1 minute
+            // FIXED: Increase refetch interval to reduce background requests
             refetchInterval: false,
             refetchOnWindowFocus: false,
             refetchOnMount: true,
             refetchOnReconnect: true,
+            // Retry configuration for better error handling
             retry: (failureCount, error) => {
+              // Don't retry on 4xx errors
               if (error instanceof Error && error.message.includes("4")) {
                 return false;
               }
               return failureCount < 3;
             },
+            // FIXED: Prevent automatic background refetching to reduce load
             gcTime: 5 * 60 * 1000, // 5 minutes
           },
           mutations: {

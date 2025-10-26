@@ -1,168 +1,193 @@
 @import "tailwindcss";
-@config "../../tailwind.config.ts";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-inter);
+  --font-mono: var(--font-geist-mono);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --color-fnh-navy: var(--fnh-navy);
+  --color-fnh-navy-dark: var(--fnh-navy-dark);
+  --color-fnh-navy-light: var(--fnh-navy-light);
+  --color-fnh-blue: var(--fnh-blue);
+  --color-fnh-blue-light: var(--fnh-blue-light);
+  --color-fnh-white: var(--fnh-white);
+  --color-fnh-porcelain: var(--fnh-porcelain);
+  --color-fnh-grey: var(--fnh-grey);
+  --color-fnh-grey-light: var(--fnh-grey-light);
+  --color-fnh-grey-dark: var(--fnh-grey-dark);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
 
 :root {
-  --foreground-rgb: 0, 0, 0;
+  --radius: 0.625rem;
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.145 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.145 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+  
+  /* FNH Healthcare Brand Colors */
+  --fnh-navy: #1F3B5C;
+  --fnh-navy-dark: #142639;
+  --fnh-navy-light: #2A4F75;
+  --fnh-blue: #2E5C8A;
+  --fnh-blue-light: #4A7BA7;
+  --fnh-white: #FFFFFF;
+  --fnh-porcelain: #F5F5F5;
+  --fnh-grey: #A8ADB8;
+  --fnh-grey-light: #E8EAEF;
+  --fnh-grey-dark: #6B7280;
+  
+  --primary: var(--fnh-navy);
+  --primary-foreground: var(--fnh-white);
+  --secondary: oklch(0.97 0 0);
+  --secondary-foreground: oklch(0.205 0 0);
+  --muted: oklch(0.97 0 0);
+  --muted-foreground: oklch(0.556 0 0);
+  --accent: var(--fnh-blue);
+  --accent-foreground: var(--fnh-white);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.922 0 0);
+  --input: oklch(0.922 0 0);
+  --ring: var(--fnh-blue-light);
+  --chart-1: oklch(0.646 0.222 41.116);
+  --chart-2: oklch(0.6 0.118 184.704);
+  --chart-3: oklch(0.398 0.07 227.392);
+  --chart-4: oklch(0.828 0.189 84.429);
+  --chart-5: oklch(0.769 0.188 70.08);
+  --sidebar: var(--fnh-porcelain);
+  --sidebar-foreground: var(--fnh-navy);
+  --sidebar-primary: var(--fnh-navy);
+  --sidebar-primary-foreground: var(--fnh-white);
+  --sidebar-accent: var(--fnh-blue);
+  --sidebar-accent-foreground: var(--fnh-white);
+  --sidebar-border: var(--fnh-grey-light);
+  --sidebar-ring: var(--fnh-blue-light);
+
+  /* Sidebar spacing */
+  --sidebar-collapsed-width: 7.5rem;
+  --sidebar-expanded-width: 20rem;
+  
+  /* Modal Styles */
+  --modal-border-radius: 1.5rem;
+  --modal-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  --modal-backdrop: rgba(0, 0, 0, 0.6);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --foreground-rgb: 255, 255, 255;
-  }
-}
-
-body {
-  color: #000;
-}
-
-@layer utilities {
-  .nav-link {
-    color: #6b7280; /* text-zinc-500 */
-    transition-property: color;
-    transition-duration: 150ms;
-    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-  }
-  .nav-link:hover {
-    color: #27272a; /* text-zinc-800 */
-  }
-
-  .dropdown-group {
-    padding-left: 0.75rem;
-    padding-right: 0.75rem;
-    padding-top: 0.5rem;
-    padding-bottom: 0.5rem;
-    font-size: 0.875rem;
-    color: #6d28d9;
-  }
-
-  #drawer-navigation:hover .aside-list-item {
-    display: flex;
-  }
-
-  .aside-link:hover > div {
-    color: #1e3a8a;
-  }
-
-  .aside-link:hover > div > svg {
-    fill: #1e3a8a;
-  }
+.dark {
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.205 0 0);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.922 0 0);
+  --primary-foreground: oklch(0.205 0 0);
+  --secondary: oklch(0.269 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.269 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+  --accent: oklch(0.269 0 0);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.556 0 0);
+  --chart-1: oklch(0.488 0.243 264.376);
+  --chart-2: oklch(0.696 0.17 162.48);
+  --chart-3: oklch(0.769 0.188 70.08);
+  --chart-4: oklch(0.627 0.265 303.9);
+  --chart-5: oklch(0.645 0.246 16.439);
+  --sidebar: oklch(0.205 0 0);
+  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-primary: oklch(0.488 0.243 264.376);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.269 0 0);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.556 0 0);
 }
 
 @layer base {
-  /* Remove arrows for Chrome, Safari, Edge, Opera */
-  input[type="number"]::-webkit-outer-spin-button,
-  input[type="number"]::-webkit-inner-spin-button {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  
+  /* Remove number input arrows */
+  input[type="number"]::-webkit-inner-spin-button,
+  input[type="number"]::-webkit-outer-spin-button {
     -webkit-appearance: none;
     margin: 0;
   }
-
-  /* Remove arrows for Firefox */
   input[type="number"] {
-    appearance: textfield;
     -moz-appearance: textfield;
-  }
-  button:not(:disabled) {
-    cursor: pointer;
-  }
-
-  button:disabled {
-    cursor: not-allowed;
-  }
-
-  /* Remove arrows for Chrome, Safari, Edge, Opera */
-  input[type="number"]::-webkit-outer-spin-button,
-  input[type="number"]::-webkit-inner-spin-button {
-    -webkit-appearance: none;
-    margin: 0;
-  }
-
-  /* Remove arrows for Firefox */
-  input[type="number"] {
     appearance: textfield;
-    -moz-appearance: textfield;
   }
 }
 
-@keyframes slide-down {
-  from {
-    transform: translateY(-100%);
-    opacity: 0;
-  }
-  to {
-    transform: translateY(0);
-    opacity: 1;
-  }
-}
-
-@keyframes slide-up {
-  from {
-    transform: translateY(0);
-    opacity: 1;
-  }
-  to {
-    transform: translateY(-100%);
-    opacity: 0;
-  }
-}
-
-.slide-down {
-  animation: slide-down 0.3s ease-out forwards;
-}
-
-.slide-up {
-  animation: slide-up 0.3s ease-out forwards;
-}
-.shimmer {
-  background: linear-gradient(to right, #d1d5db 8%, #f3f4f6 18%, #d1d5db 33%);
-  background-size: 1000px 100%;
-  animation: shimmer 2s infinite linear;
-}
-@keyframes dropdown-open {
+/* Shimmer animation for benefits progress bar */
+@keyframes shimmer {
   0% {
-    opacity: 0;
-    transform: translateY(-8px);
-    pointer-events: none;
+    transform: translateX(-100%);
   }
   100% {
-    opacity: 1;
-    transform: translateY(0);
-    pointer-events: auto;
+    transform: translateX(100%);
   }
 }
 
-@keyframes dropdown-close {
-  0% {
-    opacity: 1;
-    transform: translateY(0);
-    pointer-events: auto;
-  }
-  100% {
-    opacity: 0;
-    transform: translateY(-8px);
-    pointer-events: none;
-  }
+.animate-shimmer {
+  animation: shimmer 2s infinite;
 }
 
-.animate-dropdown-open {
-  animation: dropdown-open 0.22s ease-out forwards;
-  transform-origin: top center;
-  backface-visibility: hidden;
-  will-change: transform, opacity;
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
-    0 4px 6px -2px rgba(0, 0, 0, 0.05);
-}
+/* ========================================
+   GLOBAL REUSABLE ANIMATIONS
+   Use these classes throughout the app
+   ======================================== */
 
-.animate-dropdown-close {
-  animation: dropdown-close 0.18s ease-out forwards;
-  transform-origin: top center;
-  backface-visibility: hidden;
-  will-change: transform, opacity;
-  display: block !important; /* Ensures the element remains visible during the close animation */
-}
-@keyframes slideDown {
+/* Dropdown animations - perfect for menus, popovers, and dropdowns */
+@keyframes dropdown-in {
   0% {
     opacity: 0;
-    transform: translateY(-20px);
+    transform: translateY(10px);
   }
   100% {
     opacity: 1;
@@ -170,693 +195,85 @@ body {
   }
 }
 
-@keyframes slideUp {
+@keyframes dropdown-out {
   0% {
     opacity: 1;
     transform: translateY(0);
   }
   100% {
     opacity: 0;
-    transform: translateY(-20px);
+    transform: translateY(10px);
   }
 }
 
-.filter-slide-down {
-  animation: slideDown 0.3s ease-out forwards;
+.animate-dropdown-in {
+  animation: dropdown-in 300ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-.filter-slide-up {
-  animation: slideUp 0.3s ease-out forwards;
+.animate-dropdown-out {
+  animation: dropdown-out 250ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
 
-.slider-thumb {
-  border-color: #1e3a8a;
-  outline: none;
-}
-
-.slider-thumb:hover,
-.slider-thumb:focus {
-  border-width: 6px;
-  border-color: #1e3a8a;
-  outline: none;
-}
-
-.dropdown-trigger-button {
-  transition: width 0.3s ease-in-out, padding 0.3s ease-in-out;
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: scale(0.9);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-@keyframes fadeOut {
-  from {
-    opacity: 1;
-    transform: scale(1);
-  }
-  to {
-    opacity: 0;
-    transform: scale(0.9);
-  }
-}
-
-.fade-in {
-  animation: fadeIn 0.3s forwards;
-}
-
-.fade-out {
-  animation: fadeOut 0.3s forwards;
-}
-
-.bookmark-button img {
-  transition: filter 0.3s ease;
-}
-
-@keyframes float {
-  0% {
-    transform: translate(-50%, 0);
-  }
-  50% {
-    transform: translate(-50%, -10px);
-  }
-  100% {
-    transform: translate(-50%, 0);
-  }
-}
-
-.animate-float {
-  animation: float 3s ease-in-out infinite;
-}
-
-.list-active {
-  font-weight: bold;
-  color: black;
-}
-
-.list-active-test {
-  background-color: #1e3a8a;
-  color: white;
-  padding: 0.25rem 0.5rem;
-  border-radius: 0.75rem;
-  font-size: 0.875rem; /* text-sm */
-}
-
-/* Remove conflicting popup animations */
-.popup-open {
-  animation: popupOpen 0.3s forwards;
-}
-
-.popup-close {
-  animation: popupClose 0.3s forwards;
-}
-
-@keyframes popupOpen {
-  from {
-    opacity: 0;
-    transform: translate(-50%, -60%);
-  }
-  to {
-    opacity: 1;
-    transform: translate(-50%, -50%);
-  }
-}
-
-@keyframes popupClose {
-  from {
-    opacity: 1;
-    transform: translate(-50%, -50%);
-  }
-  to {
-    opacity: 0;
-    transform: translate(-50%, -60%);
-  }
-}
-
-.custom-calendar {
-  font-family: "Arial", sans-serif;
-  font-size: 14px;
-  padding: 4px;
-  font-weight: 500;
-  z-index: 9999; /* Ensure this is high enough */
-  position: relative;
-}
-
-.custom-calendar .rdp {
-  padding: 4px;
-}
-
-.custom-calendar .rdp-month {
-  padding: 4px;
-}
-
-.custom-calendar .rdp-day:hover {
-  background-color: #f0f0f0;
-  cursor: pointer;
-  border-radius: 50%; /* Hover effect as a circle */
-}
-
-.custom-calendar .rdp-day_selected {
-  border-radius: 50%; /* Make selected date circle thinner */
-  border: 2px solid #000; /* Adjusted to make the circle thinner */
-  background-color: #e0e0e0; /* Subtle background to show selection */
-}
-
-.rt-Button.bg-blue-950 {
-  background-color: #1e3a8a !important; /* blue-950 */
-  color: #fff !important;
-  border: none !important;
-  border-radius: 0.75rem !important; /* matches rounded-xl */
-  box-shadow: none !important;
-  padding: 0.5rem 1.25rem !important; /* Add padding for a rounded look */
-}
-
-.rt-Button.bg-blue-950:hover,
-.rt-Button.bg-blue-950:focus {
-  background-color: #172554 !important; /* blue-900 */
-  color: #fff !important;
-  border-radius: 0.75rem !important;
-  padding: 0.5rem 1.25rem !important;
-}
-
-.custom-calendar .rdp-day {
-  font-smooth: antialiased;
-  text-rendering: optimizeLegibility; /* Clearer text rendering */
-  font-weight: 500;
-}
-.high-z-index {
-  z-index: 1000; /* Adjust the value as needed */
-  position: relative; /* Ensure the z-index takes effect */
-}
-.floating-scrollbar {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  background: #f6f8fa;
-  z-index: 1000;
-  border-top: 1px solid #e2e8f0;
-}
-
-.dot-1,
-.dot-2,
-.dot-3 {
-  background-color: #fff;
-  border-radius: 50%;
-  display: inline-block;
-  height: 8px;
-  width: 8px;
-  margin: 0 2px;
-  animation: bounce 1.4s infinite both;
-}
-
-.dot-2 {
-  animation-delay: 0.2s;
-}
-
-.dot-3 {
-  animation-delay: 0.4s;
-}
-
-@keyframes bounce {
-  0%,
-  80%,
-  100% {
-    transform: scale(0);
-  }
-  40% {
-    transform: scale(1);
-  }
-}
-
-@keyframes pulse {
-  0% {
-    transform: scale(1) rotateX(45deg);
-    opacity: 1;
-  }
-  50% {
-    transform: scale(1.05) rotateX(45deg);
-    opacity: 0.7;
-  }
-  100% {
-    transform: scale(1) rotateX(45deg);
-    opacity: 1;
-  }
-}
-
-.skeleton-pulse {
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2), 0 12px 40px rgba(0, 0, 0, 0.2);
-  animation: pulse 1.5s ease-in-out infinite;
-}
-
-.gray-highlight .rdrDayNumber span {
-  background-color: transparent;
-  color: gray;
-}
-
-.gray-highlight .rdrDayNumber span.rdrDayNumberSelected {
-  background-color: gray;
-  color: white;
-}
-
-/* datepicker-custom.css */
-@media (max-width: 640px) {
-  .rdrMonth {
-    width: 100% !important;
-  }
-  .rdrCalendarWrapper {
-    width: 100% !important;
-    font-size: 14px !important;
-  }
-}
-
-@media (max-width: 768px) {
-  .custom-date-range-picker .rdrDefinedRangesWrapper {
-    display: none;
-  }
-
-  .custom-date-range-picker .rdrMonthAndYearWrapper {
-    padding-top: 0;
-  }
-
-  .custom-date-range-picker .rdrMonthAndYearPickers {
-    font-size: 14px;
-  }
-
-  .custom-date-range-picker .rdrMonth {
-    padding: 0;
-  }
-
-  .custom-date-range-picker .rdrDateDisplayWrapper {
-    display: none;
-  }
-
-  .custom-date-range-picker .rdrCalendarWrapper {
-    font-size: 12px;
-    width: 100%;
-  }
-
-  .custom-date-range-picker .rdrDayNumber span {
-    font-size: 12px;
-  }
-
-  .custom-date-range-picker .rdrInputRanges {
-    display: none;
-  }
-}
-
-.switch {
-  position: relative;
-  display: inline-block;
-  width: 34px;
-  height: 14px;
-}
-
-.switch input {
+/* Initial state for dropdown before animation starts */
+.dropdown-hidden {
   opacity: 0;
-  width: 0;
-  height: 0;
+  transform: translateY(10px);
 }
 
-.slider {
-  position: absolute;
-  cursor: pointer;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: #ccc;
-  transition: 0.4s;
-  border-radius: 34px;
-}
-
-.slider:before {
-  position: absolute;
-  content: "";
-  height: 10px;
-  width: 10px;
-  left: 2px;
-  bottom: 2px;
-  background-color: white;
-  transition: 0.4s;
-  border-radius: 50%;
-}
-
-input:checked + .slider {
-  background-color: #2196f3;
-}
-
-input:checked + .slider:before {
-  transform: translateX(20px);
-}
-
-input[type="number"] {
-  appearance: textfield;
-  -moz-appearance: textfield;
-}
-
-input::-webkit-outer-spin-button,
-input::-webkit-inner-spin-button {
-  -webkit-appearance: none;
-  margin: 0;
-}
-.rdrStaticRange {
-  white-space: nowrap !important;
-  position: relative !important;
-  background: #ffffff !important;
-  border: 0 !important;
-  padding-bottom: 5px !important;
-  cursor: pointer !important;
-  transition: all 0.3s ease !important;
-  display: block !important;
-  pointer-events: auto !important;
-}
-
-.rdrStaticRange::after {
-  content: "" !important;
-  position: absolute !important;
-  bottom: 0 !important;
-  left: 0 !important;
-  width: 100% !important;
-  height: 2px !important;
-  background-color: #1e3a8a !important; /* blue-950 */
-  opacity: 0 !important;
-  transition: opacity 0.3s ease !important;
-  pointer-events: none !important;
-}
-
-/* Hover state */
-.rdrStaticRange:hover:not(.rdrStaticRangeSelected) {
-  background: #f5f5f5 !important;
-}
-
-.rdrStaticRange:hover:not(.rdrStaticRangeSelected)::after {
-  opacity: 1 !important;
-}
-
-/* Selected state */
-.rdrStaticRange.rdrStaticRangeSelected {
-  background: #1e3a8a !important; /* blue-950 */
-  font-weight: 600 !important;
-}
-
-.rdrStaticRange.rdrStaticRangeSelected::after {
-  opacity: 1 !important;
-  background-color: #ffffff !important;
-}
-
-.rdrStaticRangeLabel {
-  white-space: nowrap !important;
-  color: #4a5568 !important;
-  transition: color 0.2s ease !important;
-  pointer-events: none !important;
-}
-
-.rdrStaticRange.rdrStaticRangeSelected .rdrStaticRangeLabel {
-  color: #ffffff !important;
-  font-weight: 600 !important;
-}
-
-.rdrInRange {
-  background: #1e3a8a !important; /* blue-950 */
-  color: white !important;
-}
-
-.rdrStartEdge,
-.rdrEndEdge {
-  background: #1e3a8a !important; /* blue-950 */
-  color: white !important;
-}
-
-.rdrDayToday .rdrDayNumber span:after {
-  background: #ffffff !important;
-}
-
-.rdrDayStartPreview,
-.rdrDayEndPreview,
-.rdrDayInPreview {
-  border-color: #1e3a8a !important; /* blue-950 */
-  color: #1e3a8a !important; /* blue-950 */
-}
-
-.rdrSelected {
-  background: #1e3a8a !important; /* blue-950 */
-  color: white !important;
-}
-
-.rdrDateDisplay {
-  color: #1e3a8a !important; /* blue-950 */
-}
-
-.rdrDefinedRangesWrapper {
-  border-right: solid 1px #eff2f7 !important;
-}
-
-/* Hover effect for custom ranges */
-.rdrStaticRange:hover .rdrDayInPreview,
-.rdrStaticRange:hover .rdrDayStartPreview,
-.rdrStaticRange:hover .rdrDayEndPreview {
-  background: rgba(30, 58, 138, 0.2) !important; /* blue-950 with opacity */
-  color: #1e3a8a !important; /* blue-950 */
-}
-
-/* Add these DateRangePicker customizations to your globals.css */
-.rdrDefinedRangesWrapper {
-  max-height: 400px !important;
-  overflow-y: auto !important;
-  min-width: 185px !important;
-}
-
-.rdrStaticRange {
-  min-width: 185px !important;
-  white-space: nowrap !important;
-}
-
-.rdrStaticRangeLabel {
-  white-space: nowrap !important;
-  overflow: hidden !important;
-  text-overflow: ellipsis !important;
-}
-
-.rdrDateRangePickerWrapper {
-  position: relative !important;
-  padding-bottom: 16px !important;
-}
-
-.rdrMonthAndYearWrapper {
-  padding-top: 10px !important;
-}
-
-.rdrMonth {
-  padding-bottom: 0 !important;
-}
-
-/* Add this to your globals.css file, merge with your existing date picker styles */
-.custom-date-range-picker .rdrStaticRanges {
-  margin-top: 8px; /* Increase top margin for the static ranges container */
-}
-
-.custom-date-range-picker .rdrStaticRange {
-  margin-bottom: 8px; /* Add spacing between each range option */
-}
-
-/* Media Queries */
-@media (max-width: 640px) {
-  .rdrMonth {
-    width: 100% !important;
+/* Fade animations - for overlays, modals, and simple transitions */
+@keyframes fade-in {
+  0% {
+    opacity: 0;
   }
-  .rdrCalendarWrapper {
-    width: 100% !important;
-    font-size: 14px !important;
+  100% {
+    opacity: 1;
   }
 }
 
-@media (max-width: 1024px) {
-  .custom-date-range-picker .rdrDefinedRangesWrapper {
-    display: none;
+@keyframes fade-out {
+  0% {
+    opacity: 1;
   }
-  .custom-date-range-picker .rdrMonthAndYearWrapper {
-    padding-top: 0;
-  }
-  .custom-date-range-picker .rdrMonthAndYearPickers {
-    font-size: 10px;
-  }
-  .custom-date-range-picker .rdrMonth {
-    padding: 0;
-  }
-  .custom-date-range-picker .rdrDateDisplayWrapper {
-    display: none;
-  }
-  .custom-date-range-picker .rdrCalendarWrapper {
-    font-size: 12px;
-    width: 100%;
-  }
-  .custom-date-range-picker .rdrDayNumber span {
-    font-size: 12px;
-  }
-  .custom-date-range-picker .rdrMonthAndYearPickers {
-    font-size: 12px;
-  }
-  .custom-date-range-picker .rdrWeekDay {
-    font-size: 12px;
-  }
-  .custom-date-range-picker .rdrDay {
-    font-size: 12px;
+  100% {
+    opacity: 0;
   }
 }
 
-/* Add to your global CSS or component styles */
-.overflow-y-auto {
-  scroll-behavior: smooth;
-  -webkit-overflow-scrolling: touch; /* For iOS smooth scrolling */
-  /* Add these for better Android support */
-  overscroll-behavior: contain;
-  scroll-snap-type: y proximity;
+.animate-fade-in {
+  animation: fade-in 200ms ease-in-out forwards;
 }
 
-/* Android-specific optimizations */
-@supports (-webkit-touch-callout: none) {
-  .overflow-y-auto {
-    -webkit-overflow-scrolling: touch;
-    -webkit-transform: translate3d(0, 0, 0);
-    transform: translate3d(0, 0, 0);
+.animate-fade-out {
+  animation: fade-out 200ms ease-in-out forwards;
+}
+
+/* Slide animations - for notifications, toasts, and sliding elements */
+@keyframes slide-in-from-top {
+  0% {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
-/* Better Android Chrome support */
-@media screen and (-webkit-min-device-pixel-ratio: 0) {
-  .overflow-y-auto {
-    scroll-behavior: auto; /* Disable native smooth scroll on Android Chrome */
+@keyframes slide-in-from-bottom {
+  0% {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
-.flatpickr-calendar {
-  background: #ffffff !important;
+.animate-slide-in-from-top {
+  animation: slide-in-from-top 300ms cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 }
 
-/* Add these selectors after the flatpickr-months section */
-
-/* Month selection button */
-.flatpickr-months .flatpickr-month .flatpickr-monthDropdown-months {
-  background: #1a3b66 !important;
-  color: #ffffff !important;
-}
-
-/* Month button hover state */
-.flatpickr-months .flatpickr-month .flatpickr-monthDropdown-months:hover {
-  background: #3b5998 !important;
-  color: #ffffff !important;
-}
-
-/* Ensure the arrow keeps the right color */
-.flatpickr-months .flatpickr-prev-month,
-.flatpickr-months .flatpickr-next-month {
-  fill: #ffffff !important;
-}
-
-/* Month header background and text */
-.flatpickr-months .flatpickr-month {
-  background: #1a3b66 !important;
-  color: #ffffff !important;
-}
-
-/* Month dropdown container and items */
-.flatpickr-monthDropdown-months .flatpickr-monthDropdown-month {
-  background: #1a3b66 !important;
-  color: #ffffff !important;
-}
-
-.flatpickr-monthDropdown-months .flatpickr-monthDropdown-month:hover,
-.flatpickr-monthDropdown-months .flatpickr-monthDropdown-month:focus {
-  background: #3b5998 !important; /* Lighter shade for hover */
-  color: #ffffff !important;
-}
-
-/* Selected month in the dropdown */
-.flatpickr-monthDropdown-month.selected {
-  background: #1a3b66 !important;
-  color: #ffffff !important;
-  font-weight: bold; /* Highlights the selected month */
-}
-
-/* Current month input field */
-.flatpickr-current-month {
-  background: #1a3b66 !important;
-  color: #ffffff !important;
-}
-
-.flatpickr-current-month:hover,
-.flatpickr-current-month:focus {
-  background: #1a3b66 !important;
-  color: #ffffff !important;
-}
-
-/* Current year input field */
-.flatpickr-current-month input.cur-year {
-  background: #1a3b66 !important;
-  color: #ffffff !important;
-  border: none !important; /* Removes default border */
-}
-
-.flatpickr-current-month input.cur-year:focus {
-  outline: none; /* Removes the default focus outline */
-}
-
-/* Hover effect for year input */
-.flatpickr-current-month input.cur-year:hover {
-  background: #3b5998 !important;
-  color: #ffffff !important;
-}
-
-/* Weekday headers */
-.flatpickr-weekday {
-  background: #1a3b66 !important;
-  color: #ffffff !important;
-}
-
-.flatpickr-weekdays {
-  background: #1a3b66 !important;
-  color: #ffffff !important;
-}
-
-/* Days of the month */
-.flatpickr-days .flatpickr-day {
-  color: #224e82;
-}
-
-/* Hover effect for days */
-.flatpickr-days .flatpickr-day:hover {
-  background: #3b5998 !important; /* Lighter shade of blue */
-  color: #ffffff !important;
-}
-
-/* Today and selected day - Updated to remove blue border */
-.flatpickr-day.today,
-.flatpickr-day.selected,
-.flatpickr-day.selected:focus,
-.flatpickr-day.selected:hover {
-  background: #1a3b66 !important;
-  color: #ffffff !important;
-  border: none !important;
-  box-shadow: none !important;
-  border-radius: 50% !important;
-}
-
-/* Disabled days */
-.flatpickr-day.disabled,
-.flatpickr-day.disabled:hover {
-  color: #cccccc !important;
-  background: #f8f8f8 !important;
-  cursor: not-allowed !important;
-  pointer-events: none;
-}
-
-.flatpickr-calendar:after {
-  border-bottom-color: #1a3b66 !important;
+.animate-slide-in-from-bottom {
+  animation: slide-in-from-bottom 300ms cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 }

@@ -1,16 +1,31 @@
 import { initSessionCleanup } from "../app/utils/sessionCleanup";
-import { initGoalReset } from "../app/utils/goalReset";
-import { initGoalTrackingNotifications } from "../app/utils/notifyGoalTracking";
+import type { ScheduledTask } from "node-cron";
 
 let isInitialized = false;
+let cronTasks: ScheduledTask[] = [];
 
 export function initializeServer() {
-  if (isInitialized) return;
-  if (process.env.NODE_ENV === "development") {
-    console.log("Initializing server tasks...");
+  if (isInitialized) {
+    console.log("[Server Init] Already initialized, skipping...");
+    return;
   }
 
-  initSessionCleanup();
-  initGoalReset();
+  console.log("[Server Init] Initializing server tasks...");
+
+  // Store task references for potential cleanup
+  cronTasks.push(initSessionCleanup());
+
+
   isInitialized = true;
+  console.log("[Server Init] All tasks initialized successfully");
+}
+
+// Optional: Function to stop all cron jobs (useful for graceful shutdown)
+export function stopServerTasks() {
+  if (cronTasks.length > 0) {
+    console.log("[Server Init] Stopping all cron tasks...");
+    cronTasks.forEach((task) => task.stop());
+    cronTasks = [];
+    isInitialized = false;
+  }
 }

@@ -1,7 +1,5 @@
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "@/lib/prisma";
 import cron from "node-cron";
-
-const prisma = new PrismaClient();
 
 export const initSessionCleanup = () => {
   console.log("[Session Cleanup] Initializing cron job...");
@@ -26,13 +24,11 @@ export const initSessionCleanup = () => {
         );
       } catch (error) {
         console.error("[Session Cleanup Error]:", error);
-      } finally {
-        await prisma.$disconnect();
       }
+      // DO NOT disconnect - reuse the singleton client
     },
     {
-      scheduled: true,
-      timezone: "Asia/Kuala_Lumpur", // Set timezone to KL time
+      timezone: "Asia/Dhaka", // Set timezone to KL time
     }
   );
 
