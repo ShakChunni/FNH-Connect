@@ -5,89 +5,76 @@ import jwt from "jsonwebtoken";
 
 const SECRET_KEY = process.env.SECRET_KEY as string;
 
+if (!SECRET_KEY) {
+  throw new Error("SECRET_KEY is not defined in environment variables");
+}
+
 export async function POST(request: NextRequest) {
   try {
     const cookieStore = await cookies();
     const sessionToken = cookieStore.get("session")?.value;
 
-    if (!sessionToken) {
-      return NextResponse.json(
-        { success: false, message: "No session found" },
-        { status: 400 }
-      );
+    // Clear session cookie immediately
+    cookieStore.delete("session");
+
+    if (sessionToken) {
+      try {
+        // Verify token to get user ID for activity logging
+        const decoded = jwt.verify(sessionToken, SECRET_KEY) as any;
+
+        // Find and delete the session from database
+        const session = await prisma.session.findUnique({
+          where: { token: sessionToken },
+        });
+
+        if (session) {
+          // Create activity log before deleting session
+          await prisma.activityLog.create({
+            data: {
+              userId: session.userId,
+              action: "LOGOUT",
+              description: `User logged out`,
+              ipAddress: request.headers.get("x-forwarded-for") || "unknown",
+              sessionId: session.id,
+            },
+          });
+
+          // Delete the session
+          await prisma.session.delete({
+            where: { token: sessionToken },
+          });
+        }
+      } catch (tokenError) {
+        // Token might be expired or invalid, but we still want to logout
+        console.log("Token verification failed during logout:", tokenError);
+      }
     }
 
-    await prisma.$transaction(async (tx) => {
-      // Get session with user details from database
-      const session = await tx.session.findUnique({
-        where: { token: sessionToken },
-        include: { user: true },
-      });
-
-      if (!session) {
-        throw new Error("Session not found in database");
-      }
-
-      // Create logout activity log using session information
-      const bdTime = new Date(new Date().getTime() + 6 * 60 * 60 * 1000); // Bangladesh time (UTC+6)
-
-      // Construct device info string from session data
-      const deviceString = `${session.deviceType || "Unknown"} (${
-        session.osType || "Unknown OS"
-      }) using ${session.browserName || "Unknown Browser"}`;
-
-      await tx.activityLog.create({
-        data: {
-          userId: session.userId,
-          action: "LOGOUT",
-          sessionId: session.id,
-          description: `User ${session.user.username} logged out from ${deviceString}`,
-          // Copy these fields directly from session using updated field names
-          readableFingerprint: session.readableFingerprint,
-          deviceFingerprint: session.deviceFingerprint,
-          ipAddress: session.ipAddress,
-          deviceType: session.deviceType,
-          browserName: session.browserName,
-          browserVersion: session.browserVersion,
-          osType: session.osType,
-          timestamp: bdTime,
-          entityType: "User",
-          entityId: session.userId,
-        },
-      });
-
-      // Delete the session
-      await tx.session.delete({
-        where: { token: sessionToken },
-      });
-    });
-
-    const response = NextResponse.json({
-      success: true,
-      message: "Logged out successfully",
-    });
-
-    // Clear the session cookie
-    response.cookies.set({
-      name: "session",
-      value: "",
-      expires: new Date(0),
-      path: "/",
-    });
+    const response = NextResponse.json(
+      {
+        success: true,
+        message: "Logged out successfully",
+      },
+      { status: 200 }
+    );
 
     return response;
   } catch (error) {
-    console.error("Logout error:", {
-      message: error instanceof Error ? error.message : "Unknown error",
-      stack: error instanceof Error ? error.stack : undefined,
-    });
+    console.error("Logout error:", error);
 
-    return NextResponse.json(
+    // Even if there's an error, clear the cookie and return success
+    // to ensure the user is logged out on the client
+    const response = NextResponse.json(
       {
-        success: false,
-        error: error instanceof Error ? error.message : "Error during logout",
+        success: true,
+        message: "Logged out",
       },
-      { status: 500 }
+      { status: 200 }
     );
+
+    const cookieStore = await cookies();
+    cookieStore.delete("session");
+
+    return response;
   }
 }

@@ -1,10 +1,8 @@
-import { Theme } from "@radix-ui/themes";
-import "@radix-ui/themes/styles.css";
 import { Inter } from "next/font/google";
 import "./globals.css";
-import "./theme-config.css";
 import QueryClientProvider from "./QueryClientProvider";
 import { AuthProvider } from "./AuthContext";
+import { NotificationProvider } from "./NotificationProvider";
 import MainContent from "./MainContent";
 import { metadata } from "./metadata";
 import PageTitle from "./PageTitle";
@@ -16,15 +14,21 @@ const inter = Inter({
   variable: "--font-inter",
 });
 
-// Initialize server tasks in production and development
-if (
-  process.env.NODE_ENV === "production" ||
-  process.env.NODE_ENV === "development"
-) {
-  initializeServer();
-}
-
 export { metadata };
+
+// Initialize server tasks ONCE using global singleton pattern
+// This prevents re-initialization on hot reloads and layout re-renders
+if (typeof window === "undefined") {
+  // Only run on server-side
+  const globalForInit = globalThis as unknown as {
+    serverInitialized?: boolean;
+  };
+
+  if (!globalForInit.serverInitialized) {
+    initializeServer();
+    globalForInit.serverInitialized = true;
+  }
+}
 
 const MAINTENANCE_MODE = process.env.NEXT_PUBLIC_MAINTENANCE === "true";
 
@@ -42,18 +46,18 @@ export default function RootLayout({
           content="telephone=no, date=no, email=no, address=no"
         />
       </head>
-      <body>
+      <body className="font-sans">
         {MAINTENANCE_MODE ? (
           <Maintenance />
         ) : (
           <>
             <PageTitle />
             <QueryClientProvider>
-              <Theme accentColor="blue" radius="large">
-                <AuthProvider>
+              <AuthProvider>
+                <NotificationProvider>
                   <MainContent>{children}</MainContent>
-                </AuthProvider>
-              </Theme>
+                </NotificationProvider>
+              </AuthProvider>
             </QueryClientProvider>
           </>
         )}

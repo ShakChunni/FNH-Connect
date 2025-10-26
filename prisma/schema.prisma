@@ -111,6 +111,23 @@ model User {
   staff        Staff         @relation(fields: [staffId], references: [id])
   sessions     Session[]
   activityLogs ActivityLog[]
+  csrfTokens   CSRFToken[]
+  securityLogs SecurityLog[]
+}
+
+// CSRF Token Management for Session Security
+model CSRFToken {
+  id        String   @id @default(cuid())
+  userId    Int
+  token     String   @unique
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+
+  // Relations
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([expiresAt])
 }
 
 // Gynecology Department
@@ -229,12 +246,19 @@ model Shift {
   // Cash reconciliation
   openingCash Decimal @default(0) // Cash at start of shift
   closingCash Decimal @default(0) // Physical cash at end
-  systemCash  Decimal @default(0) // What system says they should have
+  systemCash  Decimal @default(0) // What system says they should have (sum of payments collected)
   variance    Decimal @default(0) // Difference between closing and system
 
-  notes        String?
-  reconciledAt DateTime?
-  reconciledBy Int?
+  // Detailed tracking
+  totalCollected Decimal @default(0) // Total amount collected in shift
+  totalRefunded  Decimal @default(0) // Total refunds given in shift
+
+  // Reconciliation details
+  notes              String?
+  reconciledAt       DateTime?
+  reconciledBy       Int? // Staff ID who reconciled
+  reconciledNotes    String? // Notes from reconciliation
+  varianceResolution String? // How variance was handled (e.g., "Noted", "Corrected", "Pending")
 
   // Relations
   staff         Staff          @relation(fields: [staffId], references: [id])
@@ -244,6 +268,7 @@ model Shift {
   @@index([staffId])
   @@index([startTime])
   @@index([isActive])
+  @@index([reconciledAt])
 }
 
 // Track all cash movements for accountability
@@ -251,16 +276,27 @@ model CashMovement {
   id           Int      @id @default(autoincrement())
   shiftId      Int
   amount       Decimal
-  movementType String // "PAYMENT_RECEIVED", "CHANGE_GIVEN", "CASH_FLOAT", "REFUND"
+  movementType String // "COLLECTION", "REFUND", "TRANSFER", "RECONCILIATION", "CORRECTION"
   description  String?
   timestamp    DateTime @default(now())
-  paymentId    Int? // Link to payment if applicable
 
+  // Link to specific transaction if applicable
+  paymentId Int? // Link to payment if this is a collection
+  notes     String? // Additional notes about the movement
+
+  // Tracking
+  createdBy  Int // Staff who recorded this movement
+  approvedBy Int? // Staff who approved if required
+  approvedAt DateTime?
+
+  // Relations
   shift   Shift    @relation(fields: [shiftId], references: [id])
   payment Payment? @relation(fields: [paymentId], references: [id])
 
   @@index([shiftId])
   @@index([timestamp])
+  @@index([movementType])
+  @@index([paymentId])
 }
 
 // Central Patient Account for all charges across departments
@@ -296,6 +332,11 @@ model ServiceCharge {
   // Service details
   serviceDate DateTime @default(now())
   description String?
+
+  // Collection tracking
+  collectedByStaffId Int? // Staff who collected payment for this service (if any)
+  collectionTime     DateTime? // When payment was collected
+  collectionNotes    String? // Notes about collection
 
   // Links to specific services if needed
   admissionId     Int?
@@ -451,6 +492,65 @@ model Hospital {
   infertilityPatients InfertilityPatient[]
 
   @@index([name])
+}
+
+// Security: Rate Limiting for Login Attempts
+model RateLimit {
+  id             Int      @id @default(autoincrement())
+  ip_address     String   @unique
+  login_attempts Int      @default(0)
+  window_start   DateTime @default(now())
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([ip_address])
+  @@index([window_start])
+}
+
+// Security: IP Blocking (Temporary & Permanent)
+model BlockedIP {
+  id             Int       @id @default(autoincrement())
+  ip_address     String    @unique
+  reason         String // Reason for blocking
+  description    String?
+  blocked_at     DateTime  @default(now())
+  blocked_until  DateTime? // Null if permanent
+  is_permanent   Boolean   @default(false)
+  user_agent     String? // User agent when blocked
+  attempt_count  Int       @default(0) // Failed attempts before block
+  unblocked_by   Int? // Staff ID who unblocked (manual unblock)
+  unblocked_at   DateTime? // When manually unblocked
+  unblock_reason String? // Reason for manual unblock
+
+  // Tracking
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([ip_address])
+  @@index([blocked_until])
+  @@index([is_permanent])
+  @@index([blocked_at])
+}
+
+// Security: Audit Log for Security Events
+model SecurityLog {
+  id          Int      @id @default(autoincrement())
+  ip_address  String
+  action      String // LOGIN_FAILED, RATE_LIMIT_BLOCK, SUSPICIOUS_ACTIVITY, CSRF_ATTEMPT, etc.
+  user_agent  String?
+  description String
+  severity    String // LOW, MEDIUM, HIGH, CRITICAL
+  timestamp   DateTime @default(now())
+
+  // Optional: Link to user if known
+  userId Int?
+  user   User? @relation(fields: [userId], references: [id])
+
+  @@index([ip_address])
+  @@index([action])
+  @@index([severity])
+  @@index([timestamp])
+  @@index([userId])
 }
 
 model InfertilityPatient {

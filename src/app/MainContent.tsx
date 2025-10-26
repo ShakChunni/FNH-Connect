@@ -10,7 +10,6 @@ export default function MainContent({
   children: React.ReactNode;
 }) {
   const { loading, user } = useAuth();
-  // FIXED: Prevent hydration mismatch with client-only check
   const [isClient, setIsClient] = useState(false);
   const [pathname, setPathname] = useState("");
   const [hasSession, setHasSession] = useState(false);
@@ -18,12 +17,10 @@ export default function MainContent({
   useEffect(() => {
     setIsClient(true);
     setPathname(window.location.pathname);
-    // Check if session cookie exists to avoid unnecessary loading states
     const sessionCookie = Cookies.get("session");
     setHasSession(!!sessionCookie);
   }, []);
 
-  // FIXED: For SSR, always render the same content to prevent hydration mismatch
   if (!isClient) {
     return (
       <main suppressHydrationWarning>
@@ -33,26 +30,30 @@ export default function MainContent({
   }
 
   const isLoginPage = pathname === "/login";
+  const isRegisterPage = pathname === "/register";
+  const isFirstTimeSetupPage = pathname === "/first-time-setup";
+  const isForgotPasswordPage = pathname === "/forgot-password";
+  const isResetPasswordPage = pathname === "/reset-password";
+  const isAuthPage =
+    isLoginPage ||
+    isRegisterPage ||
+    isFirstTimeSetupPage ||
+    isForgotPasswordPage ||
+    isResetPasswordPage;
 
-  // Don't show LoadingState on login page
-  if (isLoginPage) {
+  if (isAuthPage) {
     return <main>{children}</main>;
   }
 
-  // FIXED: Only show loading state if we don't have a session cookie
-  // This prevents showing LoadingState for already-authenticated users
   if (loading && !hasSession) {
     return <LoadingState type="authenticating" />;
   }
 
-  // For authenticated routes - if we have user OR session cookie, show content
   if (user || hasSession) {
     return <main>{children}</main>;
   }
 
-  // Redirect to login if no user and not on login page
-  if (!isLoginPage) {
-    // Use Next.js router instead of window.location for better hydration
+  if (!isAuthPage) {
     if (typeof window !== "undefined") {
       window.location.href = "/login";
     }
