@@ -1,151 +1,472 @@
-import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
-import * as jose from "jose";
+/**
+ * Edge Runtime Middleware - Lightweight Security Layer
+ *
+ * This middleware runs on Edge Runtime for optimal performance.
+ * It handles:
+ * - CSRF protection
+ * - In-memory rate limiting with aggressive cleanup
+ * - Suspicious path detection
+ * - IP blocking (synced from database via cron)
+ *
+ * Memory is managed aggressively to prevent leaks.
+ * Database writes happen via /api/security/sync cron endpoint.
+ */
 
-const SECRET_KEY = new TextEncoder().encode(process.env.SECRET_KEY as string);
+import { NextRequest, NextResponse } from "next/server";
+import {
+  validateCSRFToken,
+  generateCSRFToken,
+  setCSRFCookie,
+} from "./lib/csrfProtection";
 
-function logWithTimestamp(message: string) {
-  const timestamp = new Date().toISOString();
-  console.log(`[${timestamp}] ${message}`);
+// === CONFIGURATION ===
+const SECRET_ENV = process.env.SECRET_KEY;
+const SECRET_KEY = SECRET_ENV
+  ? new TextEncoder().encode(SECRET_ENV)
+  : undefined;
+
+// Rate Limiting Configuration (from environment variables)
+const RATE_LIMIT_WINDOW =
+  (parseInt(process.env.RATE_LIMIT_WINDOW_MINUTES || "15") || 15) * 60 * 1000;
+const RATE_LIMIT_MAX =
+  parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || "500") || 500;
+const API_RATE_LIMIT_WINDOW =
+  (parseInt(process.env.API_RATE_LIMIT_WINDOW_MINUTES || "1") || 1) * 60 * 1000;
+const API_RATE_LIMIT_MAX =
+  parseInt(process.env.API_RATE_LIMIT_MAX_REQUESTS || "30") || 30;
+
+// Memory Management Configuration
+const MAX_MAP_SIZE = 200; // Reduced for tighter control
+const CLEANUP_INTERVAL = 20 * 1000; // 20 seconds - aggressive cleanup
+const BLOCKED_IP_SYNC_INTERVAL =
+  (parseInt(process.env.BLOCKED_IP_SYNC_INTERVAL_SECONDS || "60") || 60) * 1000;
+
+// === TYPE DEFINITIONS ===
+type RateLimitEntry = {
+  count: number;
+  resetTime: number;
+};
+
+type SuspiciousEntry = {
+  hits: number;
+  paths: string[];
+  lastHit: number;
+};
+
+type SecurityEvent = {
+  ip: string;
+  path: string;
+  action: "SUSPICIOUS_PATH" | "RATE_LIMITED" | "BLOCKED";
+  timestamp: number;
+};
+
+// === GLOBAL STATE (Edge Runtime Safe) ===
+const globalForMiddleware = globalThis as unknown as {
+  generalRateLimit?: Map<string, RateLimitEntry>;
+  apiRateLimit?: Map<string, RateLimitEntry>;
+  suspiciousIPs?: Map<string, SuspiciousEntry>;
+  blockedIPs?: Set<string>;
+  securityEvents?: SecurityEvent[];
+  lastCleanupTime?: number;
+  lastBlockedIPSync?: number;
+  totalRequestsProcessed?: number;
+};
+
+// Initialize maps
+if (!globalForMiddleware.generalRateLimit) {
+  globalForMiddleware.generalRateLimit = new Map();
+}
+if (!globalForMiddleware.apiRateLimit) {
+  globalForMiddleware.apiRateLimit = new Map();
+}
+if (!globalForMiddleware.suspiciousIPs) {
+  globalForMiddleware.suspiciousIPs = new Map();
+}
+if (!globalForMiddleware.blockedIPs) {
+  globalForMiddleware.blockedIPs = new Set();
+}
+if (!globalForMiddleware.securityEvents) {
+  globalForMiddleware.securityEvents = [];
+}
+if (!globalForMiddleware.lastCleanupTime) {
+  globalForMiddleware.lastCleanupTime = 0;
+}
+if (!globalForMiddleware.lastBlockedIPSync) {
+  globalForMiddleware.lastBlockedIPSync = 0;
+}
+if (!globalForMiddleware.totalRequestsProcessed) {
+  globalForMiddleware.totalRequestsProcessed = 0;
 }
 
-function clearAuthCookies(response: NextResponse) {
-  logWithTimestamp("Clearing auth cookies");
-  response.cookies.delete("session");
-  logWithTimestamp("Session cookie deleted");
+const generalRateLimit = globalForMiddleware.generalRateLimit;
+const apiRateLimit = globalForMiddleware.apiRateLimit;
+const suspiciousIPs = globalForMiddleware.suspiciousIPs;
+const blockedIPs = globalForMiddleware.blockedIPs;
+const securityEvents = globalForMiddleware.securityEvents;
+
+// === SUSPICIOUS PATH PATTERNS ===
+const SUSPICIOUS_PATTERNS = [
+  ".env",
+  "config.json",
+  "credentials",
+  "secrets.json",
+  "laravel_session",
+  "XDEBUG_SESSION",
+  "owa/auth",
+  "remote/fgt",
+  "vendor/phpunit",
+  "api/v1/cmd",
+  "invoker/readonly",
+  "system_api.php",
+  "shell.jsp",
+  "cmd.jsp",
+  "webshell",
+  "eval.php",
+  "c99.php",
+  ".aws/credentials",
+  "backup.sql",
+  "database.sql",
+  ".git/config",
+  "sftp-config.json",
+  "docker-compose",
+  "Dockerfile",
+  "terraform.tfstate",
+  "swagger",
+  "vpn/../",
+  ".htaccess",
+  ".htpasswd",
+  "web-console",
+  "jmx-console",
+  "phpmyadmin",
+  "adminer",
+];
+
+// === UTILITY FUNCTIONS ===
+function getClientIP(request: NextRequest): string {
+  const forwardedFor = request.headers.get("x-forwarded-for");
+  const realIP = request.headers.get("x-real-ip");
+  return forwardedFor?.split(",")[0].trim() || realIP || "unknown";
+}
+
+function isSuspiciousPath(pathname: string): boolean {
+  const lowerPath = pathname.toLowerCase();
+  return SUSPICIOUS_PATTERNS.some((pattern) =>
+    lowerPath.includes(pattern.toLowerCase())
+  );
+}
+
+// === MEMORY MANAGEMENT ===
+function pruneMap(
+  map: Map<string, RateLimitEntry>,
+  now: number,
+  maxSize: number
+) {
+  // Remove expired entries
+  let removed = 0;
+  for (const [key, value] of map.entries()) {
+    if (now > value.resetTime) {
+      map.delete(key);
+      removed++;
+    }
+  }
+
+  // If still too large, remove oldest entries
+  if (map.size > maxSize) {
+    const entries = Array.from(map.entries());
+    entries.sort((a, b) => a[1].resetTime - b[1].resetTime);
+    const toRemove = entries.slice(0, map.size - maxSize);
+    toRemove.forEach(([key]) => map.delete(key));
+    removed += toRemove.length;
+  }
+
+  return removed;
+}
+
+function cleanupMaps(now: number) {
+  const lastCleanup = globalForMiddleware.lastCleanupTime || 0;
+
+  if (now - lastCleanup < CLEANUP_INTERVAL) {
+    return;
+  }
+
+  globalForMiddleware.lastCleanupTime = now;
+
+  // Cleanup rate limit maps
+  const generalRemoved = pruneMap(generalRateLimit, now, MAX_MAP_SIZE);
+  const apiRemoved = pruneMap(apiRateLimit, now, MAX_MAP_SIZE);
+
+  // Cleanup suspicious IPs (remove entries older than 1 hour)
+  const oneHourAgo = now - 60 * 60 * 1000;
+  let suspiciousRemoved = 0;
+  for (const [ip, entry] of suspiciousIPs.entries()) {
+    if (entry.lastHit < oneHourAgo) {
+      suspiciousIPs.delete(ip);
+      suspiciousRemoved++;
+    }
+  }
+
+  // Limit security events to last 1000
+  if (securityEvents.length > 1000) {
+    securityEvents.splice(0, securityEvents.length - 1000);
+  }
+
+  // Log cleanup stats in development
+  if (process.env.NODE_ENV === "development") {
+    console.log(
+      `[Middleware Cleanup] General: ${generalRemoved}, API: ${apiRemoved}, Suspicious: ${suspiciousRemoved}, Events: ${securityEvents.length}, Total Requests: ${globalForMiddleware.totalRequestsProcessed}`
+    );
+  }
+}
+
+// === RATE LIMITING ===
+function recordRequest(
+  map: Map<string, RateLimitEntry>,
+  ip: string,
+  windowMs: number,
+  maxRequests: number,
+  now: number
+): boolean {
+  const entry = map.get(ip);
+
+  if (!entry || now > entry.resetTime) {
+    map.set(ip, { count: 1, resetTime: now + windowMs });
+    return false;
+  }
+
+  entry.count++;
+  return entry.count > maxRequests;
+}
+
+// === MIDDLEWARE HANDLER ===
+export async function middleware(request: NextRequest) {
+  const now = Date.now();
+  const { pathname } = request.nextUrl;
+  const normalizedPath = (() => {
+    if (pathname === "/") {
+      return "/";
+    }
+
+    const trimmed = pathname.replace(/\/+$/, "");
+    return trimmed.length === 0 ? "/" : trimmed;
+  })();
+  const ip = getClientIP(request);
+
+  // === EXEMPTIONS FOR INTERNAL/CRON ENDPOINTS ===
+  // Skip all middleware checks for internal API routes used by cron jobs
+  if (
+    pathname.startsWith("/api/internal/") ||
+    pathname.startsWith("/api/security/")
+  ) {
+    return NextResponse.next();
+  }
+
+  // Increment request counter
+  if (globalForMiddleware.totalRequestsProcessed !== undefined) {
+    globalForMiddleware.totalRequestsProcessed++;
+  }
+
+  // Periodic cleanup
+  cleanupMaps(now);
+
+  // === 1. CHECK BLOCKED IPS ===
+  if (blockedIPs.has(ip)) {
+    return new NextResponse("Forbidden", { status: 403 });
+  }
+
+  // === 2. CHECK SUSPICIOUS PATHS ===
+  if (isSuspiciousPath(pathname)) {
+    const entry = suspiciousIPs.get(ip) || { hits: 0, paths: [], lastHit: now };
+    entry.hits++;
+    entry.lastHit = now;
+
+    if (!entry.paths.includes(pathname)) {
+      entry.paths.push(pathname);
+    }
+
+    suspiciousIPs.set(ip, entry);
+
+    // Log security event
+    securityEvents.push({
+      ip,
+      path: pathname,
+      action: "SUSPICIOUS_PATH",
+      timestamp: now,
+    });
+
+    // Block after 3 suspicious hits
+    if (entry.hits >= 3) {
+      blockedIPs.add(ip);
+      securityEvents.push({
+        ip,
+        path: pathname,
+        action: "BLOCKED",
+        timestamp: now,
+      });
+      return new NextResponse("Forbidden", { status: 403 });
+    }
+
+    return new NextResponse("Not Found", { status: 404 });
+  }
+
+  // === 3. RATE LIMITING ===
+  const isAPIRoute = pathname.startsWith("/api");
+  const rateMap = isAPIRoute ? apiRateLimit : generalRateLimit;
+  const windowMs = isAPIRoute ? API_RATE_LIMIT_WINDOW : RATE_LIMIT_WINDOW;
+  const maxRequests = isAPIRoute ? API_RATE_LIMIT_MAX : RATE_LIMIT_MAX;
+
+  const isRateLimited = recordRequest(rateMap, ip, windowMs, maxRequests, now);
+
+  if (isRateLimited) {
+    securityEvents.push({
+      ip,
+      path: pathname,
+      action: "RATE_LIMITED",
+      timestamp: now,
+    });
+    return new NextResponse("Too Many Requests", { status: 429 });
+  }
+
+  // === 4. CSRF PROTECTION ===
+  const method = request.method;
+  const isStateMutating = ["POST", "PUT", "DELETE", "PATCH"].includes(method);
+  const isAuthRoute = pathname.startsWith("/api/auth");
+
+  if (isStateMutating && !isAuthRoute) {
+    const isValid = validateCSRFToken(request);
+    if (!isValid) {
+      return new NextResponse("CSRF validation failed", { status: 403 });
+    }
+  }
+
+  // === 5. SESSION VALIDATION & SMART REDIRECTS (Edge-Level) ===
+  const sessionToken = request.cookies.get("session")?.value;
+  const hasSession = !!sessionToken;
+
+  const isAdminRoute =
+    normalizedPath.startsWith("/admin") ||
+    normalizedPath.startsWith("/api/admin");
+
+  // Only /login is public
+  const isLoginPage = normalizedPath === "/login";
+  const isRootPath = normalizedPath === "/";
+
+  // REDIRECT 1: Root path with session → /dashboard
+  if (isRootPath && hasSession) {
+    return NextResponse.redirect(new URL("/dashboard", request.url));
+  }
+
+  // REDIRECT 2: Root path without session → /login
+  if (isRootPath && !hasSession) {
+    return NextResponse.redirect(new URL("/login", request.url));
+  }
+
+  // REDIRECT 3: Login page with session → /dashboard
+  if (isLoginPage && hasSession) {
+    return NextResponse.redirect(new URL("/dashboard", request.url));
+  }
+
+  // REDIRECT 4: Admin routes without session → /login
+  if (isAdminRoute && !hasSession) {
+    if (isAPIRoute) {
+      return new NextResponse(JSON.stringify({ message: "Unauthorized" }), {
+        status: 401,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+    return NextResponse.redirect(new URL("/login", request.url));
+  }
+
+  // REDIRECT 5: Protected routes without session → /login
+  const isPublicRoute = isLoginPage || isRootPath;
+  const isProtectedRoute = !isAuthRoute && !isPublicRoute;
+
+  if (isProtectedRoute && !hasSession) {
+    if (isAPIRoute) {
+      return new NextResponse(JSON.stringify({ message: "Unauthorized" }), {
+        status: 401,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+    return NextResponse.redirect(new URL("/login", request.url));
+  }
+
+  // === 6. PREPARE RESPONSE ===
+  const response = NextResponse.next();
+
+  // Set CSRF token
+  const existingToken = request.cookies.get("csrf-token");
+  if (!existingToken) {
+    const csrfToken = generateCSRFToken();
+    setCSRFCookie(response, csrfToken);
+  }
+
   return response;
 }
 
-async function validateSession(sessionToken: string) {
-  try {
-    const { payload } = await jose.jwtVerify(sessionToken, SECRET_KEY);
-    const now = Math.floor(Date.now() / 1000);
-
-    if (!payload || !payload.exp || payload.exp < now) {
-      logWithTimestamp("Invalid or expired token");
-      return null;
-    }
-
-    return payload;
-  } catch (error) {
-    logWithTimestamp("Token validation failed");
-    return null;
-  }
+// === EXPORT SECURITY DATA (for sync endpoint) ===
+export function getSecurityData() {
+  return {
+    events: [...securityEvents],
+    suspicious: Array.from(suspiciousIPs.entries()).map(([ip, data]) => ({
+      ip,
+      ...data,
+    })),
+    blocked: Array.from(blockedIPs),
+  };
 }
 
-async function handleProtectedRoute(
-  request: NextRequest,
-  sessionToken: string
-) {
-  if (!sessionToken) {
-    logWithTimestamp("Protected route - no session, redirecting to login");
-    return NextResponse.redirect(new URL("/login", request.url));
-  }
-
-  const payload = await validateSession(sessionToken);
-  if (!payload) {
-    logWithTimestamp(
-      "Protected route - invalid session, clearing cookies and redirecting to login"
-    );
-    return clearAuthCookies(
-      NextResponse.redirect(new URL("/login", request.url))
-    );
-  }
-
-  return null;
+export function clearSecurityEvents() {
+  securityEvents.length = 0;
 }
 
-async function handleAdminRoute(request: NextRequest, sessionToken: string) {
-  if (!sessionToken) {
-    logWithTimestamp("Admin route - no session, redirecting to login");
-    return NextResponse.redirect(new URL("/login", request.url));
-  }
-
-  const payload = await validateSession(sessionToken);
-  if (!payload || payload.role !== "admin") {
-    logWithTimestamp("Admin route - unauthorized access, redirecting to home");
-    return NextResponse.redirect(new URL("/home", request.url));
-  }
-
-  return null;
+export function addBlockedIP(ip: string) {
+  blockedIPs.add(ip);
 }
 
-export async function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl;
-  const sessionToken = request.cookies.get("session")?.value;
-
-  switch (true) {
-    case pathname === "/":
-      if (!sessionToken) {
-        logWithTimestamp("Root path - no session, redirecting to login");
-        return NextResponse.redirect(new URL("/login", request.url));
-      }
-
-      const rootPayload = await validateSession(sessionToken);
-      if (rootPayload) {
-        logWithTimestamp("Root path - valid session, redirecting to home");
-        return NextResponse.redirect(new URL("/home", request.url));
-      }
-
-      logWithTimestamp(
-        "Root path - invalid session, clearing cookies and redirecting to login"
-      );
-      return clearAuthCookies(
-        NextResponse.redirect(new URL("/login", request.url))
-      );
-
-    case pathname === "/login":
-      if (!sessionToken) {
-        logWithTimestamp("Login path - no session");
-        return NextResponse.next();
-      }
-
-      const loginPayload = await validateSession(sessionToken);
-      if (loginPayload) {
-        logWithTimestamp("Login path - valid session, redirecting to home");
-        return NextResponse.redirect(new URL("/home", request.url));
-      }
-
-      logWithTimestamp("Login path - invalid session, clearing cookies");
-      return clearAuthCookies(NextResponse.next());
-
-    case pathname.startsWith("/home"):
-    case pathname.startsWith("/goals"):
-      if (sessionToken) {
-        return handleProtectedRoute(request, sessionToken);
-      } else {
-        logWithTimestamp("Protected route - no session, redirecting to login");
-        return NextResponse.redirect(new URL("/login", request.url));
-      }
-
-    // Special case for goals-analytics - accessible to all authenticated users
-    case pathname.startsWith("/admin/goals-analytics"):
-      if (sessionToken) {
-        const result = await handleProtectedRoute(request, sessionToken);
-        if (result) return result; // if there's an error with the session
-        return null; // Allow access for any authenticated user
-      } else {
-        logWithTimestamp("Goals analytics - no session, redirecting to login");
-        return NextResponse.redirect(new URL("/login", request.url));
-      }
-
-    // All other admin routes require admin role
-    case pathname.startsWith("/admin"):
-      if (sessionToken) {
-        return handleAdminRoute(request, sessionToken);
-      } else {
-        logWithTimestamp("Admin route - no session, redirecting to login");
-        return NextResponse.redirect(new URL("/login", request.url));
-      }
-
-    default:
-      logWithTimestamp(`Handling path: ${pathname}`);
-      return NextResponse.next();
-  }
+export function removeBlockedIP(ip: string) {
+  blockedIPs.delete(ip);
 }
 
+export function syncBlockedIPs(ips: string[]) {
+  blockedIPs.clear();
+  ips.forEach((ip) => blockedIPs.add(ip));
+}
+
+export function getMiddlewareMetrics() {
+  const generalUtilization = (generalRateLimit.size / MAX_MAP_SIZE) * 100;
+  const apiUtilization = (apiRateLimit.size / MAX_MAP_SIZE) * 100;
+  const suspiciousUtilization = (suspiciousIPs.size / MAX_MAP_SIZE) * 100;
+
+  return {
+    generalRateLimit: {
+      size: generalRateLimit.size,
+      maxSize: MAX_MAP_SIZE,
+      utilizationPercent: Number.isFinite(generalUtilization)
+        ? generalUtilization
+        : 0,
+    },
+    apiRateLimit: {
+      size: apiRateLimit.size,
+      maxSize: MAX_MAP_SIZE,
+      utilizationPercent: Number.isFinite(apiUtilization) ? apiUtilization : 0,
+    },
+    suspiciousIPs: {
+      size: suspiciousIPs.size,
+      maxSize: MAX_MAP_SIZE,
+      utilizationPercent: Number.isFinite(suspiciousUtilization)
+        ? suspiciousUtilization
+        : 0,
+    },
+    blockedIPs: blockedIPs.size,
+    totalRequestsProcessed: globalForMiddleware.totalRequestsProcessed ?? 0,
+    lastCleanupTime: globalForMiddleware.lastCleanupTime ?? 0,
+    lastBlockedIPSync: globalForMiddleware.lastBlockedIPSync ?? 0,
+  };
+}
+
+// === MATCHER CONFIGURATION ===
 export const config = {
   matcher: [
-    "/((?!api|_next/static|_next/image|favicon.*\\.ico|mavn-logo-white.png|mi-favicon-bw-copy.png|.*\\.svg|.*\\.jpg|.*\\.jpeg|.*\\.png|.*\\.gif).*)",
+    "/((?!_next/static|_next/image|favicon.*\\.ico|mavn-logo-white.png|mi-favicon-bw-copy.png|.*\\.svg|.*\\.jpg|.*\\.jpeg|.*\\.png|.*\\.webp|.*\\.gif).*)",
   ],
 };

@@ -1,183 +1,84 @@
-import { useMemo, useCallback } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
+import { api } from "@/lib/axios";
 
-interface FilterState {
-  dateSelector: {
-    start: string | null;
-    end: string | null;
-  };
-}
-
-interface SearchParams {
-  searchTerm: string;
-  searchField: string;
-}
-
-interface InfertilityPatientData {
+// Response type for infertility patient list
+export interface InfertilityPatient {
   id: number;
-  hospitalName: string | null;
-  patientFirstName: string;
-  patientLastName: string | null;
-  patientFullName: string;
-  patientAge: number | null;
-  patientDOB: Date | null;
-  husbandName: string | null;
-  husbandAge: number | null;
-  husbandDOB: Date | null;
-  mobileNumber: string | null;
-  address: string | null;
+  patientId: number;
+  hospitalId: number;
+  patient: {
+    id: number;
+    fullName: string;
+    age: number | null;
+    phoneNumber: string | null;
+    email: string | null;
+    gender: string;
+  };
+  hospital: {
+    id: number;
+    name: string;
+    type: string | null;
+  };
   yearsMarried: number | null;
   yearsTrying: number | null;
-  para: string | null;
-  alc: string | null;
-  weight: number | null;
-  bp: string | null;
   infertilityType: string | null;
-  notes: string | null;
+  status: string | null;
+  nextAppointment: Date | null;
   createdAt: Date;
   updatedAt: Date;
 }
 
-interface FetchDataResponse {
-  data: InfertilityPatientData[];
-  customOptions: {
-    infertilityTypes: string[];
-    hospitals: string[];
-    totalCount: number;
-  };
+// Filter options
+export interface InfertilityFilters {
+  status?: string;
+  hospitalId?: number;
+  infertilityType?: string;
+  search?: string;
 }
 
-const useFetchInfertilityData = (
-  filters: FilterState,
-  shouldFetch: boolean,
-  searchParams?: SearchParams
-) => {
-  const queryClient = useQueryClient();
+export function useFetchInfertilityData(filters: InfertilityFilters = {}) {
+  return useQuery({
+    queryKey: ["infertilityPatients", filters],
+    queryFn: async (): Promise<InfertilityPatient[]> => {
+      try {
+        const params = new URLSearchParams();
 
-  const queryKey = useMemo(
-    () => ["infertilityPatients", filters, searchParams, shouldFetch],
-    [filters, searchParams, shouldFetch]
-  );
+        // Add filters
+        if (filters.status) {
+          params.append("status", filters.status);
+        }
 
-  const fetchInfertilityPatients =
-    useCallback(async (): Promise<FetchDataResponse> => {
-      const response = await fetch("/api/infertility-patients/fetch", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          filters,
-          searchParams,
-        }),
-      });
+        if (filters.hospitalId) {
+          params.append("hospitalId", filters.hospitalId.toString());
+        }
 
-      if (!response.ok) {
-        throw new Error(
-          `Failed to fetch infertility patients: ${response.statusText}`
-        );
+        if (filters.infertilityType) {
+          params.append("infertilityType", filters.infertilityType);
+        }
+
+        if (filters.search) {
+          params.append("search", filters.search);
+        }
+
+        const response = await api.get<{
+          success: boolean;
+          data: InfertilityPatient[];
+          error?: string;
+        }>(`/infertility-patients?${params.toString()}`);
+
+        console.log("Infertility Patients API Response:", response.data);
+
+        if (!response.data.success) {
+          throw new Error(
+            response.data.error || "Failed to fetch infertility patients"
+          );
+        }
+
+        return response.data.data;
+      } catch (error) {
+        console.error("Error fetching infertility patients:", error);
+        throw error;
       }
-
-      return response.json();
-    }, [filters, searchParams]);
-
-  const {
-    data: queryData,
-    isLoading,
-    error,
-    refetch: queryRefetch,
-    isFetching,
-    isStale,
-  } = useQuery({
-    queryKey,
-    queryFn: fetchInfertilityPatients,
-    enabled: shouldFetch,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 10 * 60 * 1000, // 10 minutes (renamed from cacheTime)
-    refetchOnWindowFocus: true,
-    refetchOnMount: true,
-    retry: 2,
-    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+    },
   });
-
-  const data = useMemo(() => queryData?.data || [], [queryData]);
-  const customOptions = useMemo(
-    () =>
-      queryData?.customOptions || {
-        infertilityTypes: [],
-        hospitals: [],
-        totalCount: 0,
-      },
-    [queryData]
-  );
-
-  const refetch = useCallback(async () => {
-    await queryClient.invalidateQueries({
-      queryKey: ["infertilityPatients"],
-      exact: false,
-    });
-    return queryRefetch();
-  }, [queryClient, queryRefetch]);
-
-  const invalidateAndRefetch = useCallback(async () => {
-    await queryClient.invalidateQueries({
-      queryKey: ["infertilityPatients"],
-    });
-    return queryRefetch();
-  }, [queryClient, queryRefetch]);
-
-  const prefetchWithNewFilters = useCallback(
-    async (newFilters: FilterState) => {
-      await queryClient.prefetchQuery({
-        queryKey: ["infertilityPatients", newFilters, searchParams, true],
-        queryFn: () =>
-          fetch("/api/infertility-patients/fetch", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              filters: newFilters,
-              searchParams,
-            }),
-          }).then((res) => res.json()),
-        staleTime: 5 * 60 * 1000,
-      });
-    },
-    [queryClient, searchParams]
-  );
-
-  const mutateOptimistically = useCallback(
-    (
-      updatedData: InfertilityPatientData[],
-      newCustomOptions?: Partial<FetchDataResponse["customOptions"]>
-    ) => {
-      queryClient.setQueryData(
-        queryKey,
-        (oldData: FetchDataResponse | undefined) => ({
-          data: updatedData,
-          customOptions: {
-            ...oldData?.customOptions,
-            ...newCustomOptions,
-          } as FetchDataResponse["customOptions"],
-        })
-      );
-    },
-    [queryClient, queryKey]
-  );
-
-  return {
-    data,
-    isLoading,
-    isFetching,
-    isStale,
-    error,
-    customOptions,
-    refetch,
-    invalidateAndRefetch,
-    prefetchWithNewFilters,
-    mutateOptimistically,
-  };
-};
-
-export default useFetchInfertilityData;
+}

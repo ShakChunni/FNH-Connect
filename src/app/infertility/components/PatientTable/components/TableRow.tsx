@@ -1,5 +1,5 @@
 import React, { useState, useRef } from "react";
-import { MinusIcon } from "lucide-react";
+import { MinusIcon, Edit } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 export interface InfertilityPatientData {
@@ -31,9 +31,10 @@ interface TableRowProps {
   row: InfertilityPatientData;
   formatDate: (date: string | null) => string;
   index: number;
+  onEdit?: (patient: InfertilityPatientData) => void;
 }
 
-const TableRow: React.FC<TableRowProps> = ({ row, formatDate, index }) => {
+const TableRow: React.FC<TableRowProps> = ({ row, formatDate, index, onEdit }) => {
   const [showFullNote, setShowFullNote] = useState(false);
   const [noteHoverTimeout, setNoteHoverTimeout] =
     useState<NodeJS.Timeout | null>(null);
@@ -178,6 +179,17 @@ const TableRow: React.FC<TableRowProps> = ({ row, formatDate, index }) => {
         <td className="px-4 py-3 whitespace-nowrap border-gray-100 text-xs">
           {row.updatedAt ? formatDate(row.updatedAt) : renderCell(null)}
         </td>
+        {onEdit && (
+          <td className="px-4 py-3 whitespace-nowrap text-xs">
+            <button
+              onClick={() => onEdit(row)}
+              className="p-1.5 rounded-full bg-blue-100 hover:bg-blue-200 text-blue-600 hover:text-blue-700 transition-colors duration-200"
+              title="Edit patient"
+            >
+              <Edit size={14} />
+            </button>
+          </td>
+        )}
       </tr>
     </>
   );
