@@ -1,58 +1,62 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { cookies } from "next/headers";
-import jwt from "jsonwebtoken";
-
-const SECRET_KEY = process.env.SECRET_KEY as string;
+import { validateCSRFToken } from "@/lib/csrfProtection";
 
 export async function POST(request: NextRequest) {
   try {
+    // ✅ CSRF Validation for state-changing request
+    const csrfValid = validateCSRFToken(request);
+    if (!csrfValid) {
+      return NextResponse.json(
+        { success: false, error: "Invalid CSRF token" },
+        { status: 403 }
+      );
+    }
+
     const cookieStore = await cookies();
     const sessionToken = cookieStore.get("session")?.value;
 
     if (!sessionToken) {
       return NextResponse.json(
-        { success: false, message: "No session found" },
-        { status: 400 }
+        { success: false, error: "No active session" },
+        { status: 401 }
       );
     }
 
     await prisma.$transaction(async (tx) => {
-      // Get session with user details from database
+      // Find and delete session
       const session = await tx.session.findUnique({
         where: { token: sessionToken },
         include: { user: true },
       });
 
       if (!session) {
-        throw new Error("Session not found in database");
+        throw new Error("Session not found");
       }
 
-      // Create logout activity log using session information
-      const bdTime = new Date(new Date().getTime() + 6 * 60 * 60 * 1000); // Bangladesh time (UTC+6)
-
-      // Construct device info string from session data
+      // Format device info for logging
       const deviceString = `${session.deviceType || "Unknown"} (${
         session.osType || "Unknown OS"
       }) using ${session.browserName || "Unknown Browser"}`;
 
+      // Log logout activity
       await tx.activityLog.create({
         data: {
           userId: session.userId,
           action: "LOGOUT",
-          sessionId: session.id,
-          description: `User ${session.user.username} logged out from ${deviceString}`,
-          // Copy these fields directly from session using updated field names
-          readableFingerprint: session.readableFingerprint,
-          deviceFingerprint: session.deviceFingerprint,
+          description: `Staff member ${session.user.username} logged out from ${deviceString}`,
+          entityType: "User",
+          entityId: session.userId,
           ipAddress: session.ipAddress,
+          sessionId: session.id,
+          deviceFingerprint: session.deviceFingerprint,
+          readableFingerprint: session.readableFingerprint,
           deviceType: session.deviceType,
           browserName: session.browserName,
           browserVersion: session.browserVersion,
           osType: session.osType,
-          timestamp: bdTime,
-          entityType: "User",
-          entityId: session.userId,
+          timestamp: new Date(),
         },
       });
 
@@ -62,10 +66,13 @@ export async function POST(request: NextRequest) {
       });
     });
 
-    const response = NextResponse.json({
-      success: true,
-      message: "Logged out successfully",
-    });
+    const response = NextResponse.json(
+      {
+        success: true,
+        message: "Logged out successfully",
+      },
+      { status: 200 }
+    );
 
     // Clear the session cookie
     response.cookies.set({
@@ -73,6 +80,9 @@ export async function POST(request: NextRequest) {
       value: "",
       expires: new Date(0),
       path: "/",
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
     });
 
     return response;
@@ -85,7 +95,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         success: false,
-        error: error instanceof Error ? error.message : "Error during logout",
+        error:
+          error instanceof Error
+            ? error.message
+            : "An error occurred during logout",
       },
       { status: 500 }
     );

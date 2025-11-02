@@ -511,3 +511,61 @@ model InfertilityPatient {
   @@index([createdAt])
   @@index([status])
 }
+
+// Security & Monitoring Models
+model SecurityLog {
+  id         Int      @id @default(autoincrement())
+  ip_address String
+  action     String // "LOGIN_FAILED", "SUSPICIOUS_PATH", "RATE_LIMITED", "BLOCKED"
+  path       String?
+  severity   String // "LOW", "MEDIUM", "HIGH"
+  timestamp  DateTime @default(now())
+  metadata   Json? // Additional context (user_agent, attempt_count, etc.)
+
+  @@index([ip_address])
+  @@index([timestamp])
+  @@index([action])
+}
+
+model BlockedIP {
+  id            Int       @id @default(autoincrement())
+  ip_address    String    @unique
+  reason        String
+  description   String?
+  paths         String[] // Suspicious paths accessed
+  blocked_at    DateTime  @default(now())
+  blocked_until DateTime? // NULL for permanent blocks
+  is_permanent  Boolean   @default(false)
+  attempt_count Int       @default(1)
+  user_agent    String?
+
+  @@index([ip_address])
+  @@index([blocked_until])
+}
+
+model RateLimit {
+  id            Int      @id @default(autoincrement())
+  ip_address    String
+  path          String
+  request_count Int      @default(1)
+  window_start  DateTime @default(now())
+  window_end    DateTime
+
+  @@unique([ip_address, path, window_start])
+  @@index([window_end])
+}
+
+model LoginAttempt {
+  id         Int      @id @default(autoincrement())
+  ip_address String
+  username   String
+  success    Boolean
+  timestamp  DateTime @default(now())
+  user_agent String?
+  metadata   Json? // Device info, browser, etc.
+
+  @@index([ip_address])
+  @@index([username])
+  @@index([timestamp])
+  @@index([success])
+}

@@ -1,28 +1,34 @@
-import { Theme } from "@radix-ui/themes";
-import "@radix-ui/themes/styles.css";
 import { Inter } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
-import "./theme-config.css";
 import QueryClientProvider from "./QueryClientProvider";
 import { AuthProvider } from "./AuthContext";
+import { NotificationProvider } from "./NotificationProvider";
 import MainContent from "./MainContent";
 import { metadata } from "./metadata";
 import PageTitle from "./PageTitle";
-import { initializeServer } from "@/lib/server-init";
-import Maintenance from "./Maintenance";
+import Maintenance from "./Maintenance"; // <-- Import the new component
 
 const inter = Inter({
   subsets: ["latin"],
   variable: "--font-inter",
 });
 
-// Initialize server tasks in production and development
-if (
-  process.env.NODE_ENV === "production" ||
-  process.env.NODE_ENV === "development"
-) {
-  initializeServer();
-}
+const gotham = localFont({
+  src: [
+    {
+      path: "../fonts/fonts-gotham/Gotham.woff",
+      weight: "400",
+      style: "normal",
+    },
+    {
+      path: "../fonts/fonts-gotham/Gotham_bold.woff",
+      weight: "700",
+      style: "normal",
+    },
+  ],
+  variable: "--font-gotham",
+});
 
 export { metadata };
 
@@ -34,7 +40,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={inter.variable}>
+    <html lang="en" className={`${inter.variable} ${gotham.variable}`}>
       <head>
         <meta name="robots" content="noindex, nofollow" />
         <meta
@@ -42,18 +48,18 @@ export default function RootLayout({
           content="telephone=no, date=no, email=no, address=no"
         />
       </head>
-      <body>
+      <body className="font-sans">
         {MAINTENANCE_MODE ? (
           <Maintenance />
         ) : (
           <>
             <PageTitle />
             <QueryClientProvider>
-              <Theme accentColor="blue" radius="large">
-                <AuthProvider>
+              <AuthProvider>
+                <NotificationProvider>
                   <MainContent>{children}</MainContent>
-                </AuthProvider>
-              </Theme>
+                </NotificationProvider>
+              </AuthProvider>
             </QueryClientProvider>
           </>
         )}

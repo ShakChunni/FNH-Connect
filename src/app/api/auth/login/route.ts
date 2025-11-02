@@ -4,6 +4,19 @@ import jwt from "jsonwebtoken";
 import DeviceDetector from "node-device-detector";
 import { prisma } from "@/lib/prisma";
 import crypto from "crypto";
+import {
+  validateCSRFToken,
+  addCSRFTokenToResponse,
+} from "@/lib/csrfProtection";
+import { z } from "zod";
+import {
+  trackLoginAttempt,
+  getFailedLoginAttempts,
+  getFailedLoginAttemptsForUser,
+  checkIPBlock,
+  blockIP,
+  trackSuspiciousActivity,
+} from "@/lib/securityActions";
 
 const SECRET_KEY = process.env.SECRET_KEY as string;
 const EXPIRATION_TIME = 60 * 60 * 24; // 1 day in seconds
@@ -12,30 +25,11 @@ if (!SECRET_KEY) {
   throw new Error("SECRET_KEY is not defined in environment variables");
 }
 
-interface LoginRequest {
-  username: string;
-  password: string;
-}
-
-interface UserResponse {
-  id: number;
-  username: string;
-  staffId: number;
-  fullName: string;
-  role: string;
-}
-
-interface DeviceInfo {
-  ipAddress: string;
-  userAgent: string;
-  deviceFingerprint: string;
-  readableFingerprint: string;
-  osType: string;
-  browserName: string;
-  browserVersion: string;
-  deviceType: string;
-  deviceString: string;
-}
+// ✅ Zod schema for login validation
+const loginSchema = z.object({
+  username: z.string().min(1, "Username is required").trim(),
+  password: z.string().min(1, "Password is required"),
+});
 
 function generateDeviceFingerprint(
   ip: string,
@@ -61,11 +55,23 @@ function generateDeviceFingerprint(
   return fingerprint;
 }
 
+interface DeviceInfoType {
+  ipAddress: string;
+  userAgent: string;
+  deviceFingerprint: string;
+  readableFingerprint: string;
+  osType: string;
+  browserName: string;
+  browserVersion: string;
+  deviceType: string;
+  deviceString: string;
+}
+
 function getDeviceInfo(
   userAgent: string,
   clientIp: string,
   userId?: number
-): DeviceInfo {
+): DeviceInfoType {
   const detector = new DeviceDetector({
     clientIndexes: true,
     deviceIndexes: true,
@@ -76,22 +82,15 @@ function getDeviceInfo(
 
   const result = detector.detect(userAgent);
 
-  // Get OS info
   const osName = result.os?.name || "Unknown";
-  let osVersion = result.os?.version || "Unknown";
-
-  // Get device info with fallbacks
-  let deviceVendor = result.device?.brand || null;
-  let deviceModel = result.device?.model || null;
+  const osVersion = result.os?.version || "Unknown";
   let deviceType = result.device?.type || null;
 
-  // Capitalize device type
   if (deviceType && typeof deviceType === "string") {
     deviceType =
       deviceType.charAt(0).toUpperCase() + deviceType.slice(1).toLowerCase();
   }
 
-  // Set desktop type for desktop operating systems
   if (
     !deviceType &&
     ((osName && ["Windows", "Mac OS", "Linux"].includes(osName)) ||
@@ -101,7 +100,6 @@ function getDeviceInfo(
     deviceType = "Desktop";
   }
 
-  // Generate device fingerprint
   const deviceFingerprint = generateDeviceFingerprint(
     clientIp,
     userAgent,
@@ -111,14 +109,15 @@ function getDeviceInfo(
     userId
   );
 
-  // Create readable fingerprint (e.g., AB:CD:EF:12:34:56)
   const readableFingerprint = deviceFingerprint
     .substring(0, 12)
     .replace(/(.{2})/g, "$1:")
     .slice(0, -1)
     .toUpperCase();
 
-  // Format device display string
+  const deviceVendor = result.device?.brand || null;
+  const deviceModel = result.device?.model || null;
+
   let deviceTypeDisplay = "Unknown Device";
 
   if (deviceVendor || deviceModel) {
@@ -158,80 +157,221 @@ function getDeviceInfo(
 }
 
 export async function POST(request: NextRequest) {
-  try {
-    const { username, password } = (await request.json()) as LoginRequest;
+  let clientIp = "Unknown";
+  let userAgent = "Unknown";
+  let attemptedUsername = "";
 
-    // Wrap all database operations in transaction
+  try {
+    // ✅ CSRF Validation for state-changing request
+    const csrfValid = validateCSRFToken(request);
+    if (!csrfValid) {
+      return NextResponse.json(
+        { success: false, error: "Invalid CSRF token" },
+        { status: 403 }
+      );
+    }
+
+    // Get client IP and user agent early for security tracking
+    clientIp =
+      request.headers.get("x-forwarded-for")?.split(",")[0].trim() ||
+      request.headers.get("x-real-ip") ||
+      "Unknown";
+
+    if (clientIp.includes(",")) {
+      clientIp = clientIp.split(",")[0].trim();
+    }
+
+    if (clientIp === "::1" || clientIp === "127.0.0.1") {
+      clientIp = "localhost";
+    }
+
+    userAgent = request.headers.get("user-agent") || "Unknown";
+
+    // ✅ Check if IP is blocked
+    const ipBlockCheck = await checkIPBlock(clientIp);
+    if (ipBlockCheck.isBlocked) {
+      await trackSuspiciousActivity({
+        ipAddress: clientIp,
+        action: "LOGIN_ATTEMPT_BLOCKED_IP",
+        severity: "HIGH",
+        metadata: {
+          reason: ipBlockCheck.reason,
+          blockedUntil: ipBlockCheck.blockedUntil,
+        },
+      });
+
+      return NextResponse.json(
+        {
+          success: false,
+          error:
+            "Access denied. Your IP has been blocked due to suspicious activity.",
+        },
+        { status: 403 }
+      );
+    }
+
+    const body = await request.json();
+
+    // ✅ Validate with Zod
+    const validation = loginSchema.safeParse(body);
+    if (!validation.success) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Invalid request data",
+          details: validation.error.flatten().fieldErrors,
+        },
+        { status: 400 }
+      );
+    }
+
+    const { username, password } = validation.data;
+    attemptedUsername = username;
+
+    // ✅ Check for excessive failed login attempts
+    const failedIPAttempts = await getFailedLoginAttempts(clientIp, 15);
+    const failedUserAttempts = await getFailedLoginAttemptsForUser(
+      username,
+      15
+    );
+
+    // Block IP after 10 failed attempts in 15 minutes
+    if (failedIPAttempts >= 10) {
+      await blockIP({
+        ipAddress: clientIp,
+        reason: "Excessive failed login attempts",
+        description: `${failedIPAttempts} failed login attempts in 15 minutes`,
+        durationHours: 1, // 1 hour block
+        userAgent,
+      });
+
+      await trackSuspiciousActivity({
+        ipAddress: clientIp,
+        action: "RATE_LIMIT_LOGIN",
+        severity: "HIGH",
+        metadata: {
+          attemptCount: failedIPAttempts,
+          username,
+        },
+      });
+
+      return NextResponse.json(
+        {
+          success: false,
+          error:
+            "Too many failed login attempts. Your IP has been temporarily blocked.",
+        },
+        { status: 429 }
+      );
+    }
+
+    // Warn after 5 failed attempts for specific username
+    if (failedUserAttempts >= 5) {
+      await trackSuspiciousActivity({
+        ipAddress: clientIp,
+        action: "MULTIPLE_FAILED_LOGIN_USER",
+        severity: "MEDIUM",
+        metadata: {
+          attemptCount: failedUserAttempts,
+          username,
+        },
+      });
+    }
+
     const result = await prisma.$transaction(async (tx) => {
       // Find user and include staff data
       const user = await tx.user.findUnique({
         where: { username },
         include: {
-          staff: true,
-          sessions: true,
+          staff: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              fullName: true,
+              role: true,
+              specialization: true,
+              email: true,
+              phoneNumber: true,
+              isActive: true,
+              createdAt: true,
+              updatedAt: true,
+            },
+          },
         },
       });
 
       if (!user) {
-        throw new Error("Invalid username");
+        // ✅ Track failed login attempt (invalid username)
+        await trackLoginAttempt({
+          ipAddress: clientIp,
+          username,
+          success: false,
+          userAgent,
+          metadata: { reason: "Invalid username" },
+        });
+        throw new Error("Invalid username or password");
       }
 
       if (!user.isActive) {
-        throw new Error(
-          "Account has been deactivated. Please contact your administrator."
-        );
+        // ✅ Track failed login attempt (inactive account)
+        await trackLoginAttempt({
+          ipAddress: clientIp,
+          username,
+          success: false,
+          userAgent,
+          metadata: { reason: "User account deactivated" },
+        });
+        throw new Error("Account has been deactivated");
       }
 
+      if (!user.staff.isActive) {
+        // ✅ Track failed login attempt (inactive staff)
+        await trackLoginAttempt({
+          ipAddress: clientIp,
+          username,
+          success: false,
+          userAgent,
+          metadata: { reason: "Staff account inactive" },
+        });
+        throw new Error("Staff account is inactive");
+      }
+
+      // Verify password
       const isValidPassword = await bcrypt.compare(password, user.password);
       if (!isValidPassword) {
-        throw new Error("Invalid password");
+        // ✅ Track failed login attempt (wrong password)
+        await trackLoginAttempt({
+          ipAddress: clientIp,
+          username,
+          success: false,
+          userAgent,
+          metadata: { reason: "Invalid password" },
+        });
+        throw new Error("Invalid username or password");
       }
 
-      // Generate JWT token with staffId and fullName from staff
+      // Generate JWT token
       const sessionToken = jwt.sign(
         {
           userId: user.id,
           username: user.username,
-          staffId: user.staffId,
+          staffId: user.staff.id,
           fullName: user.staff.fullName,
-          role: user.role,
+          role: user.staff.role,
         },
         SECRET_KEY,
         { expiresIn: EXPIRATION_TIME }
       );
 
-      // Create expiration date in Bangladesh time (UTC+6)
+      // Calculate expiration time
       const expiresAt = new Date();
-      const createdAt = new Date();
-      const updatedAt = new Date();
-
-      // Add 6 hours for Bangladesh time
-      expiresAt.setHours(expiresAt.getHours() + 6);
-      createdAt.setHours(createdAt.getHours() + 6);
-      updatedAt.setHours(updatedAt.getHours() + 6);
-
-      // Add expiration time
       expiresAt.setSeconds(expiresAt.getSeconds() + EXPIRATION_TIME);
 
-      // Process client IP address
-      let clientIp =
-        request.headers.get("x-forwarded-for")?.split(",")[0].trim() ||
-        request.headers.get("x-real-ip") ||
-        "Unknown";
-
-      if (clientIp.includes(",")) {
-        clientIp = clientIp.split(",")[0].trim();
-      }
-
-      if (clientIp === "::1" || clientIp === "127.0.0.1") {
-        clientIp = "localhost";
-      }
-
-      // Get detailed device information with device fingerprinting
-      const userAgent = request.headers.get("user-agent") || "Unknown";
+      // Get device information
       const deviceInfo = getDeviceInfo(userAgent, clientIp, user.id);
 
-      // Check if there's an existing session with the same device fingerprint
+      // Check if session with same device fingerprint exists
       const existingSession = await tx.session.findFirst({
         where: {
           userId: user.id,
@@ -239,21 +379,19 @@ export async function POST(request: NextRequest) {
         },
       });
 
-      // If there's an existing session, you might want to invalidate it
+      // Delete existing session to prevent multiple concurrent sessions from same device
       if (existingSession) {
         await tx.session.delete({
           where: { id: existingSession.id },
         });
       }
 
-      // Create server-side session with Bangladesh times and device info
+      // Create new session
       const session = await tx.session.create({
         data: {
           userId: user.id,
           token: sessionToken,
           expiresAt,
-          createdAt,
-          updatedAt,
           ipAddress: deviceInfo.ipAddress,
           userAgent: deviceInfo.userAgent,
           deviceFingerprint: deviceInfo.deviceFingerprint,
@@ -265,15 +403,12 @@ export async function POST(request: NextRequest) {
         },
       });
 
-      // Bangladesh time (UTC+6)
-      const bdTime = new Date(new Date().getTime() + 6 * 60 * 60 * 1000);
-
-      // Log the login activity with enhanced device information
+      // Log login activity
       await tx.activityLog.create({
         data: {
           userId: user.id,
           action: "LOGIN",
-          description: `User ${user.username} logged in from ${deviceInfo.deviceString}`,
+          description: `Staff member ${user.username} logged in from ${deviceInfo.deviceString}`,
           entityType: "User",
           entityId: user.id,
           ipAddress: deviceInfo.ipAddress,
@@ -284,33 +419,52 @@ export async function POST(request: NextRequest) {
           browserName: deviceInfo.browserName,
           browserVersion: deviceInfo.browserVersion,
           osType: deviceInfo.osType,
-          timestamp: bdTime,
+          timestamp: new Date(),
         },
       });
 
-      // Create user response object
-      const userResponse: UserResponse = {
-        id: user.id,
-        username: user.username,
-        staffId: user.staffId,
-        fullName: user.staff.fullName,
-        role: user.role,
-      };
+      // ✅ Track successful login attempt
+      await trackLoginAttempt({
+        ipAddress: clientIp,
+        username,
+        success: true,
+        userAgent,
+        metadata: {
+          userId: user.id,
+          staffId: user.staff.id,
+          deviceFingerprint: deviceInfo.deviceFingerprint,
+        },
+      });
 
-      return { userResponse, sessionToken };
+      return {
+        user: {
+          id: user.id,
+          username: user.username,
+          firstName: user.staff.firstName,
+          lastName: user.staff.lastName,
+          fullName: user.staff.fullName,
+          role: user.staff.role, // Hospital role
+          systemRole: user.role, // System role for permissions
+          specialization: user.staff.specialization,
+          email: user.staff.email,
+          phoneNumber: user.staff.phoneNumber,
+          isActive: user.isActive,
+        },
+        sessionToken,
+      };
     });
 
     const response = NextResponse.json(
       {
         success: true,
         message: "Login successful",
-        user: result.userResponse,
+        user: result.user,
       },
       { status: 200 }
     );
 
+    // Set httpOnly session cookie
     const cookieExpiry = new Date();
-    cookieExpiry.setHours(cookieExpiry.getHours() + 6); // Set to Bangladesh time
     cookieExpiry.setSeconds(cookieExpiry.getSeconds() + EXPIRATION_TIME);
 
     response.cookies.set({
@@ -323,24 +477,50 @@ export async function POST(request: NextRequest) {
       path: "/",
     });
 
-    return response;
+    // ✅ Ensure CSRF token is present in response
+    return addCSRFTokenToResponse(response);
   } catch (error) {
     console.error("Login error:", {
       message: error instanceof Error ? error.message : "Unknown error",
       stack: error instanceof Error ? error.stack : undefined,
+      ip: clientIp,
+      username: attemptedUsername,
     });
+
+    // ✅ Track failed login in catch block (for unexpected errors)
+    if (attemptedUsername && clientIp !== "Unknown") {
+      try {
+        await trackLoginAttempt({
+          ipAddress: clientIp,
+          username: attemptedUsername,
+          success: false,
+          userAgent,
+          metadata: {
+            errorType: "exception",
+            errorMessage:
+              error instanceof Error ? error.message : "Unknown error",
+          },
+        });
+      } catch (trackError) {
+        console.error("Failed to track login attempt:", trackError);
+      }
+    }
+
+    const isAuthError =
+      error instanceof Error &&
+      (error.message.includes("Invalid") ||
+        error.message.includes("deactivated") ||
+        error.message.includes("inactive"));
 
     return NextResponse.json(
       {
         success: false,
-        error: error instanceof Error ? error.message : "Internal server error",
+        error:
+          error instanceof Error
+            ? error.message
+            : "An error occurred during login",
       },
-      {
-        status:
-          error instanceof Error && error.message.includes("Invalid")
-            ? 401
-            : 500,
-      }
+      { status: isAuthError ? 401 : 500 }
     );
   }
 }

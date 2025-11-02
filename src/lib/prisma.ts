@@ -1,15 +1,29 @@
 import { PrismaClient, Prisma } from "@prisma/client";
 
+// ═══════════════════════════════════════════════════════════════
+// CONFIGURATION
+// ═══════════════════════════════════════════════════════════════
+
 const logLevels: Prisma.LogLevel[] =
-  process.env.NODE_ENV === "development" ? ["error"] : ["error"];
+  process.env.NODE_ENV === "development" ? ["error", "warn"] : ["error"];
 
 const prismaClientSingleton = () => {
   return new PrismaClient({
     log: logLevels,
+    errorFormat: "pretty",
+    datasources: {
+      db: {
+        url: process.env.DATABASE_URL,
+      },
+    },
   });
 };
 
 type PrismaClientSingleton = ReturnType<typeof prismaClientSingleton>;
+
+// ═══════════════════════════════════════════════════════════════
+// SINGLETON PATTERN (Prevents connection pool exhaustion)
+// ═══════════════════════════════════════════════════════════════
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClientSingleton | undefined;
@@ -17,17 +31,11 @@ const globalForPrisma = globalThis as unknown as {
 
 const prisma = globalForPrisma.prisma ?? prismaClientSingleton();
 
-if (process.env.NODE_ENV !== "production") {
-  globalForPrisma.prisma = prisma;
+// Store in globalThis to prevent garbage collection across HMR reloads
+globalForPrisma.prisma = prisma;
+
+if (process.env.NODE_ENV === "development") {
+  console.log("[Prisma] Singleton initialized");
 }
-
-const handleShutdown = async () => {
-  await prisma.$disconnect();
-  process.exit(0);
-};
-
-process.on("beforeExit", handleShutdown);
-process.on("SIGINT", handleShutdown);
-process.on("SIGTERM", handleShutdown);
 
 export { prisma };

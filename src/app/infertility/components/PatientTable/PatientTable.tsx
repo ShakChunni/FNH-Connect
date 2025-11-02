@@ -40,6 +40,7 @@ interface PatientTableProps {
   messagePopupRef: React.RefObject<HTMLDivElement>;
   customOptions?: any;
   onSearch?: (searchTerm: string) => void;
+  onEdit?: (patient: InfertilityPatientData) => void;
   isLoading?: boolean;
   enableAutoSearch?: boolean;
   debounceMs?: number;
@@ -52,6 +53,7 @@ const PatientTable: React.FC<PatientTableProps> = ({
   messagePopupRef,
   customOptions,
   onSearch,
+  onEdit,
   isLoading = false,
   enableAutoSearch = true,
   debounceMs = 500,
@@ -149,6 +151,7 @@ const PatientTable: React.FC<PatientTableProps> = ({
     { key: "notes", label: "Notes" },
     { key: "createdAt", label: "Created" },
     { key: "updatedAt", label: "Updated" },
+    ...(onEdit ? [{ key: "actions", label: "Actions" }] : []),
   ];
 
   const paginatedData = filteredData.slice(
@@ -285,6 +288,7 @@ const PatientTable: React.FC<PatientTableProps> = ({
                     row={row}
                     index={index + 1 + (currentPage - 1) * itemsPerPage}
                     formatDate={formatDate}
+                    onEdit={onEdit}
                   />
                 ))}
           </tbody>

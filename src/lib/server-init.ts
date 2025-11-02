@@ -1,16 +1,11 @@
-import { initSessionCleanup } from "../app/utils/sessionCleanup";
-import { initGoalReset } from "../app/utils/goalReset";
-import { initGoalTrackingNotifications } from "../app/utils/notifyGoalTracking";
+import { runSessionCleanup } from "../app/utils/sessionCleanup";
 
-let isInitialized = false;
+type MaintenanceResults = {
+  session: Awaited<ReturnType<typeof runSessionCleanup>>;
+};
 
-export function initializeServer() {
-  if (isInitialized) return;
-  if (process.env.NODE_ENV === "development") {
-    console.log("Initializing server tasks...");
-  }
+export async function runMaintenanceJobs(): Promise<MaintenanceResults> {
+  const session = await runSessionCleanup();
 
-  initSessionCleanup();
-  initGoalReset();
-  isInitialized = true;
+  return { session };
 }

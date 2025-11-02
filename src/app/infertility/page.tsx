@@ -3,8 +3,10 @@ import React, { useState, useRef, useCallback, useMemo } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { createPortal } from "react-dom";
 import AddNewDataInfertility from "./components/AddNewData/AddNewDataInfertility";
+import EditDataInfertility from "./components/EditData/EditDataInfertility";
 import PatientTable from "./components/PatientTable/PatientTable";
 import SkeletonPatientTable from "./components/PatientTable/components/SkeletonPatientTable";
+import { InfertilityPatientData } from "./components/PatientTable/PatientTable";
 import useFetchData from "./hooks/useFetchInfertilityData";
 import Dropdowns from "./components/Filters/Dropdowns";
 import ButtonContainer from "./components/ButtonContainer";
@@ -40,6 +42,11 @@ const InfertilityManagement = React.memo(() => {
   // AddNewData popup state (open/closing) to match dashboard behavior
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [isPopupClosing, setIsPopupClosing] = useState(false);
+
+  // EditData popup state
+  const [isEditPopupOpen, setIsEditPopupOpen] = useState(false);
+  const [isEditPopupClosing, setIsEditPopupClosing] = useState(false);
+  const [selectedPatient, setSelectedPatient] = useState<InfertilityPatientData | null>(null);
 
   const [shouldFetchData, setShouldFetchData] = useState(true);
   const [searchParams, setSearchParams] = useState<SearchParams | undefined>(
@@ -81,6 +88,21 @@ const InfertilityManagement = React.memo(() => {
     setTimeout(() => {
       setIsPopupOpen(false);
       setIsPopupClosing(false);
+    }, 300);
+  }, []);
+
+  // Handle edit data popup (open/close with closing animation)
+  const handleOpenEditPopup = useCallback((patient: InfertilityPatientData) => {
+    setSelectedPatient(patient);
+    setIsEditPopupOpen(true);
+  }, []);
+
+  const handleCloseEditPopup = useCallback(() => {
+    setIsEditPopupClosing(true);
+    setTimeout(() => {
+      setIsEditPopupOpen(false);
+      setIsEditPopupClosing(false);
+      setSelectedPatient(null);
     }, 300);
   }, []);
 
@@ -270,6 +292,7 @@ const InfertilityManagement = React.memo(() => {
                 messagePopupRef as React.RefObject<HTMLDivElement>
               }
               onSearch={handleTableSearch}
+              onEdit={handleOpenEditPopup}
             />
           )}
         </div>
@@ -284,9 +307,23 @@ const InfertilityManagement = React.memo(() => {
           <AddNewDataInfertility
             isOpen={isPopupOpen && !isPopupClosing}
             onClose={handleCloseAddPopup}
-            onSubmit={handleAddData}
             onMessage={handleMessage}
             messagePopupRef={messagePopupRef}
+          />,
+          document.body
+        )}
+
+      {/* Edit Data Portal (open while opening or closing) */}
+      {(isEditPopupOpen || isEditPopupClosing) &&
+        selectedPatient &&
+        typeof window !== "undefined" &&
+        createPortal(
+          <EditDataInfertility
+            isOpen={isEditPopupOpen && !isEditPopupClosing}
+            onClose={handleCloseEditPopup}
+            onMessage={handleMessage}
+            messagePopupRef={messagePopupRef}
+            patientData={selectedPatient}
           />,
           document.body
         )}
