@@ -1,18 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { UAParser } from "ua-parser-js";
+import { getUserFromSession, requireAdmin } from "@/lib/auth";
 
 export async function DELETE(request: NextRequest) {
-  const { id, actor } = await request.json();
-
-  if (!id || !actor) {
-    return NextResponse.json(
-      { message: "Missing required fields" },
-      { status: 400 }
-    );
-  }
-
   try {
+    // Authenticate and authorize user
+    const currentUser = await getUserFromSession(request);
+    requireAdmin(currentUser);
+
+    const { id, actor } = await request.json();
+
+    if (!id || !actor) {
+      return NextResponse.json(
+        { message: "Missing required fields" },
+        { status: 400 }
+      );
+    }
+
     const result = await prisma.$transaction(async (tx) => {
       const deletedUser = await tx.user.delete({
         where: { id: Number(id) },
@@ -42,11 +47,15 @@ export async function DELETE(request: NextRequest) {
       // Log the deletion activity with IP address and device type
       await tx.activityLog.create({
         data: {
-          username: actor,
+          userId: currentUser.userId,
           action: "DELETE",
-          description: `Deleted user with username ID ${id}`,
-          ip_address: clientIp,
-          device_type: deviceType,
+          description: `Deleted user with ID ${id}`,
+          entityType: "User",
+          entityId: Number(id),
+          ipAddress: clientIp,
+          deviceType: deviceType,
+          browserName: userAgentResult.browser.name || "Unknown",
+          osType: userAgentResult.os.name || "Unknown",
           timestamp: klTime,
         },
       });
@@ -57,6 +66,18 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json(result, { status: 200 });
   } catch (error) {
     console.error("Error deleting user:", error);
+    if (
+      error instanceof Error &&
+      error.message.includes("Admin access required")
+    ) {
+      return NextResponse.json(
+        { message: "Admin access required" },
+        { status: 403 }
+      );
+    }
+    if (error instanceof Error && error.message.includes("Unauthorized")) {
+      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+    }
     return NextResponse.json(
       {
         message: "Internal server error",

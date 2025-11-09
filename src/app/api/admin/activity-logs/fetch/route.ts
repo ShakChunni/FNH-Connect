@@ -1,8 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { getUserFromSession, requireAdmin } from "@/lib/auth";
 
 export async function POST(req: NextRequest) {
-  const body = await req.json();
+  try {
+    // Authenticate and authorize user
+    const user = await getUserFromSession(req);
+    requireAdmin(user);
+
+    const body = await req.json();
   const {
     page = 1,
     pageSize = 50,
@@ -122,6 +128,18 @@ export async function POST(req: NextRequest) {
     });
   } catch (error) {
     console.error("Error fetching activity logs:", error);
+    if (error instanceof Error && error.message.includes("Admin access required")) {
+      return NextResponse.json(
+        { error: "Admin access required" },
+        { status: 403 }
+      );
+    }
+    if (error instanceof Error && error.message.includes("Unauthorized")) {
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 }
+      );
+    }
     return NextResponse.json(
       {
         error: "Error fetching activity logs",

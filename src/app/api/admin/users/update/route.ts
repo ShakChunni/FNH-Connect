@@ -1,31 +1,33 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 import { UAParser } from "ua-parser-js";
+import { getUserFromSession, requireAdmin } from "@/lib/auth";
 
 export async function POST(request: NextRequest) {
-  const { id, username, role, password, manages, organizations, actor } =
-    await request.json();
-
-  if (!id || !username || !role || !actor) {
-    return NextResponse.json(
-      { message: "Missing required fields" },
-      { status: 400 }
-    );
-  }
-
   try {
+    // Authenticate and authorize user
+    const currentUser = await getUserFromSession(request);
+    requireAdmin(currentUser);
+
+    const { id, username, role, password, manages, organizations, actor } =
+      await request.json();
+
+    if (!id || !username || !role || !actor) {
+      return NextResponse.json(
+        { message: "Missing required fields" },
+        { status: 400 }
+      );
+    }
+
     const updateData: {
       username: string;
       role: string;
       password?: string;
-      manages?: string[];
-      organizations?: string[];
+      isActive?: boolean;
     } = {
       username,
       role,
-      manages: manages || [],
-      organizations: organizations || [],
     };
 
     if (password) {
@@ -64,11 +66,15 @@ export async function POST(request: NextRequest) {
       // Log the update activity with IP address and device type
       await tx.activityLog.create({
         data: {
-          username: actor,
+          userId: currentUser.userId,
           action: "UPDATE",
           description: `Updated user with ID ${id}`,
-          ip_address: clientIp,
-          device_type: deviceType,
+          entityType: "User",
+          entityId: Number(id),
+          ipAddress: clientIp,
+          deviceType: deviceType,
+          browserName: userAgentResult.browser.name || "Unknown",
+          osType: userAgentResult.os.name || "Unknown",
           timestamp: klTime,
         },
       });
@@ -79,6 +85,18 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(result, { status: 200 });
   } catch (error) {
     console.error("Error updating user:", error);
+    if (
+      error instanceof Error &&
+      error.message.includes("Admin access required")
+    ) {
+      return NextResponse.json(
+        { message: "Admin access required" },
+        { status: 403 }
+      );
+    }
+    if (error instanceof Error && error.message.includes("Unauthorized")) {
+      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+    }
     return NextResponse.json(
       { message: "Internal server error" },
       { status: 500 }

@@ -1,30 +1,47 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 import { UAParser } from "ua-parser-js";
+import { getUserFromSession, requireAdmin } from "@/lib/auth";
 
 export async function POST(request: NextRequest) {
-  const { username, role, password, manages, organizations, actor } =
-    await request.json();
-
-  if (!username || !role || !password || !actor) {
-    return NextResponse.json(
-      { message: "Missing required fields" },
-      { status: 400 }
-    );
-  }
-
   try {
+    // Authenticate and authorize user
+    const currentUser = await getUserFromSession(request);
+    requireAdmin(currentUser);
+
+    const { username, role, password, manages, organizations, actor } =
+      await request.json();
+
+    if (!username || !role || !password || !actor) {
+      return NextResponse.json(
+        { message: "Missing required fields" },
+        { status: 400 }
+      );
+    }
+
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const result = await prisma.$transaction(async (tx) => {
+      // Create staff record first
+      const staff = await tx.staff.create({
+        data: {
+          firstName: username, // Use username as firstName for now
+          lastName: "",
+          fullName: username,
+          role: "Staff", // Default hospital role
+          isActive: true,
+        },
+      });
+
+      // Create user record
       const newUser = await tx.user.create({
         data: {
           username,
           role,
           password: hashedPassword,
-          manages: manages || [],
-          organizations: organizations || [],
+          staffId: staff.id,
+          isActive: true,
         },
       });
 
@@ -53,11 +70,15 @@ export async function POST(request: NextRequest) {
       // Log the creation activity with IP address and device type
       await tx.activityLog.create({
         data: {
-          username: actor,
+          userId: currentUser.userId,
           action: "CREATE",
           description: `Created new user ${username}`,
-          ip_address: clientIp,
-          device_type: deviceType,
+          entityType: "User",
+          entityId: newUser.id,
+          ipAddress: clientIp,
+          deviceType: deviceType,
+          browserName: result.browser.name || "Unknown",
+          osType: result.os.name || "Unknown",
           timestamp: klTime,
         },
       });
@@ -68,6 +89,18 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(result, { status: 201 });
   } catch (error) {
     console.error("Error creating user:", error);
+    if (
+      error instanceof Error &&
+      error.message.includes("Admin access required")
+    ) {
+      return NextResponse.json(
+        { message: "Admin access required" },
+        { status: 403 }
+      );
+    }
+    if (error instanceof Error && error.message.includes("Unauthorized")) {
+      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+    }
     return NextResponse.json(
       { message: "Internal server error" },
       { status: 500 }

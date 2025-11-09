@@ -26,21 +26,16 @@ const SECRET_KEY = SECRET_ENV
   ? new TextEncoder().encode(SECRET_ENV)
   : undefined;
 
-// Rate Limiting Configuration (from environment variables)
-const RATE_LIMIT_WINDOW =
-  (parseInt(process.env.RATE_LIMIT_WINDOW_MINUTES || "15") || 15) * 60 * 1000;
-const RATE_LIMIT_MAX =
-  parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || "500") || 500;
-const API_RATE_LIMIT_WINDOW =
-  (parseInt(process.env.API_RATE_LIMIT_WINDOW_MINUTES || "1") || 1) * 60 * 1000;
-const API_RATE_LIMIT_MAX =
-  parseInt(process.env.API_RATE_LIMIT_MAX_REQUESTS || "30") || 30;
+// Rate Limiting Configuration
+const GENERAL_WINDOW = 15 * 60 * 1000; // 15 minutes
+const GENERAL_MAX_REQUESTS = 500;
+const API_WINDOW = 60 * 1000; // 1 minute
+const API_MAX_REQUESTS = 30;
 
 // Memory Management Configuration
-const MAX_MAP_SIZE = 200; // Reduced for tighter control
+const MAX_MAP_SIZE = 200; // Reduced from 300 for tighter control
 const CLEANUP_INTERVAL = 20 * 1000; // 20 seconds - aggressive cleanup
-const BLOCKED_IP_SYNC_INTERVAL =
-  (parseInt(process.env.BLOCKED_IP_SYNC_INTERVAL_SECONDS || "60") || 60) * 1000;
+const BLOCKED_IP_SYNC_INTERVAL = 60 * 1000; // Sync from external source every 60s
 
 // === TYPE DEFINITIONS ===
 type RateLimitEntry = {
@@ -312,8 +307,8 @@ export async function middleware(request: NextRequest) {
   // === 3. RATE LIMITING ===
   const isAPIRoute = pathname.startsWith("/api");
   const rateMap = isAPIRoute ? apiRateLimit : generalRateLimit;
-  const windowMs = isAPIRoute ? API_RATE_LIMIT_WINDOW : RATE_LIMIT_WINDOW;
-  const maxRequests = isAPIRoute ? API_RATE_LIMIT_MAX : RATE_LIMIT_MAX;
+  const windowMs = isAPIRoute ? API_WINDOW : GENERAL_WINDOW;
+  const maxRequests = isAPIRoute ? API_MAX_REQUESTS : GENERAL_MAX_REQUESTS;
 
   const isRateLimited = recordRequest(rateMap, ip, windowMs, maxRequests, now);
 
@@ -330,9 +325,13 @@ export async function middleware(request: NextRequest) {
   // === 4. CSRF PROTECTION ===
   const method = request.method;
   const isStateMutating = ["POST", "PUT", "DELETE", "PATCH"].includes(method);
-  const isAuthRoute = pathname.startsWith("/api/auth");
+  const isFileUploadRoute = pathname.startsWith(
+    "/api/admin/employees/upload-photo"
+  );
 
-  if (isStateMutating && !isAuthRoute) {
+  // ✅ CSRF protection now INCLUDES auth routes for maximum security
+  // Previously excluded, but auth endpoints are critical attack vectors
+  if (isStateMutating && !isFileUploadRoute) {
     const isValid = validateCSRFToken(request);
     if (!isValid) {
       return new NextResponse("CSRF validation failed", { status: 403 });
@@ -359,8 +358,15 @@ export async function middleware(request: NextRequest) {
     normalizedPath.startsWith("/admin") ||
     normalizedPath.startsWith("/api/admin");
 
-  // Only /login is public
-  const isLoginPage = normalizedPath === "/login";
+  const STATIC_AUTH_PAGES = new Set([
+    "/login",
+    "/register",
+    "/first-time-setup",
+    "/forgot-password",
+  ]);
+  const isAuthPage =
+    STATIC_AUTH_PAGES.has(normalizedPath) ||
+    normalizedPath.startsWith("/reset-password");
   const isRootPath = normalizedPath === "/";
 
   // REDIRECT 1: Root path with valid session → /dashboard
@@ -373,25 +379,27 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
-  // REDIRECT 3: Login page with valid session → /dashboard
-  if (isLoginPage && hasValidSession) {
+  // REDIRECT 3: Auth pages with valid session → /dashboard
+  if (isAuthPage && hasValidSession) {
     return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 
-  // REDIRECT 4: Admin routes without session → /login
-  if (isAdminRoute && !hasValidSession) {
-    if (isAPIRoute) {
-      return new NextResponse(JSON.stringify({ message: "Unauthorized" }), {
-        status: 401,
-        headers: { "Content-Type": "application/json" },
-      });
+  // REDIRECT 4: Admin routes - check session AND role
+  if (isAdminRoute) {
+    if (!hasValidSession) {
+      if (isAPIRoute) {
+        return new NextResponse(JSON.stringify({ message: "Unauthorized" }), {
+          status: 401,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+      return NextResponse.redirect(new URL("/login", request.url));
     }
-    return NextResponse.redirect(new URL("/login", request.url));
-  }
 
-  // REDIRECT 5: Admin routes with session but insufficient privileges → /dashboard
-  if (isAdminRoute && hasValidSession) {
-    const isAdmin = userRole === "system-admin" || userRole === "admin";
+    const isAdmin =
+      userRole === "Admin" ||
+      userRole === "SuperAdmin" ||
+      userRole === "HRAdmin";
 
     if (!isAdmin) {
       if (isAPIRoute) {
@@ -407,9 +415,10 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // REDIRECT 6: Protected routes without session → /login
-  const isPublicRoute = isLoginPage || isRootPath;
-  const isProtectedRoute = !isAuthRoute && !isPublicRoute;
+  // REDIRECT 5: Protected routes without session → /login
+  const isPublicRoute = isAuthPage || isRootPath;
+  const isAPIAuthRoute = pathname.startsWith("/api/auth");
+  const isProtectedRoute = !isAPIAuthRoute && !isPublicRoute;
 
   if (isProtectedRoute && !hasValidSession) {
     if (isAPIRoute) {
@@ -443,6 +452,24 @@ export function getSecurityData() {
       ...data,
     })),
     blocked: Array.from(blockedIPs),
+  };
+}
+
+// Export rate limit data for database persistence
+export function getRateLimitData() {
+  return {
+    general: Array.from(generalRateLimit.entries()).map(([ip, data]) => ({
+      ip,
+      count: data.count,
+      resetTime: data.resetTime,
+      type: "GENERAL" as const,
+    })),
+    api: Array.from(apiRateLimit.entries()).map(([ip, data]) => ({
+      ip,
+      count: data.count,
+      resetTime: data.resetTime,
+      type: "API" as const,
+    })),
   };
 }
 

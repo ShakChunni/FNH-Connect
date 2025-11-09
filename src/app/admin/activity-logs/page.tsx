@@ -1,6 +1,15 @@
 "use client";
-import React, { useState, useMemo, useCallback, useRef } from "react";
+import React, {
+  useState,
+  useMemo,
+  useCallback,
+  useRef,
+  useEffect,
+} from "react";
 import { ChevronUp, ChevronDown } from "lucide-react";
+import { useAuth } from "@/app/AuthContext";
+import { useRouter } from "next/navigation";
+import { canAccessAdminRoutes } from "@/lib/roles";
 import useFetchActivityLog from "./hooks/useFetchActivityLog";
 import useFetchOverviewLog from "./hooks/useFetchOverviewLog";
 import {
@@ -13,6 +22,25 @@ import {
 import Options from "./components/Options";
 
 const ActivityLogs: React.FC = () => {
+  const { user } = useAuth();
+  const router = useRouter();
+
+  // Check admin access
+  useEffect(() => {
+    if (user && !canAccessAdminRoutes(user.role)) {
+      router.replace("/dashboard");
+    }
+  }, [user, router]);
+
+  // Redirect if no user (handled by middleware, but for safety)
+  if (!user) {
+    return <div>Loading...</div>;
+  }
+
+  // Check admin access
+  if (!canAccessAdminRoutes(user.role)) {
+    return <div>Access denied</div>;
+  }
   const [selectedActivities, setSelectedActivities] = useState<string[]>([]);
   const [dateRange, setDateRange] = useState<{
     start: string | null;
