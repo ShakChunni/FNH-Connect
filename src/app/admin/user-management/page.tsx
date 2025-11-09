@@ -59,8 +59,8 @@ const UserManagement: React.FC = () => {
   const [scrollLeft, setScrollLeft] = useState(0);
 
   useEffect(() => {
-    if (user?.role !== "admin") {
-      router.replace("/Home");
+    if (user?.role !== "system-admin" && user?.role !== "admin") {
+      router.replace("/dashboard");
     }
   }, [user, router]);
 

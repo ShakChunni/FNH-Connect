@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import jwt from "jsonwebtoken";
 import { prisma } from "./prisma";
+import { isAdminRole, isSystemAdminRole, SystemRole } from "./roles";
 
 const SECRET_KEY = process.env.SECRET_KEY as string;
 
@@ -66,8 +67,33 @@ export function hasRole(user: AuthenticatedUser, role: string): boolean {
 }
 
 /**
- * Check if user is system admin
+ * Check if user has admin privileges (system-admin or admin)
  */
 export function isAdmin(user: AuthenticatedUser): boolean {
-  return user.systemRole === "sysAdmin";
+  return isAdminRole(user.systemRole);
+}
+
+/**
+ * Check if user is system admin
+ */
+export function isSystemAdmin(user: AuthenticatedUser): boolean {
+  return isSystemAdminRole(user.systemRole);
+}
+
+/**
+ * Require admin access - throws error if user doesn't have admin privileges
+ */
+export function requireAdmin(user: AuthenticatedUser): void {
+  if (!isAdmin(user)) {
+    throw new Error("Admin access required");
+  }
+}
+
+/**
+ * Require system admin access - throws error if user doesn't have system admin privileges
+ */
+export function requireSystemAdmin(user: AuthenticatedUser): void {
+  if (!isSystemAdmin(user)) {
+    throw new Error("System admin access required");
+  }
 }

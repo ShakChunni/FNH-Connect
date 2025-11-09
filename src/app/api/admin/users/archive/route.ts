@@ -1,9 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { UAParser } from "ua-parser-js";
+import { getUserFromSession, requireAdmin } from "@/lib/auth";
 
 export async function POST(request: NextRequest) {
-  const { id, archived, actor } = await request.json();
+  try {
+    // Authenticate and authorize user
+    const currentUser = await getUserFromSession(request);
+    requireAdmin(currentUser);
+
+    const { id, archived, actor } = await request.json();
 
   if (id === undefined || actor === undefined) {
     return NextResponse.json(
@@ -24,7 +30,7 @@ export async function POST(request: NextRequest) {
 
       const updatedUser = await tx.user.update({
         where: { id: Number(id) },
-        data: { archived: archived },
+        data: { isActive: !archived }, // archived=true means isActive=false
       });
 
       // Get client IP address
@@ -51,11 +57,15 @@ export async function POST(request: NextRequest) {
       // Log the archive activity with IP address and device type
       await tx.activityLog.create({
         data: {
-          username: actor,
-          action: "ARCHIVE",
-          description: `User ${user.username} archive status changed to ${archived}`,
-          ip_address: clientIp,
-          device_type: deviceType,
+          userId: currentUser.userId,
+          action: archived ? "ARCHIVE" : "UNARCHIVE",
+          description: `User ${user.username} ${archived ? "archived" : "unarchived"}`,
+          entityType: "User",
+          entityId: Number(id),
+          ipAddress: clientIp,
+          deviceType: deviceType,
+          browserName: userAgentResult.browser.name || "Unknown",
+          osType: userAgentResult.os.name || "Unknown",
           timestamp: klTime,
         },
       });
@@ -66,6 +76,18 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(result, { status: 200 });
   } catch (error) {
     console.error("Error updating user archive status:", error);
+    if (error instanceof Error && error.message.includes("Admin access required")) {
+      return NextResponse.json(
+        { message: "Admin access required" },
+        { status: 403 }
+      );
+    }
+    if (error instanceof Error && error.message.includes("Unauthorized")) {
+      return NextResponse.json(
+        { message: "Unauthorized" },
+        { status: 401 }
+      );
+    }
     return NextResponse.json(
       {
         message: "Internal server error",
