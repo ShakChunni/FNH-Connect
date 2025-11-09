@@ -5,18 +5,25 @@ const prisma = new PrismaClient();
 
 async function main() {
   const username = "ashfaq";
-  const rawPassword = "60123040@#$%!";
+  const rawPassword = "aDAm60123040@#$";
   const password = await bcrypt.hash(rawPassword, 12);
 
   // Upsert Staff
   const staff = await prisma.staff.upsert({
-    where: { fullName: "Ashfaq" },
-    update: {},
+    where: { fullName: "F.M. Ashfaq" },
+    update: {
+      firstName: "F.M.",
+      lastName: "Ashfaq",
+      fullName: "F.M. Ashfaq",
+      role: "System Admin",
+      specialization: "System Developer",
+      isActive: true,
+    },
     create: {
-      firstName: "Ashfaq",
-      lastName: null,
-      fullName: "Ashfaq",
-      role: "Principal Engineer", // or "Admin", "Developer"
+      firstName: "F.M.",
+      lastName: "Ashfaq",
+      fullName: "F.M. Ashfaq",
+      role: "System Admin",
       specialization: "System Developer",
       phoneNumber: null,
       email: null,
@@ -29,7 +36,7 @@ async function main() {
     where: { username },
     update: {
       password,
-      role: "admin",
+      role: "system-admin",
       isActive: true,
       staffId: staff.id,
     },
@@ -37,12 +44,12 @@ async function main() {
       username,
       password,
       staffId: staff.id,
-      role: "admin",
+      role: "system-admin",
       isActive: true,
     },
   });
 
-  console.log("Seeded admin user: ashfaq");
+  console.log("Seeded system admin user: F.M. Ashfaq (username: ashfaq)");
 }
 
 main()
