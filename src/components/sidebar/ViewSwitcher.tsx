@@ -5,9 +5,9 @@ import { usePathname, useRouter } from "next/navigation";
 import { User, ShieldCheck, Check, LogOut } from "lucide-react";
 
 const CONTAINER_BG =
-  "linear-gradient(180deg, #433F3C 0%, #332F2D 35%, #2A2524 70%, #393434 100%)";
+  "var(--sidebar)";
 
-type ViewMode = "employee" | "hradmin";
+type ViewMode = "logout";
 
 interface ViewSwitcherProps {
   userRole: string;
@@ -93,26 +93,6 @@ export default function ViewSwitcher({
 
   const views = [
     {
-      id: "employee" as ViewMode,
-      label: "Employee",
-      subtitle: "My Profile & Benefits",
-      icon: User,
-      available:
-        userRole.toLowerCase() === "hradmin" ||
-        userRole.toLowerCase() === "superadmin",
-      action: "switch" as const,
-    },
-    {
-      id: "hradmin" as ViewMode,
-      label: "HR Admin",
-      subtitle: "Admin Dashboard",
-      icon: ShieldCheck,
-      available:
-        userRole.toLowerCase() === "hradmin" ||
-        userRole.toLowerCase() === "superadmin",
-      action: "switch" as const,
-    },
-    {
       id: "logout" as const,
       label: "Logout",
       subtitle: "Sign out of your account",
@@ -123,7 +103,6 @@ export default function ViewSwitcher({
   ];
 
   const availableViews = views.filter((view) => view.available);
-  const switchViews = availableViews.filter((view) => view.action === "switch");
   const logoutView = availableViews.find((view) => view.action === "logout");
 
   if (availableViews.length === 0) {
@@ -177,7 +156,7 @@ export default function ViewSwitcher({
     <div ref={dropdownRef}>
       {shouldRender && (
         <div
-          className={`absolute bottom-full left-0 right-0 mb-2 overflow-hidden rounded-2xl border border-white/10 shadow-[0_24px_60px_rgba(0,0,0,0.5)] ${
+          className={`absolute bottom-full left-0 right-0 mb-2 overflow-hidden border border-sidebar-border bg-sidebar ${
             isVisible
               ? "animate-dropdown-in"
               : isClosing
@@ -187,111 +166,23 @@ export default function ViewSwitcher({
           style={{ background: CONTAINER_BG }}
         >
           <div className="p-3">
-            {switchViews.length > 0 && (
-              <>
-<<<<<<< HEAD
-                <p className="mb-2 px-2 text-[9px] sm:text-[10px] font-semibold uppercase tracking-wider text-white/50">
-=======
-                <p className="mb-2 px-2 text-[10px] font-semibold uppercase tracking-wider text-white/50">
->>>>>>> a69666330f8d45dac67c77f45d357e102170bda1
-                  Switch View
-                </p>
-                <div className="space-y-1 mb-3">
-                  {switchViews.map((view) => (
-                    <button
-                      key={view.id}
-                      onClick={() => handleViewSwitch(view.id)}
-<<<<<<< HEAD
-                      className={`w-full flex items-center gap-3 px-2 py-2 sm:p-3 rounded-xl transition-all duration-200 hover:cursor-pointer ${
-=======
-                      className={`w-full flex items-center gap-3 p-3 rounded-xl transition-all duration-200 hover:cursor-pointer ${
->>>>>>> a69666330f8d45dac67c77f45d357e102170bda1
-                        selectedView === view.id
-                          ? "bg-gradient-to-r from-white/20 to-white/5 text-white"
-                          : "hover:bg-white/5 text-white/85"
-                      }`}
-                    >
-                      <div
-<<<<<<< HEAD
-                        className={`w-7 h-7 sm:w-9 sm:h-9 rounded-lg flex items-center justify-center transition-all ${
-=======
-                        className={`w-9 h-9 rounded-lg flex items-center justify-center transition-all ${
->>>>>>> a69666330f8d45dac67c77f45d357e102170bda1
-                          selectedView === view.id
-                            ? "bg-white/15"
-                            : "bg-white/10"
-                        }`}
-                      >
-                        <view.icon
-<<<<<<< HEAD
-                          className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${
-=======
-                          className={`w-4 h-4 ${
->>>>>>> a69666330f8d45dac67c77f45d357e102170bda1
-                            selectedView === view.id
-                              ? "text-white"
-                              : "text-white/70"
-                          }`}
-                        />
-                      </div>
-                      <div className="flex-1 text-left">
-<<<<<<< HEAD
-                        <p className="font-semibold text-xs sm:text-sm">
-                          {view.label}
-                        </p>
-                        <p className="text-[9px] sm:text-[10px] opacity-75">
-=======
-                        <p className="font-semibold text-sm">{view.label}</p>
-                        <p className="text-[10px] opacity-75">
->>>>>>> a69666330f8d45dac67c77f45d357e102170bda1
-                          {view.subtitle}
-                        </p>
-                      </div>
-                      {selectedView === view.id && (
-<<<<<<< HEAD
-                        <Check className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
-=======
-                        <Check className="w-4 h-4 flex-shrink-0" />
->>>>>>> a69666330f8d45dac67c77f45d357e102170bda1
-                      )}
-                    </button>
-                  ))}
-                </div>
-              </>
-            )}
             {logoutView && (
-              <>
-                {switchViews.length > 0 && (
-                  <div className="border-t border-white/10 my-2"></div>
-                )}
-                <button
-                  onClick={() => handleViewSwitch("logout")}
-<<<<<<< HEAD
-                  className="w-full flex items-center gap-3 px-2 py-2 sm:p-3 rounded-xl transition-all duration-200 hover:cursor-pointer hover:bg-red-500/10 text-red-400 hover:text-red-300"
-                >
-                  <div className="w-7 h-7 sm:w-9 sm:h-9 rounded-lg flex items-center justify-center bg-red-500/20">
-                    <logoutView.icon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                  </div>
-                  <div className="flex-1 text-left">
-                    <p className="font-semibold text-xs sm:text-sm">
-                      {logoutView.label}
-                    </p>
-                    <p className="text-[9px] sm:text-[10px] opacity-75">
-=======
-                  className="w-full flex items-center gap-3 p-3 rounded-xl transition-all duration-200 hover:cursor-pointer hover:bg-red-500/10 text-red-400 hover:text-red-300"
-                >
-                  <div className="w-9 h-9 rounded-lg flex items-center justify-center bg-red-500/20">
-                    <logoutView.icon className="w-4 h-4" />
-                  </div>
-                  <div className="flex-1 text-left">
-                    <p className="font-semibold text-sm">{logoutView.label}</p>
-                    <p className="text-[10px] opacity-75">
->>>>>>> a69666330f8d45dac67c77f45d357e102170bda1
-                      {logoutView.subtitle}
-                    </p>
-                  </div>
-                </button>
-              </>
+              <button
+                onClick={() => handleViewSwitch("logout")}
+                className="w-full flex items-center gap-3 px-2 py-2 sm:p-3 rounded-xl transition-all duration-200 hover:cursor-pointer hover:bg-red-500/10 text-red-400 hover:text-red-300"
+              >
+                <div className="w-7 h-7 sm:w-9 sm:h-9 rounded-lg flex items-center justify-center bg-red-500/20">
+                  <logoutView.icon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                </div>
+                <div className="flex-1 text-left">
+                  <p className="font-semibold text-xs sm:text-sm">
+                    {logoutView.label}
+                  </p>
+                  <p className="text-[9px] sm:text-[10px] opacity-75">
+                    {logoutView.subtitle}
+                  </p>
+                </div>
+              </button>
             )}
           </div>
         </div>

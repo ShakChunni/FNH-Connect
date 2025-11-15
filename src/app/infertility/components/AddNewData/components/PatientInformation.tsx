@@ -21,9 +21,7 @@ import {
   Info,
   X,
 } from "lucide-react";
-import useFetchPatientInformation, {
-  InfertilityPatientBasic,
-} from "../hooks/useFetchPatientInformation";
+import { useFetchPatientInformation } from "../hooks";
 import DateOfBirthDropdown from "../Dropdowns/DobDropdown";
 import GenderDropdown from "../Dropdowns/GenderDropdown";
 import ContactEmailInput from "./ContactEmailInput";
@@ -63,13 +61,16 @@ const PatientInformation: React.FC<PatientInformationProps> = ({
   onValidationChange,
   hospitalName,
 }) => {
+  const [searchQuery, setSearchQueryState] = useState("");
+  const setSearchQuery = useCallback((query: string) => {
+    setSearchQueryState(query);
+  }, []);
+
   const {
-    searchQuery,
-    setSearchQuery,
-    patients: globalPatients,
-    loading,
+    data: patients = [],
+    isLoading: loading,
     error,
-  } = useFetchPatientInformation();
+  } = useFetchPatientInformation(searchQuery);
 
   useEffect(() => {
     if (error) {

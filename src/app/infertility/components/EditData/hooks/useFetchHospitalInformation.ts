@@ -1,122 +1,45 @@
-import { useState, useEffect, useCallback, useRef } from "react";
-import axios from "axios";
-import { debounce } from "lodash";
+import { useQuery } from "@tanstack/react-query";
+import { api } from "@/lib/axios";
 import { useAuth } from "@/app/AuthContext";
+import { useState, useEffect } from "react";
+import type { Hospital } from "../../../types";
 
-export interface Hospital {
-  id: number;
-  name: string;
-  address: string | null;
-  phoneNumber: string | null;
-  email: string | null;
-  website: string | null;
-  type: string | null;
-}
-
-const useFetchHospitalInformation = () => {
+export function useFetchHospitalInformation(searchQuery: string) {
   const { user } = useAuth();
-  const [searchQuery, setSearchQueryState] = useState("");
-  const [hospitals, setHospitals] = useState<Hospital[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const abortControllerRef = useRef<AbortController | null>(null);
+  const [debouncedQuery, setDebouncedQuery] = useState(searchQuery);
 
-  // Memoized setSearchQuery to prevent infinite re-renders
-  const setSearchQuery = useCallback((query: string) => {
-    setSearchQueryState(query);
-  }, []);
+  useEffect(() => {
+    const handler = setTimeout(() => setDebouncedQuery(searchQuery), 200);
+    return () => clearTimeout(handler);
+  }, [searchQuery]);
 
-  const fetchHospitals = useCallback(
-    async (query: string) => {
-      if (!user?.username || query.length < 1) {
-        setHospitals([]);
-        setLoading(false);
-        return;
+  return useQuery({
+    queryKey: ["hospitals", "search", debouncedQuery],
+    queryFn: async (): Promise<Hospital[]> => {
+      if (!debouncedQuery.trim() || !user?.username) {
+        return [];
       }
 
-      const trimmedQuery = query.trim();
-      setLoading(true);
+      const response = await api.get<Hospital[]>("/hospitals/search", {
+        params: {
+          query: debouncedQuery.trim(),
+          username: user.username,
+          userRole: user.role,
+        },
+        timeout: 5000,
+      });
 
-      // Cancel previous request
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort();
-      }
-
-      abortControllerRef.current = new AbortController();
-      setError(null);
-
-      try {
-        const response = await axios.get<Hospital[]>(`/api/hospitals/search`, {
-          params: {
-            query: trimmedQuery,
-            username: user.username,
-            userRole: user.role,
-          },
-          signal: abortControllerRef.current.signal,
-          timeout: 5000,
-        });
-
-        setHospitals(response.data || []);
-      } catch (err) {
-        if (axios.isCancel(err)) return;
-
-        // Handle specific error cases
-        if (axios.isAxiosError(err)) {
-          if (err.response?.status === 404) {
-            setError("Hospital search API not found. Please contact support.");
-            console.warn("Hospital search API endpoint not implemented");
-          } else if (err.response && err.response.status >= 500) {
-            setError("Server error. Please try again later.");
-          } else if (err.code === "ECONNABORTED") {
-            setError("Request timeout. Please try again.");
-          } else {
-            setError("Failed to fetch hospitals. Please try again.");
-          }
-        } else {
-          setError("Network error. Please check your connection.");
-        }
-
-        console.error("Hospital fetch error:", err);
-        setHospitals([]);
-      } finally {
-        setLoading(false);
-        abortControllerRef.current = null;
-      }
+      return response.data || [];
     },
-    [user?.username]
-  );
-
-  const debouncedFetch = useCallback(debounce(fetchHospitals, 200), [
-    fetchHospitals,
-  ]);
-
-  useEffect(() => {
-    debouncedFetch(searchQuery);
-
-    return () => {
-      debouncedFetch.cancel();
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort();
+    enabled: !!debouncedQuery.trim() && !!user?.username,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
+    retry: (failureCount, error) => {
+      if (error instanceof Error && error.message.includes("404")) {
+        return false;
       }
-    };
-  }, [searchQuery, debouncedFetch]);
-
-  useEffect(() => {
-    return () => {
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort();
-      }
-    };
-  }, []);
-
-  return {
-    searchQuery,
-    setSearchQuery,
-    hospitals,
-    loading,
-    error,
-    setHospitals,
-  };
-};
-
-export default useFetchHospitalInformation;
+      return failureCount < 1;
+    },
+    refetchOnWindowFocus: false,
+  });
+}

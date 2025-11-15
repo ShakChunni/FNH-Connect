@@ -30,6 +30,7 @@ export interface SessionUser {
   phoneNumber?: string;
   isActive: boolean;
   department?: string;
+  organizations?: string[];
 }
 
 // Authentication Flow Types
