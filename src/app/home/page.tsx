@@ -336,40 +336,42 @@ const Dashboard = () => {
 
   return (
     <>
-      <div className="bg-[#f6f9fd] min-h-screen pt-6">
-        <ButtonContainer
-          onToggleExpand={handleToggleDropdowns}
-          isExpanded={showDropdowns}
-          onAddData={handleOpenAddPopup}
-        />
+      <div className="min-h-screen bg-fnh-porcelain pb-4 sm:pb-3 lg:pb-2">
+        <div className="mx-auto w-full px-4 sm:px-6 lg:px-8 pt-4 sm:pt-3 lg:pt-2">
+          <div className="space-y-4 px-4 sm:space-y-6 sm:px-6 lg:px-8 w-full max-w-full overflow-hidden">
+            <ButtonContainer
+              onToggleExpand={handleToggleDropdowns}
+              isExpanded={showDropdowns}
+              onAddData={handleOpenAddPopup}
+            />
 
-        <AnimatePresence>
-          {showDropdowns && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.2 }}
-              className="overflow-hidden"
-            >
-              <div className="flex justify-center items-center mb-4 py-4">
-                <div className="flex items-center space-x-4">
-                  <Dropdowns
-                    filters={filters}
-                    fetchedPics={fetchedPics}
-                    onFilterChange={handleFilterUpdate}
-                    searchBarRef={searchBarRef}
-                    isInitialLoad={isInitialLoad}
-                    shouldFetchFilteredData={shouldFetchFilteredData}
-                    setShouldFetchFilteredData={setShouldFetchFilteredData}
-                    tableSelectorValue={filters.tableSelector}
-                    onTableSelectorChange={handleTableSelectorSelect}
-                  />
-                </div>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+            <AnimatePresence>
+              {showDropdowns && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: 0.2 }}
+                  className="overflow-hidden"
+                >
+                  <div className="flex justify-center items-center mb-4 py-4">
+                    <div className="flex items-center space-x-4">
+                      <Dropdowns
+                        filters={filters}
+                        fetchedPics={fetchedPics}
+                        onFilterChange={handleFilterUpdate}
+                        searchBarRef={searchBarRef}
+                        isInitialLoad={isInitialLoad}
+                        shouldFetchFilteredData={shouldFetchFilteredData}
+                        setShouldFetchFilteredData={setShouldFetchFilteredData}
+                        tableSelectorValue={filters.tableSelector}
+                        onTableSelectorChange={handleTableSelectorSelect}
+                      />
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
         <div className="px-4 lg:px-12 mx-auto">
           <div className="grid grid-cols-1 gap-6 mb-8">
@@ -484,6 +486,7 @@ const Dashboard = () => {
               debounceMs={500}
               minSearchLength={2}
             />
+          </div>
           </div>
         </div>
       </div>

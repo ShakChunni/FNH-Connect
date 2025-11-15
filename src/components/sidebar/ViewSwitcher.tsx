@@ -1,11 +1,9 @@
 "use client";
 
 import { useEffect, useState, useRef, useCallback } from "react";
-import { usePathname, useRouter } from "next/navigation";
-import { User, ShieldCheck, Check, LogOut } from "lucide-react";
+import { LogOut } from "lucide-react";
 
-const CONTAINER_BG =
-  "var(--sidebar)";
+const CONTAINER_BG = "var(--sidebar)"; // Dark navy
 
 type ViewMode = "logout";
 
@@ -26,9 +24,6 @@ export default function ViewSwitcher({
   onLogout,
   parentRef,
 }: ViewSwitcherProps) {
-  const router = useRouter();
-  const pathname = usePathname();
-  const [selectedView, setSelectedView] = useState<ViewMode>("employee");
   const [isAnimating, setIsAnimating] = useState(false);
   const [shouldRender, setShouldRender] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
@@ -36,14 +31,6 @@ export default function ViewSwitcher({
   const dropdownRef = useRef<HTMLDivElement>(null);
   const openTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const closeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-
-  useEffect(() => {
-    if (pathname.startsWith("/admin")) {
-      setSelectedView("hradmin");
-    } else {
-      setSelectedView("employee");
-    }
-  }, [pathname]);
 
   useEffect(() => {
     // Clear any existing timeouts
@@ -102,10 +89,9 @@ export default function ViewSwitcher({
     },
   ];
 
-  const availableViews = views.filter((view) => view.available);
-  const logoutView = availableViews.find((view) => view.action === "logout");
+  const logoutView = views[0]; // Since only one view
 
-  if (availableViews.length === 0) {
+  if (!logoutView.available) {
     return null;
   }
 
@@ -138,14 +124,6 @@ export default function ViewSwitcher({
       handleClose();
       return;
     }
-
-    setSelectedView(viewId);
-    if (viewId === "hradmin") {
-      router.push("/admin/dashboard");
-    } else {
-      router.push("/dashboard");
-    }
-    handleClose();
   };
 
   if (!isExpanded) {
@@ -156,7 +134,7 @@ export default function ViewSwitcher({
     <div ref={dropdownRef}>
       {shouldRender && (
         <div
-          className={`absolute bottom-full left-0 right-0 mb-2 overflow-hidden border border-sidebar-border bg-sidebar ${
+          className={`absolute bottom-full left-0 right-0 mb-2 overflow-hidden border border-sidebar-border bg-sidebar rounded-3xl ${
             isVisible
               ? "animate-dropdown-in"
               : isClosing
@@ -169,7 +147,7 @@ export default function ViewSwitcher({
             {logoutView && (
               <button
                 onClick={() => handleViewSwitch("logout")}
-                className="w-full flex items-center gap-3 px-2 py-2 sm:p-3 rounded-xl transition-all duration-200 hover:cursor-pointer hover:bg-red-500/10 text-red-400 hover:text-red-300"
+                className="w-full flex items-center gap-3 px-2 py-2 sm:p-3 rounded-xl transition-all duration-200 hover:cursor-pointer hover:bg-white/15 text-red-400 hover:text-red-300"
               >
                 <div className="w-7 h-7 sm:w-9 sm:h-9 rounded-lg flex items-center justify-center bg-red-500/20">
                   <logoutView.icon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />

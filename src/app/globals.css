@@ -47,6 +47,8 @@
   --color-fnh-grey: var(--fnh-grey);
   --color-fnh-grey-light: var(--fnh-grey-light);
   --color-fnh-grey-dark: var(--fnh-grey-dark);
+  --color-fnh-black: var(--fnh-black);
+  --color-fnh-rich-black: var(--fnh-rich-black);
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -62,44 +64,49 @@
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
   
-  /* FNH Healthcare Brand Colors - Updated for Modern Navy Look */
-  --fnh-navy: #16213e;           /* Deep navy */
-  --fnh-navy-dark: #0f1626;      /* Almost black navy */
-  --fnh-navy-light: #23395d;     /* Lighter navy */
-  --fnh-blue: #1e3a8a;           /* Rich blue accent */
-  --fnh-blue-light: #3b4a6b;     /* Muted blue for backgrounds */
-  --fnh-white: #f3f4f6;          /* Soft white for foreground */
-  --fnh-porcelain: #23272f;      /* Dark grey for backgrounds */
-  --fnh-grey: #4b5563;           /* Medium grey */
-  --fnh-grey-light: #9ca3af;     /* Light grey for borders */
-  --fnh-grey-dark: #23272f;      /* Dark grey for backgrounds */
-  --fnh-black: #0a0a0a;
+  /* FNH Healthcare Brand Colors - Professional Design System */
+  --fnh-navy: #1e293b;           /* Slate 800 - Primary navy */
+  --fnh-navy-dark: #0f172a;      /* Slate 900 - Darkest navy for sidebar */
+  --fnh-navy-light: #334155;     /* Slate 700 - Lighter navy for hover */
+  --fnh-blue: #3b82f6;           /* Blue 500 - Primary blue accent */
+  --fnh-blue-light: #60a5fa;     /* Blue 400 - Light blue for hover */
+  --fnh-blue-dark: #2563eb;      /* Blue 600 - Dark blue for active */
+  --fnh-white: #ffffff;          /* Pure white for backgrounds */
+  --fnh-porcelain: #f8fafc;      /* Slate 50 - Off-white background */
+  --fnh-grey: #64748b;           /* Slate 500 - Medium grey */
+  --fnh-grey-light: #cbd5e1;     /* Slate 300 - Light grey for borders */
+  --fnh-grey-lighter: #e2e8f0;   /* Slate 200 - Very light grey */
+  --fnh-grey-dark: #475569;      /* Slate 600 - Dark grey */
+  --fnh-yellow: #fbbf24;         /* Amber 400 - Yellow accent for active states */
+  --fnh-yellow-light: #fcd34d;   /* Amber 300 - Light yellow for hover */
+  --fnh-black: #000000;
+  --fnh-rich-black: #0a0a0a;
 
   --primary: var(--fnh-navy);
   --primary-foreground: var(--fnh-white);
   --secondary: var(--fnh-navy-light);
   --secondary-foreground: var(--fnh-white);
   --muted: var(--fnh-porcelain);
-  --muted-foreground: var(--fnh-grey-light);
+  --muted-foreground: var(--fnh-grey);
   --accent: var(--fnh-blue);
   --accent-foreground: var(--fnh-white);
-  --destructive: #b91c1c; /* deep red for destructive */
+  --destructive: #dc2626; /* Red 600 for destructive */
   --border: var(--fnh-grey-light);
-  --input: var(--fnh-grey);
+  --input: var(--fnh-grey-lighter);
   --ring: var(--fnh-blue);
-  --chart-1: var(--fnh-navy-light); /* navy shade */
-  --chart-2: var(--fnh-blue);      /* blue accent */
-  --chart-3: var(--fnh-blue-light);/* muted blue */
+  --chart-1: var(--fnh-blue); /* blue accent */
+  --chart-2: var(--fnh-navy);      /* navy */
+  --chart-3: var(--fnh-blue-light);/* light blue */
   --chart-4: var(--fnh-grey);      /* medium grey */
-  --chart-5: var(--fnh-grey-light);/* light grey */
+  --chart-5: var(--fnh-yellow);/* yellow accent */
   --sidebar: var(--fnh-navy-dark);
   --sidebar-foreground: var(--fnh-white);
   --sidebar-primary: var(--fnh-navy);
   --sidebar-primary-foreground: var(--fnh-white);
-  --sidebar-accent: var(--fnh-blue);
-  --sidebar-accent-foreground: var(--fnh-white);
-  --sidebar-border: var(--fnh-grey);
-  --sidebar-ring: var(--fnh-blue-light);
+  --sidebar-accent: var(--fnh-yellow);
+  --sidebar-accent-foreground: var(--fnh-navy-dark);
+  --sidebar-border: var(--fnh-navy-light);
+  --sidebar-ring: var(--fnh-blue);
 
   /* Sidebar spacing */
   --sidebar-collapsed-width: 7.5rem;
