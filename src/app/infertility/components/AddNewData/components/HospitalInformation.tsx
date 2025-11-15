@@ -8,10 +8,8 @@ import React, {
 import { motion, AnimatePresence } from "framer-motion";
 import { createPortal } from "react-dom";
 import { Building2, PlusCircle, Loader2, Info, X } from "lucide-react";
-import useFetchHospitalInformation, {
-  Hospital,
-} from "../hooks/useFetchHospitalInformation";
-import { Tooltip as ReactTooltip } from "react-tooltip";
+import { useFetchHospitalInformation } from "../hooks";
+import { Hospital } from "../../../types";
 import HospitalTypeDropdown from "../Dropdowns/HospitalTypeDropdown";
 import ContactPhoneInput from "./ContactPhoneInput";
 import ContactEmailInput from "./ContactEmailInput";
@@ -41,14 +39,22 @@ const HospitalInformation: React.FC<HospitalInformationProps> = ({
   isMobile,
   titleTooltipStyle,
 }) => {
+  const [searchQuery, setSearchQueryState] = useState("");
+  const setSearchQuery = useCallback((query: string) => {
+    setSearchQueryState(query);
+  }, []);
+
   // Use the hook for fetching hospitals
-  const { searchQuery, setSearchQuery, hospitals, loading, error } =
-    useFetchHospitalInformation();
+  const {
+    data: hospitals = [],
+    isLoading: loading,
+    error,
+  } = useFetchHospitalInformation(searchQuery);
 
   // Display error to user when API fails
   useEffect(() => {
     if (error) {
-      onMessage("error", error);
+      onMessage("error", error.message || "Failed to fetch hospitals");
     }
   }, [error, onMessage]);
 

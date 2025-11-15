@@ -18,42 +18,21 @@ export default function SidebarLayout({
 
 function SidebarLayoutContent({ children }: { children: React.ReactNode }) {
   const { isExpanded, isPinned } = useSidebarState();
-<<<<<<< HEAD
 
   // Calculate layout class - now we're guaranteed to have the real state from localStorage
-=======
-  const [isMounted, setIsMounted] = useState(false);
-
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
-
-  if (!isMounted) {
-    return null;
-  }
-
->>>>>>> a69666330f8d45dac67c77f45d357e102170bda1
   const desktopOffsetClass =
     isPinned || isExpanded
       ? "lg:ml-[var(--sidebar-expanded-width)]"
       : "lg:ml-[var(--sidebar-collapsed-width)]";
 
   return (
-<<<<<<< HEAD
     <div className="flex min-h-screen w-full bg-jd-porcelain lg:bg-jd-black">
-=======
-    <div className="flex min-h-screen w-full bg-fnh-porcelain lg:bg-fnh-grey-light">
->>>>>>> a69666330f8d45dac67c77f45d357e102170bda1
       <Sidebar />
       <div
         className={`flex min-h-screen flex-1 flex-col transition-all duration-300 ease-[cubic-bezier(0.25,0.1,0.25,1)] ${desktopOffsetClass}`}
       >
         <div className="flex min-h-screen flex-1 flex-col px-0 pb-6 pt-20 sm:px-6 sm:pt-24 lg:px-3 lg:pt-3">
-<<<<<<< HEAD
-          <div className="relative flex w-full flex-1 flex-col lg:rounded-[2.5rem] lg:bg-jd-porcelain text-jd-rich-black lg:shadow-[0_32px_80px_rgba(0,0,0,0.35)] lg:ring-1 lg:ring-white/5">
-=======
-          <div className="relative flex w-full flex-1 flex-col lg:bg-fnh-white text-fnh-navy lg:shadow-[0_32px_80px_rgba(0,0,0,0.08)] lg:ring-1 lg:ring-fnh-grey-light/50">
->>>>>>> a69666330f8d45dac67c77f45d357e102170bda1
+          <div className="relative flex w-full flex-1 flex-col bg-[var(--sidebar)] text-[var(--sidebar-foreground)]">
             <div className="relative flex flex-1 flex-col overflow-hidden">
               {children}
             </div>

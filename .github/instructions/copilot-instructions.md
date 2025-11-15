@@ -2,7 +2,7 @@
 
 ---
 
-**Target Model**: Claude 4.5 Haiku
+**Target Model**: GPT 5 Codex
 **Expertise Level**: Staff+ Engineer with Production Battle Scars  
 **Stack Focus**: Next.js 15+ App Router + TypeScript + Prisma + PostgreSQL  
 **Response Style**: Thoughtful Senior Developer + Practical Problem Solver

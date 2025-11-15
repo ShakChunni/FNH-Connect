@@ -1,84 +1,55 @@
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/axios";
-
-// Response type for infertility patient list
-export interface InfertilityPatient {
-  id: number;
-  patientId: number;
-  hospitalId: number;
-  patient: {
-    id: number;
-    fullName: string;
-    age: number | null;
-    phoneNumber: string | null;
-    email: string | null;
-    gender: string;
-  };
-  hospital: {
-    id: number;
-    name: string;
-    type: string | null;
-  };
-  yearsMarried: number | null;
-  yearsTrying: number | null;
-  infertilityType: string | null;
-  status: string | null;
-  nextAppointment: Date | null;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-// Filter options
-export interface InfertilityFilters {
-  status?: string;
-  hospitalId?: number;
-  infertilityType?: string;
-  search?: string;
-}
+import type {
+  InfertilityPatient,
+  InfertilityFilters,
+  FetchInfertilityPatientsResponse,
+} from "../types";
 
 export function useFetchInfertilityData(filters: InfertilityFilters = {}) {
   return useQuery({
     queryKey: ["infertilityPatients", filters],
     queryFn: async (): Promise<InfertilityPatient[]> => {
-      try {
-        const params = new URLSearchParams();
+      const params = new URLSearchParams();
 
-        // Add filters
-        if (filters.status) {
-          params.append("status", filters.status);
-        }
-
-        if (filters.hospitalId) {
-          params.append("hospitalId", filters.hospitalId.toString());
-        }
-
-        if (filters.infertilityType) {
-          params.append("infertilityType", filters.infertilityType);
-        }
-
-        if (filters.search) {
-          params.append("search", filters.search);
-        }
-
-        const response = await api.get<{
-          success: boolean;
-          data: InfertilityPatient[];
-          error?: string;
-        }>(`/infertility-patients?${params.toString()}`);
-
-        console.log("Infertility Patients API Response:", response.data);
-
-        if (!response.data.success) {
-          throw new Error(
-            response.data.error || "Failed to fetch infertility patients"
-          );
-        }
-
-        return response.data.data;
-      } catch (error) {
-        console.error("Error fetching infertility patients:", error);
-        throw error;
+      // Add filters
+      if (filters.status) {
+        params.append("status", filters.status);
       }
+
+      if (filters.hospitalId) {
+        params.append("hospitalId", filters.hospitalId.toString());
+      }
+
+      if (filters.infertilityType) {
+        params.append("infertilityType", filters.infertilityType);
+      }
+
+      if (filters.search) {
+        params.append("search", filters.search);
+      }
+
+      const response = await api.get<FetchInfertilityPatientsResponse>(
+        `/infertility-patients?${params.toString()}`
+      );
+
+      if (!response.data.success) {
+        throw new Error(
+          response.data.error || "Failed to fetch infertility patients"
+        );
+      }
+
+      return response.data.data;
     },
+    staleTime: 2 * 60 * 1000, // 2 minutes
+    gcTime: 5 * 60 * 1000, // 5 minutes
+    retry: (failureCount, error) => {
+      if (error instanceof Error && error.message.includes("401")) {
+        return false;
+      }
+      return failureCount < 2;
+    },
+    refetchOnWindowFocus: false,
+    refetchOnMount: true,
   });
 }

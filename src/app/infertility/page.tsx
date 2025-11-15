@@ -7,8 +7,8 @@ import EditDataInfertility from "./components/EditData/EditDataInfertility";
 import PatientTable from "./components/PatientTable/PatientTable";
 import SkeletonPatientTable from "./components/PatientTable/components/SkeletonPatientTable";
 import { InfertilityPatientData } from "./components/PatientTable/PatientTable";
-import useFetchData from "./hooks/useFetchInfertilityData";
-import Dropdowns from "./components/Filters/Dropdowns";
+import { useFetchInfertilityData } from "./hooks";
+import type { InfertilityFilters } from "./types";
 import ButtonContainer from "./components/ButtonContainer";
 import { useAuth } from "../AuthContext";
 
@@ -46,32 +46,35 @@ const InfertilityManagement = React.memo(() => {
   // EditData popup state
   const [isEditPopupOpen, setIsEditPopupOpen] = useState(false);
   const [isEditPopupClosing, setIsEditPopupClosing] = useState(false);
-  const [selectedPatient, setSelectedPatient] = useState<InfertilityPatientData | null>(null);
+  const [selectedPatient, setSelectedPatient] =
+    useState<InfertilityPatientData | null>(null);
 
-  const [shouldFetchData, setShouldFetchData] = useState(true);
   const [searchParams, setSearchParams] = useState<SearchParams | undefined>(
     undefined
+  );
+
+  // Map page filters to hook filters
+  const hookFilters: InfertilityFilters = useMemo(
+    () => ({
+      status: filters.leadsFilter !== "All" ? filters.leadsFilter : undefined,
+      search: searchParams?.searchTerm || undefined,
+    }),
+    [filters.leadsFilter, searchParams]
   );
 
   const {
     data: patientData,
     isLoading,
-    customOptions,
     refetch,
-  } = useFetchData(filters, shouldFetchData, searchParams);
+  } = useFetchInfertilityData(hookFilters);
 
   // FIX 1: Use correct ref type
   const messagePopupRef = useRef<HTMLDivElement>(null);
 
   // FIX 2: Update handleTableSearch to match PatientTable's expected prop
-  const handleTableSearch = useCallback(
-    (searchTerm: string) => {
-      setSearchParams({ searchTerm, searchField: "patientFullName" }); // Default field
-      setShouldFetchData(true);
-      refetch();
-    },
-    [refetch]
-  );
+  const handleTableSearch = useCallback((searchTerm: string) => {
+    setSearchParams({ searchTerm, searchField: "patientFullName" }); // Default field
+  }, []);
 
   // Handle dropdown toggle
   const handleToggleDropdowns = useCallback((isExpanded: boolean) => {
@@ -117,17 +120,16 @@ const InfertilityManagement = React.memo(() => {
         setSearchParams(undefined);
       }
 
-      // Only refetch for dateSelector for now; other filters' hook logic to be implemented later
-      if (key === "dateSelector") {
-        // Use a timeout to prevent rapid successive calls
-        setTimeout(() => {
-          refetch().catch((error: unknown) => {
-            console.error("Error refetching data:", error);
-          });
-        }, 100);
-      }
+      // Only refetch for supported filters; dateSelector not yet implemented in hook
+      // if (key === "dateSelector") {
+      //   setTimeout(() => {
+      //     refetch().catch((error: unknown) => {
+      //       console.error("Error refetching data:", error);
+      //     });
+      //   }, 100);
+      // }
     },
-    [refetch, searchParams]
+    [searchParams]
   );
 
   // Ref for search bar (stub)
@@ -170,18 +172,14 @@ const InfertilityManagement = React.memo(() => {
         // Close popup first
         handleCloseAddPopup();
 
-        // Refresh data after a delay
-        setTimeout(() => {
-          setShouldFetchData(true);
-          refetch().finally(() => setShouldFetchData(false));
-        }, 500);
+        // Data will be automatically refreshed via invalidateQueries
       } catch (error) {
         console.error("Error in handleAddData:", error);
         setMessageType("error");
         setMessageContent("Failed to save patient data.");
       }
     },
-    [handleCloseAddPopup, refetch]
+    [handleCloseAddPopup]
   );
 
   // Memoized message popup content
@@ -228,23 +226,29 @@ const InfertilityManagement = React.memo(() => {
   const normalizedPatientData = useMemo(
     () =>
       (patientData || []).map((row) => ({
-        ...row,
-        patientDOB:
-          row.patientDOB instanceof Date
-            ? row.patientDOB.toISOString()
-            : row.patientDOB,
-        husbandDOB:
-          row.husbandDOB instanceof Date
-            ? row.husbandDOB.toISOString()
-            : row.husbandDOB,
-        createdAt:
-          row.createdAt instanceof Date
-            ? row.createdAt.toISOString()
-            : row.createdAt,
-        updatedAt:
-          row.updatedAt instanceof Date
-            ? row.updatedAt.toISOString()
-            : row.updatedAt,
+        id: row.id,
+        hospitalName: row.hospital.name,
+        patientFirstName: row.patient.fullName.split(" ")[0] || "",
+        patientLastName:
+          row.patient.fullName.split(" ").slice(1).join(" ") || null,
+        patientFullName: row.patient.fullName,
+        patientAge: row.patient.age,
+        patientDOB: null, // Not available in current API
+        husbandName: null, // Not in API
+        husbandAge: null, // Not in API
+        husbandDOB: null, // Not in API
+        mobileNumber: row.patient.phoneNumber,
+        address: null, // Not in API
+        yearsMarried: row.yearsMarried,
+        yearsTrying: row.yearsTrying,
+        para: null, // Not in API
+        alc: null, // Not in API
+        weight: null, // Not in API
+        bp: null, // Not in API
+        infertilityType: row.infertilityType,
+        notes: null, // Not in API
+        createdAt: row.createdAt.toISOString(),
+        updatedAt: row.updatedAt.toISOString(),
       })),
     [patientData]
   );
@@ -266,16 +270,7 @@ const InfertilityManagement = React.memo(() => {
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.2 }}
             className="overflow-hidden"
-          >
-            <div className="flex justify-center items-center mb-4 py-4">
-              <Dropdowns
-                filters={filters}
-                onFilterChange={handleFilterUpdate}
-                searchBarRef={searchBarRef}
-                isInitialLoad={isInitialLoad}
-              />
-            </div>
-          </motion.div>
+          ></motion.div>
         )}
       </AnimatePresence>
 
@@ -286,7 +281,6 @@ const InfertilityManagement = React.memo(() => {
           ) : (
             <PatientTable
               tableData={normalizedPatientData}
-              customOptions={customOptions}
               onMessage={handleMessage}
               messagePopupRef={
                 messagePopupRef as React.RefObject<HTMLDivElement>
