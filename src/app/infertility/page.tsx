@@ -193,7 +193,7 @@ const InfertilityManagement = React.memo(() => {
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.8 }}
         transition={{ duration: 0.3, ease: "easeOut" }}
-        className="fixed inset-0 flex items-center justify-center z-[99999]"
+        className="fixed inset-0 flex items-center justify-center z-99999"
       >
         <div className="bg-white p-8 rounded-2xl shadow-xl max-w-md w-full mx-4 text-center border border-gray-100">
           {/* Title */}
@@ -254,41 +254,53 @@ const InfertilityManagement = React.memo(() => {
   );
 
   return (
-    <div className="bg-[#f6f9fd] min-h-screen pt-6">
-      <ButtonContainer
-        onToggleExpand={handleToggleDropdowns}
-        isExpanded={showDropdowns}
-        onAddData={handleOpenAddPopup}
-      />
-
-      {/* Animated dropdown filter section */}
-      <AnimatePresence>
-        {showDropdowns && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.2 }}
-            className="overflow-hidden"
-          ></motion.div>
-        )}
-      </AnimatePresence>
-
-      <div className="px-4 lg:px-12 mx-auto">
-        <div className="overflow-x-auto rounded-3xl shadow-lg mb-16 md:mb-8">
-          {isLoading ? (
-            <SkeletonPatientTable />
-          ) : (
-            <PatientTable
-              tableData={normalizedPatientData}
-              onMessage={handleMessage}
-              messagePopupRef={
-                messagePopupRef as React.RefObject<HTMLDivElement>
-              }
-              onSearch={handleTableSearch}
-              onEdit={handleOpenEditPopup}
+    <div className="min-h-screen bg-fnh-porcelain pb-4 sm:pb-3 lg:pb-2">
+      <div className="mx-auto w-full px-4 sm:px-6 lg:px-2 pt-4 sm:pt-3 lg:pt-2">
+        <div className="space-y-4 px-4 sm:space-y-6 sm:px-6 lg:px-2 w-full max-w-full overflow-hidden">
+          {/* Button Container */}
+          <div className="bg-white px-8 py-6 border-b border-fnh-grey-lighter">
+            <ButtonContainer
+              onToggleExpand={handleToggleDropdowns}
+              isExpanded={showDropdowns}
+              onAddData={handleOpenAddPopup}
             />
-          )}
+          </div>
+
+          {/* Animated dropdown filter section */}
+          <AnimatePresence>
+            {showDropdowns && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: "auto", opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.3, ease: "easeInOut" }}
+                className="overflow-hidden bg-fnh-porcelain border-b border-fnh-grey-lighter"
+              >
+                <div className="px-8 py-6">
+                  {/* Filter components will go here */}
+                  <div className="text-fnh-grey text-sm">
+                    Filter options coming soon...
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Table Container with proper styling */}
+          <div className="bg-white p-8">
+            <div className="bg-white rounded-2xl shadow-sm border border-fnh-grey-lighter overflow-hidden">
+              <PatientTable
+                tableData={normalizedPatientData}
+                isLoading={isLoading}
+                onSearch={handleTableSearch}
+                onEdit={handleOpenEditPopup}
+                onMessage={handleMessage}
+                messagePopupRef={
+                  messagePopupRef as React.RefObject<HTMLDivElement>
+                }
+              />
+            </div>
+          </div>
         </div>
       </div>
 

@@ -10,9 +10,11 @@ import Image from "next/image";
 import { useAuth } from "@/app/AuthContext";
 import ViewSwitcher from "./ViewSwitcher";
 
-const SIDEBAR_BG = "var(--fnh-black)"; // FNH Black
-const CONTAINER_BG =
-  "linear-gradient(180deg, var(--fnh-navy) 0%, var(--fnh-navy-dark) 35%, var(--fnh-navy-light) 70%, var(--fnh-grey-dark) 100%)"; // FNH Sidebar Gradient
+const SIDEBAR_BG = "#111111"; // FNH Black 
+const CONTAINER_BG = "#1e293b"; // FNH Navy - slightly lighter slate 800
+const ACTIVE_BG = "#334155"; // FNH Navy Light - slate 700 for active items
+const HOVER_BG = "rgba(59, 130, 246, 0.1)"; // Blue with opacity for hover
+const ACTIVE_INDICATOR = "#fbbf24"; // Yellow accent for active border
 
 interface UserProfileSectionProps {
   user: {
@@ -200,7 +202,7 @@ export default function DesktopSidebar({
                     priority
                   />
                   <div className="flex items-center gap-1 leading-tight min-w-0">
-                    <span className="text-xs font-semibold uppercase tracking-[0.25em] text-white/60 whitespace-nowrap">
+                    <span className="text-sm font-bold uppercase tracking-[0.25em] text-white/80 whitespace-nowrap">
                       FNH Connect
                     </span>
                   </div>
@@ -223,7 +225,7 @@ export default function DesktopSidebar({
 
           {/* Navigation inside first container */}
           <nav className="overflow-y-auto">
-            <ul className="space-y-2">
+            <ul className="space-y-3">
               {navigationItems.map((item) => {
                 const isActive = pathname === item.href;
                 const Icon = item.icon;
@@ -234,17 +236,31 @@ export default function DesktopSidebar({
                       href={item.href}
                       className={`group flex items-center rounded-2xl px-3 py-2.5 text-sm font-medium transition-all duration-200 ease-[cubic-bezier(0.25,0.1,0.25,1)] ${
                         isActive
-                          ? isExpanded
-                            ? "bg-linear-to-r from-white/20 to-white/5 text-white"
-                            : "bg-white/20 text-white"
-                          : "text-white/85 hover:bg-white/5 hover:text-white"
+                          ? "text-white shadow-lg"
+                          : "text-white/70 hover:text-white"
                       } ${isExpanded ? "gap-3" : "justify-center"}`}
+                      style={{
+                        background: isActive ? ACTIVE_BG : "transparent",
+                        borderLeft: isActive
+                          ? `4px solid ${ACTIVE_INDICATOR}`
+                          : "4px solid transparent",
+                      }}
+                      onMouseEnter={(e) => {
+                        if (!isActive) {
+                          e.currentTarget.style.background = HOVER_BG;
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (!isActive) {
+                          e.currentTarget.style.background = "transparent";
+                        }
+                      }}
                     >
                       <span
                         className={`flex h-9 w-9 min-w-9 shrink-0 items-center justify-center rounded-xl transition-all duration-200 ${
                           isActive
-                            ? "bg-white/15 text-white"
-                            : "text-white/70 group-hover:text-white"
+                            ? "text-white"
+                            : "text-white/60 group-hover:text-white"
                         }`}
                       >
                         <Icon className="h-5 w-5" />

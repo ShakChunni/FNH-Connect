@@ -66,20 +66,21 @@ const ButtonContainer: React.FC<ButtonContainerProps> = ({
             initial={false}
             animate={{
               background: isExpanded
-                ? "linear-gradient(to right, #1e3a8a, #172554)"
-                : "linear-gradient(to left, #1e3a8a, #172554)",
+                ? "linear-gradient(135deg, #3b82f6, #2563eb)"
+                : "linear-gradient(135deg, #1e293b, #334155)",
               scale: 1,
             }}
             whileHover={{
               background: isExpanded
-                ? "linear-gradient(to right, #1e40af, #1e3a8a)"
-                : "linear-gradient(to left, #1e40af, #1e3a8a)",
+                ? "linear-gradient(135deg, #60a5fa, #3b82f6)"
+                : "linear-gradient(135deg, #334155, #475569)",
+              scale: 1.02,
             }}
             layout="position"
-            className={`text-white rounded-2xl ${buttonSize}
-              flex items-center justify-center shadow-md
+            className={`text-white rounded-xl ${buttonSize}
+              flex items-center justify-center shadow-lg
               transition-all duration-300 ease-in-out cursor-pointer
-              font-medium
+              font-semibold
               ${isMobile ? "w-full px-0" : "w-full px-5 py-2"}
             `}
             transition={{
@@ -101,7 +102,7 @@ const ButtonContainer: React.FC<ButtonContainerProps> = ({
               <motion.div
                 animate={{
                   rotate: isExpanded ? 90 : 0,
-                  color: isExpanded ? "#fde047" : "#ffffff",
+                  color: isExpanded ? "#fbbf24" : "#ffffff",
                 }}
                 transition={{
                   duration: 0.5,
@@ -162,21 +163,22 @@ const ButtonContainer: React.FC<ButtonContainerProps> = ({
           onClick={onAddData}
           initial={false}
           animate={{
-            background: "linear-gradient(to right, #172554, #1e3a8a)",
+            background: "linear-gradient(135deg, #3b82f6, #2563eb)",
           }}
           whileHover={{
-            background: "linear-gradient(to right, #1e40af, #1e3a8a)",
+            background: "linear-gradient(135deg, #60a5fa, #3b82f6)",
+            scale: 1.02,
           }}
           transition={{
             duration: 0.35,
             ease: [0.25, 0.1, 0.35, 1],
             background: { duration: 0.5, ease: "easeOut" },
           }}
-          className={`text-white rounded-2xl ${buttonSize}
-            flex items-center justify-center shadow-md
+          className={`text-white rounded-xl ${buttonSize}
+            flex items-center justify-center shadow-lg
             transition-all duration-300 ease-in-out cursor-pointer
-            font-medium
-            ${isMobile ? "flex-1 px-0" : "w-[160px] px-5 py-2"}
+            font-semibold
+            ${isMobile ? "flex-1 px-0" : "w-40 px-5 py-2"}
           `}
         >
           <PlusIcon className="w-4 h-4 mr-2" />

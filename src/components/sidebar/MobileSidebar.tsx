@@ -10,8 +10,7 @@ import { useAuth } from "@/app/AuthContext";
 import ViewSwitcher from "./ViewSwitcher";
 
 const SIDEBAR_BG = "var(--fnh-black)"; // FNH Black
-const CONTAINER_BG =
-  "var(--sidebar)";
+const CONTAINER_BG = "var(--sidebar)"; // Dark navy
 
 const formatRoleLabel = (role?: string) => {
   if (!role) return "Employee";
@@ -145,7 +144,7 @@ export default function MobileSidebar() {
                   height={32}
                   className="h-8 w-8 shrink-0"
                 />
-                <div className="text-[9px] font-semibold uppercase tracking-[0.25em] text-white/60 leading-tight">
+                <div className="text-[10px] font-bold uppercase tracking-[0.25em] text-white/80 leading-tight">
                   FNH Connect
                 </div>
               </div>
@@ -158,7 +157,7 @@ export default function MobileSidebar() {
               </button>
             </div>
             {/* Navigation inside first container */}
-            <ul className="space-y-1">
+            <ul className="space-y-2">
               {navigationItems.map((item) => {
                 const isActive = pathname === item.href;
                 const Icon = item.icon;
@@ -170,8 +169,8 @@ export default function MobileSidebar() {
                       onClick={handleClose}
                       className={`group flex items-center rounded-xl px-2 py-2 text-xs font-medium transition-all duration-200 ease-[cubic-bezier(0.25,0.1,0.25,1)] ${
                         isActive
-                          ? "bg-gradient-to-r from-white/20 to-white/5 text-white"
-                          : "text-white/85 hover:bg-white/5 hover:text-white"
+                          ? "bg-white/15 text-white border-r-4 border-yellow-400"
+                          : "text-white/85 hover:bg-white/10 hover:text-white"
                       } gap-2`}
                     >
                       <span

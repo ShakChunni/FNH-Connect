@@ -1,42 +1,35 @@
-import {
-  Home,
-  User,
-  CreditCard,
-  Ticket,
-  Receipt,
-  BookText,
-} from "lucide-react";
+import { Home, Baby, Microscope, Shield, Users, FileText } from "lucide-react";
 import { NavigationItem } from "./types";
 
 export const navigationItems: NavigationItem[] = [
   {
     label: "Dashboard",
-    href: "/dashboard",
+    href: "/home",
     icon: Home,
   },
   {
-    label: "My Profile",
-    href: "/profile",
-    icon: User,
+    label: "Infertility",
+    href: "/infertility",
+    icon: Baby,
   },
   {
-    label: "Digital ID Card",
-    href: "/id-card",
-    icon: CreditCard,
+    label: "Pathology",
+    href: "/pathology",
+    icon: Microscope,
   },
   {
-    label: "My Vouchers",
-    href: "/vouchers",
-    icon: Ticket,
+    label: "Admin Dashboard",
+    href: "/admin-dashboard",
+    icon: Shield,
   },
   {
-    label: "Purchase History",
-    href: "/purchase-history",
-    icon: Receipt,
+    label: "User Management",
+    href: "/admin/user-management",
+    icon: Users,
   },
   {
-    label: "Employee Playbook",
-    href: "/playbook",
-    icon: BookText,
+    label: "Activity Logs",
+    href: "/admin/activity-logs",
+    icon: FileText,
   },
 ];
