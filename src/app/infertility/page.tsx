@@ -5,30 +5,15 @@ import { createPortal } from "react-dom";
 import AddNewDataInfertility from "./components/AddNewData/AddNewDataInfertility";
 import EditDataInfertility from "./components/EditData/EditDataInfertility";
 import PatientTable from "./components/PatientTable/PatientTable";
-import SkeletonPatientTable from "./components/PatientTable/components/SkeletonPatientTable";
-import { InfertilityPatientData } from "./components/PatientTable/PatientTable";
-import { useFetchInfertilityData } from "./hooks";
-import type { InfertilityFilters } from "./types";
 import ButtonContainer from "./components/ButtonContainer";
-import { useAuth } from "../AuthContext";
-
-interface FilterState {
-  dateSelector: {
-    start: string | null;
-    end: string | null;
-    option: string[];
-  };
-  leadsFilter: string;
-}
-
-interface SearchParams {
-  searchTerm: string;
-  searchField: string;
-}
+import MessagePopup from "./components/MessagePopup";
+import Filters from "./components/Filters/Filters";
+import { InfertilityPatientData } from "./types";
+import { useFetchInfertilityData } from "./hooks";
+import type { InfertilityFilters, FilterState, SearchParams } from "./types";
+import { normalizePatientData } from "./utils";
 
 const InfertilityManagement = React.memo(() => {
-  const { user } = useAuth();
-
   // Only leadsFilter and dateSelector for this page
   const [filters, setFilters] = useState<FilterState>({
     dateSelector: { start: null, end: null, option: [] },
@@ -182,74 +167,8 @@ const InfertilityManagement = React.memo(() => {
     [handleCloseAddPopup]
   );
 
-  // Memoized message popup content
-  const messagePopupContent = useMemo(() => {
-    if (!messageType) return null;
-
-    return (
-      <motion.div
-        ref={messagePopupRef}
-        initial={{ opacity: 0, scale: 0.8 }}
-        animate={{ opacity: 1, scale: 1 }}
-        exit={{ opacity: 0, scale: 0.8 }}
-        transition={{ duration: 0.3, ease: "easeOut" }}
-        className="fixed inset-0 flex items-center justify-center z-99999"
-      >
-        <div className="bg-white p-8 rounded-2xl shadow-xl max-w-md w-full mx-4 text-center border border-gray-100">
-          {/* Title */}
-          <h3
-            className={`text-lg font-semibold mb-3 ${
-              messageType === "success" ? "text-green-700" : "text-red-700"
-            }`}
-          >
-            {messageType === "success" ? "Success!" : "Error!"}
-          </h3>
-          {/* Message */}
-          <div className="mb-6 text-gray-600 leading-relaxed">
-            {messageContent}
-          </div>
-          <button
-            onClick={dismissMessage}
-            className={`w-full py-3 px-6 rounded-xl font-semibold transition-all duration-200 ${
-              messageType === "success"
-                ? "bg-green-500 hover:bg-green-600 text-white"
-                : "bg-red-500 hover:bg-red-600 text-white"
-            }`}
-          >
-            Got it
-          </button>
-        </div>
-      </motion.div>
-    );
-  }, [messageType, messageContent, dismissMessage]);
-
   const normalizedPatientData = useMemo(
-    () =>
-      (patientData || []).map((row) => ({
-        id: row.id,
-        hospitalName: row.hospital.name,
-        patientFirstName: row.patient.fullName.split(" ")[0] || "",
-        patientLastName:
-          row.patient.fullName.split(" ").slice(1).join(" ") || null,
-        patientFullName: row.patient.fullName,
-        patientAge: row.patient.age,
-        patientDOB: null, // Not available in current API
-        husbandName: null, // Not in API
-        husbandAge: null, // Not in API
-        husbandDOB: null, // Not in API
-        mobileNumber: row.patient.phoneNumber,
-        address: null, // Not in API
-        yearsMarried: row.yearsMarried,
-        yearsTrying: row.yearsTrying,
-        para: null, // Not in API
-        alc: null, // Not in API
-        weight: null, // Not in API
-        bp: null, // Not in API
-        infertilityType: row.infertilityType,
-        notes: null, // Not in API
-        createdAt: row.createdAt.toISOString(),
-        updatedAt: row.updatedAt.toISOString(),
-      })),
+    () => normalizePatientData(patientData),
     [patientData]
   );
 
@@ -258,7 +177,7 @@ const InfertilityManagement = React.memo(() => {
       <div className="mx-auto w-full px-4 sm:px-6 lg:px-2 pt-4 sm:pt-3 lg:pt-2">
         <div className="space-y-4 px-4 sm:space-y-6 sm:px-6 lg:px-2 w-full max-w-full overflow-hidden">
           {/* Button Container */}
-          <div className="bg-white px-8 py-6 border-b border-fnh-grey-lighter">
+          <div className="px-8 py-6">
             <ButtonContainer
               onToggleExpand={handleToggleDropdowns}
               isExpanded={showDropdowns}
@@ -274,38 +193,43 @@ const InfertilityManagement = React.memo(() => {
                 animate={{ height: "auto", opacity: 1 }}
                 exit={{ height: 0, opacity: 0 }}
                 transition={{ duration: 0.3, ease: "easeInOut" }}
-                className="overflow-hidden bg-fnh-porcelain border-b border-fnh-grey-lighter"
+                className="overflow-hidden bg-fnh-porcelain"
               >
                 <div className="px-8 py-6">
-                  {/* Filter components will go here */}
-                  <div className="text-fnh-grey text-sm">
-                    Filter options coming soon...
-                  </div>
+                  <Filters
+                    filters={filters}
+                    onFilterUpdate={handleFilterUpdate}
+                  />
                 </div>
               </motion.div>
             )}
           </AnimatePresence>
 
           {/* Table Container with proper styling */}
-          <div className="bg-white p-8">
-            <div className="bg-white rounded-2xl shadow-sm border border-fnh-grey-lighter overflow-hidden">
-              <PatientTable
-                tableData={normalizedPatientData}
-                isLoading={isLoading}
-                onSearch={handleTableSearch}
-                onEdit={handleOpenEditPopup}
-                onMessage={handleMessage}
-                messagePopupRef={
-                  messagePopupRef as React.RefObject<HTMLDivElement>
-                }
-              />
-            </div>
+          <div className="p-8">
+            <PatientTable
+              tableData={normalizedPatientData}
+              isLoading={isLoading}
+              onSearch={handleTableSearch}
+              onEdit={handleOpenEditPopup}
+              onMessage={handleMessage}
+              messagePopupRef={
+                messagePopupRef as React.RefObject<HTMLDivElement>
+              }
+            />
           </div>
         </div>
       </div>
 
       {/* Message Popup */}
-      <AnimatePresence>{messagePopupContent}</AnimatePresence>
+      <AnimatePresence>
+        <MessagePopup
+          messageType={messageType}
+          messageContent={messageContent}
+          onDismiss={dismissMessage}
+          messagePopupRef={messagePopupRef as React.RefObject<HTMLDivElement>}
+        />
+      </AnimatePresence>
       {/* Add New Data Portal (open while opening or closing) */}
       {(isPopupOpen || isPopupClosing) &&
         typeof window !== "undefined" &&

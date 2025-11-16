@@ -506,7 +506,7 @@ const PatientInformation: React.FC<PatientInformationProps> = ({
 
   const showHospitalPatients = availablePatients.length > 0;
   const showGlobalPatients =
-    !loading && globalPatients.length > 0 && searchQuery.length > 0;
+    !loading && patients.length > 0 && searchQuery.length > 0;
   const showAddNew = !loading && searchQuery.length > 1;
 
   const dropdownContent = (
@@ -588,7 +588,7 @@ const PatientInformation: React.FC<PatientInformationProps> = ({
                     Other patients in system
                   </p>
                 </div>
-                {globalPatients.map((patient) => (
+                {patients.map((patient) => (
                   <div
                     key={patient.id}
                     onMouseDown={(e) => {

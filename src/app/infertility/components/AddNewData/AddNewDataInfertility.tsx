@@ -19,6 +19,11 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/app/AuthContext";
 import { useMediaQuery } from "react-responsive";
 import { useAddInfertilityData } from "../../hooks/useAddInfertilityData";
+import {
+  modalVariants,
+  backdropVariants,
+} from "@/components/ui/modal-animations";
+import { getTabColors } from "./utils/modalUtils";
 import HospitalInformation, {
   HospitalData,
 } from "./components/HospitalInformation";
@@ -50,10 +55,10 @@ const AddNewDataInfertility: React.FC<AddNewDataProps> = ({
     reset: resetMutation,
   } = useAddInfertilityData({
     onSuccess: (data) => {
-      if (data) {
+      if (data && data.data) {
         onMessage(
           "success",
-          `Patient ${data.patient.fullName} has been successfully registered with ID: ${data.displayId}`
+          `Patient ${data.data.patient.fullName} has been successfully registered with ID: ${data.data.displayId}`
         );
       } else {
         onMessage("success", "Patient has been successfully registered!");
@@ -452,31 +457,6 @@ const AddNewDataInfertility: React.FC<AddNewDataProps> = ({
     },
   ];
 
-  // Tab styling functions
-  const getTabColors = (color: string, isActive: boolean) => {
-    const colorMap = {
-      blue: isActive
-        ? "bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg"
-        : "bg-blue-50 text-blue-700 hover:bg-blue-100 hover:text-blue-800",
-      indigo: isActive
-        ? "bg-gradient-to-r from-indigo-500 to-indigo-600 text-white shadow-lg"
-        : "bg-indigo-50 text-indigo-700 hover:bg-indigo-100 hover:text-indigo-800",
-      purple: isActive
-        ? "bg-gradient-to-r from-purple-500 to-purple-600 text-white shadow-lg"
-        : "bg-purple-50 text-purple-700 hover:bg-purple-100 hover:text-purple-800",
-      pink: isActive
-        ? "bg-gradient-to-r from-pink-500 to-pink-600 text-white shadow-lg"
-        : "bg-pink-50 text-pink-700 hover:bg-pink-100 hover:text-pink-800",
-      emerald: isActive
-        ? "bg-gradient-to-r from-emerald-500 to-emerald-600 text-white shadow-lg"
-        : "bg-emerald-50 text-emerald-700 hover:bg-emerald-100 hover:text-emerald-800",
-      amber: isActive
-        ? "bg-gradient-to-r from-amber-500 to-amber-600 text-white shadow-lg"
-        : "bg-amber-50 text-amber-700 hover:bg-amber-100 hover:text-amber-800",
-    };
-    return colorMap[color as keyof typeof colorMap] || colorMap.blue;
-  };
-
   // Input styling
   const inputClassName =
     "text-gray-700 font-normal rounded-lg h-12 md:h-14 py-2 px-4 w-full focus:border-blue-600 focus:ring-2 focus:ring-blue-100 outline-none shadow-sm hover:shadow-md transition-all duration-300 placeholder:text-gray-400 placeholder:font-light text-xs sm:text-sm bg-gray-50 border border-gray-300";
@@ -495,41 +475,13 @@ const AddNewDataInfertility: React.FC<AddNewDataProps> = ({
     "Other",
   ];
 
-  const modalVariants = {
-    hidden: {
-      scale: 0.95,
-      opacity: 0,
-      transition: {
-        duration: 0.3,
-        ease: "easeInOut" as const, // Use string, not array
-        scale: { duration: 0.3 },
-        opacity: { duration: 0.3 },
-      },
-    },
-    visible: {
-      scale: 1,
-      opacity: 1,
-      transition: {
-        duration: 0.3,
-        ease: "easeInOut" as const, // Use string, not array
-        scale: { duration: 0.3 },
-        opacity: { duration: 0.25 },
-      },
-    },
-  };
-
-  const overlayVariants = {
-    hidden: { opacity: 0, transition: { duration: 0.3 } },
-    visible: { opacity: 1, transition: { duration: 0.3 } },
-  };
-
   return (
     <AnimatePresence mode="wait">
       {isOpen && (
         <motion.div
-          className="fixed inset-0 bg-slate-900/70 flex items-center justify-center z-50"
+          className="fixed inset-0 bg-slate-900/70 flex items-center justify-center z-100000"
           onClick={onClose}
-          variants={overlayVariants}
+          variants={backdropVariants}
           initial="hidden"
           animate="visible"
           exit="hidden"
@@ -608,7 +560,7 @@ const AddNewDataInfertility: React.FC<AddNewDataProps> = ({
                     <button
                       key={section.id}
                       onClick={() => scrollToSection(section.id)}
-                      className={`flex items-center gap-1 sm:gap-2 px-2 sm:px-3 md:px-4 py-2 sm:py-2.5 md:py-3 rounded-lg sm:rounded-xl text-xs sm:text-sm font-semibold transition-all duration-300 shadow-sm ${getTabColors(
+                      className={`flex items-center gap-1 sm:gap-2 px-2 sm:px-3 md:px-4 py-2 sm:py-2.5 md:py-3 rounded-lg sm:rounded-xl text-xs sm:text-sm font-semibold transition-all duration-300 shadow-sm cursor-pointer ${getTabColors(
                         section.color,
                         isActive
                       )} ${

@@ -178,3 +178,54 @@ export interface ActivityLogData {
   sourceTable: "infertility_patient";
   sourceId: number;
 }
+
+// Page-specific types
+export interface FilterState {
+  dateSelector: {
+    start: string | null;
+    end: string | null;
+    option: string[];
+  };
+  leadsFilter: string;
+}
+
+export interface SearchParams {
+  searchTerm: string;
+  searchField: string;
+}
+
+// Patient Table Types
+export interface InfertilityPatientData {
+  id: number;
+  hospitalName: string | null;
+  patientFirstName: string;
+  patientLastName: string | null;
+  patientFullName: string;
+  patientAge: number | null;
+  patientDOB: string | null;
+  husbandName: string | null;
+  husbandAge: number | null;
+  husbandDOB: string | null;
+  mobileNumber: string | null;
+  address: string | null;
+  yearsMarried: number | null;
+  yearsTrying: number | null;
+  para: string | null;
+  alc: string | null;
+  weight: number | null;
+  bp: string | null;
+  infertilityType: string | null;
+  notes: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface TableHeader {
+  key: string;
+  label: string;
+}
+
+export interface SortConfig {
+  key: string;
+  direction: string;
+}
