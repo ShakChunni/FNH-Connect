@@ -1,38 +1,15 @@
 import React, { useState, useRef, useMemo } from "react";
-import { format } from "date-fns";
-import ExportDropdown from "./components/ExportDropdown";
-import SearchBar from "./components/SearchBar";
-import TableHeader from "./components/TableHeader";
+import { useAuth } from "@/app/AuthContext";
+import { usePagination } from "@/hooks/usePagination";
+import { Pagination } from "@/components/pagination/Pagination";
 import TableRow from "./components/TableRow";
 import TableRowSkeleton from "./components/TableRowSkeleton";
-import Pagination from "./components/Pagination";
-import { useAuth } from "@/app/AuthContext";
-import { createPortal } from "react-dom";
-
-export interface InfertilityPatientData {
-  id: number;
-  hospitalName: string | null;
-  patientFirstName: string;
-  patientLastName: string | null;
-  patientFullName: string;
-  patientAge: number | null;
-  patientDOB: string | null;
-  husbandName: string | null;
-  husbandAge: number | null;
-  husbandDOB: string | null;
-  mobileNumber: string | null;
-  address: string | null;
-  yearsMarried: number | null;
-  yearsTrying: number | null;
-  para: string | null;
-  alc: string | null;
-  weight: number | null;
-  bp: string | null;
-  infertilityType: string | null;
-  notes: string | null;
-  createdAt: string;
-  updatedAt: string;
-}
+import {
+  InfertilityPatientData,
+  SortConfig,
+  TableHeader as TableHeaderType,
+} from "../../types";
+import { getTableHeaders } from "./utils";
 
 interface PatientTableProps {
   tableData: InfertilityPatientData[];
@@ -61,26 +38,8 @@ const PatientTable: React.FC<PatientTableProps> = ({
 }) => {
   const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
-  const [sortConfig, setSortConfig] = useState<{
-    key: string;
-    direction: string;
-  } | null>(null);
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 50;
+  const [sortConfig, setSortConfig] = useState<SortConfig | null>(null);
   const tableContainerRef = useRef<HTMLDivElement>(null);
-  const searchBarRef = useRef<{ search: () => void }>(null);
-  const [isDragging, setIsDragging] = useState(false);
-  const [startX, setStartX] = useState(0);
-  const [scrollLeft, setScrollLeft] = useState(0);
-
-  const formatDate = (date: string | null) => {
-    if (!date) return "";
-    try {
-      return format(new Date(date), "dd/MM/yyyy");
-    } catch {
-      return date;
-    }
-  };
 
   // Sorting logic for infertility patients
   const sortedData = useMemo(() => {
@@ -127,57 +86,27 @@ const PatientTable: React.FC<PatientTableProps> = ({
   }, [tableData, sortConfig]);
 
   const filteredData = sortedData;
-  const totalPages = Math.ceil(filteredData.length / itemsPerPage);
 
-  // Table headers for infertility patients
-  const headers = [
-    { key: "id", label: "#" },
-    { key: "hospitalName", label: "Hospital" },
-    { key: "patientFullName", label: "Patient Name" },
-    { key: "patientAge", label: "Age" },
-    { key: "patientDOB", label: "DOB" },
-    { key: "husbandName", label: "Husband Name" },
-    { key: "husbandAge", label: "Husband Age" },
-    { key: "husbandDOB", label: "Husband DOB" },
-    { key: "mobileNumber", label: "Mobile" },
-    { key: "address", label: "Address" },
-    { key: "yearsMarried", label: "Years Married" },
-    { key: "yearsTrying", label: "Years Trying" },
-    { key: "para", label: "Para" },
-    { key: "alc", label: "ALC" },
-    { key: "weight", label: "Weight" },
-    { key: "bp", label: "BP" },
-    { key: "infertilityType", label: "Infertility Type" },
-    { key: "notes", label: "Notes" },
-    { key: "createdAt", label: "Created" },
-    { key: "updatedAt", label: "Updated" },
-    ...(onEdit ? [{ key: "actions", label: "Actions" }] : []),
-  ];
+  const {
+    currentPage,
+    totalPages,
+    visiblePages,
+    paginationMeta,
+    goToPage,
+    goToPrev,
+    goToNext,
+  } = usePagination({
+    totalResults: filteredData.length,
+    pageSize: 50,
+    initialPage: 1,
+  });
 
   const paginatedData = filteredData.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
+    (currentPage - 1) * 50,
+    currentPage * 50
   );
 
-  // Table drag-to-scroll handlers
-  const handleMouseDown = (e: React.MouseEvent) => {
-    e.preventDefault();
-    if (tableContainerRef.current) {
-      setIsDragging(true);
-      setStartX(e.pageX - tableContainerRef.current.offsetLeft);
-      setScrollLeft(tableContainerRef.current.scrollLeft);
-    }
-  };
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (!isDragging) return;
-    e.preventDefault();
-    if (tableContainerRef.current) {
-      const x = e.pageX - tableContainerRef.current.offsetLeft;
-      const walk = (x - startX) * 2;
-      tableContainerRef.current.scrollLeft = scrollLeft - walk;
-    }
-  };
-  const handleMouseUp = () => setIsDragging(false);
+  const headers = getTableHeaders(onEdit);
 
   // Sorting
   const requestSort = (key: string) => {
@@ -199,31 +128,6 @@ const PatientTable: React.FC<PatientTableProps> = ({
     setSortConfig({ key, direction });
   };
 
-  // Pagination
-  const scrollToTop = () => {
-    if (tableContainerRef.current) {
-      tableContainerRef.current.scrollTo({ top: 0, behavior: "smooth" });
-    }
-  };
-  const handlePreviousPage = () => {
-    setCurrentPage((prev) => {
-      const newPage = Math.max(prev - 1, 1);
-      scrollToTop();
-      return newPage;
-    });
-  };
-  const handleNextPage = () => {
-    setCurrentPage((prev) => {
-      const newPage = Math.min(prev + 1, totalPages);
-      scrollToTop();
-      return newPage;
-    });
-  };
-  const handlePageChange = (page: number) => {
-    setCurrentPage(page);
-    scrollToTop();
-  };
-
   // Search
   const handleClearSearch = () => {
     setSearchTerm("");
@@ -233,76 +137,128 @@ const PatientTable: React.FC<PatientTableProps> = ({
     if (onSearch) onSearch(searchTerm);
   };
 
-  // Export (optional, if you have export logic)
-  // const { exportTableAsExcel } = useCSVExport(tableData);
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setSearchTerm(value);
+    if (enableAutoSearch && value.length >= minSearchLength) {
+      if (onSearch) onSearch(value);
+    }
+  };
+
+  const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      handleSearch();
+    }
+  };
 
   return (
-    <div className="bg-white border border-slate-200 rounded-3xl shadow-md p-6">
-      <div className="flex justify-end items-center mb-4 space-x-2">
-        <div className="justify-end">
-          <SearchBar
-            searchTerm={searchTerm}
-            setSearchTerm={setSearchTerm}
-            onSearch={handleSearch}
-            onClear={handleClearSearch}
-            ref={searchBarRef}
-            enableAutoSearch={enableAutoSearch}
-            debounceMs={debounceMs}
-            minSearchLength={minSearchLength}
+    <div className="rounded-3xl shadow-xl p-6">
+      <div className="flex justify-end items-center mb-6">
+        <div className="flex items-center gap-2">
+          <input
+            type="text"
+            placeholder="Search patients..."
+            value={searchTerm}
+            onChange={handleSearchChange}
+            onKeyDown={handleSearchKeyDown}
+            className="px-4 py-2 border border-fnh-grey-light rounded-full focus:outline-none focus:ring-2 focus:ring-fnh-blue text-sm"
           />
+          {searchTerm && (
+            <button
+              onClick={handleClearSearch}
+              className="text-fnh-grey hover:text-fnh-grey-dark"
+            >
+              ✕
+            </button>
+          )}
         </div>
-        {/* {user?.role === "admin" && (
-          <ExportDropdown onExportCSV={exportTableAsExcel} />
-        )} */}
       </div>
-      <div
-        className="overflow-x-auto shadow-sm rounded-2xl overflow-y-auto w-full"
-        ref={tableContainerRef}
-        onMouseDown={handleMouseDown}
-        onMouseMove={handleMouseMove}
-        onMouseUp={handleMouseUp}
-        onMouseLeave={handleMouseUp}
-        style={{
-          cursor: isDragging ? "grabbing" : "grab",
-          transition: "scroll-left 0.3s ease-out",
-          userSelect: "none",
-          maxHeight: "800px",
-        }}
-      >
-        <table className="min-w-full divide-y divide-gray-200 table-fixed">
-          <TableHeader
-            headers={headers}
-            sortConfig={sortConfig}
-            requestSort={requestSort}
-            currentPage={currentPage}
-            totalRows={filteredData.length}
-          />
-          <tbody className="bg-white divide-y divide-gray-200">
-            {isLoading
-              ? Array.from({ length: 10 }).map((_, index) => (
-                  <TableRowSkeleton key={index} />
-                ))
-              : paginatedData.map((row, index) => (
-                  <TableRow
-                    key={row.id}
-                    row={row}
-                    index={index + 1 + (currentPage - 1) * itemsPerPage}
-                    formatDate={formatDate}
-                    onEdit={onEdit}
-                  />
+      {isLoading ? (
+        <div
+          className="overflow-x-auto rounded-2xl overflow-y-auto w-full max-h-[800px]"
+          ref={tableContainerRef}
+        >
+          <table className="min-w-full divide-y divide-fnh-grey-light table-fixed">
+            <thead className="bg-fnh-porcelain">
+              <tr>
+                {headers.map((header) => (
+                  <th
+                    key={header.key}
+                    className="px-4 py-3 text-left text-xs font-semibold text-fnh-grey-dark uppercase tracking-wider cursor-pointer hover:bg-fnh-grey-lighter transition-colors"
+                    onClick={() => requestSort(header.key)}
+                  >
+                    <div className="flex items-center gap-1">
+                      {header.label}
+                      {sortConfig?.key === header.key && (
+                        <span className="text-fnh-blue">
+                          {sortConfig.direction === "ascending" ? "↑" : "↓"}
+                        </span>
+                      )}
+                    </div>
+                  </th>
                 ))}
-          </tbody>
-        </table>
-      </div>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-fnh-grey-light">
+              {Array.from({ length: 10 }).map((_, index) => (
+                <TableRowSkeleton key={index} headers={headers} />
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : paginatedData.length === 0 ? (
+        <div className="text-center py-12 text-fnh-grey">No patients found</div>
+      ) : (
+        <div
+          className="overflow-x-auto rounded-2xl overflow-y-auto w-full max-h-[800px]"
+          ref={tableContainerRef}
+        >
+          <table className="min-w-full divide-y divide-fnh-grey-light table-fixed">
+            <thead className="bg-fnh-porcelain">
+              <tr>
+                {headers.map((header) => (
+                  <th
+                    key={header.key}
+                    className="px-4 py-3 text-left text-xs font-semibold text-fnh-grey-dark uppercase tracking-wider cursor-pointer hover:bg-fnh-grey-lighter transition-colors"
+                    onClick={() => requestSort(header.key)}
+                  >
+                    <div className="flex items-center gap-1">
+                      {header.label}
+                      {sortConfig?.key === header.key && (
+                        <span className="text-fnh-blue">
+                          {sortConfig.direction === "ascending" ? "↑" : "↓"}
+                        </span>
+                      )}
+                    </div>
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-fnh-grey-light">
+              {paginatedData.map((row, index) => (
+                <TableRow
+                  key={row.id}
+                  row={row}
+                  index={(currentPage - 1) * 50 + index + 1}
+                  headers={headers}
+                  onEdit={onEdit}
+                />
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
       {!isLoading && totalPages > 1 && (
         <div className="mt-6">
           <Pagination
             currentPage={currentPage}
             totalPages={totalPages}
-            onPreviousPage={handlePreviousPage}
-            onNextPage={handleNextPage}
-            onPageChange={handlePageChange}
-            scrollToTop={scrollToTop}
+            totalResults={filteredData.length}
+            startIndex={paginationMeta.startIndex}
+            endIndex={paginationMeta.endIndex}
+            onPageChange={goToPage}
+            onPrev={goToPrev}
+            onNext={goToNext}
           />
         </div>
       )}

@@ -1,4 +1,8 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  useMutation,
+  useQueryClient,
+  UseMutationOptions,
+} from "@tanstack/react-query";
 import { api } from "@/lib/axios";
 import type {
   AddInfertilityPatientRequest,
@@ -6,11 +10,20 @@ import type {
 } from "../types";
 import { useNotification } from "@/hooks/useNotification";
 
-export function useAddInfertilityData() {
+export function useAddInfertilityData(
+  options?: Partial<
+    UseMutationOptions<
+      AddInfertilityPatientResponse,
+      Error,
+      AddInfertilityPatientRequest
+    >
+  >
+) {
   const queryClient = useQueryClient();
   const { showNotification } = useNotification();
 
-  return useMutation({
+  const mutation = useMutation({
+    ...options,
     mutationFn: async (
       data: AddInfertilityPatientRequest
     ): Promise<AddInfertilityPatientResponse> => {
@@ -32,7 +45,7 @@ export function useAddInfertilityData() {
 
       return response.data;
     },
-    onSuccess: (response) => {
+    onSuccess: (response, variables, context) => {
       // Invalidate and refetch infertility patients queries
       queryClient.invalidateQueries({ queryKey: ["infertilityPatients"] });
 
@@ -54,13 +67,27 @@ export function useAddInfertilityData() {
         response.message || "Infertility patient added successfully!",
         "success"
       );
+
+      // Call the provided onSuccess if any
+      options?.onSuccess?.(response, variables, context);
     },
-    onError: (error: any) => {
+    onError: (error: Error, variables, context) => {
       // Show error notification
       showNotification(
         error.message || "Failed to add infertility patient",
         "error"
       );
+
+      // Call the provided onError if any
+      options?.onError?.(error, variables, context);
     },
   });
+
+  return {
+    addPatient: mutation.mutate,
+    isLoading: mutation.isPending,
+    error: mutation.error,
+    reset: mutation.reset,
+    ...mutation,
+  };
 }

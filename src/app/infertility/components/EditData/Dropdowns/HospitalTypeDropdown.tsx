@@ -158,9 +158,12 @@ const HospitalTypeDropdown: React.FC<HospitalTypeDropdownProps> = ({
     <>
       <button
         ref={buttonRef}
-        onClick={() => handleOpenChange(!isOpen)}
+        onClick={(e) => {
+          e.stopPropagation();
+          handleOpenChange(!isOpen);
+        }}
         disabled={disabled}
-        className={`${inputClassName} flex justify-between items-center !pr-3`}
+        className={`${inputClassName} flex justify-between items-center pr-3!`}
         type="button"
       >
         <span
