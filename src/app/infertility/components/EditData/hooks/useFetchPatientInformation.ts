@@ -1,41 +1,60 @@
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/axios";
-import { useAuth } from "@/app/AuthContext";
 import { useState, useEffect } from "react";
+import { getAgeInYears } from "../../../utils/dateUtils";
 import type { InfertilityPatientBasic } from "../../../types";
 
 export function useFetchPatientInformation(searchQuery: string) {
-  const { user } = useAuth();
-  const [debouncedQuery, setDebouncedQuery] = useState(searchQuery);
+  const [debouncedQuery, setDebouncedQuery] = useState(searchQuery || "");
 
   useEffect(() => {
-    const handler = setTimeout(() => setDebouncedQuery(searchQuery), 150);
+    const handler = setTimeout(() => setDebouncedQuery(searchQuery || ""), 150);
     return () => clearTimeout(handler);
   }, [searchQuery]);
 
   return useQuery({
     queryKey: ["infertilityPatients", "search", debouncedQuery],
     queryFn: async (): Promise<InfertilityPatientBasic[]> => {
-      if (!debouncedQuery.trim() || !user?.username) {
+      if (!debouncedQuery || !debouncedQuery.trim()) {
         return [];
       }
 
-      const response = await api.get<InfertilityPatientBasic[]>(
-        "/infertility-patients/search",
-        {
-          params: {
-            query: debouncedQuery.trim(),
-            searchBy: "both",
-            username: user.username,
-            userRole: user.role,
-          },
-          timeout: 5000,
-        }
-      );
+      const response = await api.get<{
+        success: boolean;
+        data: Array<{
+          id: number;
+          patientId: number;
+          patient: {
+            id: number;
+            fullName: string;
+            dateOfBirth: string;
+            phoneNumber: string | null;
+            email: string | null;
+          };
+        }>;
+        error?: string;
+      }>("/infertility-patients", {
+        params: {
+          search: debouncedQuery.trim(),
+          limit: 10,
+        },
+        timeout: 5000,
+      });
 
-      return response.data || [];
+      if (!response.data.success) {
+        throw new Error(response.data.error || "Failed to fetch patients");
+      }
+
+      // Transform the data to match InfertilityPatientBasic format
+      return (response.data.data || []).map((record) => ({
+        id: record.patientId, // Use patient ID as the main ID for search results
+        patientFullName: record.patient.fullName,
+        patientAge: getAgeInYears(record.patient.dateOfBirth),
+        mobileNumber: record.patient.phoneNumber,
+        email: record.patient.email,
+      }));
     },
-    enabled: !!debouncedQuery.trim() && !!user?.username,
+    enabled: !!(debouncedQuery && debouncedQuery.trim()),
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes
     retry: (failureCount, error) => {

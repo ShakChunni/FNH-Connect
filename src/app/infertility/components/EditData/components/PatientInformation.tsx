@@ -22,8 +22,8 @@ import {
   X,
 } from "lucide-react";
 import { useFetchPatientInformation } from "../hooks";
-import DateOfBirthDropdown from "../Dropdowns/DobDropdown";
-import GenderDropdown from "../Dropdowns/GenderDropdown";
+import DateOfBirthDropdown from "../../Dropdowns/DobDropdown";
+import GenderDropdown from "../../Dropdowns/GenderDropdown";
 import ContactEmailInput from "./ContactEmailInput";
 import ContactPhoneInput from "./ContactPhoneInput";
 
@@ -49,8 +49,9 @@ interface PatientInformationProps {
   availablePatients: InfertilityPatientBasic[];
   onDropdownToggle: (isOpen: boolean) => void;
   isMobile: boolean;
-  onValidationChange: (isValid: { phone: boolean; email: boolean }) => void;
+  onValidationChange: (validation: { phone: boolean; email: boolean }) => void;
   hospitalName: string;
+  initialData?: PatientData;
 }
 
 const PatientInformation: React.FC<PatientInformationProps> = ({
@@ -60,8 +61,11 @@ const PatientInformation: React.FC<PatientInformationProps> = ({
   isMobile,
   onValidationChange,
   hospitalName,
+  initialData,
 }) => {
-  const [searchQuery, setSearchQueryState] = useState("");
+  const [searchQuery, setSearchQueryState] = useState(
+    initialData?.patientFullName || ""
+  );
   const setSearchQuery = useCallback((query: string) => {
     setSearchQueryState(query);
   }, []);
@@ -78,22 +82,24 @@ const PatientInformation: React.FC<PatientInformationProps> = ({
     }
   }, [error]);
 
-  const [localData, setLocalData] = useState<PatientData>({
-    id: null,
-    patientFirstName: "",
-    patientLastName: "",
-    patientFullName: "",
-    patientGender: "Female",
-    patientAge: null,
-    patientDOB: null,
-    mobileNumber: "",
-    email: "",
-    address: "",
-    spouseName: "",
-    spouseAge: null,
-    spouseDOB: null,
-    spouseGender: "Male",
-  });
+  const [localData, setLocalData] = useState<PatientData>(
+    initialData || {
+      id: null,
+      patientFirstName: "",
+      patientLastName: "",
+      patientFullName: "",
+      patientGender: "Female",
+      patientAge: null,
+      patientDOB: null,
+      mobileNumber: "",
+      email: "",
+      address: "",
+      spouseName: "",
+      spouseAge: null,
+      spouseDOB: null,
+      spouseGender: "Male",
+    }
+  );
 
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isPhoneValid, setIsPhoneValid] = useState(true);
@@ -106,7 +112,7 @@ const PatientInformation: React.FC<PatientInformationProps> = ({
 
   const [patientStatus, setPatientStatus] = useState<
     "" | "hospital-filled" | "global-filled" | "new"
-  >("");
+  >(initialData?.id ? "global-filled" : "");
   const [patientTouched, setPatientTouched] = useState(false);
   const [autofilledFields, setAutofilledFields] = useState<{
     mobileNumber: boolean;
@@ -115,12 +121,29 @@ const PatientInformation: React.FC<PatientInformationProps> = ({
     patientAge: boolean;
     patientDOB: boolean;
   }>({
-    mobileNumber: false,
-    email: false,
-    address: false,
-    patientAge: false,
-    patientDOB: false,
+    mobileNumber: !!initialData?.mobileNumber,
+    email: !!initialData?.email,
+    address: !!initialData?.address,
+    patientAge: !!initialData?.patientAge,
+    patientDOB: !!initialData?.patientDOB,
   });
+
+  // Update localData when initialData changes (for edit mode)
+  useEffect(() => {
+    if (initialData) {
+      setLocalData(initialData);
+      setSearchQuery(initialData.patientFullName);
+      setPatientStatus(initialData.id ? "global-filled" : "");
+      setPatientTouched(false);
+      setAutofilledFields({
+        mobileNumber: !!initialData.mobileNumber,
+        email: !!initialData.email,
+        address: !!initialData.address,
+        patientAge: !!initialData.patientAge,
+        patientDOB: !!initialData.patientDOB,
+      });
+    }
+  }, [initialData, setSearchQuery]);
 
   const dropdownRef = useRef<HTMLDivElement>(null);
   const nameInputRef = useRef<HTMLInputElement>(null);
@@ -518,7 +541,7 @@ const PatientInformation: React.FC<PatientInformationProps> = ({
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: -10, scale: 0.98 }}
           transition={{ duration: 0.2, ease: "easeOut" }}
-          className="bg-white border border-gray-300 rounded-lg shadow-2xl z-[60] overflow-hidden"
+          className="bg-white border border-gray-300 rounded-lg shadow-2xl z-60 overflow-hidden"
           style={{
             position: "absolute",
             top: dropdownPosition.top,
@@ -563,7 +586,7 @@ const PatientInformation: React.FC<PatientInformationProps> = ({
                     }}
                     className="px-4 py-3 cursor-pointer hover:bg-indigo-50 flex items-center gap-3 border-b border-gray-100 last:border-b-0"
                   >
-                    <User className="w-5 h-5 text-gray-400 flex-shrink-0" />
+                    <User className="w-5 h-5 text-gray-400 shrink-0" />
                     <div className="min-w-0 flex-1">
                       <p className="font-medium text-gray-800 text-sm truncate">
                         {patient.patientFullName}
@@ -598,7 +621,7 @@ const PatientInformation: React.FC<PatientInformationProps> = ({
                     }}
                     className="px-4 py-3 cursor-pointer hover:bg-indigo-50 flex items-center gap-3 border-b border-gray-100 last:border-b-0"
                   >
-                    <User className="w-5 h-5 text-gray-400 flex-shrink-0" />
+                    <User className="w-5 h-5 text-gray-400 shrink-0" />
                     <div className="min-w-0 flex-1">
                       <p className="font-medium text-gray-800 text-sm truncate">
                         {patient.patientFullName}
@@ -631,7 +654,7 @@ const PatientInformation: React.FC<PatientInformationProps> = ({
                 }}
                 className="px-4 py-3 cursor-pointer hover:bg-indigo-50 flex items-center gap-3 border-t border-gray-200"
               >
-                <PlusCircle className="w-5 h-5 text-indigo-600 flex-shrink-0" />
+                <PlusCircle className="w-5 h-5 text-indigo-600 shrink-0" />
                 <p className="font-medium text-indigo-700 text-sm">
                   Add &quot;{searchQuery}&quot; as a new patient
                 </p>
@@ -647,10 +670,10 @@ const PatientInformation: React.FC<PatientInformationProps> = ({
     <div id="patient" className="mt-2 sm:mt-0 mb-6 sm:mb-8 md:mb-10">
       {/* Header */}
       <div
-        className={`bg-gradient-to-r ${getHeaderBg()} rounded-lg sm:rounded-xl p-4 sm:p-5 md:p-6 mb-4 sm:mb-5 md:mb-6 shadow-sm border transition-colors duration-300`}
+        className={`bg-linear-to-r ${getHeaderBg()} rounded-lg sm:rounded-xl p-4 sm:p-5 md:p-6 mb-4 sm:mb-5 md:mb-6 shadow-sm border transition-colors duration-300`}
       >
         <div className="flex items-center gap-3 sm:gap-4">
-          <div className="p-2 sm:p-2.5 md:p-3 bg-white rounded-lg sm:rounded-xl shadow-md flex-shrink-0">
+          <div className="p-2 sm:p-2.5 md:p-3 bg-white rounded-lg sm:rounded-xl shadow-md shrink-0">
             <User className={"text-indigo-600"} size={28} />
           </div>
           <div className="flex flex-col">

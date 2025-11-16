@@ -77,7 +77,9 @@ export function DropdownPortal({
             duration: 0.25,
             ease: [0.34, 1.56, 0.64, 1], // Custom spring-like easing for smooth bounce
           }}
-          style={positionStyle}
+          // ensure portal dropdowns in modals are always above the popup overlay
+          // set a high zIndex inline so that it overrides any parent stacking context
+          style={{ ...positionStyle, zIndex: 110000 }}
           className={`bg-white border border-gray-300 rounded-lg shadow-2xl overflow-hidden ${className}`}
         >
           {children}

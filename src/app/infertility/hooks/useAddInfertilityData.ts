@@ -69,7 +69,7 @@ export function useAddInfertilityData(
       );
 
       // Call the provided onSuccess if any
-      options?.onSuccess?.(response, variables, context);
+      (options?.onSuccess as any)?.(response, variables, undefined, context);
     },
     onError: (error: Error, variables, context) => {
       // Show error notification
@@ -79,15 +79,13 @@ export function useAddInfertilityData(
       );
 
       // Call the provided onError if any
-      options?.onError?.(error, variables, context);
+      (options?.onError as any)?.(error, variables, undefined, context);
     },
   });
 
   return {
     addPatient: mutation.mutate,
     isLoading: mutation.isPending,
-    error: mutation.error,
-    reset: mutation.reset,
     ...mutation,
   };
 }

@@ -11,10 +11,10 @@ import {
   Pill,
   FileText,
 } from "lucide-react";
-import InfertilityTypeDropdown from "../Dropdowns/InfertilityTypeDropdown";
-import BloodGroupDropdown from "../Dropdowns/BloodGroupDropdown";
-import ReferralSourceDropdown from "../Dropdowns/ReferralSourceDropdown";
-import StatusDropdown from "../Dropdowns/StatusDropdown";
+import InfertilityTypeDropdown from "../../Dropdowns/InfertilityTypeDropdown";
+import BloodGroupDropdown from "../../Dropdowns/BloodGroupDropdown";
+import ReferralSourceDropdown from "../../Dropdowns/ReferralSourceDropdown";
+import StatusDropdown from "../../Dropdowns/StatusDropdown";
 
 interface MedicalInfo {
   yearsMarried: number | null;

@@ -11,10 +11,10 @@ import {
   Pill,
   FileText,
 } from "lucide-react";
-import InfertilityTypeDropdown from "../Dropdowns/InfertilityTypeDropdown";
-import BloodGroupDropdown from "../Dropdowns/BloodGroupDropdown";
-import ReferralSourceDropdown from "../Dropdowns/ReferralSourceDropdown";
-import StatusDropdown from "../Dropdowns/StatusDropdown";
+import InfertilityTypeDropdown from "../../Dropdowns/InfertilityTypeDropdown";
+import BloodGroupDropdown from "../../Dropdowns/BloodGroupDropdown";
+import ReferralSourceDropdown from "../../Dropdowns/ReferralSourceDropdown";
+import StatusDropdown from "../../Dropdowns/StatusDropdown";
 
 interface MedicalInfo {
   yearsMarried: number | null;
@@ -94,7 +94,7 @@ const MedicalInformation: React.FC<MedicalInformationProps> = ({
   return (
     <div id="medical" className="mb-4 sm:mb-4 md:mb-2">
       {/* Main Header */}
-      <div className="bg-gradient-to-r from-purple-50 to-purple-100 rounded-lg sm:rounded-xl p-4 sm:p-5 md:p-6 mb-4 sm:mb-5 md:mb-6 shadow-sm border border-purple-200">
+      <div className="bg-linear-to-r from-purple-50 to-purple-100 rounded-lg sm:rounded-xl p-4 sm:p-5 md:p-6 mb-4 sm:mb-5 md:mb-6 shadow-sm border border-purple-200">
         <div className="flex items-center gap-3 sm:gap-4">
           <div className="p-2 bg-white rounded-lg shadow flex items-center justify-center border border-purple-200">
             <Stethoscope

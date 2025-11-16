@@ -24,13 +24,10 @@ import {
   backdropVariants,
 } from "@/components/ui/modal-animations";
 import { getTabColors } from "./utils/modalUtils";
-import HospitalInformation, {
-  HospitalData,
-} from "./components/HospitalInformation";
-import PatientInformation, {
-  PatientData,
-} from "./components/PatientInformation";
+import HospitalInformation from "./components/HospitalInformation";
+import PatientInformation from "./components/PatientInformation";
 import MedicalInformation from "./components/MedicalInformation";
+import type { PatientData, HospitalData, SpouseInfo } from "../../types";
 
 interface AddNewDataProps {
   isOpen: boolean;
@@ -54,7 +51,7 @@ const AddNewDataInfertility: React.FC<AddNewDataProps> = ({
     error: submitError,
     reset: resetMutation,
   } = useAddInfertilityData({
-    onSuccess: (data) => {
+    onSuccess: (data, variables, context) => {
       if (data && data.data) {
         onMessage(
           "success",
@@ -76,19 +73,23 @@ const AddNewDataInfertility: React.FC<AddNewDataProps> = ({
       });
       setPatientData({
         id: null,
-        patientFirstName: "",
-        patientLastName: "",
-        patientFullName: "",
-        patientGender: "Female",
-        patientAge: null,
-        patientDOB: null,
-        mobileNumber: "",
-        email: "",
+        firstName: "",
+        lastName: "",
+        fullName: "",
+        gender: "Female",
+        age: null,
+        dateOfBirth: null,
+        guardianName: "",
         address: "",
-        spouseName: "",
-        spouseAge: null,
-        spouseDOB: null,
-        spouseGender: "Male",
+        phoneNumber: "",
+        email: "",
+        bloodGroup: "",
+      });
+      setSpouseData({
+        name: "",
+        age: null,
+        dateOfBirth: null,
+        gender: "Male",
       });
       setMedicalInfo({
         yearsMarried: null,
@@ -135,19 +136,24 @@ const AddNewDataInfertility: React.FC<AddNewDataProps> = ({
 
   const [patientData, setPatientData] = useState<PatientData>({
     id: null,
-    patientFirstName: "",
-    patientLastName: "",
-    patientFullName: "",
-    patientGender: "Female",
-    patientAge: null,
-    patientDOB: null,
-    mobileNumber: "",
-    email: "",
+    firstName: "",
+    lastName: "",
+    fullName: "",
+    gender: "Female",
+    age: null,
+    dateOfBirth: null,
+    guardianName: "",
     address: "",
-    spouseName: "",
-    spouseAge: null,
-    spouseDOB: null,
-    spouseGender: "Male",
+    phoneNumber: "",
+    email: "",
+    bloodGroup: "",
+  });
+
+  const [spouseData, setSpouseData] = useState<SpouseInfo>({
+    name: "",
+    age: null,
+    dateOfBirth: null,
+    gender: "Male",
   });
 
   // Medical information state
@@ -196,11 +202,11 @@ const AddNewDataInfertility: React.FC<AddNewDataProps> = ({
   const isFormValid = useMemo(() => {
     return (
       hospitalData.name.trim() !== "" &&
-      patientData.patientFirstName.trim() !== "" &&
+      patientData.firstName.trim() !== "" &&
       validationStatus.phone &&
       validationStatus.email
     );
-  }, [hospitalData.name, patientData.patientFirstName, validationStatus]);
+  }, [hospitalData.name, patientData.firstName, validationStatus]);
 
   // BMI calculation
   useEffect(() => {
@@ -249,23 +255,23 @@ const AddNewDataInfertility: React.FC<AddNewDataProps> = ({
         },
         patient: {
           id: patientData.id,
-          firstName: patientData.patientFirstName,
-          lastName: patientData.patientLastName || "",
-          fullName: patientData.patientFullName,
-          gender: patientData.patientGender,
-          age: patientData.patientAge,
-          dateOfBirth: patientData.patientDOB,
-          guardianName: patientData.spouseName, // Spouse name for infertility patients
+          firstName: patientData.firstName,
+          lastName: patientData.lastName || "",
+          fullName: patientData.fullName,
+          gender: patientData.gender,
+          age: patientData.age,
+          dateOfBirth: patientData.dateOfBirth,
+          guardianName: spouseData.name, // Spouse name for infertility patients
           address: patientData.address,
-          phoneNumber: patientData.mobileNumber,
+          phoneNumber: patientData.phoneNumber,
           email: patientData.email,
           bloodGroup: medicalInfo.bloodGroup,
         },
         spouseInfo: {
-          name: patientData.spouseName,
-          age: patientData.spouseAge,
-          dateOfBirth: patientData.spouseDOB,
-          gender: patientData.spouseGender,
+          name: spouseData.name,
+          age: spouseData.age,
+          dateOfBirth: spouseData.dateOfBirth,
+          gender: spouseData.gender,
         },
         medicalInfo: {
           yearsMarried: medicalInfo.yearsMarried,
@@ -507,10 +513,10 @@ const AddNewDataInfertility: React.FC<AddNewDataProps> = ({
             }}
           >
             {/* Header */}
-            <div className="sticky top-0 bg-gradient-to-br from-slate-50/90 via-white/85 to-slate-100/90 border-b border-gray-100 rounded-t-3xl z-10 overflow-hidden">
+            <div className="sticky top-0 bg-linear-to-br from-slate-50/90 via-white/85 to-slate-100/90 border-b border-gray-100 rounded-t-3xl z-10 overflow-hidden">
               <div className="flex justify-between items-center p-3 sm:p-4 md:p-6 pb-2 sm:pb-3 md:pb-4 relative z-10">
                 <div className="flex items-center gap-3 sm:gap-4">
-                  <div className="p-2 sm:p-2.5 md:p-3 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-lg flex-shrink-0">
+                  <div className="p-2 sm:p-2.5 md:p-3 bg-linear-to-br from-blue-500 to-blue-600 rounded-xl shadow-lg shrink-0">
                     <Stethoscope
                       className="text-white"
                       size={isMobile ? 18 : isMd ? 24 : 32}
@@ -532,7 +538,7 @@ const AddNewDataInfertility: React.FC<AddNewDataProps> = ({
                   <button
                     onClick={handleClose}
                     disabled={isSubmitting}
-                    className="bg-red-100 hover:bg-red-200 text-red-500 p-1.5 sm:p-2 rounded-full flex items-center justify-center transition-all duration-200 flex-shrink-0 hover:scale-110 hover:shadow-md group disabled:opacity-50"
+                    className="bg-red-100 hover:bg-red-200 text-red-500 p-1.5 sm:p-2 rounded-full flex items-center justify-center transition-all duration-200 shrink-0 hover:scale-110 hover:shadow-md group disabled:opacity-50"
                     aria-label="Close"
                   >
                     <motion.div
@@ -569,7 +575,7 @@ const AddNewDataInfertility: React.FC<AddNewDataProps> = ({
                     >
                       <Icon
                         size={isMobile ? 14 : isMd ? 16 : 18}
-                        className="flex-shrink-0"
+                        className="shrink-0"
                       />
                       <span className="hidden xs:inline sm:inline whitespace-nowrap">
                         {isMobile ? section.label.split(" ")[0] : section.label}

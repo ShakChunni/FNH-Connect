@@ -10,7 +10,7 @@ import { createPortal } from "react-dom";
 import { Building2, PlusCircle, Loader2, Info, X } from "lucide-react";
 import { useFetchHospitalInformation } from "../hooks";
 import { Hospital } from "../../../types";
-import HospitalTypeDropdown from "../Dropdowns/HospitalTypeDropdown";
+import HospitalTypeDropdown from "../../Dropdowns/HospitalTypeDropdown";
 import ContactPhoneInput from "./ContactPhoneInput";
 import ContactEmailInput from "./ContactEmailInput";
 
@@ -404,99 +404,121 @@ const HospitalInformation: React.FC<HospitalInformationProps> = ({
     return "Search for a hospital or add a new one to the system.";
   };
 
-  const dropdownContent = (
-    <AnimatePresence>
-      {isDropdownOpen && !isHospitalSelected && (
-        <motion.div
-          ref={dropdownRef}
-          initial={{ opacity: 0, y: -10, scale: 0.98 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          exit={{ opacity: 0, y: -10, scale: 0.98 }}
-          transition={{ duration: 0.2, ease: "easeOut" }}
-          className="bg-white border border-gray-300 rounded-lg shadow-2xl z-[60] overflow-hidden"
-          style={{
-            position: "absolute",
-            top: dropdownPosition.top,
-            left: dropdownPosition.left,
-            width: dropdownPosition.width,
-            maxHeight: "300px",
-            boxShadow:
-              "0 10px 25px -5px rgba(0, 0, 0, 0.2), 0 8px 10px -6px rgba(0, 0, 0, 0.2)",
-          }}
-          onMouseDown={(e) => e.stopPropagation()}
-          onClick={(e) => e.stopPropagation()}
-        >
-          <div
-            className="max-h-[300px] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent"
+  const dropdownContent = useMemo(
+    () => (
+      <AnimatePresence>
+        {isDropdownOpen && !isHospitalSelected && (
+          <motion.div
+            ref={dropdownRef}
+            initial={{ opacity: 0, y: -10, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -10, scale: 0.98 }}
+            transition={{ duration: 0.2, ease: "easeOut" }}
+            className="bg-white border border-gray-300 rounded-lg shadow-2xl z-110000 overflow-hidden"
             style={{
-              scrollbarWidth: "thin",
-              scrollbarColor: "#D1D5DB transparent",
+              position: "absolute",
+              top: dropdownPosition.top,
+              left: dropdownPosition.left,
+              width: dropdownPosition.width,
+              maxHeight: "300px",
+              boxShadow:
+                "0 10px 25px -5px rgba(0, 0, 0, 0.2), 0 8px 10px -6px rgba(0, 0, 0, 0.2)",
             }}
+            onMouseDown={(e) => e.stopPropagation()}
+            onClick={(e) => e.stopPropagation()}
           >
-            {loading && (
-              <div className="flex items-center justify-center p-4 text-gray-500">
-                <Loader2 className="w-5 h-5 animate-spin mr-2" />
-                Searching...
-              </div>
-            )}
-            {!loading &&
-              hospitals.length > 0 &&
-              hospitals.map((hospital) => (
-                <div
-                  key={hospital.id}
-                  onMouseDown={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    handleSelectHospital(hospital);
-                  }}
-                  className="px-4 py-3 cursor-pointer hover:bg-blue-50 flex items-center gap-3 border-b border-gray-100 last:border-b-0"
-                >
-                  <Building2 className="w-5 h-5 text-gray-400 flex-shrink-0" />
-                  <div className="min-w-0 flex-1">
-                    <p className="font-medium text-gray-800 text-sm truncate">
-                      {hospital.name}
-                    </p>
-                    <p className="text-xs text-gray-500 truncate">
-                      {hospital.type || "No type"} •{" "}
-                      {hospital.address || "No address"}
+            <div
+              className="max-h-[300px] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent"
+              style={{
+                scrollbarWidth: "thin",
+                scrollbarColor: "#D1D5DB transparent",
+              }}
+            >
+              {loading && (
+                <div className="flex items-center justify-center p-4 text-gray-500">
+                  <Loader2 className="w-5 h-5 animate-spin mr-2" />
+                  Searching...
+                </div>
+              )}
+              {!loading &&
+                hospitals.length > 0 &&
+                hospitals.map((hospital) => (
+                  <div
+                    key={hospital.id}
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleSelectHospital(hospital);
+                    }}
+                    className="px-4 py-3 cursor-pointer hover:bg-blue-50 flex items-center gap-3 border-b border-gray-100 last:border-b-0"
+                  >
+                    <Building2 className="w-5 h-5 text-gray-400 shrink-0" />
+                    <div className="min-w-0 flex-1">
+                      <p className="font-medium text-gray-800 text-sm truncate">
+                        {hospital.name}
+                      </p>
+                      <p className="text-xs text-gray-500 truncate">
+                        {hospital.type || "No type"} •{" "}
+                        {hospital.address || "No address"}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              {!loading && searchQuery.length === 0 && (
+                <div className="flex items-center gap-2 px-4 py-3 text-gray-500 text-xs border-t border-gray-100">
+                  <Info className="w-4 h-4 text-gray-400" />
+                  Start typing to search for hospitals from our database.
+                </div>
+              )}
+              {!loading &&
+                searchQuery.length >= 1 &&
+                // Only show add-as-new when typed query doesn't exactly match
+                // an existing hospital name to avoid duplication.
+                !hospitals.some(
+                  (h) =>
+                    h.name.toLowerCase().trim() ===
+                    searchQuery.toLowerCase().trim()
+                ) && (
+                  <div
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleAddNew();
+                    }}
+                    className="px-4 py-3 cursor-pointer hover:bg-blue-50 flex items-center gap-3 border-t border-gray-200"
+                  >
+                    <PlusCircle className="w-5 h-5 text-blue-600 shrink-0" />
+                    <p className="font-medium text-blue-700 text-sm">
+                      Add &quot;{searchQuery}&quot; as a new hospital
                     </p>
                   </div>
-                </div>
-              ))}
-            {!loading && searchQuery.length === 0 && (
-              <div className="flex items-center gap-2 px-4 py-3 text-gray-500 text-xs border-t border-gray-100">
-                <Info className="w-4 h-4 text-gray-400" />
-                Start typing to search for hospitals from our database.
-              </div>
-            )}
-            {!loading && searchQuery.length >= 1 && (
-              <div
-                onMouseDown={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  handleAddNew();
-                }}
-                className="px-4 py-3 cursor-pointer hover:bg-blue-50 flex items-center gap-3 border-t border-gray-200"
-              >
-                <PlusCircle className="w-5 h-5 text-blue-600 flex-shrink-0" />
-                <p className="font-medium text-blue-700 text-sm">
-                  Add &quot;{searchQuery}&quot; as a new hospital
-                </p>
-              </div>
-            )}
-          </div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+                )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    ),
+    [
+      isDropdownOpen,
+      isHospitalSelected,
+      dropdownPosition.top,
+      dropdownPosition.left,
+      dropdownPosition.width,
+      loading,
+      hospitals,
+      searchQuery.length,
+      handleSelectHospital,
+      handleAddNew,
+    ]
   );
 
   return (
     <div id="hospital" className="mt-2 sm:mt-0 mb-6 sm:mb-8 md:mb-10">
       <div
-        className={`bg-gradient-to-r ${getHeaderBg()} rounded-lg sm:rounded-xl p-4 sm:p-5 md:p-6 mb-4 sm:mb-5 md:mb-6 shadow-sm border transition-colors duration-300`}
+        className={`bg-linear-to-r ${getHeaderBg()} rounded-lg sm:rounded-xl p-4 sm:p-5 md:p-6 mb-4 sm:mb-5 md:mb-6 shadow-sm border transition-colors duration-300`}
       >
         <div className="flex items-center gap-3 sm:gap-4">
-          <div className="p-2 sm:p-2.5 md:p-3 bg-white rounded-lg sm:rounded-xl shadow-md flex-shrink-0">
+          <div className="p-2 sm:p-2.5 md:p-3 bg-white rounded-lg sm:rounded-xl shadow-md shrink-0">
             <Building2 className={"text-blue-600"} size={28} />
           </div>
           <div className="flex flex-col">
@@ -525,8 +547,8 @@ const HospitalInformation: React.FC<HospitalInformationProps> = ({
           {/* Mobile status badge next to label */}
           <div className="sm:hidden">
             {hospitalStatus === "new" && (
-              <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 text-xs font-semibold border border-blue-200 shadow-sm">
-                <PlusCircle className="w-3 h-3 mr-1 text-blue-500" />
+              <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-green-100 text-green-700 text-xs font-semibold border border-green-200 shadow-sm">
+                <PlusCircle className="w-3 h-3 mr-1 text-green-500" />
                 New
               </span>
             )}
@@ -543,7 +565,11 @@ const HospitalInformation: React.FC<HospitalInformationProps> = ({
             ref={hospitalInputRef}
             type="text"
             className={
-              inputClassName(localData.name, isHospitalSelected) +
+              // If the user typed something, treat it as valid so we show
+              // the green success styles while they type (this avoids a
+              // red validation ring before the user blurs or explicitly
+              // adds the new hospital).
+              inputClassName(localData.name, localData.name.trim() !== "") +
               " pr-44 sm:pr-56"
             }
             value={searchQuery}
@@ -563,10 +589,10 @@ const HospitalInformation: React.FC<HospitalInformationProps> = ({
           <div className="hidden sm:flex absolute right-3 top-1/2 -translate-y-1/2 flex-row gap-2 items-center max-w-[70vw] sm:max-w-none">
             {hospitalStatus === "new" && (
               <span
-                className="inline-flex items-center px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 text-xs font-semibold border border-blue-200 shadow-sm pointer-events-none whitespace-nowrap"
+                className="inline-flex items-center px-2 py-0.5 rounded-full bg-green-100 text-green-700 text-xs font-semibold border border-green-200 shadow-sm pointer-events-none whitespace-nowrap"
                 style={{ zIndex: 2 }}
               >
-                <PlusCircle className="w-3 h-3 mr-1 text-blue-500" />
+                <PlusCircle className="w-3 h-3 mr-1 text-green-500" />
                 Adding as a new hospital
               </span>
             )}

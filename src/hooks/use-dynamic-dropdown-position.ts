@@ -1,4 +1,4 @@
-import { RefObject, useEffect, useState } from 'react';
+import { RefObject, useEffect, useState } from "react";
 
 export const useDynamicDropdownPosition = (
   isOpen: boolean,
@@ -10,7 +10,9 @@ export const useDynamicDropdownPosition = (
     // Start with opacity 0 to prevent flicker
     opacity: 0,
   });
-  const [animationDirection, setAnimationDirection] = useState<'up' | 'down'>('down');
+  const [animationDirection, setAnimationDirection] = useState<"up" | "down">(
+    "down"
+  );
 
   useEffect(() => {
     if (!isOpen) {
@@ -36,18 +38,22 @@ export const useDynamicDropdownPosition = (
 
       if (spaceBelow >= dropdownHeight) {
         top = buttonRect.bottom + window.scrollY + verticalOffset;
-        setAnimationDirection('down');
+        setAnimationDirection("down");
       } else {
         top = buttonRect.top + window.scrollY - dropdownHeight - verticalOffset;
-        setAnimationDirection('up');
+        setAnimationDirection("up");
       }
 
       setPositionStyle({
-        position: 'absolute' as const,
+        position: "absolute" as const,
         top: `${top}px`,
         left: `${left}px`,
         width: `${width}px`,
-        zIndex: 9999,
+        // Keep dropdowns above most UI layers; this zIndex must be less than
+        // the modal overlay if the overlay intentionally sits above dropdowns.
+        // For AddNewData modal we need portals to render above it, DropdownPortal
+        // overrides this inline value when needed.
+        zIndex: 110000,
         opacity: 1,
       });
     };
@@ -58,21 +64,24 @@ export const useDynamicDropdownPosition = (
     }
 
     const handleScroll = (event: Event) => {
-      if (!dropdownRef.current || dropdownRef.current.contains(event.target as Node)) {
+      if (
+        !dropdownRef.current ||
+        dropdownRef.current.contains(event.target as Node)
+      ) {
         return;
       }
       onClose();
     };
 
-    window.addEventListener('resize', updatePosition);
-    window.addEventListener('scroll', handleScroll, true);
+    window.addEventListener("resize", updatePosition);
+    window.addEventListener("scroll", handleScroll, true);
 
     return () => {
       if (dropdownRef.current) {
         observer.unobserve(dropdownRef.current);
       }
-      window.removeEventListener('resize', updatePosition);
-      window.removeEventListener('scroll', handleScroll, true);
+      window.removeEventListener("resize", updatePosition);
+      window.removeEventListener("scroll", handleScroll, true);
     };
   }, [isOpen, buttonRef, dropdownRef, onClose]);
 
