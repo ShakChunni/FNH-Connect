@@ -1,4 +1,21 @@
-// Type definitions for Infertility Patient Management
+/**
+ * Centralized Type Definitions for Infertility Patient Management
+ * All types are defined here to ensure consistency across the application
+ */
+
+// ═══════════════════════════════════════════════════════════════
+// UTILITY TYPES
+// ═══════════════════════════════════════════════════════════════
+
+export interface AgeInfo {
+  years: number;
+  months: number;
+  days: number;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// PATIENT & HOSPITAL TYPES
+// ═══════════════════════════════════════════════════════════════
 
 export interface PatientData {
   id: number | null;
@@ -122,19 +139,45 @@ export interface InfertilityPatient {
     phoneNumber: string | null;
     email: string | null;
     gender: string;
+    dateOfBirth: Date | null;
+    guardianName: string | null;
+    address: string | null;
+    bloodGroup: string | null;
+    spouseDOB: Date | null;
+    spouseGender: string | null;
   };
   hospital: {
     id: number;
     name: string;
     type: string | null;
+    address: string | null;
+    phoneNumber: string | null;
+    email: string | null;
+    website: string | null;
   };
   yearsMarried: number | null;
   yearsTrying: number | null;
   infertilityType: string | null;
   status: string | null;
   nextAppointment: Date | null;
-  createdAt: Date;
-  updatedAt: Date;
+  para: string | null;
+  gravida: string | null;
+  weight: number | null;
+  height: number | null;
+  bmi: number | null;
+  bloodPressure: string | null;
+  bloodGroup: string | null;
+  medicalHistory: string | null;
+  surgicalHistory: string | null;
+  menstrualHistory: string | null;
+  contraceptiveHistory: string | null;
+  referralSource: string | null;
+  chiefComplaint: string | null;
+  treatmentPlan: string | null;
+  medications: string | null;
+  notes: string | null;
+  createdAt: string;
+  updatedAt: string;
 }
 
 // Filter options
@@ -197,17 +240,28 @@ export interface SearchParams {
 // Patient Table Types
 export interface InfertilityPatientData {
   id: number;
+  patientId: number;
+  hospitalId: number;
   hospitalName: string | null;
+  hospitalAddress: string | null;
+  hospitalPhone: string | null;
+  hospitalEmail: string | null;
+  hospitalWebsite: string | null;
+  hospitalType: string | null;
   patientFirstName: string;
   patientLastName: string | null;
   patientFullName: string;
+  patientGender: string;
   patientAge: number | null;
   patientDOB: string | null;
   husbandName: string | null;
   husbandAge: number | null;
   husbandDOB: string | null;
+  spouseGender: string;
   mobileNumber: string | null;
+  email: string | null;
   address: string | null;
+  bloodGroup: string | null;
   yearsMarried: number | null;
   yearsTrying: number | null;
   para: string | null;

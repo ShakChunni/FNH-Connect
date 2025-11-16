@@ -10,7 +10,7 @@ import Image from "next/image";
 import { useAuth } from "@/app/AuthContext";
 import ViewSwitcher from "./ViewSwitcher";
 
-const SIDEBAR_BG = "#111111"; // FNH Black 
+const SIDEBAR_BG = "#0f172a"; // FNH Black 
 const CONTAINER_BG = "#1e293b"; // FNH Navy - slightly lighter slate 800
 const ACTIVE_BG = "#334155"; // FNH Navy Light - slate 700 for active items
 const HOVER_BG = "rgba(59, 130, 246, 0.1)"; // Blue with opacity for hover

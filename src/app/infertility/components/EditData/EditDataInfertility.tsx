@@ -24,6 +24,7 @@ import {
   backdropVariants,
 } from "@/components/ui/modal-animations";
 import { getTabColors } from "./utils/modalUtils";
+import { initializeFormData } from "./utils/formInitialization";
 import HospitalInformation, {
   HospitalData,
 } from "./components/HospitalInformation";
@@ -31,31 +32,7 @@ import PatientInformation, {
   PatientData,
 } from "./components/PatientInformation";
 import MedicalInformation from "./components/MedicalInformation";
-
-interface InfertilityPatientData {
-  id: number;
-  hospitalName: string | null;
-  patientFirstName: string;
-  patientLastName: string | null;
-  patientFullName: string;
-  patientAge: number | null;
-  patientDOB: string | null;
-  husbandName: string | null;
-  husbandAge: number | null;
-  husbandDOB: string | null;
-  mobileNumber: string | null;
-  address: string | null;
-  yearsMarried: number | null;
-  yearsTrying: number | null;
-  para: string | null;
-  alc: string | null;
-  weight: number | null;
-  bp: string | null;
-  infertilityType: string | null;
-  notes: string | null;
-  createdAt: string;
-  updatedAt: string;
-}
+import { InfertilityPatientData } from "../../types";
 
 interface EditDataProps {
   isOpen: boolean;
@@ -101,65 +78,12 @@ const EditDataInfertility: React.FC<EditDataProps> = ({
   });
 
   // Initialize form data from patientData prop
-  const initializeFormData = useCallback(() => {
-    return {
-      hospitalData: {
-        id: null, // We'll need to fetch this from the API or derive it
-        name: patientData.hospitalName || "",
-        address: "", // Will be populated from hospital lookup
-        phoneNumber: "",
-        email: "",
-        website: "",
-        type: "",
-      },
-      patientData: {
-        id: null, // Patient ID from main Patient table
-        patientFirstName: patientData.patientFirstName,
-        patientLastName: patientData.patientLastName || "",
-        patientFullName: patientData.patientFullName,
-        patientGender: "Female", // Default, can be updated if we have this info
-        patientAge: patientData.patientAge,
-        patientDOB: patientData.patientDOB
-          ? new Date(patientData.patientDOB)
-          : null,
-        mobileNumber: patientData.mobileNumber || "",
-        email: "", // Not in the current data structure
-        address: patientData.address || "",
-        spouseName: patientData.husbandName || "",
-        spouseAge: patientData.husbandAge,
-        spouseDOB: patientData.husbandDOB
-          ? new Date(patientData.husbandDOB)
-          : null,
-        spouseGender: "Male",
-      },
-      medicalInfo: {
-        yearsMarried: patientData.yearsMarried,
-        yearsTrying: patientData.yearsTrying,
-        infertilityType: patientData.infertilityType || "",
-        para: patientData.para || "",
-        gravida: "", // Not in current data structure
-        weight: patientData.weight,
-        height: null as number | null, // Not in current data structure
-        bmi: null as number | null, // Will be calculated
-        bloodPressure: patientData.bp || "",
-        bloodGroup: "", // Not in current data structure
-        medicalHistory: "",
-        surgicalHistory: "",
-        menstrualHistory: "",
-        contraceptiveHistory: "",
-        referralSource: "",
-        chiefComplaint: "",
-        treatmentPlan: "",
-        medications: "",
-        nextAppointment: null as Date | null,
-        status: "Active",
-        notes: patientData.notes || "",
-      },
-    };
-  }, []);
+  const getInitialFormData = useCallback(() => {
+    return initializeFormData(patientData);
+  }, [patientData]);
 
   // Main data states - initialized with patient data
-  const [formData, setFormData] = useState(initializeFormData);
+  const [formData, setFormData] = useState(getInitialFormData);
 
   // Extract individual state variables for easier access
   const [hospitalData, setHospitalData] = useState<HospitalData>(
@@ -172,12 +96,12 @@ const EditDataInfertility: React.FC<EditDataProps> = ({
 
   // Update form data when patientData prop changes
   useEffect(() => {
-    const newFormData = initializeFormData();
+    const newFormData = getInitialFormData();
     setFormData(newFormData);
     setHospitalData(newFormData.hospitalData);
     setPatientDataState(newFormData.patientData);
     setMedicalInfo(newFormData.medicalInfo);
-  }, [patientData, initializeFormData]);
+  }, [patientData, getInitialFormData]);
 
   // UI states
   const [activeSection, setActiveSection] = useState("hospital");
@@ -486,7 +410,7 @@ const EditDataInfertility: React.FC<EditDataProps> = ({
     <AnimatePresence mode="wait">
       {isOpen && (
         <motion.div
-          className="fixed inset-0 bg-slate-900/70 flex items-center justify-center z-50"
+          className="fixed inset-0 bg-slate-900/70 flex items-center justify-center z-100000"
           onClick={onClose}
           variants={backdropVariants}
           initial="hidden"
@@ -514,10 +438,10 @@ const EditDataInfertility: React.FC<EditDataProps> = ({
             }}
           >
             {/* Header */}
-            <div className="sticky top-0 bg-gradient-to-br from-slate-50/90 via-white/85 to-slate-100/90 border-b border-gray-100 rounded-t-3xl z-10 overflow-hidden">
+            <div className="sticky top-0 bg-linear-to-br from-slate-50/90 via-white/85 to-slate-100/90 border-b border-gray-100 rounded-t-3xl z-10 overflow-hidden">
               <div className="flex justify-between items-center p-3 sm:p-4 md:p-6 pb-2 sm:pb-3 md:pb-4 relative z-10">
                 <div className="flex items-center gap-3 sm:gap-4">
-                  <div className="p-2 sm:p-2.5 md:p-3 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-lg flex-shrink-0">
+                  <div className="p-2 sm:p-2.5 md:p-3 bg-linear-to-br from-blue-500 to-blue-600 rounded-xl shadow-lg shrink-0">
                     <Stethoscope
                       className="text-white"
                       size={isMobile ? 18 : isMd ? 24 : 32}
@@ -539,7 +463,7 @@ const EditDataInfertility: React.FC<EditDataProps> = ({
                   <button
                     onClick={handleClose}
                     disabled={isSubmitting}
-                    className="bg-red-100 hover:bg-red-200 text-red-500 p-1.5 sm:p-2 rounded-full flex items-center justify-center transition-all duration-200 flex-shrink-0 hover:scale-110 hover:shadow-md group disabled:opacity-50"
+                    className="bg-red-100 hover:bg-red-200 text-red-500 p-1.5 sm:p-2 rounded-full flex items-center justify-center transition-all duration-200 shrink-0 hover:scale-110 hover:shadow-md group disabled:opacity-50"
                     aria-label="Close"
                   >
                     <motion.div
@@ -576,7 +500,7 @@ const EditDataInfertility: React.FC<EditDataProps> = ({
                     >
                       <Icon
                         size={isMobile ? 14 : isMd ? 16 : 18}
-                        className="flex-shrink-0"
+                        className="shrink-0"
                       />
                       <span className="hidden xs:inline sm:inline whitespace-nowrap">
                         {isMobile ? section.label.split(" ")[0] : section.label}
@@ -598,6 +522,7 @@ const EditDataInfertility: React.FC<EditDataProps> = ({
                     onMessage={onMessage}
                     isMobile={isMobile}
                     titleTooltipStyle={{}}
+                    initialData={formData.hospitalData}
                   />
                 </div>
 
@@ -610,6 +535,7 @@ const EditDataInfertility: React.FC<EditDataProps> = ({
                     isMobile={isMobile}
                     onValidationChange={handleValidationChange}
                     hospitalName={hospitalData.name}
+                    initialData={formData.patientData}
                   />
                 </div>
 

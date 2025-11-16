@@ -7,6 +7,9 @@ interface TableRowSkeletonProps {
 
 const TableRowSkeleton: React.FC<TableRowSkeletonProps> = ({ headers }) => (
   <tr>
+    <td className="px-4 py-4">
+      <div className="animate-pulse bg-fnh-grey-lighter h-4 rounded"></div>
+    </td>
     {headers.map((header) => (
       <td key={header.key} className="px-4 py-4">
         <div className="animate-pulse bg-fnh-grey-lighter h-4 rounded"></div>

@@ -4,14 +4,14 @@ import {
   addCSRFTokenToResponse,
 } from "@/lib/csrfProtection";
 import { getUserFromSession } from "@/lib/auth";
-import * as infertilityService from "@/services/infertilityService";
+import { prisma } from "@/lib/prisma";
 import {
-  infertilityFiltersSchema,
-  addPatientSchema as importedAddPatientSchema,
+  hospitalQuerySchema,
+  createHospitalSchema as importedCreateHospitalSchema,
 } from "@/app/infertility/types/schemas";
 
 // ═══════════════════════════════════════════════════════════════
-// GET /api/infertility-patients - List with filters
+// GET /api/hospitals - List hospitals with optional search/filter
 // ═══════════════════════════════════════════════════════════════
 
 export async function GET(request: NextRequest) {
@@ -19,11 +19,10 @@ export async function GET(request: NextRequest) {
     await getUserFromSession(request);
 
     const { searchParams } = new URL(request.url);
-    const validation = infertilityFiltersSchema.safeParse({
-      status: searchParams.get("status") || undefined,
-      hospitalId: searchParams.get("hospitalId") || undefined,
-      infertilityType: searchParams.get("infertilityType") || undefined,
+    const validation = hospitalQuerySchema.safeParse({
       search: searchParams.get("search") || undefined,
+      type: searchParams.get("type") || undefined,
+      limit: searchParams.get("limit") || undefined,
     });
 
     if (!validation.success) {
@@ -37,16 +36,44 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const patients = await infertilityService.getInfertilityPatients(
-      validation.data
-    );
+    const { search, type, limit = 50 } = validation.data;
+
+    // Build where clause for filtering
+    const where: any = {};
+    if (search) {
+      where.OR = [
+        { name: { contains: search, mode: "insensitive" } },
+        { address: { contains: search, mode: "insensitive" } },
+      ];
+    }
+    if (type) {
+      where.type = type;
+    }
+
+    const hospitals = await prisma.hospital.findMany({
+      where,
+      select: {
+        id: true,
+        name: true,
+        address: true,
+        phoneNumber: true,
+        email: true,
+        website: true,
+        type: true,
+        createdAt: true,
+      },
+      orderBy: {
+        name: "asc",
+      },
+      take: Math.min(limit, 100), // Max 100 results
+    });
 
     return NextResponse.json({
       success: true,
-      data: patients,
+      data: hospitals,
     });
   } catch (error) {
-    console.error("GET /api/infertility-patients error:", error);
+    console.error("GET /api/hospitals error:", error);
 
     if (error instanceof Error && error.message.includes("Unauthorized")) {
       return NextResponse.json(
@@ -58,7 +85,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(
       {
         success: false,
-        error: "Failed to fetch infertility patients",
+        error: "Failed to fetch hospitals",
         message: error instanceof Error ? error.message : "Unknown error",
       },
       { status: 500 }
@@ -67,7 +94,7 @@ export async function GET(request: NextRequest) {
 }
 
 // ═══════════════════════════════════════════════════════════════
-// POST /api/infertility-patients - Create new
+// POST /api/hospitals - Create new hospital
 // ═══════════════════════════════════════════════════════════════
 
 export async function POST(request: NextRequest) {
@@ -82,7 +109,7 @@ export async function POST(request: NextRequest) {
     const { userId, staffId } = await getUserFromSession(request);
 
     const body = await request.json();
-    const validation = importedAddPatientSchema.safeParse(body);
+    const validation = importedCreateHospitalSchema.safeParse(body);
 
     if (!validation.success) {
       return NextResponse.json(
@@ -95,29 +122,56 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { patient, hospital, spouseInfo, medicalInfo } = validation.data;
+    const { name, address, phoneNumber, email, website, type } =
+      validation.data;
 
-    const result = await infertilityService.createInfertilityPatient(
-      patient,
-      hospital,
-      spouseInfo,
-      medicalInfo,
-      staffId,
-      userId
-    );
+    // Check if hospital with the same name already exists
+    const existingHospital = await prisma.hospital.findUnique({
+      where: { name: name.trim() },
+    });
+
+    if (existingHospital) {
+      return NextResponse.json(
+        { success: false, error: "Hospital with this name already exists" },
+        { status: 409 }
+      );
+    }
+
+    // Create new hospital
+    const newHospital = await prisma.hospital.create({
+      data: {
+        name: name.trim(),
+        address: address?.trim() || null,
+        phoneNumber: phoneNumber?.trim() || null,
+        email: email?.trim() || null,
+        website: website?.trim() || null,
+        type: type?.trim() || null,
+        createdBy: staffId,
+      },
+      select: {
+        id: true,
+        name: true,
+        address: true,
+        phoneNumber: true,
+        email: true,
+        website: true,
+        type: true,
+        createdAt: true,
+      },
+    });
 
     const response = NextResponse.json(
       {
         success: true,
-        data: result,
-        message: "Infertility patient record created successfully",
+        data: newHospital,
+        message: "Hospital created successfully",
       },
       { status: 201 }
     );
 
     return addCSRFTokenToResponse(response);
   } catch (error) {
-    console.error("POST /api/infertility-patients error:", error);
+    console.error("POST /api/hospitals error:", error);
 
     if (error instanceof Error && error.message.includes("Unauthorized")) {
       return NextResponse.json(
@@ -129,7 +183,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         success: false,
-        error: "Failed to create infertility patient record",
+        error: "Failed to create hospital",
         message: error instanceof Error ? error.message : "Unknown error",
       },
       { status: 500 }

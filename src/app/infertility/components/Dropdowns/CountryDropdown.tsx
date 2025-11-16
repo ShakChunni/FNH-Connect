@@ -7,7 +7,8 @@ import React, {
   useMemo,
 } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { createPortal } from "react-dom";
+// createPortal replaced by DropdownPortal
+import { DropdownPortal } from "@/components/ui/DropdownPortal";
 import { Text } from "@radix-ui/themes";
 import countriesData from "world-countries/countries.json";
 import { FixedSizeList } from "react-window";
@@ -36,11 +37,7 @@ const CountryDropdown: FC<CountryDropdownProps> = ({
   const [isOpen, setIsOpen] = useState(false);
   const [isDropdownReady, setIsDropdownReady] = useState<boolean>(false);
   const [searchTerm, setSearchTerm] = useState<string>("");
-  const [dropdownPosition, setDropdownPosition] = useState<{
-    top: number;
-    left: number;
-    width: number;
-  }>({ top: 0, left: 0, width: 0 });
+  // portal will handle position
 
   const dropdownRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -49,16 +46,7 @@ const CountryDropdown: FC<CountryDropdownProps> = ({
     setSelectedValue(defaultValue);
   }, [defaultValue]);
 
-  const updateDropdownPosition = useCallback(() => {
-    if (buttonRef.current) {
-      const rect = buttonRef.current.getBoundingClientRect();
-      setDropdownPosition({
-        top: rect.bottom + window.scrollY + 4,
-        left: rect.left + window.scrollX,
-        width: rect.width,
-      });
-    }
-  }, []);
+  // DropdownPortal manages updating placement
 
   const handleSelect = useCallback(
     (value: string) => {
@@ -79,89 +67,16 @@ const CountryDropdown: FC<CountryDropdownProps> = ({
 
   const handleOpenChange = useCallback(
     (open: boolean) => {
-      // Prevent opening when disabled, but allow closing
       if (disabled && open) return;
-
-      if (open) {
-        setIsDropdownReady(true);
-        setSearchTerm("");
-        updateDropdownPosition();
-        requestAnimationFrame(() => {
-          setIsOpen(true);
-        });
-      } else {
-        setIsOpen(false);
-        setSearchTerm("");
-      }
+      setIsOpen(open);
+      setSearchTerm("");
       onDropdownToggle(open);
       onDropdownOpenStateChange(open);
     },
-    [
-      onDropdownToggle,
-      onDropdownOpenStateChange,
-      updateDropdownPosition,
-      disabled,
-    ]
+    [onDropdownToggle, onDropdownOpenStateChange, disabled]
   );
 
-  const handleClickOutside = useCallback(
-    (event: MouseEvent) => {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(event.target as Node) &&
-        buttonRef.current &&
-        !buttonRef.current.contains(event.target as Node)
-      ) {
-        setIsOpen(false);
-        setSearchTerm("");
-        onDropdownToggle(false);
-        onDropdownOpenStateChange(false);
-      }
-    },
-    [onDropdownToggle, onDropdownOpenStateChange]
-  );
-
-  const handleScroll = useCallback(
-    (event: Event) => {
-      if (isOpen) {
-        const target = event.target as Element;
-
-        if (dropdownRef.current && dropdownRef.current.contains(target)) {
-          return;
-        }
-
-        if (buttonRef.current && buttonRef.current.contains(target)) {
-          return;
-        }
-
-        setIsOpen(false);
-        setSearchTerm("");
-        onDropdownToggle(false);
-        onDropdownOpenStateChange(false);
-      }
-    },
-    [isOpen, onDropdownToggle, onDropdownOpenStateChange]
-  );
-
-  useEffect(() => {
-    if (isOpen) {
-      document.addEventListener("mousedown", handleClickOutside);
-      document.addEventListener("scroll", handleScroll, { capture: true });
-      window.addEventListener("scroll", handleScroll);
-      window.addEventListener("resize", updateDropdownPosition);
-    } else {
-      document.removeEventListener("mousedown", handleClickOutside);
-      document.removeEventListener("scroll", handleScroll, { capture: true });
-      window.removeEventListener("scroll", handleScroll);
-      window.removeEventListener("resize", updateDropdownPosition);
-    }
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-      document.removeEventListener("scroll", handleScroll, { capture: true });
-      window.removeEventListener("scroll", handleScroll);
-      window.removeEventListener("resize", updateDropdownPosition);
-    };
-  }, [isOpen, handleClickOutside, handleScroll, updateDropdownPosition]);
+  // DropdownPortal will control click outside and repositioning
 
   const clearSearch = useCallback(() => {
     setSearchTerm("");
@@ -227,16 +142,7 @@ const CountryDropdown: FC<CountryDropdownProps> = ({
           }
           exit={{ opacity: 0, height: 0 }}
           transition={{ duration: 0.25, ease: "easeOut" }}
-          className="bg-white border border-gray-300 rounded-lg shadow-lg overflow-hidden z-[60]"
-          style={{
-            position: "absolute",
-            top: dropdownPosition.top,
-            left: dropdownPosition.left,
-            width: dropdownPosition.width,
-            maxHeight: window.innerWidth < 640 ? "350px" : "450px",
-            boxShadow:
-              "0 10px 25px -5px rgba(0, 0, 0, 0.2), 0 8px 10px -6px rgba(0, 0, 0, 0.2)",
-          }}
+          className="bg-white border border-gray-300 rounded-lg shadow-lg overflow-hidden z-110000"
           onAnimationComplete={() => {
             if (!isOpen) setIsDropdownReady(false);
           }}
@@ -319,8 +225,9 @@ const CountryDropdown: FC<CountryDropdownProps> = ({
         </button>
       </div>
 
-      {typeof window !== "undefined" &&
-        createPortal(dropdownContent, document.body)}
+      <DropdownPortal isOpen={isOpen} onClose={() => handleOpenChange(false)} buttonRef={buttonRef} className="z-110000 overflow-hidden">
+        {dropdownContent}
+      </DropdownPortal>
     </>
   );
 };

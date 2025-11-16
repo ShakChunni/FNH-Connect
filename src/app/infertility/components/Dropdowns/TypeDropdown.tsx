@@ -7,7 +7,8 @@ import React, {
   useMemo,
 } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { createPortal } from "react-dom";
+// createPortal replaced by DropdownPortal
+import { DropdownPortal } from "@/components/ui/DropdownPortal";
 import { Text } from "@radix-ui/themes";
 
 interface TypeDropdownProps {
@@ -32,11 +33,7 @@ const TypeDropdown: FC<TypeDropdownProps> = ({
   const [isDropdownReady, setIsDropdownReady] = useState<boolean>(false);
   const [isCreatingNew, setIsCreatingNew] = useState(false);
   const [customValue, setCustomValue] = useState<string>("");
-  const [dropdownPosition, setDropdownPosition] = useState<{
-    top: number;
-    left: number;
-    width: number;
-  }>({ top: 0, left: 0, width: 0 });
+  // dynamic position handled by DropdownPortal
 
   const dropdownRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -48,16 +45,7 @@ const TypeDropdown: FC<TypeDropdownProps> = ({
     }
   }, [defaultValue]);
 
-  const updateDropdownPosition = useCallback(() => {
-    if (buttonRef.current) {
-      const rect = buttonRef.current.getBoundingClientRect();
-      setDropdownPosition({
-        top: rect.bottom + window.scrollY + 4,
-        left: rect.left + window.scrollX,
-        width: rect.width,
-      });
-    }
-  }, []);
+  // portal handles update
 
   const handleSelect = useCallback(
     (value: string) => {
@@ -75,80 +63,16 @@ const TypeDropdown: FC<TypeDropdownProps> = ({
   const handleOpenChange = useCallback(
     (open: boolean) => {
       if (open) {
-        setIsDropdownReady(true);
-        setIsCreatingNew(false);
-        updateDropdownPosition();
-        requestAnimationFrame(() => {
-          setIsOpen(true);
-        });
-      } else {
-        setIsOpen(false);
         setIsCreatingNew(false);
       }
+      setIsOpen(open);
       onDropdownToggle(open);
       onDropdownOpenStateChange(open);
-    },
-    [onDropdownToggle, onDropdownOpenStateChange, updateDropdownPosition]
-  );
-
-  const handleClickOutside = useCallback(
-    (event: MouseEvent) => {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(event.target as Node) &&
-        buttonRef.current &&
-        !buttonRef.current.contains(event.target as Node)
-      ) {
-        setIsOpen(false);
-        setIsCreatingNew(false);
-        onDropdownToggle(false);
-        onDropdownOpenStateChange(false);
-      }
     },
     [onDropdownToggle, onDropdownOpenStateChange]
   );
 
-  const handleScroll = useCallback(
-    (event: Event) => {
-      if (isOpen) {
-        const target = event.target as Element;
-
-        if (dropdownRef.current && dropdownRef.current.contains(target)) {
-          return;
-        }
-
-        if (buttonRef.current && buttonRef.current.contains(target)) {
-          return;
-        }
-
-        setIsOpen(false);
-        setIsCreatingNew(false);
-        onDropdownToggle(false);
-        onDropdownOpenStateChange(false);
-      }
-    },
-    [isOpen, onDropdownToggle, onDropdownOpenStateChange]
-  );
-
-  useEffect(() => {
-    if (isOpen) {
-      document.addEventListener("mousedown", handleClickOutside);
-      document.addEventListener("scroll", handleScroll, { capture: true });
-      window.addEventListener("scroll", handleScroll);
-      window.addEventListener("resize", updateDropdownPosition);
-    } else {
-      document.removeEventListener("mousedown", handleClickOutside);
-      document.removeEventListener("scroll", handleScroll, { capture: true });
-      window.removeEventListener("scroll", handleScroll);
-      window.removeEventListener("resize", updateDropdownPosition);
-    }
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-      document.removeEventListener("scroll", handleScroll, { capture: true });
-      window.removeEventListener("scroll", handleScroll);
-      window.removeEventListener("resize", updateDropdownPosition);
-    };
-  }, [isOpen, handleClickOutside, handleScroll, updateDropdownPosition]);
+  // use the centralized DropdownPortal to handle positioning and outside-click
 
   const handleCustomInputChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -212,16 +136,7 @@ const TypeDropdown: FC<TypeDropdownProps> = ({
           }
           exit={{ opacity: 0, height: 0 }}
           transition={{ duration: 0.25, ease: "easeOut" }}
-          className="bg-white border border-gray-300 rounded-lg shadow-lg overflow-hidden z-[60]"
-          style={{
-            position: "absolute",
-            top: dropdownPosition.top,
-            left: dropdownPosition.left,
-            width: dropdownPosition.width,
-            maxHeight: window.innerWidth < 640 ? "300px" : "400px",
-            boxShadow:
-              "0 10px 25px -5px rgba(0, 0, 0, 0.2), 0 8px 10px -6px rgba(0, 0, 0, 0.2)",
-          }}
+          className="bg-white border border-gray-300 rounded-lg shadow-lg overflow-hidden z-110000"
           onAnimationComplete={() => {
             if (!isOpen) setIsDropdownReady(false);
           }}
@@ -276,7 +191,7 @@ const TypeDropdown: FC<TypeDropdownProps> = ({
                     onChange={handleCustomInputChange}
                     onKeyDown={handleKeyDown}
                     placeholder="Enter custom type"
-                    className="flex-grow px-3 sm:px-4 py-2 bg-white border-none rounded-l-lg outline-none transition-all duration-300 text-xs sm:text-sm"
+                    className="grow px-3 sm:px-4 py-2 bg-white border-none rounded-l-lg outline-none transition-all duration-300 text-xs sm:text-sm"
                   />
                   <div className="flex items-center bg-white">
                     <div className="h-[60%] mx-2 sm:mx-4 border-l border-gray-200" />
@@ -318,8 +233,9 @@ const TypeDropdown: FC<TypeDropdownProps> = ({
         </button>
       </div>
 
-      {typeof window !== "undefined" &&
-        createPortal(dropdownContent, document.body)}
+      <DropdownPortal isOpen={isOpen} onClose={() => handleOpenChange(false)} buttonRef={buttonRef} className="z-110000 overflow-hidden">
+        {dropdownContent}
+      </DropdownPortal>
     </>
   );
 };

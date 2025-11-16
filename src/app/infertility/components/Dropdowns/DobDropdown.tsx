@@ -91,6 +91,14 @@ const DobDropdown: React.FC<DobDropdownProps> = ({
       dateFormat: "F j, Y",
       maxDate: "today",
       allowInput: true,
+      // Ensure flatpickr calendar is appended to body and above modal overlay
+      // so it is not rendered behind the modal popup.
+      appendTo: typeof document !== "undefined" ? document.body : undefined,
+      onReady: (_selectedDates: Date[], _dateStr: string, instance: any) => {
+        if (instance && instance.calendarContainer) {
+          instance.calendarContainer.style.zIndex = "110000";
+        }
+      },
       onOpen: (_selectedDates: Date[], _dateStr: string, instance: any) => {
         if (!selectedDate && instance && instance.input) {
           // leave blank

@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { validateCSRFToken, addCSRFTokenToResponse } from "@/lib/csrfProtection";
+import {
+  validateCSRFToken,
+  addCSRFTokenToResponse,
+} from "@/lib/csrfProtection";
 import { getUserFromSession } from "@/lib/auth";
 import * as infertilityService from "@/services/infertilityService";
 
@@ -10,20 +13,23 @@ import * as infertilityService from "@/services/infertilityService";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     await getUserFromSession(request);
 
-    const id = parseInt(params.id);
-    if (isNaN(id)) {
+    const { id } = await params;
+    const patientId = parseInt(id);
+    if (isNaN(patientId)) {
       return NextResponse.json(
         { success: false, error: "Invalid patient ID" },
         { status: 400 }
       );
     }
 
-    const patient = await infertilityService.getInfertilityPatientById(id);
+    const patient = await infertilityService.getInfertilityPatientById(
+      patientId
+    );
 
     if (!patient) {
       return NextResponse.json(
@@ -68,7 +74,10 @@ const patientUpdateSchema = z.object({
   fullName: z.string().min(1, "Full name is required"),
   gender: z.string().min(1, "Gender is required"),
   age: z.number().nullable(),
-  dateOfBirth: z.string().nullable().transform((val) => (val ? new Date(val) : null)),
+  dateOfBirth: z
+    .string()
+    .nullable()
+    .transform((val) => (val ? new Date(val) : null)),
   guardianName: z.string(),
   address: z.string(),
   phoneNumber: z.string(),
@@ -89,7 +98,10 @@ const hospitalUpdateSchema = z.object({
 const spouseInfoUpdateSchema = z.object({
   name: z.string(),
   age: z.number().nullable(),
-  dateOfBirth: z.string().nullable().transform((val) => (val ? new Date(val) : null)),
+  dateOfBirth: z
+    .string()
+    .nullable()
+    .transform((val) => (val ? new Date(val) : null)),
   gender: z.string(),
 });
 
@@ -111,7 +123,10 @@ const medicalInfoUpdateSchema = z.object({
   chiefComplaint: z.string(),
   treatmentPlan: z.string(),
   medications: z.string(),
-  nextAppointment: z.string().nullable().transform((val) => (val ? new Date(val) : null)),
+  nextAppointment: z
+    .string()
+    .nullable()
+    .transform((val) => (val ? new Date(val) : null)),
   status: z.string(),
   notes: z.string(),
 });
@@ -125,7 +140,7 @@ const updatePatientSchema = z.object({
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     if (!validateCSRFToken(request)) {
@@ -137,8 +152,9 @@ export async function PATCH(
 
     const { userId, staffId } = await getUserFromSession(request);
 
-    const id = parseInt(params.id);
-    if (isNaN(id)) {
+    const { id } = await params;
+    const patientId = parseInt(id);
+    if (isNaN(patientId)) {
       return NextResponse.json(
         { success: false, error: "Invalid patient ID" },
         { status: 400 }
@@ -162,7 +178,7 @@ export async function PATCH(
     const { patient, hospital, spouseInfo, medicalInfo } = validation.data;
 
     const result = await infertilityService.updateInfertilityPatient(
-      id,
+      patientId,
       patient,
       hospital,
       spouseInfo,
@@ -212,7 +228,7 @@ export async function PATCH(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     if (!validateCSRFToken(request)) {
@@ -224,15 +240,16 @@ export async function DELETE(
 
     const { userId } = await getUserFromSession(request);
 
-    const id = parseInt(params.id);
-    if (isNaN(id)) {
+    const { id } = await params;
+    const patientId = parseInt(id);
+    if (isNaN(patientId)) {
       return NextResponse.json(
         { success: false, error: "Invalid patient ID" },
         { status: 400 }
       );
     }
 
-    await infertilityService.deleteInfertilityPatient(id, userId);
+    await infertilityService.deleteInfertilityPatient(patientId, userId);
 
     const response = NextResponse.json({
       success: true,

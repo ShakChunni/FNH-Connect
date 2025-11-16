@@ -10,7 +10,7 @@ import { createPortal } from "react-dom";
 import { Building2, PlusCircle, Loader2, Info, X } from "lucide-react";
 import { useFetchHospitalInformation } from "../hooks";
 import { Hospital } from "../../../types";
-import HospitalTypeDropdown from "../Dropdowns/HospitalTypeDropdown";
+import HospitalTypeDropdown from "../../Dropdowns/HospitalTypeDropdown";
 import ContactPhoneInput from "./ContactPhoneInput";
 import ContactEmailInput from "./ContactEmailInput";
 
@@ -30,6 +30,7 @@ interface HospitalInformationProps {
   onMessage: (type: "success" | "error", content: string) => void;
   isMobile: boolean;
   titleTooltipStyle: React.CSSProperties;
+  initialData?: HospitalData;
 }
 
 const HospitalInformation: React.FC<HospitalInformationProps> = ({
@@ -38,8 +39,9 @@ const HospitalInformation: React.FC<HospitalInformationProps> = ({
   onMessage,
   isMobile,
   titleTooltipStyle,
+  initialData,
 }) => {
-  const [searchQuery, setSearchQueryState] = useState("");
+  const [searchQuery, setSearchQueryState] = useState(initialData?.name || "");
   const setSearchQuery = useCallback((query: string) => {
     setSearchQueryState(query);
   }, []);
@@ -59,15 +61,17 @@ const HospitalInformation: React.FC<HospitalInformationProps> = ({
   }, [error, onMessage]);
 
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [localData, setLocalData] = useState<HospitalData>({
-    id: null,
-    name: "",
-    address: "",
-    phoneNumber: "",
-    email: "",
-    website: "",
-    type: "",
-  });
+  const [localData, setLocalData] = useState<HospitalData>(
+    initialData || {
+      id: null,
+      name: "",
+      address: "",
+      phoneNumber: "",
+      email: "",
+      website: "",
+      type: "",
+    }
+  );
 
   const [autofilledFields, setAutofilledFields] = useState<{
     address: boolean;
@@ -76,11 +80,11 @@ const HospitalInformation: React.FC<HospitalInformationProps> = ({
     website: boolean;
     type: boolean;
   }>({
-    address: false,
-    phoneNumber: false,
-    email: false,
-    website: false,
-    type: false,
+    address: !!initialData?.address,
+    phoneNumber: !!initialData?.phoneNumber,
+    email: !!initialData?.email,
+    website: !!initialData?.website,
+    type: !!initialData?.type,
   });
 
   // Add validation states for phone and email
@@ -96,7 +100,7 @@ const HospitalInformation: React.FC<HospitalInformationProps> = ({
   }>({ top: 0, left: 0, width: 0 });
 
   const [hospitalStatus, setHospitalStatus] = useState<"" | "existing" | "new">(
-    ""
+    initialData?.id ? "existing" : ""
   );
   const [hospitalTouched, setHospitalTouched] = useState(false);
 
@@ -413,7 +417,7 @@ const HospitalInformation: React.FC<HospitalInformationProps> = ({
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: -10, scale: 0.98 }}
           transition={{ duration: 0.2, ease: "easeOut" }}
-          className="bg-white border border-gray-300 rounded-lg shadow-2xl z-[60] overflow-hidden"
+          className="bg-white border border-gray-300 rounded-lg shadow-2xl z-60 overflow-hidden"
           style={{
             position: "absolute",
             top: dropdownPosition.top,
@@ -451,7 +455,7 @@ const HospitalInformation: React.FC<HospitalInformationProps> = ({
                   }}
                   className="px-4 py-3 cursor-pointer hover:bg-blue-50 flex items-center gap-3 border-b border-gray-100 last:border-b-0"
                 >
-                  <Building2 className="w-5 h-5 text-gray-400 flex-shrink-0" />
+                  <Building2 className="w-5 h-5 text-gray-400 shrink-0" />
                   <div className="min-w-0 flex-1">
                     <p className="font-medium text-gray-800 text-sm truncate">
                       {hospital.name}
@@ -478,7 +482,7 @@ const HospitalInformation: React.FC<HospitalInformationProps> = ({
                 }}
                 className="px-4 py-3 cursor-pointer hover:bg-blue-50 flex items-center gap-3 border-t border-gray-200"
               >
-                <PlusCircle className="w-5 h-5 text-blue-600 flex-shrink-0" />
+                <PlusCircle className="w-5 h-5 text-blue-600 shrink-0" />
                 <p className="font-medium text-blue-700 text-sm">
                   Add &quot;{searchQuery}&quot; as a new hospital
                 </p>
@@ -493,10 +497,10 @@ const HospitalInformation: React.FC<HospitalInformationProps> = ({
   return (
     <div id="hospital" className="mt-2 sm:mt-0 mb-6 sm:mb-8 md:mb-10">
       <div
-        className={`bg-gradient-to-r ${getHeaderBg()} rounded-lg sm:rounded-xl p-4 sm:p-5 md:p-6 mb-4 sm:mb-5 md:mb-6 shadow-sm border transition-colors duration-300`}
+        className={`bg-linear-to-r ${getHeaderBg()} rounded-lg sm:rounded-xl p-4 sm:p-5 md:p-6 mb-4 sm:mb-5 md:mb-6 shadow-sm border transition-colors duration-300`}
       >
         <div className="flex items-center gap-3 sm:gap-4">
-          <div className="p-2 sm:p-2.5 md:p-3 bg-white rounded-lg sm:rounded-xl shadow-md flex-shrink-0">
+          <div className="p-2 sm:p-2.5 md:p-3 bg-white rounded-lg sm:rounded-xl shadow-md shrink-0">
             <Building2 className={"text-blue-600"} size={28} />
           </div>
           <div className="flex flex-col">
