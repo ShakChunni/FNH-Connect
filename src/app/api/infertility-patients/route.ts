@@ -24,6 +24,8 @@ export async function GET(request: NextRequest) {
       hospitalId: searchParams.get("hospitalId") || undefined,
       infertilityType: searchParams.get("infertilityType") || undefined,
       search: searchParams.get("search") || undefined,
+      startDate: searchParams.get("startDate") || undefined,
+      endDate: searchParams.get("endDate") || undefined,
     });
 
     if (!validation.success) {

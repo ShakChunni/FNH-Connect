@@ -12,7 +12,7 @@ export function NotificationContainer({
   onClose,
 }: NotificationContainerProps) {
   return (
-    <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-2 pointer-events-none">
+    <div className="fixed bottom-4 right-4 z-999999 flex flex-col gap-2 pointer-events-none">
       {notifications.map((notification) => (
         <div key={notification.id} className="pointer-events-auto">
           <Notification

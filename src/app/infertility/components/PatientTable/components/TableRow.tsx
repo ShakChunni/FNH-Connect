@@ -49,12 +49,12 @@ const TableRow: React.FC<TableRowProps> = ({ row, index, headers, onEdit }) => {
         return row.yearsTrying;
       case "para":
         return row.para;
-      case "alc":
-        return row.alc;
+      case "gravida":
+        return row.gravida;
       case "weight":
         return row.weight;
-      case "bp":
-        return row.bp;
+      case "bloodPressure":
+        return row.bloodPressure;
       case "infertilityType":
         return row.infertilityType;
       case "notes":

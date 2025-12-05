@@ -7,6 +7,7 @@ import { create } from "zustand";
 import { devtools } from "zustand/middleware";
 import { useShallow } from "zustand/react/shallow";
 import type { InfertilityPatientData } from "../types";
+import { useInfertilityFormStore } from "./formStore";
 
 // ═══════════════════════════════════════════════════════════════
 // TYPE DEFINITIONS
@@ -97,14 +98,18 @@ export const useInfertilityUIStore = create<UIState & UIActions>()(
       // ADD MODAL ACTIONS
       // ─────────────────────────────────────────────────────────
 
-      openAddModal: () =>
+      openAddModal: () => {
+        // Reset form to ensure clean state
+        useInfertilityFormStore.getState().resetForm();
+
         set((state) => ({
           modals: {
             ...state.modals,
             isAddOpen: true,
             isAddClosing: false,
           },
-        })),
+        }));
+      },
 
       closeAddModal: () => {
         // Start closing animation
@@ -112,8 +117,11 @@ export const useInfertilityUIStore = create<UIState & UIActions>()(
           modals: { ...state.modals, isAddClosing: true },
         }));
 
-        // After animation, fully close
+        // After animation, fully close and reset form
         setTimeout(() => {
+          // Reset form data
+          useInfertilityFormStore.getState().resetForm();
+
           set((state) => ({
             modals: {
               ...state.modals,

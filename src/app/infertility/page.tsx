@@ -1,90 +1,118 @@
 "use client";
-import React, { useRef, useCallback, useMemo } from "react";
-import { AnimatePresence, motion } from "framer-motion";
+import React, { useCallback, useMemo, useState } from "react";
+import { AnimatePresence } from "framer-motion";
 import { createPortal } from "react-dom";
+import { PlusIcon } from "lucide-react";
 import AddNewDataInfertility from "./components/AddNewData/AddNewDataInfertility";
 import EditDataInfertility from "./components/EditData/EditDataInfertility";
 import PatientTable from "./components/PatientTable/PatientTable";
-import ButtonContainer from "./components/ButtonContainer";
-import MessagePopup from "./components/MessagePopup";
-import Filters from "./components/Filters/Filters";
+import { SearchBar } from "@/components/ui/SearchBar";
 import { InfertilityPatientData } from "./types";
 import { useFetchInfertilityData } from "./hooks";
 import type { InfertilityFilters } from "./types";
 import { normalizePatientData } from "./components/form-sections/utils/dataUtils";
-import {
-  useInfertilityFilters,
-  useInfertilitySearch,
-  useInfertilityUI,
-  useInfertilityModals,
-  useInfertilityMessage,
-  useInfertilityActions,
-} from "./stores";
+import { useInfertilityModals, useInfertilityActions } from "./stores";
+
+// Department options for infertility page
+const DEPARTMENT_OPTIONS = [
+  { value: "all", label: "All" },
+  { value: "infertility", label: "Infertility" },
+];
+
+// Helper to calculate date range
+const getDateRangeFromOption = (
+  option: string
+): { start?: Date; end?: Date } => {
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+  switch (option) {
+    case "yesterday": {
+      const yesterday = new Date(today);
+      yesterday.setDate(yesterday.getDate() - 1);
+      return { start: yesterday, end: today };
+    }
+    case "last_week": {
+      const lastWeek = new Date(today);
+      lastWeek.setDate(lastWeek.getDate() - 7);
+      return { start: lastWeek, end: now };
+    }
+    case "last_month": {
+      const lastMonth = new Date(today);
+      lastMonth.setMonth(lastMonth.getMonth() - 1);
+      return { start: lastMonth, end: now };
+    }
+    case "last_3_months": {
+      const last3Months = new Date(today);
+      last3Months.setMonth(last3Months.getMonth() - 3);
+      return { start: last3Months, end: now };
+    }
+    case "last_6_months": {
+      const last6Months = new Date(today);
+      last6Months.setMonth(last6Months.getMonth() - 6);
+      return { start: last6Months, end: now };
+    }
+    case "this_year": {
+      const startOfYear = new Date(now.getFullYear(), 0, 1);
+      return { start: startOfYear, end: now };
+    }
+    default:
+      return {};
+  }
+};
 
 const InfertilityManagement = React.memo(() => {
   // Zustand store selectors
-  const filters = useInfertilityFilters();
-  const searchParams = useInfertilitySearch();
-  const ui = useInfertilityUI();
   const modals = useInfertilityModals();
-  const message = useInfertilityMessage();
   const actions = useInfertilityActions();
 
-  // Map page filters to hook filters
+  // Local state for search bar
+  const [searchValue, setSearchValue] = useState("");
+  const [selectedDepartment, setSelectedDepartment] = useState("all");
+  const [selectedDateRange, setSelectedDateRange] = useState("all");
+
+  // Calculate date range for API
+  const dateRange = useMemo(
+    () => getDateRangeFromOption(selectedDateRange),
+    [selectedDateRange]
+  );
+
+  // Map filters to hook format
   const hookFilters: InfertilityFilters = useMemo(
     () => ({
-      status: filters.leadsFilter !== "All" ? filters.leadsFilter : undefined,
-      search: searchParams?.searchTerm || undefined,
+      search: searchValue.length >= 2 ? searchValue : undefined,
+      startDate: dateRange.start?.toISOString(),
+      endDate: dateRange.end?.toISOString(),
     }),
-    [filters.leadsFilter, searchParams]
+    [searchValue, dateRange]
   );
 
-  const {
-    data: patientData,
-    isLoading,
-    refetch,
-  } = useFetchInfertilityData(hookFilters);
+  const { data: patientData, isLoading } = useFetchInfertilityData(hookFilters);
 
-  const messagePopupRef = useRef<HTMLDivElement>(null);
+  // Handle search value change with debounced API call
+  const handleSearchChange = useCallback((value: string) => {
+    setSearchValue(value);
+  }, []);
 
-  // Handle table search
-  const handleTableSearch = useCallback(
-    (searchTerm: string) => {
-      actions.setSearchParams(
-        searchTerm ? { searchTerm, searchField: "patientFullName" } : undefined
-      );
-    },
-    [actions]
-  );
+  // Handle explicit search (Enter key)
+  const handleSearch = useCallback((value: string) => {
+    setSearchValue(value);
+  }, []);
 
-  // Handle dropdown toggle
-  const handleToggleDropdowns = useCallback(
-    (isExpanded: boolean) => {
-      actions.setShowDropdowns(isExpanded);
-    },
-    [actions]
-  );
+  // Handle department change
+  const handleDepartmentChange = useCallback((value: string) => {
+    setSelectedDepartment(value);
+  }, []);
 
-  // Handle filter updates
-  const handleFilterUpdate = useCallback(
-    (key: string, value: any) => {
-      actions.updateFilter(key as keyof typeof filters, value);
-    },
-    [actions, filters]
-  );
+  // Handle date range change
+  const handleDateRangeChange = useCallback((value: string) => {
+    setSelectedDateRange(value);
+  }, []);
 
   // Handle edit patient
   const handleOpenEditPopup = useCallback(
     (patient: InfertilityPatientData) => {
       actions.openEditModal(patient);
-    },
-    [actions]
-  );
-
-  // Handle messages
-  const handleMessage = useCallback(
-    (type: "success" | "error", content: string) => {
-      actions.showMessage(type, content);
     },
     [actions]
   );
@@ -96,63 +124,48 @@ const InfertilityManagement = React.memo(() => {
   );
 
   return (
-    <div className="min-h-screen bg-fnh-porcelain pb-2 sm:pb-3 lg:pb-4">
-      <div className="mx-auto w-full px-2 sm:px-4 lg:px-2 pt-2 sm:pt-3 lg:pt-4">
-        <div className="space-y-3 sm:space-y-4 lg:space-y-6 px-2 sm:px-4 lg:px-2 w-full max-w-full overflow-hidden">
-          {/* Button Container */}
-          <div className="px-2 sm:px-4 lg:px-8 py-3 sm:py-4 lg:py-6">
-            <ButtonContainer
-              onToggleExpand={handleToggleDropdowns}
-              isExpanded={ui.showDropdowns}
-              onAddData={actions.openAddModal}
-            />
+    <div className="min-h-screen bg-fnh-porcelain pb-2 sm:pb-3 lg:pb-4 w-full overflow-x-hidden">
+      <div className="mx-auto w-full max-w-full px-2 sm:px-4 lg:px-6 pt-2 sm:pt-3 lg:pt-4">
+        <div className="space-y-4 sm:space-y-5 lg:space-y-6 w-full">
+          {/* Top: New Patient Button - Right aligned */}
+          <div className="flex justify-end px-2 sm:px-4 lg:px-8">
+            <button
+              onClick={actions.openAddModal}
+              className="flex items-center gap-2 px-4 sm:px-5 py-2.5 sm:py-3 bg-linear-to-r from-fnh-blue to-blue-600 hover:from-blue-500 hover:to-fnh-blue text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 font-semibold text-sm sm:text-base cursor-pointer"
+            >
+              <PlusIcon className="w-4 h-4 sm:w-5 sm:h-5" />
+              <span>New Patient</span>
+            </button>
           </div>
 
-          {/* Animated dropdown filter section */}
-          <AnimatePresence>
-            {ui.showDropdowns && (
-              <motion.div
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: "auto", opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                transition={{ duration: 0.3, ease: "easeInOut" }}
-                className="overflow-hidden bg-fnh-porcelain"
-              >
-                <div className="px-2 sm:px-4 lg:px-8 py-3 sm:py-4 lg:py-6">
-                  <Filters
-                    filters={filters}
-                    onFilterUpdate={handleFilterUpdate}
-                  />
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+          {/* Center: Search Bar */}
+          <div className="px-2 sm:px-4 lg:px-8">
+            <div className="max-w-3xl mx-auto">
+              <SearchBar
+                departments={DEPARTMENT_OPTIONS}
+                selectedDepartment={selectedDepartment}
+                onDepartmentChange={handleDepartmentChange}
+                searchValue={searchValue}
+                onSearchChange={handleSearchChange}
+                onSearch={handleSearch}
+                placeholder="Search by patient name or mobile number..."
+                showDateFilter={true}
+                selectedDateRange={selectedDateRange}
+                onDateRangeChange={handleDateRangeChange}
+              />
+            </div>
+          </div>
 
           {/* Table Container */}
-          <div className="p-2 sm:p-4 lg:p-8">
+          <div className="px-2 sm:px-4 lg:px-8">
             <PatientTable
               tableData={normalizedPatientData}
               isLoading={isLoading}
-              onSearch={handleTableSearch}
               onEdit={handleOpenEditPopup}
-              onMessage={handleMessage}
-              messagePopupRef={
-                messagePopupRef as React.RefObject<HTMLDivElement>
-              }
             />
           </div>
         </div>
       </div>
-
-      {/* Message Popup */}
-      <AnimatePresence>
-        <MessagePopup
-          messageType={message.type}
-          messageContent={message.content}
-          onDismiss={actions.dismissMessage}
-          messagePopupRef={messagePopupRef as React.RefObject<HTMLDivElement>}
-        />
-      </AnimatePresence>
 
       {/* Add New Data Portal */}
       {(modals.isAddOpen || modals.isAddClosing) &&
@@ -161,8 +174,6 @@ const InfertilityManagement = React.memo(() => {
           <AddNewDataInfertility
             isOpen={modals.isAddOpen && !modals.isAddClosing}
             onClose={actions.closeAddModal}
-            onMessage={handleMessage}
-            messagePopupRef={messagePopupRef}
           />,
           document.body
         )}
@@ -175,8 +186,6 @@ const InfertilityManagement = React.memo(() => {
           <EditDataInfertility
             isOpen={modals.isEditOpen && !modals.isEditClosing}
             onClose={actions.closeEditModal}
-            onMessage={handleMessage}
-            messagePopupRef={messagePopupRef}
             patientData={modals.selectedPatient}
           />,
           document.body

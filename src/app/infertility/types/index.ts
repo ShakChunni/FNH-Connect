@@ -186,6 +186,8 @@ export interface InfertilityFilters {
   hospitalId?: number;
   infertilityType?: string;
   search?: string;
+  startDate?: string; // ISO date string
+  endDate?: string; // ISO date string
 }
 
 // Fetch response type
@@ -266,12 +268,23 @@ export interface InfertilityPatientData {
   yearsMarried: number | null;
   yearsTrying: number | null;
   para: string | null;
-  alc: string | null;
+  gravida: string | null;
   weight: number | null;
   height: number | null;
   bmi: number | null;
-  bp: string | null;
+  bloodPressure: string | null;
   infertilityType: string | null;
+  // Medical history fields
+  medicalHistory: string | null;
+  surgicalHistory: string | null;
+  menstrualHistory: string | null;
+  contraceptiveHistory: string | null;
+  referralSource: string | null;
+  chiefComplaint: string | null;
+  treatmentPlan: string | null;
+  medications: string | null;
+  nextAppointment: string | null;
+  status: string | null;
   notes: string | null;
   createdAt: string;
   updatedAt: string;

@@ -14,6 +14,8 @@ export const infertilityFiltersSchema = z.object({
   hospitalId: z.string().transform(Number).optional(),
   infertilityType: z.string().optional(),
   search: z.string().optional(),
+  startDate: z.string().optional(), // ISO date string
+  endDate: z.string().optional(), // ISO date string
 });
 
 export type InfertilityFiltersInput = z.infer<typeof infertilityFiltersSchema>;
@@ -116,8 +118,8 @@ export const addPatientSchema = z.object({
 
 export type AddPatientInput = z.infer<typeof addPatientSchema>;
 
+// Edit schema - id comes from URL, not body
 export const editPatientSchema = z.object({
-  id: z.number(),
   patient: patientDataSchema,
   hospital: hospitalDataSchema,
   spouseInfo: spouseInfoSchema,
