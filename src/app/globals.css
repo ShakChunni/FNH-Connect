@@ -63,22 +63,22 @@
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
-  
+
   /* FNH Healthcare Brand Colors - Professional Design System */
-  --fnh-navy: #1e293b;           /* Slate 800 - Primary navy */
-  --fnh-navy-dark: #0f172a;      /* Slate 900 - Darkest navy for sidebar */
-  --fnh-navy-light: #334155;     /* Slate 700 - Lighter navy for hover */
-  --fnh-blue: #3b82f6;           /* Blue 500 - Primary blue accent */
-  --fnh-blue-light: #60a5fa;     /* Blue 400 - Light blue for hover */
-  --fnh-blue-dark: #2563eb;      /* Blue 600 - Dark blue for active */
-  --fnh-white: #ffffff;          /* Pure white for backgrounds */
-  --fnh-porcelain: #f8fafc;      /* Slate 50 - Off-white background */
-  --fnh-grey: #64748b;           /* Slate 500 - Medium grey */
-  --fnh-grey-light: #cbd5e1;     /* Slate 300 - Light grey for borders */
-  --fnh-grey-lighter: #e2e8f0;   /* Slate 200 - Very light grey */
-  --fnh-grey-dark: #475569;      /* Slate 600 - Dark grey */
-  --fnh-yellow: #fbbf24;         /* Amber 400 - Yellow accent for active states */
-  --fnh-yellow-light: #fcd34d;   /* Amber 300 - Light yellow for hover */
+  --fnh-navy: #1e293b; /* Slate 800 - Primary navy */
+  --fnh-navy-dark: #0f172a; /* Slate 900 - Darkest navy for sidebar */
+  --fnh-navy-light: #334155; /* Slate 700 - Lighter navy for hover */
+  --fnh-blue: #3b82f6; /* Blue 500 - Primary blue accent */
+  --fnh-blue-light: #60a5fa; /* Blue 400 - Light blue for hover */
+  --fnh-blue-dark: #2563eb; /* Blue 600 - Dark blue for active */
+  --fnh-white: #ffffff; /* Pure white for backgrounds */
+  --fnh-porcelain: #f8fafc; /* Slate 50 - Off-white background */
+  --fnh-grey: #64748b; /* Slate 500 - Medium grey */
+  --fnh-grey-light: #cbd5e1; /* Slate 300 - Light grey for borders */
+  --fnh-grey-lighter: #e2e8f0; /* Slate 200 - Very light grey */
+  --fnh-grey-dark: #475569; /* Slate 600 - Dark grey */
+  --fnh-yellow: #fbbf24; /* Amber 400 - Yellow accent for active states */
+  --fnh-yellow-light: #fcd34d; /* Amber 300 - Light yellow for hover */
   --fnh-black: #000000;
   --fnh-rich-black: #0a0a0a;
 
@@ -95,10 +95,10 @@
   --input: var(--fnh-grey-lighter);
   --ring: var(--fnh-blue);
   --chart-1: var(--fnh-blue); /* blue accent */
-  --chart-2: var(--fnh-navy);      /* navy */
-  --chart-3: var(--fnh-blue-light);/* light blue */
-  --chart-4: var(--fnh-grey);      /* medium grey */
-  --chart-5: var(--fnh-yellow);/* yellow accent */
+  --chart-2: var(--fnh-navy); /* navy */
+  --chart-3: var(--fnh-blue-light); /* light blue */
+  --chart-4: var(--fnh-grey); /* medium grey */
+  --chart-5: var(--fnh-yellow); /* yellow accent */
   --sidebar: var(--fnh-navy-dark);
   --sidebar-foreground: var(--fnh-white);
   --sidebar-primary: var(--fnh-navy);
@@ -111,10 +111,11 @@
   /* Sidebar spacing */
   --sidebar-collapsed-width: 7.5rem;
   --sidebar-expanded-width: 20rem;
-  
+
   /* Modal Styles */
   --modal-border-radius: 1.5rem;
-  --modal-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  --modal-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1),
+    0 10px 10px -5px rgba(0, 0, 0, 0.04);
   --modal-backdrop: rgba(0, 0, 0, 0.6);
 }
 
@@ -159,7 +160,7 @@
   body {
     @apply bg-background text-foreground;
   }
-  
+
   /* Remove number input arrows */
   input[type="number"]::-webkit-inner-spin-button,
   input[type="number"]::-webkit-outer-spin-button {
@@ -284,4 +285,155 @@
 
 .animate-slide-in-from-bottom {
   animation: slide-in-from-bottom 300ms cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+/* ========================================
+   LOADING STATE ANIMATIONS
+   Pure CSS for hydration safety - FNH themed
+   ======================================== */
+
+@keyframes loading-glow-in {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes loading-logo-light-up {
+  0% {
+    opacity: 0.3;
+    transform: scale(0.95);
+    filter: drop-shadow(0 0 0px rgba(59, 130, 246, 0));
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+    filter: drop-shadow(0 0 30px rgba(59, 130, 246, 0.5));
+  }
+}
+
+@keyframes loading-text-fade-in {
+  0% {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes loading-footer-fade-in {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+.animate-loading-glow-in {
+  animation: loading-glow-in 1s ease-out forwards;
+}
+
+.animate-loading-logo-light-up {
+  animation: loading-logo-light-up 1s ease-out forwards;
+}
+
+.animate-loading-text-fade-in {
+  opacity: 0;
+  animation: loading-text-fade-in 700ms ease-out 300ms forwards;
+}
+
+.animate-loading-footer-fade-in {
+  opacity: 0;
+  animation: loading-footer-fade-in 700ms ease-out 500ms forwards;
+}
+
+/* ========================================
+   GMAIL-STYLE LOADING SCREEN ANIMATIONS
+   For more advanced loading states
+   ======================================== */
+
+@keyframes logo-pulse {
+  0%, 100% {
+    opacity: 0.4;
+    transform: scale(0.98);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes logo-glow {
+  0%, 100% {
+    filter: drop-shadow(0 0 0px rgba(59, 130, 246, 0));
+  }
+  50% {
+    filter: drop-shadow(0 0 20px rgba(59, 130, 246, 0.6));
+  }
+}
+
+@keyframes progress-indeterminate {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(400%);
+  }
+}
+
+@keyframes fade-in-up {
+  0% {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes dot-pulse {
+  0%, 80%, 100% {
+    opacity: 0.3;
+    transform: scale(0.8);
+  }
+  40% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-logo-pulse {
+  animation: logo-pulse 2s ease-in-out infinite;
+}
+
+.animate-logo-glow {
+  animation: logo-glow 2s ease-in-out infinite;
+}
+
+.animate-progress-indeterminate {
+  animation: progress-indeterminate 1.5s ease-in-out infinite;
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.5s ease-out forwards;
+}
+
+.animate-dot-pulse {
+  animation: dot-pulse 1.4s ease-in-out infinite;
+}
+
+.animate-dot-pulse-delay-1 {
+  animation: dot-pulse 1.4s ease-in-out infinite;
+  animation-delay: 0.2s;
+}
+
+.animate-dot-pulse-delay-2 {
+  animation: dot-pulse 1.4s ease-in-out infinite;
+  animation-delay: 0.4s;
 }

@@ -236,32 +236,8 @@ const PatientInformation: React.FC = () => {
                   setPatientData({ ...patientData, address: e.target.value })
                 }
                 placeholder="Patient address"
-                rows={2}
+                rows={4}
               />
-            </div>
-
-            {/* Blood Group */}
-            <div>
-              <label className="block text-gray-700 text-sm sm:text-base font-semibold mb-1.5 sm:mb-2">
-                Blood Group
-              </label>
-              <select
-                className={inputClassName(patientData.bloodGroup)}
-                value={patientData.bloodGroup}
-                onChange={(e) =>
-                  setPatientData({ ...patientData, bloodGroup: e.target.value })
-                }
-              >
-                <option value="">Select Blood Group</option>
-                <option value="A+">A+</option>
-                <option value="A-">A-</option>
-                <option value="B+">B+</option>
-                <option value="B-">B-</option>
-                <option value="AB+">AB+</option>
-                <option value="AB-">AB-</option>
-                <option value="O+">O+</option>
-                <option value="O-">O-</option>
-              </select>
             </div>
           </div>
         </div>

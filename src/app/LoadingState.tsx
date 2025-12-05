@@ -1,5 +1,3 @@
-import { useEffect, useState } from "react";
-
 interface LoadingStateProps {
   type?: "authenticating" | "loading" | "logout";
   message?: string;
@@ -13,62 +11,65 @@ const LoadingState = ({
   description,
   className = "",
 }: LoadingStateProps) => {
-  // FIXED: Complete client-side only rendering to prevent SSR hydration issues
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
   // Default messages based on type
   const getDefaultMessage = () => {
     switch (type) {
       case "authenticating":
-        return "Authenticating...";
+        return "Authenticating";
       case "logout":
-        return "Logging Out...";
+        return "Signing Out";
       default:
-        return "Loading...";
+        return "Loading";
     }
   };
 
   const getDefaultDescription = () => {
     switch (type) {
       case "authenticating":
-        return "Please wait while we verify your credentials.";
+        return "Verifying your credentials";
       case "logout":
-        return "Please wait while we log you out.";
+        return "See you soon";
       default:
-        return "Please wait...";
+        return "Preparing your experience";
     }
   };
 
   const finalMessage = message || getDefaultMessage();
   const finalDescription = description || getDefaultDescription();
 
-  // Always return the same static content regardless of mount state
-  // This prevents hydration mismatches completely
   return (
     <div
-      className={`flex items-center justify-center min-h-screen bg-white p-4 sm:p-8 ${className}`}
+      className={`fixed inset-0 flex flex-col items-center justify-center bg-fnh-porcelain overflow-hidden ${className}`}
     >
-      <div className="flex flex-col items-center p-4 sm:p-8 bg-transparent">
-        {/* Unified spinner without framer-motion to prevent SSR issues */}
-        <div
-          className={`w-12 h-12 sm:w-16 sm:h-16 rounded-full border-4 border-t-transparent border-black mb-4 sm:mb-8 ${
-            mounted ? "animate-spin" : ""
-          }`}
-          suppressHydrationWarning
-        />
+      {/* Main content container - fixed height to prevent layout shift */}
+      <div className="flex flex-col items-center justify-center flex-1 px-4">
+        {/* Logo container with fixed dimensions to prevent layout shift */}
+        <div className="relative w-20 h-20 sm:w-28 sm:h-28 md:w-32 md:h-32 mb-8 sm:mb-12">
+          {/* Glow background - pure CSS animation with FNH blue */}
+          <div className="absolute inset-0 rounded-full bg-fnh-blue/30 blur-3xl scale-[2] animate-loading-glow-in" />
 
-        {/* Main Message */}
-        <p className="text-lg sm:text-xl text-black font-semibold">
-          {finalMessage}
-        </p>
+          {/* FNH Logo SVG - pure CSS light-up animation */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/fnh-logo.svg"
+            alt="FNH Logo"
+            className="absolute inset-0 w-full h-full object-contain animate-loading-logo-light-up"
+          />
+        </div>
 
-        {/* Description */}
-        <p className="text-sm sm:text-base text-black mt-2 sm:mt-4 text-center">
-          {finalDescription}
+        {/* Text content - pure CSS fade in with delay */}
+        <div className="flex flex-col items-center animate-loading-text-fade-in">
+          {/* Description */}
+          <p className="text-sm sm:text-base text-gray-500 text-center">
+            {finalDescription}
+          </p>
+        </div>
+      </div>
+
+      {/* Footer branding - pure CSS fade in with longer delay */}
+      <div className="pb-6 sm:pb-8 animate-loading-footer-fade-in">
+        <p className="text-[10px] sm:text-xs text-gray-400 tracking-wider uppercase">
+          FNH Connect
         </p>
       </div>
     </div>

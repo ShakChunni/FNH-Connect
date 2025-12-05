@@ -87,7 +87,6 @@ export const SearchBar: React.FC<SearchBarProps> = ({
 
   const handleDateRangeSelect = useCallback(
     (value: string) => {
-      // Don't close or do anything for custom range (will implement calendar later)
       if (value === "custom") {
         // Future: Open calendar picker
         return;
@@ -120,23 +119,23 @@ export const SearchBar: React.FC<SearchBarProps> = ({
       {/* Main Search Bar Container with glow effect on focus */}
       <div
         className={`
-          flex items-center gap-2 sm:gap-3 w-full 
+          flex items-center w-full 
           bg-white border rounded-full 
-          px-1.5 py-1.5 sm:px-2 sm:py-2
+          h-12 sm:h-14
           transition-all duration-300 ease-out
           ${
             isFocused
-              ? "border-fnh-blue shadow-[0_0_0_3px_rgba(59,130,246,0.15),0_0_20px_rgba(59,130,246,0.1)] ring-1 ring-fnh-blue/30"
+              ? "border-fnh-blue shadow-[0_0_0_3px_rgba(59,130,246,0.12),0_0_16px_rgba(59,130,246,0.08)] ring-1 ring-fnh-blue/20"
               : "border-gray-200 shadow-sm hover:shadow-md hover:border-gray-300"
           }
         `}
       >
-        {/* Left: Department Dropdown Pill */}
-        <div className="relative shrink-0">
+        {/* Left: Department Dropdown - integrated into bar */}
+        <div className="relative shrink-0 h-full">
           <button
             ref={departmentButtonRef}
             onClick={() => setIsDepartmentOpen(!isDepartmentOpen)}
-            className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 bg-fnh-navy rounded-full text-white text-xs sm:text-sm font-medium hover:bg-fnh-navy-light transition-colors duration-200 min-w-[80px] sm:min-w-[100px] justify-between cursor-pointer"
+            className="flex items-center gap-1.5 sm:gap-2 h-full px-4 sm:px-5 bg-fnh-navy-dark rounded-l-full text-white text-xs sm:text-sm font-medium hover:bg-fnh-navy transition-colors duration-200 min-w-[90px] sm:min-w-[110px] justify-between cursor-pointer border-r border-fnh-navy-light/30"
           >
             <span className="truncate">{selectedDepartmentLabel}</span>
             <ChevronDown
@@ -150,17 +149,17 @@ export const SearchBar: React.FC<SearchBarProps> = ({
             isOpen={isDepartmentOpen}
             onClose={() => setIsDepartmentOpen(false)}
             buttonRef={departmentButtonRef}
-            className="w-44"
+            className="w-52"
           >
-            <div className="py-1">
+            <div className="py-1 max-h-[300px] overflow-y-auto">
               {departments.map((dept) => (
                 <button
                   key={dept.value}
                   onClick={() => handleDepartmentSelect(dept.value)}
                   className={`w-full text-left px-4 py-2.5 text-sm transition-colors duration-150 cursor-pointer ${
                     selectedDepartment === dept.value
-                      ? "bg-fnh-blue text-white font-medium"
-                      : "text-gray-700 hover:bg-gray-100"
+                      ? "bg-fnh-navy text-white font-medium"
+                      : "text-gray-700 hover:bg-slate-100"
                   }`}
                 >
                   {dept.label}
@@ -170,11 +169,13 @@ export const SearchBar: React.FC<SearchBarProps> = ({
           </DropdownPortal>
         </div>
 
+      
+
         {/* Center: Search Input */}
-        <form onSubmit={handleSearchSubmit} className="flex-1 min-w-0">
-          <div className="relative flex items-center">
+        <form onSubmit={handleSearchSubmit} className="flex-1 min-w-0 h-full">
+          <div className="relative flex items-center h-full">
             <Search
-              className={`absolute left-3 w-4 h-4 sm:w-5 sm:h-5 pointer-events-none transition-colors duration-200 ${
+              className={`absolute left-3 sm:left-4 w-4 h-4 sm:w-5 sm:h-5 pointer-events-none transition-colors duration-200 ${
                 isFocused ? "text-fnh-blue" : "text-gray-400"
               }`}
             />
@@ -186,25 +187,29 @@ export const SearchBar: React.FC<SearchBarProps> = ({
               onFocus={() => setIsFocused(true)}
               onBlur={() => setIsFocused(false)}
               placeholder={placeholder}
-              className="w-full pl-9 sm:pl-11 pr-3 py-1.5 sm:py-2 bg-transparent border-0 focus:ring-0 focus:outline-none text-gray-700 text-sm sm:text-base placeholder:text-gray-400 placeholder:text-sm"
+              className="w-full h-full pl-10 sm:pl-12 pr-4 bg-transparent border-0 focus:ring-0 focus:outline-none text-gray-700 text-sm sm:text-base placeholder:text-gray-400 placeholder:text-sm"
             />
           </div>
         </form>
 
-        {/* Right: Date Range Pill */}
+        
+
+        {/* Right: Date Range - integrated into bar */}
         {showDateFilter && (
-          <div className="shrink-0 ml-1 sm:ml-2">
+          <div className="relative shrink-0 h-full">
             <button
               ref={dateRangeButtonRef}
               onClick={() => setIsDateRangeOpen(!isDateRangeOpen)}
-              className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-medium transition-all duration-200 cursor-pointer ${
+              className={`flex items-center gap-1.5 sm:gap-2 h-full px-4 sm:px-5 rounded-r-full text-xs sm:text-sm font-medium transition-all duration-200 cursor-pointer ${
                 selectedDateRange !== "all"
-                  ? "bg-fnh-blue text-white hover:bg-fnh-blue-light"
-                  : "bg-gray-100 hover:bg-gray-200 text-gray-600"
+                  ? "bg-fnh-navy text-white hover:bg-fnh-navy-light"
+                  : "bg-gray-200 hover:bg-slate-100 text-gray-600"
               }`}
             >
               <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-              <span className="hidden sm:inline">{selectedDateRangeLabel}</span>
+              <span className="hidden sm:inline whitespace-nowrap">
+                {selectedDateRangeLabel}
+              </span>
               <ChevronDown
                 className={`w-3 h-3 sm:w-3.5 sm:h-3.5 transition-transform duration-200 ${
                   isDateRangeOpen ? "rotate-180" : ""
@@ -216,27 +221,22 @@ export const SearchBar: React.FC<SearchBarProps> = ({
               isOpen={isDateRangeOpen}
               onClose={() => setIsDateRangeOpen(false)}
               buttonRef={dateRangeButtonRef}
-              className="w-48"
+              className="w-52"
             >
-              <div className="py-1">
+              <div className="py-1 max-h-[300px] min-w-[200px] overflow-y-auto">
                 {dateRangeOptions.map((option) => (
                   <button
                     key={option.value}
                     onClick={() => handleDateRangeSelect(option.value)}
                     className={`w-full text-left px-4 py-2.5 text-sm transition-colors duration-150 cursor-pointer ${
                       selectedDateRange === option.value
-                        ? "bg-fnh-blue text-white font-medium"
+                        ? "bg-fnh-navy text-white font-medium"
                         : option.value === "custom"
-                        ? "text-gray-500 hover:bg-gray-100 border-t border-gray-100"
-                        : "text-gray-700 hover:bg-gray-100"
+                        ? "text-gray-500 hover:bg-slate-100 border-t border-gray-100"
+                        : "text-gray-700 hover:bg-slate-100"
                     }`}
                   >
                     {option.label}
-                    {option.value === "custom" && (
-                      <span className="text-xs text-gray-400 ml-1">
-                        (coming soon)
-                      </span>
-                    )}
                   </button>
                 ))}
               </div>

@@ -41,10 +41,10 @@ const Notification: React.FC<NotificationProps> = ({
     switch (type) {
       case "success":
         return {
-          bg: successBg,
-          border: fnhBlue,
+          bg: loadingBg,
+          border: fnhYellow,
           icon: CheckCircle,
-          iconColor: fnhBlue,
+          iconColor: fnhYellow,
           textColor: fnhWhite,
         };
       case "error":
