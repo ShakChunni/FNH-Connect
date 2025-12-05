@@ -1,8 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/axios";
 import { useState, useEffect } from "react";
-import { getAgeInYears } from "../../../utils/dateUtils";
-import type { InfertilityPatientBasic } from "../../../types";
+import { getAgeInYears } from "../utils/dateUtils";
+import type { InfertilityPatientBasic } from "@/app/infertility/types";
 
 export function useFetchPatientInformation(searchQuery: string) {
   const [debouncedQuery, setDebouncedQuery] = useState(searchQuery || "");
@@ -27,7 +27,7 @@ export function useFetchPatientInformation(searchQuery: string) {
           patient: {
             id: number;
             fullName: string;
-            dateOfBirth: string;
+            dateOfBirth: string | null;
             phoneNumber: string | null;
             email: string | null;
           };
@@ -47,9 +47,10 @@ export function useFetchPatientInformation(searchQuery: string) {
 
       // Transform the data to match InfertilityPatientBasic format
       return (response.data.data || []).map((record) => ({
-        id: record.patientId, // Use patient ID as the main ID for search results
+        id: record.patientId,
         patientFullName: record.patient.fullName,
         patientAge: getAgeInYears(record.patient.dateOfBirth),
+        dateOfBirth: record.patient.dateOfBirth,
         mobileNumber: record.patient.phoneNumber,
         email: record.patient.email,
       }));

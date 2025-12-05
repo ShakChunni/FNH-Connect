@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState, useCallback } from "react";
-import { motion } from "framer-motion";
 import { PasswordInput } from "./PasswordInput";
 import { LoginError } from "./LoginError";
 import { LoginLoading } from "./LoginLoading";
@@ -127,13 +126,7 @@ export function LoginForm({
   };
 
   return (
-    <motion.form
-      onSubmit={handleSubmit}
-      className="space-y-6"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.3 }}
-    >
+    <form onSubmit={handleSubmit} className="space-y-6 animate-fade-in">
       {/* Error Message */}
       {submitError && (
         <LoginError
@@ -143,19 +136,14 @@ export function LoginForm({
       )}
 
       {/* Username Field */}
-      <motion.div
-        initial={{ x: -20, opacity: 0 }}
-        animate={{ x: 0, opacity: 1 }}
-        transition={{ delay: 0.1 }}
-        className="space-y-2"
-      >
+      <div className="space-y-2 animate-slide-in-from-bottom [animation-delay:100ms]">
         <label
           htmlFor="username"
           className="block text-sm font-medium text-fnh-navy"
         >
           Username
         </label>
-        <motion.input
+        <input
           type="text"
           id="username"
           value={formData.username}
@@ -164,32 +152,33 @@ export function LoginForm({
           disabled={isLoading}
           placeholder="Enter your username"
           autoComplete="username"
-          whileFocus={{ scale: 1.01 }}
-          className={`w-full px-4 py-3 rounded-lg border-2 text-fnh-navy placeholder-fnh-grey transition-all duration-200 focus:outline-none ${
+          // Removed scale effect, added clean color transition, reduced text size for small screens
+          className={`w-full px-4 py-3 rounded-lg border-2 text-sm sm:text-base text-fnh-navy placeholder-fnh-grey transition-colors duration-200 focus:outline-none ${
             touched.username && errors.username
-              ? "border-red-500 bg-red-50 focus:ring-2 focus:ring-red-500/20 focus:border-red-500"
-              : "border-fnh-grey-light bg-white focus:ring-2 focus:ring-fnh-blue-light/20 focus:border-fnh-blue"
+              ? "border-red-500 bg-red-50 focus:border-red-600"
+              : "border-fnh-grey-light bg-white focus:border-fnh-blue hover:border-fnh-blue-light"
           } ${
             isLoading ? "bg-fnh-porcelain text-fnh-grey cursor-not-allowed" : ""
           }`}
         />
-        {touched.username && errors.username && (
-          <motion.p
-            initial={{ opacity: 0, y: -4 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-sm font-medium text-red-600"
-          >
-            {errors.username}
-          </motion.p>
-        )}
-      </motion.div>
+        {/* Smooth Error Reveal */}
+        <div
+          className={`grid transition-all duration-300 ease-in-out ${
+            touched.username && errors.username
+              ? "grid-rows-[1fr] opacity-100 mt-1"
+              : "grid-rows-[0fr] opacity-0"
+          }`}
+        >
+          <div className="overflow-hidden">
+            <p className="text-sm font-medium text-red-600">
+              {errors.username}
+            </p>
+          </div>
+        </div>
+      </div>
 
       {/* Password Field */}
-      <motion.div
-        initial={{ x: -20, opacity: 0 }}
-        animate={{ x: 0, opacity: 1 }}
-        transition={{ delay: 0.2 }}
-      >
+      <div className="animate-slide-in-from-bottom [animation-delay:200ms]">
         <PasswordInput
           value={formData.password}
           onChange={(value) => handleFieldChange("password", value)}
@@ -197,31 +186,24 @@ export function LoginForm({
           error={touched.password ? errors.password : undefined}
           disabled={isLoading}
         />
-      </motion.div>
+      </div>
 
       {/* Submit Button */}
-      <motion.button
-        type="submit"
-        disabled={isLoading}
-        whileHover={!isLoading ? { scale: 1.02 } : {}}
-        whileTap={!isLoading ? { scale: 0.98 } : {}}
-        initial={{ y: 10, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ delay: 0.3 }}
-        className="w-full h-12 px-4 bg-gradient-to-r from-fnh-navy to-fnh-navy-light text-fnh-white font-semibold rounded-lg shadow-md hover:shadow-lg hover:to-fnh-blue disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
-      >
-        {isLoading ? <LoginLoading message="Logging in..." /> : "Login"}
-      </motion.button>
+      <div className="animate-slide-in-from-bottom [animation-delay:300ms]">
+        <button
+          type="submit"
+          disabled={isLoading}
+          // Removed scale, using pure color transitions
+          className="w-full h-12 px-4 bg-fnh-navy text-fnh-white font-semibold rounded-lg shadow-md hover:shadow-lg hover:bg-fnh-navy-light focus:ring-2 focus:ring-offset-2 focus:ring-fnh-blue disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 cursor-pointer"
+        >
+          {isLoading ? <LoginLoading message="Logging in..." /> : "Login"}
+        </button>
+      </div>
 
       {/* Footer Info */}
-      <motion.p
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.4 }}
-        className="text-center text-xs text-fnh-grey-dark"
-      >
+      <p className="text-center text-xs text-fnh-grey-dark animate-slide-in-from-bottom [animation-delay:400ms]">
         For security purposes, sessions expire after 24 hours of inactivity.
-      </motion.p>
-    </motion.form>
+      </p>
+    </form>
   );
 }

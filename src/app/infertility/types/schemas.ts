@@ -29,10 +29,17 @@ export const patientDataSchema = z.object({
   fullName: z.string().min(1, "Full name is required"),
   gender: z.string().min(1, "Gender is required"),
   age: z.number().nullable(),
-  dateOfBirth: z
-    .string()
-    .nullable()
-    .transform((val) => (val ? new Date(val) : null)),
+  dateOfBirth: z.preprocess(
+    (val) => {
+      if (val === null || val === undefined || val === "") return null;
+      if (val instanceof Date) return val.toISOString();
+      return String(val);
+    },
+    z
+      .string()
+      .nullable()
+      .transform((val) => (val ? new Date(val) : null))
+  ),
   guardianName: z.string(),
   address: z.string(),
   phoneNumber: z.string(),
@@ -53,10 +60,17 @@ export const hospitalDataSchema = z.object({
 export const spouseInfoSchema = z.object({
   name: z.string(),
   age: z.number().nullable(),
-  dateOfBirth: z
-    .string()
-    .nullable()
-    .transform((val) => (val ? new Date(val) : null)),
+  dateOfBirth: z.preprocess(
+    (val) => {
+      if (val === null || val === undefined || val === "") return null;
+      if (val instanceof Date) return val.toISOString();
+      return String(val);
+    },
+    z
+      .string()
+      .nullable()
+      .transform((val) => (val ? new Date(val) : null))
+  ),
   gender: z.string(),
 });
 
@@ -78,10 +92,17 @@ export const medicalInfoSchema = z.object({
   chiefComplaint: z.string(),
   treatmentPlan: z.string(),
   medications: z.string(),
-  nextAppointment: z
-    .string()
-    .nullable()
-    .transform((val) => (val ? new Date(val) : null)),
+  nextAppointment: z.preprocess(
+    (val) => {
+      if (val === null || val === undefined || val === "") return null;
+      if (val instanceof Date) return val.toISOString();
+      return String(val);
+    },
+    z
+      .string()
+      .nullable()
+      .transform((val) => (val ? new Date(val) : null))
+  ),
   status: z.string(),
   notes: z.string(),
 });

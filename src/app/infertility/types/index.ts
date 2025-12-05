@@ -200,6 +200,7 @@ export interface InfertilityPatientBasic {
   id: number;
   patientFullName: string;
   patientAge: number | null;
+  dateOfBirth: Date | string | null;
   mobileNumber: string | null;
   email: string | null;
 }
@@ -267,6 +268,8 @@ export interface InfertilityPatientData {
   para: string | null;
   alc: string | null;
   weight: number | null;
+  height: number | null;
+  bmi: number | null;
   bp: string | null;
   infertilityType: string | null;
   notes: string | null;
@@ -282,4 +285,26 @@ export interface TableHeader {
 export interface SortConfig {
   key: string;
   direction: string;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// FORM STATE TYPES (for modals)
+// ═══════════════════════════════════════════════════════════════
+
+export interface FormDataState {
+  hospitalData: HospitalData;
+  patientData: PatientData;
+  spouseData: SpouseInfo;
+  medicalInfo: InfertilityMedicalData;
+}
+
+export interface ValidationStatus {
+  phone: boolean;
+  email: boolean;
+}
+
+export interface ModalFormState extends FormDataState {
+  validationStatus: ValidationStatus;
+  isDropdownOpen: boolean;
+  activeSection: string;
 }

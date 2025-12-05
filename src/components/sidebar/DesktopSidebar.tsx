@@ -10,7 +10,7 @@ import Image from "next/image";
 import { useAuth } from "@/app/AuthContext";
 import ViewSwitcher from "./ViewSwitcher";
 
-const SIDEBAR_BG = "#0f172a"; // FNH Black 
+const SIDEBAR_BG = "#0f172a"; // FNH Black
 const CONTAINER_BG = "#1e293b"; // FNH Navy - slightly lighter slate 800
 const ACTIVE_BG = "#334155"; // FNH Navy Light - slate 700 for active items
 const HOVER_BG = "rgba(59, 130, 246, 0.1)"; // Blue with opacity for hover
@@ -172,21 +172,27 @@ export default function DesktopSidebar({
         }`}
       >
         {/* First Container: Logo, Text, Pin Button, and Navigation */}
-        <div className="rounded-3xl p-4" style={{ background: CONTAINER_BG }}>
+        {/* First Container: Logo, Text, Pin Button, and Navigation */}
+        <div
+          className="relative rounded-3xl p-4 overflow-hidden"
+          style={{ background: CONTAINER_BG }}
+        >
           <div
-            className={`flex items-start gap-3 mb-3 ${
+            className={`flex items-start gap-3 mb-3 relative z-10 ${
               isExpanded ? "justify-between" : "justify-center"
             }`}
           >
             {!isExpanded ? (
-              <Image
-                src="/JD-BLACK.svg"
-                alt="FNH Healthcare"
-                width={40}
-                height={40}
-                className="h-10 w-10 shrink-0"
-                priority
-              />
+              <div className="relative h-10 w-10 shrink-0 flex items-center justify-center">
+                <Image
+                  src="/fnh-logo.svg"
+                  alt="FNH Healthcare"
+                  width={40}
+                  height={40}
+                  className="object-contain brightness-0 invert"
+                  priority
+                />
+              </div>
             ) : (
               <>
                 <Link
@@ -194,11 +200,11 @@ export default function DesktopSidebar({
                   className="flex items-center gap-3 flex-1 min-w-0"
                 >
                   <Image
-                    src="/JD-BLACK.svg"
+                    src="/fnh-logo.svg"
                     alt="FNH Healthcare"
                     width={40}
                     height={40}
-                    className="h-10 w-10 shrink-0"
+                    className="h-10 w-10 shrink-0 object-contain brightness-0 invert"
                     priority
                   />
                   <div className="flex items-center gap-1 leading-tight min-w-0">

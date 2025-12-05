@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/axios";
 import { useState, useEffect } from "react";
-import type { Hospital } from "../../../types";
+import type { Hospital } from "@/app/infertility/types";
 
 export function useFetchHospitalInformation(searchQuery: string) {
   const [debouncedQuery, setDebouncedQuery] = useState(searchQuery || "");

@@ -1,11 +1,14 @@
 "use client";
 
 import React, { useState, useCallback } from "react";
-import { motion } from "framer-motion";
+import Image from "next/image";
 import { useAuth } from "@/app/AuthContext";
 import { LoginForm } from "./components";
 import { fetchWithCSRF } from "@/lib/fetchWithCSRF";
 import type { LoginFormData, LoginResponse } from "./types";
+import { FaWhatsapp } from "react-icons/fa";
+
+const ADMIN_WHATSAPP = "+8801736436786";
 
 export default function LoginPage() {
   const { login } = useAuth();
@@ -55,72 +58,54 @@ export default function LoginPage() {
     [login]
   );
 
+  const openWhatsApp = () => {
+    const number = ADMIN_WHATSAPP.replace(/[^0-9]/g, "");
+    window.open(`https://wa.me/${number}`, "_blank");
+  };
+
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      className="flex items-center justify-center min-h-screen bg-gradient-to-br from-fnh-porcelain via-fnh-grey-light to-white p-4"
-    >
-      <motion.div
-        initial={{ scale: 0.95, opacity: 0, y: 20 }}
-        animate={{ scale: 1, opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, ease: "easeOut" }}
-        className="w-full max-w-md"
-      >
-        {/* Header */}
-        <motion.div
-          initial={{ y: -20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.1 }}
-          className="mb-8 text-center"
-        >
-          <h1 className="text-3xl font-bold text-fnh-navy mb-2">FNH Connect</h1>
-          <p className="text-fnh-grey-dark text-sm">
-            Healthcare Management System
-          </p>
-        </motion.div>
-
-        {/* Card */}
-        <motion.div
-          initial={{ y: 20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.2 }}
-          className="bg-fnh-white p-8 rounded-2xl shadow-lg border border-fnh-grey-light"
-        >
-          <motion.h2
-            initial={{ y: -10, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.3 }}
-            className="text-2xl font-bold mb-2 text-fnh-navy"
-          >
-            Welcome Back
-          </motion.h2>
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.4 }}
-            className="text-fnh-grey-dark text-sm mb-6"
-          >
-            Please enter your credentials to access your account
-          </motion.p>
-
-          <LoginForm
-            onSubmit={handleLogin}
-            isLoading={isLoading}
-            error={error}
+    <div className="space-y-8 px-4 sm:px-0">
+      {/* Header - Mobile Logo Only */}
+      <div className="flex flex-col items-center sm:items-start text-center sm:text-left space-y-2">
+        {/* Visible only on mobile/tablet where right panel is hidden */}
+        <div className="relative w-16 h-16 mb-4 lg:hidden">
+          <Image
+            src="/fnh-logo.svg"
+            alt="FNH Logo"
+            fill
+            className="object-contain"
           />
-        </motion.div>
+        </div>
 
-        {/* Footer */}
-        <motion.p
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.5 }}
-          className="text-center text-xs text-fnh-grey mt-6"
+        {/* Adjusted text sizing for responsiveness */}
+        <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-fnh-navy">
+          Welcome back
+        </h2>
+        <p className="text-fnh-grey-dark max-w-sm text-sm sm:text-base">
+          Please enter your credentials to access the FNH Connect portal.
+        </p>
+      </div>
+
+      <div className="w-full">
+        <LoginForm onSubmit={handleLogin} isLoading={isLoading} error={error} />
+      </div>
+
+      <div className="pt-4 border-t border-fnh-grey-lighter">
+        <p className="text-center sm:text-left text-xs sm:text-sm text-fnh-grey mb-2">
+          Don't have an account or need support?
+        </p>
+        <button
+          onClick={openWhatsApp}
+          // Simplified button text for mobile
+          className="flex items-center gap-2 text-sm font-semibold text-fnh-blue hover:text-fnh-blue-dark transition-colors cursor-pointer mx-auto sm:mx-0 group"
         >
-          © 2025 FNH Connect. All rights reserved.
-        </motion.p>
-      </motion.div>
-    </motion.div>
+          <FaWhatsapp className="w-4 h-4 group-hover:text-[#25D366] transition-colors" />
+          <span className="sm:hidden">Administrator</span>
+          <span className="hidden sm:inline">
+            Contact Administrator (F.M. Ashfaq)
+          </span>
+        </button>
+      </div>
+    </div>
   );
 }

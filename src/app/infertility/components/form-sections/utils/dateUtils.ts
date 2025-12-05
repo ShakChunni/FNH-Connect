@@ -3,7 +3,7 @@
  * Centralized functions for calculating age from DOB across the application
  */
 
-import type { AgeInfo } from "../types";
+import type { AgeInfo } from "../../../types";
 
 /**
  * Calculate age in years, months, and days from a date of birth

@@ -6,28 +6,28 @@ import React, {
   useState,
   useMemo,
 } from "react";
-import {
-  X,
-  Save,
-  Loader2,
-  Building2,
-  User,
-  Stethoscope,
-  Users,
-} from "lucide-react";
+import { Save, Building2, User, Stethoscope } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/app/AuthContext";
-import { useMediaQuery } from "react-responsive";
 import { useAddInfertilityData } from "../../hooks/useAddInfertilityData";
 import {
   modalVariants,
   backdropVariants,
 } from "@/components/ui/modal-animations";
+import { ModalHeader } from "@/components/ui/ModalHeader";
+import { ModalFooter } from "@/components/ui/ModalFooter";
 import { getTabColors } from "./utils/modalUtils";
-import HospitalInformation from "./components/HospitalInformation";
-import PatientInformation from "./components/PatientInformation";
-import MedicalInformation from "./components/MedicalInformation";
-import type { PatientData, HospitalData, SpouseInfo } from "../../types";
+import HospitalInformation from "../form-sections/HospitalInformation";
+import PatientInformation from "../form-sections/PatientInformation";
+import MedicalInformation from "../form-sections/MedicalInformation";
+import {
+  useInfertilityHospitalData,
+  useInfertilityPatientData,
+  useInfertilitySpouseData,
+  useInfertilityMedicalInfo,
+  useInfertilityValidationStatus,
+  useInfertilityActions,
+} from "../../stores";
 
 interface AddNewDataProps {
   isOpen: boolean;
@@ -43,6 +43,21 @@ const AddNewDataInfertility: React.FC<AddNewDataProps> = ({
   messagePopupRef,
 }) => {
   const { user } = useAuth();
+
+  // Get form data from Zustand store
+  const hospitalData = useInfertilityHospitalData();
+  const patientData = useInfertilityPatientData();
+  const spouseData = useInfertilitySpouseData();
+  const medicalInfo = useInfertilityMedicalInfo();
+  const validationStatus = useInfertilityValidationStatus();
+  const {
+    setHospitalData,
+    setPatientData,
+    setSpouseData,
+    setMedicalInfo,
+    updateMedicalInfo,
+    resetFormState,
+  } = useInfertilityActions();
 
   // Initialize our custom hook for adding infertility data
   const {
@@ -61,59 +76,8 @@ const AddNewDataInfertility: React.FC<AddNewDataProps> = ({
         onMessage("success", "Patient has been successfully registered!");
       }
       onClose();
-      // Reset form data
-      setHospitalData({
-        id: null,
-        name: "",
-        address: "",
-        phoneNumber: "",
-        email: "",
-        website: "",
-        type: "",
-      });
-      setPatientData({
-        id: null,
-        firstName: "",
-        lastName: "",
-        fullName: "",
-        gender: "Female",
-        age: null,
-        dateOfBirth: null,
-        guardianName: "",
-        address: "",
-        phoneNumber: "",
-        email: "",
-        bloodGroup: "",
-      });
-      setSpouseData({
-        name: "",
-        age: null,
-        dateOfBirth: null,
-        gender: "Male",
-      });
-      setMedicalInfo({
-        yearsMarried: null,
-        yearsTrying: null,
-        infertilityType: "",
-        para: "",
-        gravida: "",
-        weight: null,
-        height: null,
-        bmi: null,
-        bloodPressure: "",
-        bloodGroup: "",
-        medicalHistory: "",
-        surgicalHistory: "",
-        menstrualHistory: "",
-        contraceptiveHistory: "",
-        referralSource: "",
-        chiefComplaint: "",
-        treatmentPlan: "",
-        medications: "",
-        nextAppointment: null,
-        status: "Active",
-        notes: "",
-      });
+      // Reset form data using Zustand action
+      resetFormState();
     },
     onError: (error) => {
       onMessage(
@@ -123,80 +87,13 @@ const AddNewDataInfertility: React.FC<AddNewDataProps> = ({
     },
   });
 
-  // Main data states
-  const [hospitalData, setHospitalData] = useState<HospitalData>({
-    id: null,
-    name: "",
-    address: "",
-    phoneNumber: "",
-    email: "",
-    website: "",
-    type: "",
-  });
-
-  const [patientData, setPatientData] = useState<PatientData>({
-    id: null,
-    firstName: "",
-    lastName: "",
-    fullName: "",
-    gender: "Female",
-    age: null,
-    dateOfBirth: null,
-    guardianName: "",
-    address: "",
-    phoneNumber: "",
-    email: "",
-    bloodGroup: "",
-  });
-
-  const [spouseData, setSpouseData] = useState<SpouseInfo>({
-    name: "",
-    age: null,
-    dateOfBirth: null,
-    gender: "Male",
-  });
-
-  // Medical information state
-  const [medicalInfo, setMedicalInfo] = useState({
-    yearsMarried: null as number | null,
-    yearsTrying: null as number | null,
-    infertilityType: "",
-    para: "",
-    gravida: "",
-    weight: null as number | null,
-    height: null as number | null,
-    bmi: null as number | null,
-    bloodPressure: "",
-    bloodGroup: "",
-    medicalHistory: "",
-    surgicalHistory: "",
-    menstrualHistory: "",
-    contraceptiveHistory: "",
-    referralSource: "",
-    chiefComplaint: "",
-    treatmentPlan: "",
-    medications: "",
-    nextAppointment: null as Date | null,
-    status: "Active",
-    notes: "",
-  });
-
   // UI states
   const [activeSection, setActiveSection] = useState("hospital");
-  const [validationStatus, setValidationStatus] = useState({
-    phone: true,
-    email: true,
-  });
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   const popupRef = useRef<HTMLDivElement>(null);
 
-  // Responsive design
-  const isMobile = useMediaQuery({ maxWidth: 639 });
-  const isMd = useMediaQuery({ minWidth: 640, maxWidth: 1023 });
-  const isLg = useMediaQuery({ minWidth: 1024, maxWidth: 1279 });
-  const isXl = useMediaQuery({ minWidth: 1280, maxWidth: 1536 });
-  const is2xl = useMediaQuery({ minWidth: 1536 });
+  // Note: Responsive design now handled via Tailwind CSS classes
 
   // Form validation
   const isFormValid = useMemo(() => {
@@ -217,16 +114,18 @@ const AddNewDataInfertility: React.FC<AddNewDataProps> = ({
 
       // Only update if BMI has actually changed to avoid infinite loops
       if (medicalInfo.bmi !== calculatedBmi) {
-        setMedicalInfo((prev) => ({
-          ...prev,
-          bmi: calculatedBmi,
-        }));
+        updateMedicalInfo("bmi", calculatedBmi);
       }
     } else if (medicalInfo.bmi !== null) {
       // Clear BMI if weight or height is missing
-      setMedicalInfo((prev) => ({ ...prev, bmi: null }));
+      updateMedicalInfo("bmi", null);
     }
-  }, [medicalInfo.weight, medicalInfo.height, medicalInfo.bmi]);
+  }, [
+    medicalInfo.weight,
+    medicalInfo.height,
+    medicalInfo.bmi,
+    updateMedicalInfo,
+  ]);
 
   // Close modal function
   const handleClose = useCallback(() => {
@@ -265,7 +164,7 @@ const AddNewDataInfertility: React.FC<AddNewDataProps> = ({
           address: patientData.address,
           phoneNumber: patientData.phoneNumber,
           email: patientData.email,
-          bloodGroup: medicalInfo.bloodGroup,
+          bloodGroup: patientData.bloodGroup,
         },
         spouseInfo: {
           name: spouseData.name,
@@ -307,6 +206,7 @@ const AddNewDataInfertility: React.FC<AddNewDataProps> = ({
     onMessage,
     hospitalData,
     patientData,
+    spouseData,
     medicalInfo,
     addPatient,
   ]);
@@ -397,29 +297,8 @@ const AddNewDataInfertility: React.FC<AddNewDataProps> = ({
     };
   }, [userClickTimeout]);
 
-  // Update medical info field
-  const updateMedicalInfo = useCallback((field: string, value: any) => {
-    setMedicalInfo((prev) => ({ ...prev, [field]: value }));
-  }, []);
-
-  // Memoized callback functions to prevent infinite re-renders
-  const handlePatientDataChange = useCallback((data: PatientData) => {
-    setPatientData(data);
-  }, []);
-
-  const handleValidationChange = useCallback(
-    (validation: { phone: boolean; email: boolean }) => {
-      setValidationStatus(validation);
-    },
-    []
-  );
-
   const handleDropdownToggle = useCallback((isOpen: boolean) => {
     setIsDropdownOpen(isOpen);
-  }, []);
-
-  const handleHospitalDataChange = useCallback((data: HospitalData) => {
-    setHospitalData(data);
   }, []);
 
   // Handle keyboard events
@@ -463,24 +342,6 @@ const AddNewDataInfertility: React.FC<AddNewDataProps> = ({
     },
   ];
 
-  // Input styling
-  const inputClassName =
-    "text-gray-700 font-normal rounded-lg h-12 md:h-14 py-2 px-4 w-full focus:border-blue-600 focus:ring-2 focus:ring-blue-100 outline-none shadow-sm hover:shadow-md transition-all duration-300 placeholder:text-gray-400 placeholder:font-light text-xs sm:text-sm bg-gray-50 border border-gray-300";
-
-  const bloodGroups = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
-  const infertilityTypes = ["Primary", "Secondary"];
-  const statusOptions = ["Active", "Follow-up", "Completed", "Discontinued"];
-  const referralSources = [
-    "Self-referral",
-    "Gynecologist",
-    "General Practitioner",
-    "Friend/Family",
-    "Online",
-    "Advertisement",
-    "Other Hospital",
-    "Other",
-  ];
-
   return (
     <AnimatePresence mode="wait">
       {isOpen && (
@@ -512,53 +373,17 @@ const AddNewDataInfertility: React.FC<AddNewDataProps> = ({
               transformStyle: "preserve-3d",
             }}
           >
-            {/* Header */}
-            <div className="sticky top-0 bg-linear-to-br from-slate-50/90 via-white/85 to-slate-100/90 border-b border-gray-100 rounded-t-3xl z-10 overflow-hidden">
-              <div className="flex justify-between items-center p-3 sm:p-4 md:p-6 pb-2 sm:pb-3 md:pb-4 relative z-10">
-                <div className="flex items-center gap-3 sm:gap-4">
-                  <div className="p-2 sm:p-2.5 md:p-3 bg-linear-to-br from-blue-500 to-blue-600 rounded-xl shadow-lg shrink-0">
-                    <Stethoscope
-                      className="text-white"
-                      size={isMobile ? 18 : isMd ? 24 : 32}
-                    />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <h2 className="text-base sm:text-xl md:text-2xl lg:text-3xl font-bold text-blue-900 leading-tight mb-0.5 sm:mb-1">
-                      <span className="hidden sm:inline">Add New Patient</span>
-                      <span className="sm:hidden">New Patient</span>
-                    </h2>
-                    <p className="text-blue-700/80 text-xs sm:text-sm font-medium leading-tight hidden lg:block">
-                      Enter all required hospital, patient, and medical details
-                      to register a new infertility case.
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2 sm:gap-3">
-                  {/* Close Button */}
-                  <button
-                    onClick={handleClose}
-                    disabled={isSubmitting}
-                    className="bg-red-100 hover:bg-red-200 text-red-500 p-1.5 sm:p-2 rounded-full flex items-center justify-center transition-all duration-200 shrink-0 hover:scale-110 hover:shadow-md group disabled:opacity-50"
-                    aria-label="Close"
-                  >
-                    <motion.div
-                      transition={{ duration: 0.2 }}
-                      whileHover={{
-                        rotate: 90,
-                        scale: 1.1,
-                      }}
-                      whileTap={{
-                        scale: 0.5,
-                      }}
-                    >
-                      <X className="text-base sm:text-lg group-hover:text-red-600 transition-colors duration-200" />
-                    </motion.div>
-                  </button>
-                </div>
-              </div>
-
-              {/* Sticky Navigation Tabs */}
-              <div className="flex flex-wrap gap-2 sm:gap-4 px-3 sm:px-4 md:px-6 pb-2 sm:pb-3 md:pb-4">
+            {/* Header using global ModalHeader */}
+            <ModalHeader
+              icon={Stethoscope}
+              iconColor="blue"
+              title="Add New Patient"
+              subtitle="Enter all required hospital, patient, and medical details to register a new infertility case."
+              onClose={handleClose}
+              isDisabled={isSubmitting}
+            >
+              {/* Navigation Tabs */}
+              <div className="flex flex-wrap gap-2 sm:gap-4">
                 {sections.map((section) => {
                   const Icon = section.icon;
                   const isActive = activeSection === section.id;
@@ -573,18 +398,15 @@ const AddNewDataInfertility: React.FC<AddNewDataProps> = ({
                         isActive ? "transform scale-110" : "hover:shadow-md"
                       }`}
                     >
-                      <Icon
-                        size={isMobile ? 14 : isMd ? 16 : 18}
-                        className="shrink-0"
-                      />
-                      <span className="hidden xs:inline sm:inline whitespace-nowrap">
-                        {isMobile ? section.label.split(" ")[0] : section.label}
+                      <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4 md:w-[18px] md:h-[18px] shrink-0" />
+                      <span className="hidden sm:inline whitespace-nowrap">
+                        {section.label}
                       </span>
                     </button>
                   );
                 })}
               </div>
-            </div>
+            </ModalHeader>
 
             {/* Content */}
             <div className="flex-1 overflow-y-auto p-3 sm:p-4 md:p-6">
@@ -592,10 +414,9 @@ const AddNewDataInfertility: React.FC<AddNewDataProps> = ({
                 {/* Hospital Information */}
                 <div id="hospital">
                   <HospitalInformation
-                    onDataChange={handleHospitalDataChange}
                     onDropdownToggle={handleDropdownToggle}
                     onMessage={onMessage}
-                    isMobile={isMobile}
+                    isMobile={false}
                     titleTooltipStyle={{}}
                   />
                 </div>
@@ -603,60 +424,32 @@ const AddNewDataInfertility: React.FC<AddNewDataProps> = ({
                 {/* Patient Information */}
                 <div id="patient">
                   <PatientInformation
-                    onDataChange={handlePatientDataChange}
                     availablePatients={[]}
                     onDropdownToggle={handleDropdownToggle}
-                    isMobile={isMobile}
-                    onValidationChange={handleValidationChange}
+                    isMobile={false}
                     hospitalName={hospitalData.name}
                   />
                 </div>
 
                 {/* Medical Information */}
                 <div id="medical">
-                  <MedicalInformation
-                    medicalInfo={medicalInfo}
-                    updateMedicalInfo={updateMedicalInfo}
-                    isMobile={isMobile}
-                    isMd={isMd}
-                    bloodGroups={bloodGroups}
-                    infertilityTypes={infertilityTypes}
-                    statusOptions={statusOptions}
-                    referralSources={referralSources}
-                  />
+                  <MedicalInformation />
                 </div>
               </div>
             </div>
 
-            {/* Footer */}
-            <div className="border-t border-gray-200 bg-gray-50 px-4 sm:px-6 py-3 sm:py-4 rounded-b-3xl">
-              <div className="flex justify-end gap-2 sm:gap-3">
-                <button
-                  onClick={handleClose}
-                  disabled={isSubmitting}
-                  className="px-4 sm:px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors duration-200 disabled:opacity-50 text-sm font-medium"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleSubmit}
-                  disabled={isSubmitting || !isFormValid}
-                  className="px-4 sm:px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 disabled:opacity-50 flex items-center gap-2 text-sm font-medium"
-                >
-                  {isSubmitting ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      Saving...
-                    </>
-                  ) : (
-                    <>
-                      <Save className="w-4 h-4" />
-                      Save Patient
-                    </>
-                  )}
-                </button>
-              </div>
-            </div>
+            {/* Footer using global ModalFooter */}
+            <ModalFooter
+              onCancel={handleClose}
+              onSubmit={handleSubmit}
+              isSubmitting={isSubmitting}
+              isDisabled={!isFormValid}
+              cancelText="Cancel"
+              submitText="Save Patient"
+              loadingText="Saving..."
+              submitIcon={Save}
+              theme="blue"
+            />
           </motion.div>
         </motion.div>
       )}

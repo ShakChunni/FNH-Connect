@@ -2,7 +2,6 @@ import React from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { FiFilter } from "react-icons/fi";
 import { PlusIcon } from "lucide-react";
-import { useMediaQuery } from "react-responsive";
 
 interface ButtonContainerProps {
   onToggleExpand: (isExpanded: boolean) => void;
@@ -15,45 +14,14 @@ const ButtonContainer: React.FC<ButtonContainerProps> = ({
   isExpanded,
   onAddData,
 }) => {
-  const isMobile = useMediaQuery({ maxWidth: 639 }); // Tailwind's sm
-  const isMd = useMediaQuery({ minWidth: 640, maxWidth: 1023 }); // Tailwind's md
-
-  // Responsive classes
-  const buttonSize = isMobile
-    ? "h-[40px] text-xs"
-    : isMd
-    ? "h-[44px] text-sm"
-    : "h-[46px] text-sm";
-
-  const expandTextWidth = isMobile
-    ? "w-[80px]"
-    : isMd
-    ? "w-[100px]"
-    : "w-[90px]";
-
   return (
-    <div
-      className={`flex px-4 lg:px-12 mb-6 ${
-        isMobile ? "justify-center" : "justify-end"
-      }`}
-    >
-      <div
-        className={
-          isMobile
-            ? "flex items-center gap-3 w-full max-w-md"
-            : "flex items-center gap-3"
-        }
-      >
-        {" "}
-        {/* Expand Button */}
+    <div className="flex px-2 sm:px-4 lg:px-12 mb-4 sm:mb-6 justify-center sm:justify-end">
+      <div className="flex items-center gap-2 sm:gap-3 w-full max-w-md sm:max-w-none sm:w-auto">
+        {/* Expand/Collapse Filters Button */}
         <motion.div
-          className={`overflow-hidden ${isMobile ? "flex-1" : ""}`}
-          initial={{
-            width: isMobile ? undefined : isMd ? 160 : 160,
-          }}
-          animate={{
-            width: isMobile ? undefined : isMd ? 160 : 160,
-          }}
+          className="flex-1 sm:flex-none overflow-hidden"
+          initial={{ width: "auto" }}
+          animate={{ width: "auto" }}
           transition={{
             type: "spring",
             stiffness: 260,
@@ -77,11 +45,14 @@ const ButtonContainer: React.FC<ButtonContainerProps> = ({
               scale: 1.02,
             }}
             layout="position"
-            className={`text-white rounded-xl ${buttonSize}
+            className={`
+              text-white rounded-lg sm:rounded-xl
+              h-9 sm:h-10 md:h-11 lg:h-[46px]
               flex items-center justify-center shadow-lg
               transition-all duration-300 ease-in-out cursor-pointer
               font-semibold
-              ${isMobile ? "w-full px-0" : "w-full px-5 py-2"}
+              w-full sm:w-36 md:w-40 lg:w-40
+              px-3 sm:px-4 md:px-5 py-2
             `}
             transition={{
               duration: 0.35,
@@ -98,7 +69,7 @@ const ButtonContainer: React.FC<ButtonContainerProps> = ({
             }}
           >
             <div className="flex items-center relative overflow-hidden">
-              {/* Filter Icon with smoother rotation */}
+              {/* Filter Icon with rotation */}
               <motion.div
                 animate={{
                   rotate: isExpanded ? 90 : 0,
@@ -108,13 +79,13 @@ const ButtonContainer: React.FC<ButtonContainerProps> = ({
                   duration: 0.5,
                   ease: [0.2, 0.1, 0.3, 1],
                 }}
-                className="mr-2"
+                className="mr-1.5 sm:mr-2"
               >
-                <FiFilter size={16} />
+                <FiFilter className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               </motion.div>
 
-              {/* Text with smoother slide animation */}
-              <div className={`relative overflow-hidden ${expandTextWidth}`}>
+              {/* Text with slide animation */}
+              <div className="relative overflow-hidden w-[70px] sm:w-[80px] md:w-[90px]">
                 <AnimatePresence initial={false} mode="wait">
                   {isExpanded ? (
                     <motion.span
@@ -126,11 +97,7 @@ const ButtonContainer: React.FC<ButtonContainerProps> = ({
                         duration: 0.3,
                         ease: [0.25, 0.1, 0.25, 1],
                       }}
-                      className={
-                        isMobile
-                          ? "block whitespace-nowrap text-xs"
-                          : "block whitespace-nowrap text-sm"
-                      }
+                      className="block whitespace-nowrap text-[10px] sm:text-xs md:text-sm"
                     >
                       Hide Filters
                     </motion.span>
@@ -144,11 +111,7 @@ const ButtonContainer: React.FC<ButtonContainerProps> = ({
                         duration: 0.3,
                         ease: [0.25, 0.1, 0.25, 1],
                       }}
-                      className={
-                        isMobile
-                          ? "block whitespace-nowrap text-xs"
-                          : "block whitespace-nowrap text-sm"
-                      }
+                      className="block whitespace-nowrap text-[10px] sm:text-xs md:text-sm"
                     >
                       Show Filters
                     </motion.span>
@@ -158,7 +121,8 @@ const ButtonContainer: React.FC<ButtonContainerProps> = ({
             </div>
           </motion.button>
         </motion.div>
-        {/* Add Data Button */}
+
+        {/* Add New Patient Button */}
         <motion.button
           onClick={onAddData}
           initial={false}
@@ -174,15 +138,20 @@ const ButtonContainer: React.FC<ButtonContainerProps> = ({
             ease: [0.25, 0.1, 0.35, 1],
             background: { duration: 0.5, ease: "easeOut" },
           }}
-          className={`text-white rounded-xl ${buttonSize}
+          className={`
+            text-white rounded-lg sm:rounded-xl
+            h-9 sm:h-10 md:h-11 lg:h-[46px]
             flex items-center justify-center shadow-lg
             transition-all duration-300 ease-in-out cursor-pointer
             font-semibold
-            ${isMobile ? "flex-1 px-0" : "w-40 px-5 py-2"}
+            flex-1 sm:flex-none sm:w-36 md:w-40 lg:w-40
+            px-3 sm:px-4 md:px-5 py-2
           `}
         >
-          <PlusIcon className="w-4 h-4 mr-2" />
-          <span className={isMobile ? "text-xs" : "text-sm"}>New Patient</span>
+          <PlusIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5 sm:mr-2" />
+          <span className="text-[10px] sm:text-xs md:text-sm whitespace-nowrap">
+            New Patient
+          </span>
         </motion.button>
       </div>
     </div>

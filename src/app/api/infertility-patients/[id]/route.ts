@@ -67,76 +67,11 @@ export async function GET(
 // PATCH /api/infertility-patients/[id] - Update patient
 // ═══════════════════════════════════════════════════════════════
 
-const patientUpdateSchema = z.object({
-  id: z.number().nullable(),
-  firstName: z.string().min(1, "First name is required"),
-  lastName: z.string(),
-  fullName: z.string().min(1, "Full name is required"),
-  gender: z.string().min(1, "Gender is required"),
-  age: z.number().nullable(),
-  dateOfBirth: z
-    .string()
-    .nullable()
-    .transform((val) => (val ? new Date(val) : null)),
-  guardianName: z.string(),
-  address: z.string(),
-  phoneNumber: z.string(),
-  email: z.string(),
-  bloodGroup: z.string(),
-});
+import { editPatientSchema } from "@/app/infertility/types/schemas";
 
-const hospitalUpdateSchema = z.object({
-  id: z.number().nullable(),
-  name: z.string().min(1, "Hospital name is required"),
-  address: z.string(),
-  phoneNumber: z.string(),
-  email: z.string(),
-  website: z.string(),
-  type: z.string(),
-});
-
-const spouseInfoUpdateSchema = z.object({
-  name: z.string(),
-  age: z.number().nullable(),
-  dateOfBirth: z
-    .string()
-    .nullable()
-    .transform((val) => (val ? new Date(val) : null)),
-  gender: z.string(),
-});
-
-const medicalInfoUpdateSchema = z.object({
-  yearsMarried: z.number().nullable(),
-  yearsTrying: z.number().nullable(),
-  infertilityType: z.string(),
-  para: z.string(),
-  gravida: z.string(),
-  weight: z.number().nullable(),
-  height: z.number().nullable(),
-  bmi: z.number().nullable(),
-  bloodPressure: z.string(),
-  medicalHistory: z.string(),
-  surgicalHistory: z.string(),
-  menstrualHistory: z.string(),
-  contraceptiveHistory: z.string(),
-  referralSource: z.string(),
-  chiefComplaint: z.string(),
-  treatmentPlan: z.string(),
-  medications: z.string(),
-  nextAppointment: z
-    .string()
-    .nullable()
-    .transform((val) => (val ? new Date(val) : null)),
-  status: z.string(),
-  notes: z.string(),
-});
-
-const updatePatientSchema = z.object({
-  patient: patientUpdateSchema,
-  hospital: hospitalUpdateSchema,
-  spouseInfo: spouseInfoUpdateSchema,
-  medicalInfo: medicalInfoUpdateSchema,
-});
+// ═══════════════════════════════════════════════════════════════
+// PATCH /api/infertility-patients/[id] - Update patient
+// ═══════════════════════════════════════════════════════════════
 
 export async function PATCH(
   request: NextRequest,
@@ -162,7 +97,7 @@ export async function PATCH(
     }
 
     const body = await request.json();
-    const validation = updatePatientSchema.safeParse(body);
+    const validation = editPatientSchema.safeParse(body);
 
     if (!validation.success) {
       return NextResponse.json(
