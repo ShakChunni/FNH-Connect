@@ -1,16 +1,12 @@
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/axios";
-import { useState, useEffect } from "react";
+import { useDebounce } from "@/hooks/useDebounce";
 import { getAgeInYears } from "../utils/dateUtils";
 import type { InfertilityPatientBasic } from "@/app/infertility/types";
 
 export function useFetchPatientInformation(searchQuery: string) {
-  const [debouncedQuery, setDebouncedQuery] = useState(searchQuery || "");
-
-  useEffect(() => {
-    const handler = setTimeout(() => setDebouncedQuery(searchQuery || ""), 150);
-    return () => clearTimeout(handler);
-  }, [searchQuery]);
+  // Use the global debounce hook
+  const debouncedQuery = useDebounce(searchQuery || "", 150);
 
   return useQuery({
     queryKey: ["infertilityPatients", "search", debouncedQuery],

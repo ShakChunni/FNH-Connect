@@ -114,22 +114,23 @@ const PatientTable: React.FC<PatientTableProps> = ({
     setSortConfig({ key, direction });
   };
 
-  // Get header classes based on pinning and position - all headers have same bg
+  // Get header classes based on pinning and position - professional slate color
   const getHeaderClasses = (header: TableHeader, index: number) => {
     const baseClasses = `
       px-2 py-2 sm:px-3 sm:py-3 md:px-4 md:py-4
       text-left text-[10px] sm:text-xs md:text-xs
-      font-semibold text-white uppercase tracking-wider
-      bg-fnh-navy
-      transition-colors
-      ${header.key !== "id" ? "cursor-pointer hover:bg-fnh-navy-light" : ""}
+      font-semibold text-slate-700 uppercase tracking-wider
+      bg-slate-100/90 backdrop-blur-sm
+      transition-colors border-b border-slate-200
+      ${header.key !== "id" ? "cursor-pointer hover:bg-slate-200/80" : ""}
     `;
 
+    // Pinned columns need solid background
     if (index === 0) {
-      return `${baseClasses} ${firstPinnedHeader}`;
+      return `${baseClasses} sticky z-30 left-0 bg-slate-100`;
     }
     if (index === 1) {
-      return `${baseClasses} ${secondPinnedHeader}`;
+      return `${baseClasses} sticky z-30 left-[70px] sm:left-[80px] md:left-[90px] bg-slate-100`;
     }
     return baseClasses;
   };
@@ -144,7 +145,7 @@ const PatientTable: React.FC<PatientTableProps> = ({
           ref={tableContainerRef}
         >
           <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-fnh-navy sticky top-0 z-20">
+            <thead className="bg-slate-100 sticky top-0 z-20">
               <tr>
                 {headers.map((header, index) => (
                   <th
@@ -158,9 +159,13 @@ const PatientTable: React.FC<PatientTableProps> = ({
                 ))}
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="bg-white divide-y divide-slate-100">
               {Array.from({ length: 10 }).map((_, index) => (
-                <TableRowSkeleton key={index} headers={headers} />
+                <TableRowSkeleton
+                  key={index}
+                  headers={headers}
+                  rowIndex={index}
+                />
               ))}
             </tbody>
           </table>
@@ -192,7 +197,7 @@ const PatientTable: React.FC<PatientTableProps> = ({
           ref={tableContainerRef}
         >
           <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-fnh-navy sticky top-0 z-20">
+            <thead className="bg-slate-100 sticky top-0 z-20">
               <tr>
                 {headers.map((header, index) => (
                   <th
@@ -203,7 +208,7 @@ const PatientTable: React.FC<PatientTableProps> = ({
                     <div className="flex items-center gap-1 sm:gap-2 group">
                       <span className="whitespace-nowrap">{header.label}</span>
                       {sortConfig?.key === header.key && (
-                        <span className="text-fnh-yellow">
+                        <span className="text-fnh-blue font-bold">
                           {sortConfig.direction === "ascending" ? "↑" : "↓"}
                         </span>
                       )}
