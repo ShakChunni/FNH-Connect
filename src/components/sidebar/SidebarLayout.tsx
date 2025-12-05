@@ -26,13 +26,13 @@ function SidebarLayoutContent({ children }: { children: React.ReactNode }) {
       : "lg:ml-[var(--sidebar-collapsed-width)]";
 
   return (
-    <div className="flex min-h-screen w-full bg-fnh-navy-dark">
+    <div className="flex min-h-screen w-full bg-fnh-navy-dark overflow-hidden">
       <Sidebar />
       <div
-        className={`flex min-h-screen flex-1 flex-col transition-all duration-300 ease-[cubic-bezier(0.25,0.1,0.25,1)] ${desktopOffsetClass}`}
+        className={`flex min-h-screen min-w-0 flex-1 flex-col transition-all duration-300 ease-[cubic-bezier(0.25,0.1,0.25,1)] ${desktopOffsetClass}`}
       >
-        <div className="flex min-h-screen flex-1 flex-col px-3 pb-4 pt-4 sm:px-4 lg:px-4 lg:pb-6 lg:pt-3">
-          <div className="relative flex w-full flex-1 flex-col overflow-hidden rounded-[2.5rem] bg-fnh-porcelain shadow-lg">
+        <div className="flex min-h-screen min-w-0 flex-1 flex-col px-3 pb-4 pt-4 sm:px-4 lg:px-4 lg:pb-6 lg:pt-3 overflow-hidden">
+          <div className="relative flex w-full min-w-0 flex-1 flex-col overflow-hidden rounded-[2.5rem] bg-fnh-porcelain shadow-lg">
             {children}
           </div>
         </div>

@@ -53,12 +53,27 @@ export const normalizePatientData = (
     yearsMarried: row.yearsMarried,
     yearsTrying: row.yearsTrying,
     para: row.para,
-    alc: row.gravida,
+    gravida: row.gravida,
     weight: row.weight,
     height: row.height,
     bmi: row.bmi,
-    bp: row.bloodPressure,
+    bloodPressure: row.bloodPressure,
     infertilityType: row.infertilityType,
+    // Medical history fields
+    medicalHistory: row.medicalHistory,
+    surgicalHistory: row.surgicalHistory,
+    menstrualHistory: row.menstrualHistory,
+    contraceptiveHistory: row.contraceptiveHistory,
+    referralSource: row.referralSource,
+    chiefComplaint: row.chiefComplaint,
+    treatmentPlan: row.treatmentPlan,
+    medications: row.medications,
+    nextAppointment: row.nextAppointment
+      ? row.nextAppointment instanceof Date
+        ? row.nextAppointment.toISOString()
+        : row.nextAppointment
+      : null,
+    status: row.status,
     notes: row.notes,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,

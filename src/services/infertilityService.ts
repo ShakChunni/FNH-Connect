@@ -15,6 +15,8 @@ export interface InfertilityFilters {
   hospitalId?: number;
   infertilityType?: string;
   search?: string;
+  startDate?: string;
+  endDate?: string;
 }
 
 export interface PatientData {
@@ -91,6 +93,7 @@ export async function getInfertilityPatients(filters: InfertilityFilters) {
     where.infertilityType = filters.infertilityType;
   }
 
+  // Search filter - search by patient name or phone number
   if (filters.search) {
     where.patient = {
       OR: [
@@ -99,6 +102,17 @@ export async function getInfertilityPatients(filters: InfertilityFilters) {
         { email: { contains: filters.search, mode: "insensitive" } },
       ],
     };
+  }
+
+  // Date range filter - filter by createdAt
+  if (filters.startDate || filters.endDate) {
+    where.createdAt = {};
+    if (filters.startDate) {
+      where.createdAt.gte = new Date(filters.startDate);
+    }
+    if (filters.endDate) {
+      where.createdAt.lte = new Date(filters.endDate);
+    }
   }
 
   return await prisma.infertilityPatient.findMany({

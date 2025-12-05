@@ -22,61 +22,62 @@ const Notification: React.FC<NotificationProps> = ({
   const [dots, setDots] = useState("");
 
   const getStyles = useCallback(() => {
-    // JD Brand Colors from globals.css
-    const jdBlack = "#000000";
-    const jdYellow = "#FEDD00";
-    const jdWhite = "#FFFFFF";
-    const jdGrey = "#B2B2B2";
-    const jdRichBlack = "#231F20";
-    const jdDeepStone = "#1B1918";
-    const jdSandstone = "#B2B2B2";
+    // FNH Healthcare Brand Colors from globals.css
+    const fnhNavyDark = "#0f172a"; // Slate 900 - Darkest navy
+    const fnhNavy = "#1e293b"; // Slate 800 - Primary navy
+    const fnhNavyLight = "#334155"; // Slate 700 - Lighter navy
+    const fnhBlue = "#3b82f6"; // Blue 500 - Primary blue accent
+    const fnhBlueDark = "#2563eb"; // Blue 600 - Darker blue
+    const fnhWhite = "#ffffff";
+    const fnhYellow = "#fbbf24"; // Amber 400 - Yellow accent
+    const fnhGrey = "#94a3b8"; // Slate 400
 
-    // JD Gradient backgrounds
-    const successBg = `linear-gradient(135deg, ${jdBlack} 0%, ${jdRichBlack} 100%)`;
-    const errorBg = `linear-gradient(135deg, ${jdDeepStone} 0%, ${jdRichBlack} 100%)`;
-    const infoBg = `linear-gradient(135deg, ${jdRichBlack} 0%, ${jdDeepStone} 100%)`;
-    const loadingBg = `linear-gradient(135deg, ${jdBlack} 0%, ${jdRichBlack} 100%)`;
+    // FNH Gradient backgrounds
+    const successBg = `linear-gradient(135deg, ${fnhNavy} 0%, ${fnhNavyDark} 100%)`;
+    const errorBg = `linear-gradient(135deg, ${fnhNavyDark} 0%, ${fnhNavy} 100%)`;
+    const infoBg = `linear-gradient(135deg, ${fnhNavy} 0%, ${fnhNavyLight} 100%)`;
+    const loadingBg = `linear-gradient(135deg, ${fnhNavyDark} 0%, ${fnhNavy} 100%)`;
 
     switch (type) {
       case "success":
         return {
           bg: successBg,
-          border: jdYellow,
+          border: fnhBlue,
           icon: CheckCircle,
-          iconColor: jdYellow,
-          textColor: jdWhite,
+          iconColor: fnhBlue,
+          textColor: fnhWhite,
         };
       case "error":
         return {
           bg: errorBg,
-          border: "#dc2626", // JD red for errors
+          border: "#ef4444", // Red 500 for errors
           icon: XCircle,
-          iconColor: "#dc2626",
-          textColor: jdWhite,
+          iconColor: "#ef4444",
+          textColor: fnhWhite,
         };
       case "info":
         return {
           bg: infoBg,
-          border: jdSandstone,
+          border: fnhGrey,
           icon: Info,
-          iconColor: jdYellow,
-          textColor: jdWhite,
+          iconColor: fnhBlue,
+          textColor: fnhWhite,
         };
       case "loading":
         return {
           bg: loadingBg,
-          border: jdYellow,
+          border: fnhYellow,
           icon: Loader2,
-          iconColor: jdYellow,
-          textColor: jdWhite,
+          iconColor: fnhYellow,
+          textColor: fnhWhite,
         };
       default:
         return {
           bg: infoBg,
-          border: jdYellow,
+          border: fnhBlue,
           icon: Info,
-          iconColor: jdYellow,
-          textColor: jdWhite,
+          iconColor: fnhBlue,
+          textColor: fnhWhite,
         };
     }
   }, [type]);

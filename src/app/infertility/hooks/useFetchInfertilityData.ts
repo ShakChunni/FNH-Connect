@@ -29,6 +29,14 @@ export function useFetchInfertilityData(filters: InfertilityFilters = {}) {
         params.append("search", filters.search);
       }
 
+      if (filters.startDate) {
+        params.append("startDate", filters.startDate);
+      }
+
+      if (filters.endDate) {
+        params.append("endDate", filters.endDate);
+      }
+
       const response = await api.get<FetchInfertilityPatientsResponse>(
         `/infertility-patients?${params.toString()}`
       );
