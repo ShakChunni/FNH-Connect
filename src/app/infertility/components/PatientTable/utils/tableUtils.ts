@@ -9,10 +9,15 @@ export const formatDate = (date: string | null) => {
   }
 };
 
-export const getTableHeaders = (onEdit?: (patient: any) => void) => [
-  { key: "id", label: "#" },
+// Table headers with new column order:
+// 1. # (includes edit button)
+// 2. Patient Name (pinned on md+)
+// 3. Hospital
+// 4. Rest of fields...
+export const getTableHeaders = () => [
+  { key: "id", label: "#", pinned: true },
+  { key: "patientFullName", label: "Patient Name", pinned: true },
   { key: "hospitalName", label: "Hospital" },
-  { key: "patientFullName", label: "Patient Name" },
   { key: "patientAge", label: "Age" },
   { key: "patientDOB", label: "DOB" },
   { key: "husbandName", label: "Husband Name" },
@@ -30,5 +35,10 @@ export const getTableHeaders = (onEdit?: (patient: any) => void) => [
   { key: "notes", label: "Notes" },
   { key: "createdAt", label: "Created" },
   { key: "updatedAt", label: "Updated" },
-  ...(onEdit ? [{ key: "actions", label: "Actions" }] : []),
 ];
+
+export interface TableHeader {
+  key: string;
+  label: string;
+  pinned?: boolean;
+}

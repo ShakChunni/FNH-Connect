@@ -40,7 +40,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${inter.variable} ${gotham.variable}`}>
+    <html
+      lang="en"
+      className={`${inter.variable} ${gotham.variable}`}
+      suppressHydrationWarning
+    >
       <head>
         <meta name="robots" content="noindex, nofollow" />
         <meta

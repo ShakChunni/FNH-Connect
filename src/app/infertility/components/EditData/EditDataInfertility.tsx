@@ -6,32 +6,29 @@ import React, {
   useState,
   useMemo,
 } from "react";
-import {
-  X,
-  Save,
-  Loader2,
-  Building2,
-  User,
-  Stethoscope,
-  Users,
-} from "lucide-react";
+import { Save, Building2, User, Stethoscope } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useAuth } from "@/app/AuthContext";
-import { useMediaQuery } from "react-responsive";
 import { useEditInfertilityData } from "../../hooks/useEditInfertilityData";
 import {
   modalVariants,
   backdropVariants,
 } from "@/components/ui/modal-animations";
+import { ModalHeader } from "@/components/ui/ModalHeader";
+import { ModalFooter } from "@/components/ui/ModalFooter";
 import { getTabColors } from "./utils/modalUtils";
-import { initializeFormData } from "./utils/formInitialization";
-import HospitalInformation, {
-  HospitalData,
-} from "./components/HospitalInformation";
-import PatientInformation, {
-  PatientData,
-} from "./components/PatientInformation";
-import MedicalInformation from "./components/MedicalInformation";
+// Use shared form-section components
+import HospitalInformation from "@/app/infertility/components/form-sections/HospitalInformation";
+import PatientInformation from "@/app/infertility/components/form-sections/PatientInformation";
+import MedicalInformation from "@/app/infertility/components/form-sections/MedicalInformation";
+// Use Zustand store
+import {
+  useInfertilityHospitalData,
+  useInfertilityPatientData,
+  useInfertilitySpouseData,
+  useInfertilityMedicalInfo,
+  useInfertilityValidationStatus,
+  useInfertilityActions,
+} from "../../stores";
 import { InfertilityPatientData } from "../../types";
 
 interface EditDataProps {
@@ -49,7 +46,14 @@ const EditDataInfertility: React.FC<EditDataProps> = ({
   messagePopupRef,
   patientData,
 }) => {
-  const { user } = useAuth();
+  // Get data from Zustand store
+  const hospitalData = useInfertilityHospitalData();
+  const patientDataState = useInfertilityPatientData();
+  const spouseData = useInfertilitySpouseData();
+  const medicalInfo = useInfertilityMedicalInfo();
+  const validationStatus = useInfertilityValidationStatus();
+  const { initializeFormForEdit, resetFormState, updateMedicalInfo } =
+    useInfertilityActions();
 
   // Initialize our custom hook for editing infertility data
   const {
@@ -67,6 +71,7 @@ const EditDataInfertility: React.FC<EditDataProps> = ({
       } else {
         onMessage("success", "Patient has been successfully updated!");
       }
+      resetFormState();
       onClose();
     },
     onError: (error) => {
@@ -77,60 +82,35 @@ const EditDataInfertility: React.FC<EditDataProps> = ({
     },
   });
 
-  // Initialize form data from patientData prop
-  const getInitialFormData = useCallback(() => {
-    return initializeFormData(patientData);
-  }, [patientData]);
-
-  // Main data states - initialized with patient data
-  const [formData, setFormData] = useState(getInitialFormData);
-
-  // Extract individual state variables for easier access
-  const [hospitalData, setHospitalData] = useState<HospitalData>(
-    formData.hospitalData
-  );
-  const [patientDataState, setPatientDataState] = useState<PatientData>(
-    formData.patientData
-  );
-  const [medicalInfo, setMedicalInfo] = useState(formData.medicalInfo);
-
-  // Update form data when patientData prop changes
+  // Initialize form data from patientData prop when modal opens or patient changes
   useEffect(() => {
-    const newFormData = getInitialFormData();
-    setFormData(newFormData);
-    setHospitalData(newFormData.hospitalData);
-    setPatientDataState(newFormData.patientData);
-    setMedicalInfo(newFormData.medicalInfo);
-  }, [patientData, getInitialFormData]);
+    if (isOpen && patientData) {
+      initializeFormForEdit(patientData);
+    }
+  }, [isOpen, patientData, initializeFormForEdit]);
 
   // UI states
   const [activeSection, setActiveSection] = useState("hospital");
-  const [validationStatus, setValidationStatus] = useState({
-    phone: true,
-    email: true,
-  });
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   const popupRef = useRef<HTMLDivElement>(null);
 
-  // Responsive design
-  const isMobile = useMediaQuery({ maxWidth: 639 });
-  const isMd = useMediaQuery({ minWidth: 640, maxWidth: 1023 });
-  const isLg = useMediaQuery({ minWidth: 1024, maxWidth: 1279 });
-  const isXl = useMediaQuery({ minWidth: 1280, maxWidth: 1536 });
-  const is2xl = useMediaQuery({ minWidth: 1536 });
-
-  // Form validation
+  // Form validation - use data from Zustand store
   const isFormValid = useMemo(() => {
     return (
       hospitalData.name.trim() !== "" &&
-      patientDataState.patientFirstName.trim() !== "" &&
+      patientDataState.firstName.trim() !== "" &&
       validationStatus.phone &&
       validationStatus.email
     );
-  }, [hospitalData.name, patientDataState.patientFirstName, validationStatus]);
+  }, [
+    hospitalData.name,
+    patientDataState.firstName,
+    validationStatus.phone,
+    validationStatus.email,
+  ]);
 
-  // BMI calculation
+  // BMI calculation - use Zustand store
   useEffect(() => {
     if (medicalInfo.weight && medicalInfo.height) {
       const heightInMeters = medicalInfo.height / 100;
@@ -139,24 +119,27 @@ const EditDataInfertility: React.FC<EditDataProps> = ({
 
       // Only update if BMI has actually changed to avoid infinite loops
       if (medicalInfo.bmi !== calculatedBmi) {
-        setMedicalInfo((prev) => ({
-          ...prev,
-          bmi: calculatedBmi,
-        }));
+        updateMedicalInfo("bmi", calculatedBmi);
       }
     } else if (medicalInfo.bmi !== null) {
       // Clear BMI if weight or height is missing
-      setMedicalInfo((prev) => ({ ...prev, bmi: null }));
+      updateMedicalInfo("bmi", null);
     }
-  }, [medicalInfo.weight, medicalInfo.height, medicalInfo.bmi]);
+  }, [
+    medicalInfo.weight,
+    medicalInfo.height,
+    medicalInfo.bmi,
+    updateMedicalInfo,
+  ]);
 
   // Close modal function
   const handleClose = useCallback(() => {
     if (isSubmitting) return;
+    resetFormState();
     onClose();
-  }, [isSubmitting, onClose]);
+  }, [isSubmitting, onClose, resetFormState]);
 
-  // Handle form submission
+  // Handle form submission - read from Zustand store
   const handleSubmit = useCallback(async () => {
     if (!isFormValid) {
       onMessage("error", "Please fill in all required fields.");
@@ -178,23 +161,23 @@ const EditDataInfertility: React.FC<EditDataProps> = ({
         },
         patient: {
           id: patientDataState.id,
-          firstName: patientDataState.patientFirstName,
-          lastName: patientDataState.patientLastName || "",
-          fullName: patientDataState.patientFullName,
-          gender: patientDataState.patientGender,
-          age: patientDataState.patientAge,
-          dateOfBirth: patientDataState.patientDOB,
-          guardianName: patientDataState.spouseName, // Spouse name for infertility patients
+          firstName: patientDataState.firstName,
+          lastName: patientDataState.lastName || "",
+          fullName: patientDataState.fullName,
+          gender: patientDataState.gender,
+          age: patientDataState.age,
+          dateOfBirth: patientDataState.dateOfBirth,
+          guardianName: spouseData.name, // Spouse name for infertility patients
           address: patientDataState.address,
-          phoneNumber: patientDataState.mobileNumber,
+          phoneNumber: patientDataState.phoneNumber,
           email: patientDataState.email,
-          bloodGroup: medicalInfo.bloodGroup,
+          bloodGroup: patientDataState.bloodGroup,
         },
         spouseInfo: {
-          name: patientDataState.spouseName,
-          age: patientDataState.spouseAge,
-          dateOfBirth: patientDataState.spouseDOB,
-          gender: patientDataState.spouseGender,
+          name: spouseData.name,
+          age: spouseData.age,
+          dateOfBirth: spouseData.dateOfBirth,
+          gender: spouseData.gender,
         },
         medicalInfo: {
           yearsMarried: medicalInfo.yearsMarried,
@@ -231,6 +214,7 @@ const EditDataInfertility: React.FC<EditDataProps> = ({
     patientData.id,
     hospitalData,
     patientDataState,
+    spouseData,
     medicalInfo,
     editPatient,
   ]);
@@ -322,29 +306,9 @@ const EditDataInfertility: React.FC<EditDataProps> = ({
     };
   }, [userClickTimeout]);
 
-  // Update medical info field
-  const updateMedicalInfo = useCallback((field: string, value: any) => {
-    setMedicalInfo((prev) => ({ ...prev, [field]: value }));
-  }, []);
-
-  // Memoized callback functions to prevent infinite re-renders
-  const handlePatientDataChange = useCallback((data: PatientData) => {
-    setPatientDataState(data);
-  }, []);
-
-  const handleValidationChange = useCallback(
-    (validation: { phone: boolean; email: boolean }) => {
-      setValidationStatus(validation);
-    },
-    []
-  );
-
+  // Memoized callback functions
   const handleDropdownToggle = useCallback((isOpen: boolean) => {
     setIsDropdownOpen(isOpen);
-  }, []);
-
-  const handleHospitalDataChange = useCallback((data: HospitalData) => {
-    setHospitalData(data);
   }, []);
 
   // Handle keyboard events
@@ -388,24 +352,6 @@ const EditDataInfertility: React.FC<EditDataProps> = ({
     },
   ];
 
-  // Input styling
-  const inputClassName =
-    "text-gray-700 font-normal rounded-lg h-12 md:h-14 py-2 px-4 w-full focus:border-blue-600 focus:ring-2 focus:ring-blue-100 outline-none shadow-sm hover:shadow-md transition-all duration-300 placeholder:text-gray-400 placeholder:font-light text-xs sm:text-sm bg-gray-50 border border-gray-300";
-
-  const bloodGroups = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
-  const infertilityTypes = ["Primary", "Secondary"];
-  const statusOptions = ["Active", "Follow-up", "Completed", "Discontinued"];
-  const referralSources = [
-    "Self-referral",
-    "Gynecologist",
-    "General Practitioner",
-    "Friend/Family",
-    "Online",
-    "Advertisement",
-    "Other Hospital",
-    "Other",
-  ];
-
   return (
     <AnimatePresence mode="wait">
       {isOpen && (
@@ -437,53 +383,17 @@ const EditDataInfertility: React.FC<EditDataProps> = ({
               transformStyle: "preserve-3d",
             }}
           >
-            {/* Header */}
-            <div className="sticky top-0 bg-linear-to-br from-slate-50/90 via-white/85 to-slate-100/90 border-b border-gray-100 rounded-t-3xl z-10 overflow-hidden">
-              <div className="flex justify-between items-center p-3 sm:p-4 md:p-6 pb-2 sm:pb-3 md:pb-4 relative z-10">
-                <div className="flex items-center gap-3 sm:gap-4">
-                  <div className="p-2 sm:p-2.5 md:p-3 bg-linear-to-br from-blue-500 to-blue-600 rounded-xl shadow-lg shrink-0">
-                    <Stethoscope
-                      className="text-white"
-                      size={isMobile ? 18 : isMd ? 24 : 32}
-                    />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <h2 className="text-base sm:text-xl md:text-2xl lg:text-3xl font-bold text-blue-900 leading-tight mb-0.5 sm:mb-1">
-                      <span className="hidden sm:inline">Edit Patient</span>
-                      <span className="sm:hidden">Edit Patient</span>
-                    </h2>
-                    <p className="text-blue-700/80 text-xs sm:text-sm font-medium leading-tight hidden lg:block">
-                      Update patient information and medical details for
-                      infertility case.
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2 sm:gap-3">
-                  {/* Close Button */}
-                  <button
-                    onClick={handleClose}
-                    disabled={isSubmitting}
-                    className="bg-red-100 hover:bg-red-200 text-red-500 p-1.5 sm:p-2 rounded-full flex items-center justify-center transition-all duration-200 shrink-0 hover:scale-110 hover:shadow-md group disabled:opacity-50"
-                    aria-label="Close"
-                  >
-                    <motion.div
-                      transition={{ duration: 0.2 }}
-                      whileHover={{
-                        rotate: 90,
-                        scale: 1.1,
-                      }}
-                      whileTap={{
-                        scale: 0.5,
-                      }}
-                    >
-                      <X className="text-base sm:text-lg group-hover:text-red-600 transition-colors duration-200" />
-                    </motion.div>
-                  </button>
-                </div>
-              </div>
-
-              {/* Sticky Navigation Tabs */}
-              <div className="flex flex-wrap gap-2 sm:gap-4 px-3 sm:px-4 md:px-6 pb-2 sm:pb-3 md:pb-4">
+            {/* Header using global ModalHeader */}
+            <ModalHeader
+              icon={Stethoscope}
+              iconColor="blue"
+              title="Edit Patient"
+              subtitle="Update patient information and medical details for infertility case."
+              onClose={handleClose}
+              isDisabled={isSubmitting}
+            >
+              {/* Navigation Tabs */}
+              <div className="flex flex-wrap gap-2 sm:gap-4">
                 {sections.map((section) => {
                   const Icon = section.icon;
                   const isActive = activeSection === section.id;
@@ -498,18 +408,15 @@ const EditDataInfertility: React.FC<EditDataProps> = ({
                         isActive ? "transform scale-110" : "hover:shadow-md"
                       }`}
                     >
-                      <Icon
-                        size={isMobile ? 14 : isMd ? 16 : 18}
-                        className="shrink-0"
-                      />
-                      <span className="hidden xs:inline sm:inline whitespace-nowrap">
-                        {isMobile ? section.label.split(" ")[0] : section.label}
+                      <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4 md:w-[18px] md:h-[18px] shrink-0" />
+                      <span className="hidden sm:inline whitespace-nowrap">
+                        {section.label}
                       </span>
                     </button>
                   );
                 })}
               </div>
-            </div>
+            </ModalHeader>
 
             {/* Content */}
             <div className="flex-1 overflow-y-auto p-3 sm:p-4 md:p-6">
@@ -517,73 +424,42 @@ const EditDataInfertility: React.FC<EditDataProps> = ({
                 {/* Hospital Information */}
                 <div id="hospital">
                   <HospitalInformation
-                    onDataChange={handleHospitalDataChange}
                     onDropdownToggle={handleDropdownToggle}
                     onMessage={onMessage}
-                    isMobile={isMobile}
+                    isMobile={false}
                     titleTooltipStyle={{}}
-                    initialData={formData.hospitalData}
                   />
                 </div>
 
                 {/* Patient Information */}
                 <div id="patient">
                   <PatientInformation
-                    onDataChange={handlePatientDataChange}
                     availablePatients={[]}
                     onDropdownToggle={handleDropdownToggle}
-                    isMobile={isMobile}
-                    onValidationChange={handleValidationChange}
+                    isMobile={false}
                     hospitalName={hospitalData.name}
-                    initialData={formData.patientData}
                   />
                 </div>
 
                 {/* Medical Information */}
                 <div id="medical">
-                  <MedicalInformation
-                    medicalInfo={medicalInfo}
-                    updateMedicalInfo={updateMedicalInfo}
-                    isMobile={isMobile}
-                    isMd={isMd}
-                    bloodGroups={bloodGroups}
-                    infertilityTypes={infertilityTypes}
-                    statusOptions={statusOptions}
-                    referralSources={referralSources}
-                  />
+                  <MedicalInformation />
                 </div>
               </div>
             </div>
 
-            {/* Footer */}
-            <div className="border-t border-gray-200 bg-gray-50 px-4 sm:px-6 py-3 sm:py-4 rounded-b-3xl">
-              <div className="flex justify-end gap-2 sm:gap-3">
-                <button
-                  onClick={handleClose}
-                  disabled={isSubmitting}
-                  className="px-4 sm:px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors duration-200 disabled:opacity-50 text-sm font-medium"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleSubmit}
-                  disabled={isSubmitting || !isFormValid}
-                  className="px-4 sm:px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 disabled:opacity-50 flex items-center gap-2 text-sm font-medium"
-                >
-                  {isSubmitting ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      Updating...
-                    </>
-                  ) : (
-                    <>
-                      <Save className="w-4 h-4" />
-                      Update Patient
-                    </>
-                  )}
-                </button>
-              </div>
-            </div>
+            {/* Footer using global ModalFooter */}
+            <ModalFooter
+              onCancel={handleClose}
+              onSubmit={handleSubmit}
+              isSubmitting={isSubmitting}
+              isDisabled={!isFormValid}
+              cancelText="Cancel"
+              submitText="Update Patient"
+              loadingText="Updating..."
+              submitIcon={Save}
+              theme="blue"
+            />
           </motion.div>
         </motion.div>
       )}

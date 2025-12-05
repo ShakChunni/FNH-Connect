@@ -138,11 +138,11 @@ export default function MobileSidebar() {
             <div className="flex items-center justify-between gap-2 mb-2 px-1">
               <div className="flex items-center gap-2">
                 <Image
-                  src="/JD-BLACK.svg"
-                  alt="JD Sports"
+                  src="/fnh-logo.svg"
+                  alt="FNH Healthcare"
                   width={32}
                   height={32}
-                  className="h-8 w-8 shrink-0"
+                  className="h-8 w-8 shrink-0 object-contain brightness-0 invert"
                 />
                 <div className="text-[10px] font-bold uppercase tracking-[0.25em] text-white/80 leading-tight">
                   FNH Connect

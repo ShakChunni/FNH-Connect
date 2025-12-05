@@ -21,54 +21,52 @@ import {
   Info,
   X,
 } from "lucide-react";
-import { useFetchPatientInformation } from "../hooks";
-import DateOfBirthDropdown from "../../Dropdowns/DobDropdown";
-import GenderDropdown from "../../Dropdowns/GenderDropdown";
+import { useFetchPatientInformation } from "./hooks";
+import DateOfBirthDropdown from "./Fields/DobDropdown";
+import GenderDropdown from "./Fields/GenderDropdown";
 import ContactEmailInput from "./ContactEmailInput";
 import ContactPhoneInput from "./ContactPhoneInput";
-
-export interface PatientData {
-  id: number | null;
-  patientFirstName: string;
-  patientLastName: string;
-  patientFullName: string;
-  patientGender: string;
-  patientAge: number | null;
-  patientDOB: Date | null;
-  mobileNumber: string;
-  email: string;
-  address: string;
-  spouseName: string;
-  spouseAge: number | null;
-  spouseDOB: Date | null;
-  spouseGender: string;
-}
+import type { PatientData, InfertilityPatientBasic } from "../../types";
+import {
+  useInfertilityPatientData,
+  useInfertilitySpouseData,
+  useInfertilityValidationStatus,
+  useInfertilityActions,
+} from "../../stores";
 
 interface PatientInformationProps {
-  onDataChange: (data: PatientData) => void;
   availablePatients: InfertilityPatientBasic[];
   onDropdownToggle: (isOpen: boolean) => void;
   isMobile: boolean;
-  onValidationChange: (validation: { phone: boolean; email: boolean }) => void;
   hospitalName: string;
-  initialData?: PatientData;
 }
 
 const PatientInformation: React.FC<PatientInformationProps> = ({
-  onDataChange,
   availablePatients,
   onDropdownToggle,
   isMobile,
-  onValidationChange,
   hospitalName,
-  initialData,
 }) => {
+  // Get patient data from Zustand store
+  const patientData = useInfertilityPatientData();
+  const spouseData = useInfertilitySpouseData();
+  const validationStatus = useInfertilityValidationStatus();
+  const { setPatientData, setSpouseData, setValidationStatus } =
+    useInfertilityActions();
+
   const [searchQuery, setSearchQueryState] = useState(
-    initialData?.patientFullName || ""
+    patientData.fullName || ""
   );
   const setSearchQuery = useCallback((query: string) => {
     setSearchQueryState(query);
   }, []);
+
+  // Sync searchQuery with store when patient data changes externally (e.g., from initializeFormForEdit)
+  useEffect(() => {
+    if (patientData.fullName && patientData.fullName !== searchQuery) {
+      setSearchQueryState(patientData.fullName);
+    }
+  }, [patientData.fullName]); // Only depend on patientData.fullName to avoid loops
 
   const {
     data: patients = [],
@@ -82,25 +80,6 @@ const PatientInformation: React.FC<PatientInformationProps> = ({
     }
   }, [error]);
 
-  const [localData, setLocalData] = useState<PatientData>(
-    initialData || {
-      id: null,
-      patientFirstName: "",
-      patientLastName: "",
-      patientFullName: "",
-      patientGender: "Female",
-      patientAge: null,
-      patientDOB: null,
-      mobileNumber: "",
-      email: "",
-      address: "",
-      spouseName: "",
-      spouseAge: null,
-      spouseDOB: null,
-      spouseGender: "Male",
-    }
-  );
-
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isPhoneValid, setIsPhoneValid] = useState(true);
   const [isEmailValid, setIsEmailValid] = useState(true);
@@ -112,38 +91,21 @@ const PatientInformation: React.FC<PatientInformationProps> = ({
 
   const [patientStatus, setPatientStatus] = useState<
     "" | "hospital-filled" | "global-filled" | "new"
-  >(initialData?.id ? "global-filled" : "");
+  >("");
   const [patientTouched, setPatientTouched] = useState(false);
   const [autofilledFields, setAutofilledFields] = useState<{
-    mobileNumber: boolean;
+    phoneNumber: boolean;
     email: boolean;
     address: boolean;
-    patientAge: boolean;
-    patientDOB: boolean;
+    age: boolean;
+    dateOfBirth: boolean;
   }>({
-    mobileNumber: !!initialData?.mobileNumber,
-    email: !!initialData?.email,
-    address: !!initialData?.address,
-    patientAge: !!initialData?.patientAge,
-    patientDOB: !!initialData?.patientDOB,
+    phoneNumber: false,
+    email: false,
+    address: false,
+    age: false,
+    dateOfBirth: false,
   });
-
-  // Update localData when initialData changes (for edit mode)
-  useEffect(() => {
-    if (initialData) {
-      setLocalData(initialData);
-      setSearchQuery(initialData.patientFullName);
-      setPatientStatus(initialData.id ? "global-filled" : "");
-      setPatientTouched(false);
-      setAutofilledFields({
-        mobileNumber: !!initialData.mobileNumber,
-        email: !!initialData.email,
-        address: !!initialData.address,
-        patientAge: !!initialData.patientAge,
-        patientDOB: !!initialData.patientDOB,
-      });
-    }
-  }, [initialData, setSearchQuery]);
 
   const dropdownRef = useRef<HTMLDivElement>(null);
   const nameInputRef = useRef<HTMLInputElement>(null);
@@ -151,58 +113,57 @@ const PatientInformation: React.FC<PatientInformationProps> = ({
   // Reset patient form when hospital changes
   const availablePatientsLength = availablePatients.length;
   useEffect(() => {
-    setLocalData({
+    setPatientData({
       id: null,
-      patientFirstName: "",
-      patientLastName: "",
-      patientFullName: "",
-      patientGender: "Female",
-      patientAge: null,
-      patientDOB: null,
-      mobileNumber: "",
-      email: "",
+      firstName: "",
+      lastName: "",
+      fullName: "",
+      gender: "Female",
+      age: null,
+      dateOfBirth: null,
+      guardianName: "",
       address: "",
-      spouseName: "",
-      spouseAge: null,
-      spouseDOB: null,
-      spouseGender: "Male",
+      phoneNumber: "",
+      email: "",
+      bloodGroup: "",
     });
     setIsDropdownOpen(false);
     setSearchQuery("");
     setPatientStatus("");
     setPatientTouched(false);
     setAutofilledFields({
-      mobileNumber: false,
+      phoneNumber: false,
       email: false,
       address: false,
-      patientAge: false,
-      patientDOB: false,
+      age: false,
+      dateOfBirth: false,
     });
     onDropdownToggle(false);
-  }, [availablePatientsLength, onDropdownToggle, setSearchQuery]);
+  }, [
+    availablePatientsLength,
+    onDropdownToggle,
+    setSearchQuery,
+    setPatientData,
+  ]);
 
   // Update full name when first/last name changes
   useEffect(() => {
-    const fullName =
-      `${localData.patientFirstName} ${localData.patientLastName}`.trim();
-    if (fullName !== localData.patientFullName) {
-      setLocalData((prev) => ({ ...prev, patientFullName: fullName }));
+    const fullName = `${patientData.firstName} ${patientData.lastName}`.trim();
+    if (fullName !== patientData.fullName) {
+      setPatientData({ ...patientData, fullName: fullName });
     }
   }, [
-    localData.patientFirstName,
-    localData.patientLastName,
-    localData.patientFullName,
+    patientData.firstName,
+    patientData.lastName,
+    patientData.fullName,
+    patientData,
+    setPatientData,
   ]);
 
-  // Lift state up when local data changes
+  // Sync validation state to store
   useEffect(() => {
-    onDataChange(localData);
-  }, [localData, onDataChange]);
-
-  // Lift validation state up
-  useEffect(() => {
-    onValidationChange({ phone: isPhoneValid, email: isEmailValid });
-  }, [isPhoneValid, isEmailValid, onValidationChange]);
+    setValidationStatus({ phone: isPhoneValid, email: isEmailValid });
+  }, [isPhoneValid, isEmailValid, setValidationStatus]);
 
   const updateDropdownPosition = useCallback(() => {
     if (nameInputRef.current) {
@@ -217,22 +178,21 @@ const PatientInformation: React.FC<PatientInformationProps> = ({
 
   // Autofill selection from hospital patients
   const handleSelectHospitalPatient = (patient: InfertilityPatientBasic) => {
-    setLocalData({
+    const dob = patient.dateOfBirth ? new Date(patient.dateOfBirth) : null;
+
+    setPatientData({
       id: patient.id,
-      patientFirstName: patient.patientFullName.split(" ")[0] || "",
-      patientLastName:
-        patient.patientFullName.split(" ").slice(1).join(" ") || "",
-      patientFullName: patient.patientFullName,
-      patientGender: "Female",
-      patientAge: patient.patientAge,
-      patientDOB: null,
-      mobileNumber: patient.mobileNumber || "",
-      email: patient.email || "",
+      firstName: patient.patientFullName.split(" ")[0] || "",
+      lastName: patient.patientFullName.split(" ").slice(1).join(" ") || "",
+      fullName: patient.patientFullName,
+      gender: "Female",
+      age: patient.patientAge,
+      dateOfBirth: dob,
+      guardianName: "",
       address: "",
-      spouseName: "",
-      spouseAge: null,
-      spouseDOB: null,
-      spouseGender: "Male",
+      phoneNumber: patient.mobileNumber || "",
+      email: patient.email || "",
+      bloodGroup: "",
     });
     setSearchQuery(patient.patientFullName);
     setIsDropdownOpen(false);
@@ -240,31 +200,30 @@ const PatientInformation: React.FC<PatientInformationProps> = ({
     setPatientTouched(true);
     setPatientStatus("hospital-filled");
     setAutofilledFields({
-      mobileNumber: !!patient.mobileNumber,
+      phoneNumber: !!patient.mobileNumber,
       email: !!patient.email,
       address: false,
-      patientAge: !!patient.patientAge,
-      patientDOB: false,
+      age: !!patient.patientAge,
+      dateOfBirth: !!patient.dateOfBirth,
     });
   };
 
   const handleSelectGlobalPatient = (patient: InfertilityPatientBasic) => {
-    setLocalData({
+    const dob = patient.dateOfBirth ? new Date(patient.dateOfBirth) : null;
+
+    setPatientData({
       id: patient.id,
-      patientFirstName: patient.patientFullName.split(" ")[0] || "",
-      patientLastName:
-        patient.patientFullName.split(" ").slice(1).join(" ") || "",
-      patientFullName: patient.patientFullName,
-      patientGender: "Female",
-      patientAge: patient.patientAge,
-      patientDOB: null,
-      mobileNumber: patient.mobileNumber || "",
-      email: patient.email || "",
+      firstName: patient.patientFullName.split(" ")[0] || "",
+      lastName: patient.patientFullName.split(" ").slice(1).join(" ") || "",
+      fullName: patient.patientFullName,
+      gender: "Female",
+      age: patient.patientAge,
+      dateOfBirth: dob,
+      guardianName: "",
       address: "",
-      spouseName: "",
-      spouseAge: null,
-      spouseDOB: null,
-      spouseGender: "Male",
+      phoneNumber: patient.mobileNumber || "",
+      email: patient.email || "",
+      bloodGroup: "",
     });
     setSearchQuery(patient.patientFullName);
     setIsDropdownOpen(false);
@@ -272,64 +231,62 @@ const PatientInformation: React.FC<PatientInformationProps> = ({
     setPatientTouched(true);
     setPatientStatus("global-filled");
     setAutofilledFields({
-      mobileNumber: !!patient.mobileNumber,
+      phoneNumber: !!patient.mobileNumber,
       email: !!patient.email,
       address: false,
-      patientAge: !!patient.patientAge,
-      patientDOB: false,
+      age: !!patient.patientAge,
+      dateOfBirth: !!patient.dateOfBirth,
     });
   };
 
   // Add new patient
   const handleAddNew = useCallback(() => {
     const names = searchQuery.trim().split(" ");
-    setLocalData((prev) => ({
-      ...prev,
+    setPatientData({
+      ...patientData,
       id: null,
-      patientFirstName: names[0] || "",
-      patientLastName: names.slice(1).join(" ") || "",
-      patientFullName: searchQuery.trim(),
-    }));
+      firstName: names[0] || "",
+      lastName: names.slice(1).join(" ") || "",
+      fullName: searchQuery.trim(),
+    });
     setIsDropdownOpen(false);
     onDropdownToggle(false);
     setPatientStatus("new");
     setPatientTouched(true);
     setAutofilledFields({
-      mobileNumber: false,
+      phoneNumber: false,
       email: false,
       address: false,
-      patientAge: false,
-      patientDOB: false,
+      age: false,
+      dateOfBirth: false,
     });
-  }, [searchQuery, onDropdownToggle]);
+  }, [searchQuery, onDropdownToggle, patientData, setPatientData]);
 
   // Clear selection
   const handleClearSelection = () => {
-    setLocalData({
+    setPatientData({
       id: null,
-      patientFirstName: "",
-      patientLastName: "",
-      patientFullName: "",
-      patientGender: "Female",
-      patientAge: null,
-      patientDOB: null,
-      mobileNumber: "",
-      email: "",
+      firstName: "",
+      lastName: "",
+      fullName: "",
+      gender: "Female",
+      age: null,
+      dateOfBirth: null,
+      guardianName: "",
       address: "",
-      spouseName: "",
-      spouseAge: null,
-      spouseDOB: null,
-      spouseGender: "Male",
+      phoneNumber: "",
+      email: "",
+      bloodGroup: "",
     });
     setSearchQuery("");
     setPatientStatus("");
     setPatientTouched(false);
     setAutofilledFields({
-      mobileNumber: false,
+      phoneNumber: false,
       email: false,
       address: false,
-      patientAge: false,
-      patientDOB: false,
+      age: false,
+      dateOfBirth: false,
     });
   };
 
@@ -338,34 +295,37 @@ const PatientInformation: React.FC<PatientInformationProps> = ({
     const newQuery = e.target.value;
     setSearchQuery(newQuery);
     const names = newQuery.trim().split(" ");
-    setLocalData((prev) => ({
-      ...prev,
-      patientFirstName: names[0] || "",
-      patientLastName: names.slice(1).join(" ") || "",
-      patientFullName: newQuery,
-    }));
+    setPatientData({
+      ...patientData,
+      firstName: names[0] || "",
+      lastName: names.slice(1).join(" ") || "",
+      fullName: newQuery,
+    });
     setPatientTouched(true);
     if (
       (patientStatus === "hospital-filled" ||
         patientStatus === "global-filled") &&
-      newQuery !== localData.patientFullName
+      newQuery !== patientData.fullName
     ) {
-      setLocalData((prev) => ({
-        ...prev,
+      setPatientData({
+        ...patientData,
         id: null,
-        mobileNumber: "",
+        phoneNumber: "",
         email: "",
         address: "",
-        patientAge: null,
-        patientDOB: null,
-      }));
+        age: null,
+        dateOfBirth: null,
+        firstName: names[0] || "",
+        lastName: names.slice(1).join(" ") || "",
+        fullName: newQuery,
+      });
       setPatientStatus("new");
       setAutofilledFields({
-        mobileNumber: false,
+        phoneNumber: false,
         email: false,
         address: false,
-        patientAge: false,
-        patientDOB: false,
+        age: false,
+        dateOfBirth: false,
       });
     }
     if (newQuery.length >= 1) {
@@ -390,7 +350,7 @@ const PatientInformation: React.FC<PatientInformationProps> = ({
       setPatientStatus("");
       return;
     }
-    if (localData.id) {
+    if (patientData.id) {
       // Keep existing status
     } else if (searchQuery.length > 1) {
       setPatientStatus("new");
@@ -404,10 +364,7 @@ const PatientInformation: React.FC<PatientInformationProps> = ({
     field: keyof PatientData,
     value: string | number | Date | null
   ) => {
-    setLocalData((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
+    setPatientData({ ...patientData, [field]: value });
     if (
       field in autofilledFields &&
       autofilledFields[field as keyof typeof autofilledFields]
@@ -424,22 +381,23 @@ const PatientInformation: React.FC<PatientInformationProps> = ({
     date: Date | null,
     age?: { years: number; months: number; days: number }
   ) => {
-    setLocalData((prev) => ({
-      ...prev,
-      patientDOB: date,
-      patientAge: age ? age.years : null,
-    }));
+    setPatientData({
+      ...patientData,
+      dateOfBirth: date,
+      age: age ? age.years : null,
+    });
   };
 
   const handleSpouseDOBChange = (
     date: Date | null,
     age?: { years: number; months: number; days: number }
   ) => {
-    setLocalData((prev) => ({
-      ...prev,
-      spouseDOB: date,
-      spouseAge: age ? age.years : null,
-    }));
+    // Update spouse data in the store
+    setSpouseData({
+      ...spouseData,
+      dateOfBirth: date,
+      age: age ? age.years : null,
+    });
   };
 
   // Enhanced click outside & scroll handler
@@ -481,7 +439,7 @@ const PatientInformation: React.FC<PatientInformationProps> = ({
     };
   }, [isDropdownOpen, onDropdownToggle, handleScroll]);
 
-  const isPatientSelected = localData.id !== null;
+  const isPatientSelected = patientData.id !== null;
 
   // Status message and dynamic header styling
   const getHeaderBg = () => {
@@ -532,138 +490,158 @@ const PatientInformation: React.FC<PatientInformationProps> = ({
     !loading && patients.length > 0 && searchQuery.length > 0;
   const showAddNew = !loading && searchQuery.length > 1;
 
-  const dropdownContent = (
-    <AnimatePresence>
-      {isDropdownOpen && !isPatientSelected && (
-        <motion.div
-          ref={dropdownRef}
-          initial={{ opacity: 0, y: -10, scale: 0.98 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          exit={{ opacity: 0, y: -10, scale: 0.98 }}
-          transition={{ duration: 0.2, ease: "easeOut" }}
-          className="bg-white border border-gray-300 rounded-lg shadow-2xl z-60 overflow-hidden"
-          style={{
-            position: "absolute",
-            top: dropdownPosition.top,
-            left: dropdownPosition.left,
-            width: dropdownPosition.width,
-            maxHeight: "300px",
-            boxShadow:
-              "0 10px 25px -5px rgba(0, 0, 0, 0.2), 0 8px 10px -6px rgba(0, 0, 0, 0.2)",
-          }}
-          onMouseDown={(e) => e.stopPropagation()}
-          onClick={(e) => e.stopPropagation()}
-        >
-          <div
-            className="max-h-[300px] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent"
+  const dropdownContent = useMemo(
+    () => (
+      <AnimatePresence>
+        {isDropdownOpen && !isPatientSelected && (
+          <motion.div
+            ref={dropdownRef}
+            initial={{ opacity: 0, y: -10, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -10, scale: 0.98 }}
+            transition={{ duration: 0.2, ease: "easeOut" }}
+            className="bg-white border border-gray-300 rounded-lg shadow-2xl z-110000 overflow-hidden"
             style={{
-              scrollbarWidth: "thin",
-              scrollbarColor: "#D1D5DB transparent",
+              position: "absolute",
+              top: dropdownPosition.top,
+              left: dropdownPosition.left,
+              width: dropdownPosition.width,
+              maxHeight: "300px",
+              boxShadow:
+                "0 10px 25px -5px rgba(0, 0, 0, 0.2), 0 8px 10px -6px rgba(0, 0, 0, 0.2)",
             }}
+            onMouseDown={(e) => e.stopPropagation()}
+            onClick={(e) => e.stopPropagation()}
           >
-            {loading && (
-              <div className="flex items-center justify-center p-4 text-gray-500">
-                <Loader2 className="w-5 h-5 animate-spin mr-2" />
-                Searching...
-              </div>
-            )}
+            <div
+              className="max-h-[300px] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent"
+              style={{
+                scrollbarWidth: "thin",
+                scrollbarColor: "#D1D5DB transparent",
+              }}
+            >
+              {loading && (
+                <div className="flex items-center justify-center p-4 text-gray-500">
+                  <Loader2 className="w-5 h-5 animate-spin mr-2" />
+                  Searching...
+                </div>
+              )}
 
-            {!loading && showHospitalPatients && (
-              <>
-                <div className="px-4 py-2 bg-indigo-50 border-b border-indigo-100">
-                  <p className="text-xs font-medium text-indigo-700 flex items-center gap-1">
-                    <Building2 className="w-3 h-3 text-indigo-500" />
-                    Patients from {hospitalName}
+              {!loading && showHospitalPatients && (
+                <>
+                  <div className="px-4 py-2 bg-indigo-50 border-b border-indigo-100">
+                    <p className="text-xs font-medium text-indigo-700 flex items-center gap-1">
+                      <Building2 className="w-3 h-3 text-indigo-500" />
+                      Patients from {hospitalName}
+                    </p>
+                  </div>
+                  {availablePatients.map((patient) => (
+                    <div
+                      key={patient.id}
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleSelectHospitalPatient(patient);
+                      }}
+                      className="px-4 py-3 cursor-pointer hover:bg-indigo-50 flex items-center gap-3 border-b border-gray-100 last:border-b-0"
+                    >
+                      <User className="w-5 h-5 text-gray-400 shrink-0" />
+                      <div className="min-w-0 flex-1">
+                        <p className="font-medium text-gray-800 text-sm truncate">
+                          {patient.patientFullName}
+                        </p>
+                        <p className="text-xs text-gray-500 truncate">
+                          {patient.patientAge
+                            ? `Age ${patient.patientAge}`
+                            : "No age"}{" "}
+                          • {patient.mobileNumber || "No phone"}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </>
+              )}
+
+              {!loading && showGlobalPatients && (
+                <>
+                  <div className="px-4 py-2 bg-indigo-50 border-b border-indigo-100">
+                    <p className="text-xs font-medium text-indigo-700 flex items-center gap-1">
+                      <User className="w-3 h-3 text-indigo-500" />
+                      Other patients in system
+                    </p>
+                  </div>
+                  {patients.map((patient) => (
+                    <div
+                      key={patient.id}
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleSelectGlobalPatient(patient);
+                      }}
+                      className="px-4 py-3 cursor-pointer hover:bg-indigo-50 flex items-center gap-3 border-b border-gray-100 last:border-b-0"
+                    >
+                      <User className="w-5 h-5 text-gray-400 shrink-0" />
+                      <div className="min-w-0 flex-1">
+                        <p className="font-medium text-gray-800 text-sm truncate">
+                          {patient.patientFullName}
+                        </p>
+                        <p className="text-xs text-gray-500 truncate">
+                          {patient.patientAge
+                            ? `Age ${patient.patientAge}`
+                            : "No age"}{" "}
+                          • {patient.mobileNumber || "No phone"}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </>
+              )}
+
+              {!loading && searchQuery.length === 0 && (
+                <div className="flex items-center gap-2 px-4 py-3 text-gray-500 text-xs border-t border-gray-100">
+                  <Info className="w-4 h-4 text-gray-400" />
+                  Start typing to search for patients from our database.
+                </div>
+              )}
+
+              {showAddNew && (
+                <div
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    handleAddNew();
+                  }}
+                  className="px-4 py-3 cursor-pointer hover:bg-indigo-50 flex items-center gap-3 border-t border-gray-200"
+                >
+                  <PlusCircle className="w-5 h-5 text-indigo-600 shrink-0" />
+                  <p className="font-medium text-indigo-700 text-sm">
+                    Add &quot;{searchQuery}&quot; as a new patient
                   </p>
                 </div>
-                {availablePatients.map((patient) => (
-                  <div
-                    key={patient.id}
-                    onMouseDown={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      handleSelectHospitalPatient(patient);
-                    }}
-                    className="px-4 py-3 cursor-pointer hover:bg-indigo-50 flex items-center gap-3 border-b border-gray-100 last:border-b-0"
-                  >
-                    <User className="w-5 h-5 text-gray-400 shrink-0" />
-                    <div className="min-w-0 flex-1">
-                      <p className="font-medium text-gray-800 text-sm truncate">
-                        {patient.patientFullName}
-                      </p>
-                      <p className="text-xs text-gray-500 truncate">
-                        {patient.patientAge
-                          ? `Age ${patient.patientAge}`
-                          : "No age"}{" "}
-                        • {patient.mobileNumber || "No phone"}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </>
-            )}
-
-            {!loading && showGlobalPatients && (
-              <>
-                <div className="px-4 py-2 bg-indigo-50 border-b border-indigo-100">
-                  <p className="text-xs font-medium text-indigo-700 flex items-center gap-1">
-                    <User className="w-3 h-3 text-indigo-500" />
-                    Other patients in system
-                  </p>
-                </div>
-                {patients.map((patient) => (
-                  <div
-                    key={patient.id}
-                    onMouseDown={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      handleSelectGlobalPatient(patient);
-                    }}
-                    className="px-4 py-3 cursor-pointer hover:bg-indigo-50 flex items-center gap-3 border-b border-gray-100 last:border-b-0"
-                  >
-                    <User className="w-5 h-5 text-gray-400 shrink-0" />
-                    <div className="min-w-0 flex-1">
-                      <p className="font-medium text-gray-800 text-sm truncate">
-                        {patient.patientFullName}
-                      </p>
-                      <p className="text-xs text-gray-500 truncate">
-                        {patient.patientAge
-                          ? `Age ${patient.patientAge}`
-                          : "No age"}{" "}
-                        • {patient.mobileNumber || "No phone"}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </>
-            )}
-
-            {!loading && searchQuery.length === 0 && (
-              <div className="flex items-center gap-2 px-4 py-3 text-gray-500 text-xs border-t border-gray-100">
-                <Info className="w-4 h-4 text-gray-400" />
-                Start typing to search for patients from our database.
-              </div>
-            )}
-
-            {showAddNew && (
-              <div
-                onMouseDown={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  handleAddNew();
-                }}
-                className="px-4 py-3 cursor-pointer hover:bg-indigo-50 flex items-center gap-3 border-t border-gray-200"
-              >
-                <PlusCircle className="w-5 h-5 text-indigo-600 shrink-0" />
-                <p className="font-medium text-indigo-700 text-sm">
-                  Add &quot;{searchQuery}&quot; as a new patient
-                </p>
-              </div>
-            )}
-          </div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    ),
+    [
+      isDropdownOpen,
+      isPatientSelected,
+      dropdownPosition.top,
+      dropdownPosition.left,
+      dropdownPosition.width,
+      loading,
+      showHospitalPatients,
+      availablePatients,
+      hospitalName,
+      showGlobalPatients,
+      patients,
+      searchQuery.length,
+      showAddNew,
+      handleSelectHospitalPatient,
+      handleSelectGlobalPatient,
+      handleAddNew,
+    ]
   );
 
   return (
@@ -725,11 +703,8 @@ const PatientInformation: React.FC<PatientInformationProps> = ({
             ref={nameInputRef}
             type="text"
             className={
-              inputClassName(
-                localData.patientFullName,
-                true,
-                isPatientSelected
-              ) + " pr-44 sm:pr-56"
+              inputClassName(patientData.fullName, true, isPatientSelected) +
+              " pr-44 sm:pr-56"
             }
             value={searchQuery}
             onChange={handleInputChange}
@@ -800,8 +775,8 @@ const PatientInformation: React.FC<PatientInformationProps> = ({
           Patient Gender<span className="text-red-500">*</span>
         </label>
         <GenderDropdown
-          value={localData.patientGender || "Female"}
-          onSelect={(v) => handleFieldChange("patientGender", v)}
+          value={patientData.gender || "Female"}
+          onSelect={(v) => handleFieldChange("gender", v)}
           style={{ width: "100%" }}
           autofilled={false}
         />
@@ -813,7 +788,7 @@ const PatientInformation: React.FC<PatientInformationProps> = ({
           <label className="block text-gray-700 text-sm sm:text-base font-semibold">
             Patient Date of Birth
           </label>
-          {autofilledFields.patientDOB && (
+          {autofilledFields.dateOfBirth && (
             <div className="sm:hidden">
               <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-rose-100 text-rose-700 text-xs font-semibold border border-rose-200 shadow-sm">
                 <User className="w-3 h-3 mr-1 text-rose-500" />
@@ -824,11 +799,11 @@ const PatientInformation: React.FC<PatientInformationProps> = ({
         </div>
         <div className="relative">
           <DateOfBirthDropdown
-            value={localData.patientDOB}
+            value={patientData.dateOfBirth}
             onChange={handleDOBChange}
             placeholder="Select date of birth"
           />
-          {autofilledFields.patientDOB && (
+          {autofilledFields.dateOfBirth && (
             <div className="hidden sm:flex absolute right-3 top-1/2 -translate-y-1/2">
               <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 text-xs font-semibold border border-indigo-200 shadow-sm pointer-events-none">
                 <User className="w-3 h-3 mr-1 text-indigo-500" />
@@ -845,7 +820,7 @@ const PatientInformation: React.FC<PatientInformationProps> = ({
           <label className="block text-gray-700 text-sm sm:text-base font-semibold">
             Mobile Number<span className="text-red-500">*</span>
           </label>
-          {autofilledFields.mobileNumber && (
+          {autofilledFields.phoneNumber && (
             <div className="sm:hidden">
               <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-rose-100 text-rose-700 text-xs font-semibold border border-rose-200 shadow-sm">
                 <User className="w-3 h-3 mr-1 text-rose-500" />
@@ -856,13 +831,13 @@ const PatientInformation: React.FC<PatientInformationProps> = ({
         </div>
         <div className="relative">
           <ContactPhoneInput
-            value={localData.mobileNumber}
-            onChange={(val) => handleFieldChange("mobileNumber", val)}
+            value={patientData.phoneNumber}
+            onChange={(val) => handleFieldChange("phoneNumber", val)}
             onValidationChange={setIsPhoneValid}
             defaultCountry="BD"
-            isAutofilled={autofilledFields.mobileNumber}
+            isAutofilled={autofilledFields.phoneNumber}
           />
-          {autofilledFields.mobileNumber && (
+          {autofilledFields.phoneNumber && (
             <div className="hidden sm:flex absolute right-3 top-1/2 -translate-y-1/2">
               <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 text-xs font-semibold border border-indigo-200 shadow-sm pointer-events-none">
                 <User className="w-3 h-3 mr-1 text-indigo-500" />
@@ -890,7 +865,7 @@ const PatientInformation: React.FC<PatientInformationProps> = ({
         </div>
         <div className="relative">
           <ContactEmailInput
-            value={localData.email}
+            value={patientData.email}
             onChange={(val) => handleFieldChange("email", val)}
             onValidationChange={setIsEmailValid}
             isAutofilled={autofilledFields.email}
@@ -924,11 +899,11 @@ const PatientInformation: React.FC<PatientInformationProps> = ({
         <div className="relative">
           <textarea
             className={`${inputClassName(
-              localData.address,
+              patientData.address,
               true,
               autofilledFields.address
             )} resize-none`}
-            value={localData.address}
+            value={patientData.address}
             onChange={(e) => handleFieldChange("address", e.target.value)}
             placeholder="Patient address"
             rows={2}
@@ -946,51 +921,57 @@ const PatientInformation: React.FC<PatientInformationProps> = ({
       </div>
 
       {/* Spouse Information */}
-      <div className="border-t border-gray-200 pt-4 mt-6">
-        <div className="flex items-center gap-2 mb-4">
-          <Heart className="w-5 h-5 text-indigo-600" />
-          <h4 className="text-lg font-semibold text-gray-800">
+      <div className="mt-6 mb-4 sm:mb-5 md:mb-6 border-t border-gray-200 pt-6">
+        <div className="flex items-center gap-3 sm:gap-4 mb-4">
+          <div className="p-2 bg-indigo-50 rounded-lg">
+            <Users className="text-indigo-600" size={20} />
+          </div>
+          <h3 className="text-md sm:text-lg md:text-xl font-bold text-gray-800">
             Spouse Information
-          </h4>
+          </h3>
         </div>
 
-        {/* Spouse Name */}
-        <div className="mb-3 sm:mb-4">
-          <label className="block text-gray-700 text-sm sm:text-base font-semibold mb-1.5 sm:mb-2">
-            Spouse Name
-          </label>
-          <input
-            type="text"
-            className={inputClassName(localData.spouseName)}
-            value={localData.spouseName}
-            onChange={(e) => handleFieldChange("spouseName", e.target.value)}
-            placeholder="Enter spouse name"
-          />
-        </div>
+        <div className="grid grid-cols-1 gap-4">
+          {/* Spouse Name */}
+          <div>
+            <label className="block text-gray-700 text-sm sm:text-base font-semibold mb-1.5 sm:mb-2">
+              Spouse Name
+            </label>
+            <input
+              type="text"
+              className={inputClassName(spouseData.name || "", true, false)}
+              value={spouseData.name || ""}
+              onChange={(e) =>
+                setSpouseData({ ...spouseData, name: e.target.value })
+              }
+              placeholder="Enter spouse name"
+            />
+          </div>
 
-        {/* Spouse Gender */}
-        <div className="mb-3 sm:mb-4">
-          <label className="block text-gray-700 text-sm sm:text-base font-semibold mb-1.5 sm:mb-2">
-            Spouse Gender
-          </label>
-          <GenderDropdown
-            value={localData.spouseGender}
-            onSelect={(v) => handleFieldChange("spouseGender", v)}
-            style={{ width: "100%" }}
-            autofilled={false}
-          />
-        </div>
+          {/* Spouse Gender */}
+          <div>
+            <label className="block text-gray-700 text-sm sm:text-base font-semibold mb-1.5 sm:mb-2">
+              Spouse Gender
+            </label>
+            <GenderDropdown
+              value={spouseData.gender || "Male"}
+              onSelect={(val) => setSpouseData({ ...spouseData, gender: val })}
+              style={{ width: "100%" }}
+              autofilled={false}
+            />
+          </div>
 
-        {/* Spouse Age/DOB */}
-        <div className="mb-3 sm:mb-4">
-          <label className="block text-gray-700 text-sm sm:text-base font-semibold mb-1.5 sm:mb-2">
-            Spouse Date of Birth
-          </label>
-          <DateOfBirthDropdown
-            value={localData.spouseDOB}
-            onChange={handleSpouseDOBChange}
-            placeholder="Select spouse date of birth"
-          />
+          {/* Spouse DOB */}
+          <div>
+            <label className="block text-gray-700 text-sm sm:text-base font-semibold mb-1.5 sm:mb-2">
+              Spouse Date of Birth
+            </label>
+            <DateOfBirthDropdown
+              value={spouseData.dateOfBirth}
+              onChange={handleSpouseDOBChange}
+              placeholder="Select date of birth"
+            />
+          </div>
         </div>
       </div>
     </div>

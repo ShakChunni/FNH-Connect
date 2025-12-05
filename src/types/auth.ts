@@ -1,36 +1,20 @@
-// Hospital Staff User Type
-export interface HospitalStaff {
-  id: number;
-  username: string;
-  firstName: string;
-  lastName: string;
-  fullName: string;
-  role: string; // Doctor, Nurse, PIC, Admin, etc.
-  specialization?: string;
-  email?: string;
-  phoneNumber?: string;
-  isActive: boolean;
-  department?: string;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
 // Session User Type (subset returned from verify-session API)
 // Lightweight user data for client-side rendering
 export interface SessionUser {
-  id: number;
+  id: number; // User ID (Int)
   username: string;
+  role: string; // User role
+  isActive: boolean;
+  staffId: number;
+  // Staff details flattened for convenience
   firstName: string;
   lastName: string;
   fullName: string;
-  role: string; // Staff hospital role (Doctor, Nurse, PIC, Admin, etc.)
-  systemRole: string; // User system role (sysAdmin, staff, etc.) for permissions
+  staffRole: string; // Staff table role
+  department?: string; // Derived from staff assignments if needed
   specialization?: string;
   email?: string;
   phoneNumber?: string;
-  isActive: boolean;
-  department?: string;
-  organizations?: string[];
 }
 
 // Authentication Flow Types
@@ -73,20 +57,21 @@ export interface LoginFormData {
 
 // Session Types (from database Session model)
 export interface Session {
-  id: number;
+  id: string; // CUID (String)
   userId: number;
   token: string;
-  ipAddress: string;
-  userAgent: string;
-  deviceFingerprint: string;
-  readableFingerprint: string;
-  osType: string;
-  browserName: string;
-  browserVersion: string;
-  deviceType: string;
   expiresAt: Date;
   createdAt: Date;
   updatedAt: Date;
+  // Device tracking (optional in type if not always fetched)
+  ipAddress?: string | null;
+  userAgent?: string | null;
+  deviceFingerprint?: string | null;
+  readableFingerprint?: string | null;
+  osType?: string | null;
+  browserName?: string | null;
+  browserVersion?: string | null;
+  deviceType?: string | null;
 }
 
 // Device Detection Info

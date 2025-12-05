@@ -31,6 +31,7 @@
     "crypto-js": "^4.2.0",
     "date-fns": "^4.1.0",
     "framer-motion": "^12.23.22",
+    "immer": "^11.0.1",
     "jose": "^6.1.0",
     "js-cookie": "^3.0.5",
     "jsonwebtoken": "^9.0.2",
@@ -38,7 +39,7 @@
     "lodash": "^4.17.21",
     "lucide-react": "^0.544.0",
     "media-query": "^1.0.0",
-    "next": "15.5.4",
+    "next": "^15.5.7",
     "node-cron": "^4.2.1",
     "node-device-detector": "^2.2.4",
     "nodemailer": "^7.0.10",
@@ -58,7 +59,8 @@
     "tailwind-merge": "^3.3.1",
     "ua-parser-js": "^2.0.5",
     "xlsx": "^0.18.5",
-    "zod": "^4.1.11"
+    "zod": "^4.1.11",
+    "zustand": "^5.0.9"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

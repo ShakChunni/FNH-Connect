@@ -8,43 +8,47 @@ import React, {
 import { motion, AnimatePresence } from "framer-motion";
 import { createPortal } from "react-dom";
 import { Building2, PlusCircle, Loader2, Info, X } from "lucide-react";
-import { useFetchHospitalInformation } from "../hooks";
-import { Hospital } from "../../../types";
-import HospitalTypeDropdown from "../../Dropdowns/HospitalTypeDropdown";
+import { useFetchHospitalInformation } from "./hooks";
+import { Hospital, HospitalData as SharedHospitalData } from "../../types";
+import {
+  useInfertilityHospitalData,
+  useInfertilityActions,
+} from "../../stores";
+import HospitalTypeDropdown from "./Fields/HospitalTypeDropdown";
 import ContactPhoneInput from "./ContactPhoneInput";
 import ContactEmailInput from "./ContactEmailInput";
 
-export interface HospitalData {
-  id: number | null;
-  name: string;
-  address: string;
-  phoneNumber: string;
-  email: string;
-  website: string;
-  type: string;
-}
+// Re-export the shared type for backwards compatibility
+export type HospitalData = SharedHospitalData;
 
 interface HospitalInformationProps {
-  onDataChange: (data: HospitalData) => void;
   onDropdownToggle: (isOpen: boolean) => void;
   onMessage: (type: "success" | "error", content: string) => void;
   isMobile: boolean;
   titleTooltipStyle: React.CSSProperties;
-  initialData?: HospitalData;
 }
 
 const HospitalInformation: React.FC<HospitalInformationProps> = ({
-  onDataChange,
   onDropdownToggle,
   onMessage,
   isMobile,
   titleTooltipStyle,
-  initialData,
 }) => {
-  const [searchQuery, setSearchQueryState] = useState(initialData?.name || "");
+  // Get hospital data from Zustand store
+  const hospitalData = useInfertilityHospitalData();
+  const { setHospitalData } = useInfertilityActions();
+
+  const [searchQuery, setSearchQueryState] = useState(hospitalData.name || "");
   const setSearchQuery = useCallback((query: string) => {
     setSearchQueryState(query);
   }, []);
+
+  // Sync searchQuery with store when hospital data changes externally (e.g., from initializeFormForEdit)
+  useEffect(() => {
+    if (hospitalData.name && hospitalData.name !== searchQuery) {
+      setSearchQueryState(hospitalData.name);
+    }
+  }, [hospitalData.name]); // Only depend on hospitalData.name to avoid loops
 
   // Use the hook for fetching hospitals
   const {
@@ -61,17 +65,6 @@ const HospitalInformation: React.FC<HospitalInformationProps> = ({
   }, [error, onMessage]);
 
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [localData, setLocalData] = useState<HospitalData>(
-    initialData || {
-      id: null,
-      name: "",
-      address: "",
-      phoneNumber: "",
-      email: "",
-      website: "",
-      type: "",
-    }
-  );
 
   const [autofilledFields, setAutofilledFields] = useState<{
     address: boolean;
@@ -80,12 +73,31 @@ const HospitalInformation: React.FC<HospitalInformationProps> = ({
     website: boolean;
     type: boolean;
   }>({
-    address: !!initialData?.address,
-    phoneNumber: !!initialData?.phoneNumber,
-    email: !!initialData?.email,
-    website: !!initialData?.website,
-    type: !!initialData?.type,
+    address: false,
+    phoneNumber: false,
+    email: false,
+    website: false,
+    type: false,
   });
+
+  const [hospitalStatus, setHospitalStatus] = useState<"" | "existing" | "new">(
+    ""
+  );
+
+  // Sync autofilled/status state when hospitalData is loaded (e.g. from Edit)
+  useEffect(() => {
+    if (hospitalData.id) {
+      setHospitalStatus("existing");
+      setAutofilledFields({
+        address: !!hospitalData.address,
+        phoneNumber: !!hospitalData.phoneNumber,
+        email: !!hospitalData.email,
+        website: !!hospitalData.website,
+        type: !!hospitalData.type,
+      });
+      setHospitalTouched(true);
+    }
+  }, [hospitalData.id, hospitalData]);
 
   // Add validation states for phone and email
   const [isPhoneValid, setIsPhoneValid] = useState(true);
@@ -99,9 +111,6 @@ const HospitalInformation: React.FC<HospitalInformationProps> = ({
     width: number;
   }>({ top: 0, left: 0, width: 0 });
 
-  const [hospitalStatus, setHospitalStatus] = useState<"" | "existing" | "new">(
-    initialData?.id ? "existing" : ""
-  );
   const [hospitalTouched, setHospitalTouched] = useState(false);
 
   const hospitalTypes = [
@@ -138,10 +147,6 @@ const HospitalInformation: React.FC<HospitalInformationProps> = ({
     };
   }, []);
 
-  useEffect(() => {
-    onDataChange(localData);
-  }, [localData, onDataChange]);
-
   const updateDropdownPosition = useCallback(() => {
     if (hospitalInputRef.current) {
       const rect = hospitalInputRef.current.getBoundingClientRect();
@@ -156,11 +161,11 @@ const HospitalInformation: React.FC<HospitalInformationProps> = ({
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newQuery = e.target.value;
     setSearchQuery(newQuery);
-    setLocalData((prev) => ({
-      ...prev,
+    setHospitalData({
+      ...hospitalData,
       id: null,
       name: newQuery,
-    }));
+    });
     setHospitalTouched(true);
     setHospitalStatus("");
 
@@ -180,7 +185,7 @@ const HospitalInformation: React.FC<HospitalInformationProps> = ({
       return;
     }
 
-    if (localData.id) {
+    if (hospitalData.id) {
       setHospitalStatus("existing");
     } else if (searchQuery.length > 1) {
       setHospitalStatus("new");
@@ -192,7 +197,7 @@ const HospitalInformation: React.FC<HospitalInformationProps> = ({
   const handleSelectHospital = useCallback(
     (hospital: Hospital) => {
       setTimeout(() => {
-        setLocalData({
+        setHospitalData({
           id: hospital.id,
           name: hospital.name,
           address: hospital.address || "",
@@ -218,7 +223,7 @@ const HospitalInformation: React.FC<HospitalInformationProps> = ({
       }, 0);
     },
     [
-      setLocalData,
+      setHospitalData,
       setAutofilledFields,
       setSearchQuery,
       setIsDropdownOpen,
@@ -230,8 +235,8 @@ const HospitalInformation: React.FC<HospitalInformationProps> = ({
     setTimeout(() => {
       setIsDropdownOpen(false);
       onDropdownToggle(false);
-      setLocalData((prev) => ({
-        ...prev,
+      setHospitalData({
+        ...hospitalData,
         id: null,
         name: searchQuery,
         address: "",
@@ -239,7 +244,7 @@ const HospitalInformation: React.FC<HospitalInformationProps> = ({
         email: "",
         website: "",
         type: "",
-      }));
+      });
 
       setAutofilledFields({
         address: false,
@@ -255,12 +260,13 @@ const HospitalInformation: React.FC<HospitalInformationProps> = ({
     searchQuery,
     setIsDropdownOpen,
     onDropdownToggle,
-    setLocalData,
+    setHospitalData,
+    hospitalData,
     setAutofilledFields,
   ]);
 
   const handleClearSelection = () => {
-    setLocalData({
+    setHospitalData({
       id: null,
       name: "",
       address: "",
@@ -281,8 +287,11 @@ const HospitalInformation: React.FC<HospitalInformationProps> = ({
     setHospitalTouched(false);
   };
 
-  const handleLocalDataChange = (field: keyof HospitalData, value: string) => {
-    setLocalData((prev) => ({ ...prev, [field]: value }));
+  const handleHospitalDataChange = (
+    field: keyof HospitalData,
+    value: string
+  ) => {
+    setHospitalData({ ...hospitalData, [field]: value });
 
     // Remove autofill status when user manually edits
     if (
@@ -344,29 +353,52 @@ const HospitalInformation: React.FC<HospitalInformationProps> = ({
     };
   }, [isDropdownOpen, onDropdownToggle, handleScroll]);
 
-  const isHospitalSelected = localData.id !== null;
+  const isHospitalSelected = hospitalData.id !== null;
 
   useEffect(() => {
-    if (!localData.name) {
-      setLocalData((prev) => ({
-        ...prev,
-        address: "",
-        phoneNumber: "",
-        email: "",
-        website: "",
-        type: "",
-      }));
-      setAutofilledFields({
-        address: false,
-        phoneNumber: false,
-        email: false,
-        website: false,
-        type: false,
-      });
-      setHospitalStatus("");
-      setHospitalTouched(false);
+    if (!hospitalData.name) {
+      // Only update if fields are not already empty to prevent infinite loops
+      const hasData =
+        hospitalData.address ||
+        hospitalData.phoneNumber ||
+        hospitalData.email ||
+        hospitalData.website ||
+        hospitalData.type;
+
+      if (hasData) {
+        setHospitalData({
+          ...hospitalData,
+          address: "",
+          phoneNumber: "",
+          email: "",
+          website: "",
+          type: "",
+        });
+        setAutofilledFields({
+          address: false,
+          phoneNumber: false,
+          email: false,
+          website: false,
+          type: false,
+        });
+        setHospitalStatus("");
+        setHospitalTouched(false);
+      }
     }
-  }, [localData.name]);
+  }, [
+    hospitalData.name,
+    hospitalData.address,
+    hospitalData.phoneNumber,
+    hospitalData.email,
+    hospitalData.website,
+    hospitalData.type,
+    // We can exclude hospitalData from dependencies since we destructured its properties
+    // but we need it for the spread in setHospitalData.
+    // Ideally setHospitalData should accept a partial or we use the functional update form if available.
+    // However, since we now check 'hasData', the loop is broken even if hospitalData is in deps.
+    hospitalData,
+    setHospitalData,
+  ]);
 
   // Status message and dynamic header styling
   const getHeaderBg = () => {
@@ -408,90 +440,112 @@ const HospitalInformation: React.FC<HospitalInformationProps> = ({
     return "Search for a hospital or add a new one to the system.";
   };
 
-  const dropdownContent = (
-    <AnimatePresence>
-      {isDropdownOpen && !isHospitalSelected && (
-        <motion.div
-          ref={dropdownRef}
-          initial={{ opacity: 0, y: -10, scale: 0.98 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          exit={{ opacity: 0, y: -10, scale: 0.98 }}
-          transition={{ duration: 0.2, ease: "easeOut" }}
-          className="bg-white border border-gray-300 rounded-lg shadow-2xl z-60 overflow-hidden"
-          style={{
-            position: "absolute",
-            top: dropdownPosition.top,
-            left: dropdownPosition.left,
-            width: dropdownPosition.width,
-            maxHeight: "300px",
-            boxShadow:
-              "0 10px 25px -5px rgba(0, 0, 0, 0.2), 0 8px 10px -6px rgba(0, 0, 0, 0.2)",
-          }}
-          onMouseDown={(e) => e.stopPropagation()}
-          onClick={(e) => e.stopPropagation()}
-        >
-          <div
-            className="max-h-[300px] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent"
+  const dropdownContent = useMemo(
+    () => (
+      <AnimatePresence>
+        {isDropdownOpen && !isHospitalSelected && (
+          <motion.div
+            ref={dropdownRef}
+            initial={{ opacity: 0, y: -10, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -10, scale: 0.98 }}
+            transition={{ duration: 0.2, ease: "easeOut" }}
+            className="bg-white border border-gray-300 rounded-lg shadow-2xl z-110000 overflow-hidden"
             style={{
-              scrollbarWidth: "thin",
-              scrollbarColor: "#D1D5DB transparent",
+              position: "absolute",
+              top: dropdownPosition.top,
+              left: dropdownPosition.left,
+              width: dropdownPosition.width,
+              maxHeight: "300px",
+              boxShadow:
+                "0 10px 25px -5px rgba(0, 0, 0, 0.2), 0 8px 10px -6px rgba(0, 0, 0, 0.2)",
             }}
+            onMouseDown={(e) => e.stopPropagation()}
+            onClick={(e) => e.stopPropagation()}
           >
-            {loading && (
-              <div className="flex items-center justify-center p-4 text-gray-500">
-                <Loader2 className="w-5 h-5 animate-spin mr-2" />
-                Searching...
-              </div>
-            )}
-            {!loading &&
-              hospitals.length > 0 &&
-              hospitals.map((hospital) => (
-                <div
-                  key={hospital.id}
-                  onMouseDown={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    handleSelectHospital(hospital);
-                  }}
-                  className="px-4 py-3 cursor-pointer hover:bg-blue-50 flex items-center gap-3 border-b border-gray-100 last:border-b-0"
-                >
-                  <Building2 className="w-5 h-5 text-gray-400 shrink-0" />
-                  <div className="min-w-0 flex-1">
-                    <p className="font-medium text-gray-800 text-sm truncate">
-                      {hospital.name}
-                    </p>
-                    <p className="text-xs text-gray-500 truncate">
-                      {hospital.type || "No type"} •{" "}
-                      {hospital.address || "No address"}
+            <div
+              className="max-h-[300px] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent"
+              style={{
+                scrollbarWidth: "thin",
+                scrollbarColor: "#D1D5DB transparent",
+              }}
+            >
+              {loading && (
+                <div className="flex items-center justify-center p-4 text-gray-500">
+                  <Loader2 className="w-5 h-5 animate-spin mr-2" />
+                  Searching...
+                </div>
+              )}
+              {!loading &&
+                hospitals.length > 0 &&
+                hospitals.map((hospital) => (
+                  <div
+                    key={hospital.id}
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleSelectHospital(hospital);
+                    }}
+                    className="px-4 py-3 cursor-pointer hover:bg-blue-50 flex items-center gap-3 border-b border-gray-100 last:border-b-0"
+                  >
+                    <Building2 className="w-5 h-5 text-gray-400 shrink-0" />
+                    <div className="min-w-0 flex-1">
+                      <p className="font-medium text-gray-800 text-sm truncate">
+                        {hospital.name}
+                      </p>
+                      <p className="text-xs text-gray-500 truncate">
+                        {hospital.type || "No type"} •{" "}
+                        {hospital.address || "No address"}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              {!loading && searchQuery.length === 0 && (
+                <div className="flex items-center gap-2 px-4 py-3 text-gray-500 text-xs border-t border-gray-100">
+                  <Info className="w-4 h-4 text-gray-400" />
+                  Start typing to search for hospitals from our database.
+                </div>
+              )}
+              {!loading &&
+                searchQuery.length >= 1 &&
+                // Only show add-as-new when typed query doesn't exactly match
+                // an existing hospital name to avoid duplication.
+                !hospitals.some(
+                  (h) =>
+                    h.name.toLowerCase().trim() ===
+                    searchQuery.toLowerCase().trim()
+                ) && (
+                  <div
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleAddNew();
+                    }}
+                    className="px-4 py-3 cursor-pointer hover:bg-blue-50 flex items-center gap-3 border-t border-gray-200"
+                  >
+                    <PlusCircle className="w-5 h-5 text-blue-600 shrink-0" />
+                    <p className="font-medium text-blue-700 text-sm">
+                      Add &quot;{searchQuery}&quot; as a new hospital
                     </p>
                   </div>
-                </div>
-              ))}
-            {!loading && searchQuery.length === 0 && (
-              <div className="flex items-center gap-2 px-4 py-3 text-gray-500 text-xs border-t border-gray-100">
-                <Info className="w-4 h-4 text-gray-400" />
-                Start typing to search for hospitals from our database.
-              </div>
-            )}
-            {!loading && searchQuery.length >= 1 && (
-              <div
-                onMouseDown={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  handleAddNew();
-                }}
-                className="px-4 py-3 cursor-pointer hover:bg-blue-50 flex items-center gap-3 border-t border-gray-200"
-              >
-                <PlusCircle className="w-5 h-5 text-blue-600 shrink-0" />
-                <p className="font-medium text-blue-700 text-sm">
-                  Add &quot;{searchQuery}&quot; as a new hospital
-                </p>
-              </div>
-            )}
-          </div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+                )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    ),
+    [
+      isDropdownOpen,
+      isHospitalSelected,
+      dropdownPosition.top,
+      dropdownPosition.left,
+      dropdownPosition.width,
+      loading,
+      hospitals,
+      searchQuery.length,
+      handleSelectHospital,
+      handleAddNew,
+    ]
   );
 
   return (
@@ -529,8 +583,8 @@ const HospitalInformation: React.FC<HospitalInformationProps> = ({
           {/* Mobile status badge next to label */}
           <div className="sm:hidden">
             {hospitalStatus === "new" && (
-              <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 text-xs font-semibold border border-blue-200 shadow-sm">
-                <PlusCircle className="w-3 h-3 mr-1 text-blue-500" />
+              <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-green-100 text-green-700 text-xs font-semibold border border-green-200 shadow-sm">
+                <PlusCircle className="w-3 h-3 mr-1 text-green-500" />
                 New
               </span>
             )}
@@ -547,8 +601,14 @@ const HospitalInformation: React.FC<HospitalInformationProps> = ({
             ref={hospitalInputRef}
             type="text"
             className={
-              inputClassName(localData.name, isHospitalSelected) +
-              " pr-44 sm:pr-56"
+              // If the user typed something, treat it as valid so we show
+              // the green success styles while they type (this avoids a
+              // red validation ring before the user blurs or explicitly
+              // adds the new hospital).
+              inputClassName(
+                hospitalData.name,
+                hospitalData.name.trim() !== ""
+              ) + " pr-44 sm:pr-56"
             }
             value={searchQuery}
             onChange={handleInputChange}
@@ -567,10 +627,10 @@ const HospitalInformation: React.FC<HospitalInformationProps> = ({
           <div className="hidden sm:flex absolute right-3 top-1/2 -translate-y-1/2 flex-row gap-2 items-center max-w-[70vw] sm:max-w-none">
             {hospitalStatus === "new" && (
               <span
-                className="inline-flex items-center px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 text-xs font-semibold border border-blue-200 shadow-sm pointer-events-none whitespace-nowrap"
+                className="inline-flex items-center px-2 py-0.5 rounded-full bg-green-100 text-green-700 text-xs font-semibold border border-green-200 shadow-sm pointer-events-none whitespace-nowrap"
                 style={{ zIndex: 2 }}
               >
-                <PlusCircle className="w-3 h-3 mr-1 text-blue-500" />
+                <PlusCircle className="w-3 h-3 mr-1 text-green-500" />
                 Adding as a new hospital
               </span>
             )}
@@ -628,12 +688,12 @@ const HospitalInformation: React.FC<HospitalInformationProps> = ({
         </div>
         <div className="relative">
           <HospitalTypeDropdown
-            value={localData.type}
-            onSelect={(v) => handleLocalDataChange("type", v)}
+            value={hospitalData.type}
+            onSelect={(v) => handleHospitalDataChange("type", v)}
             options={hospitalTypes}
             disabled={autofilledFields.type}
             inputClassName={inputClassName(
-              localData.type,
+              hospitalData.type,
               true,
               autofilledFields.type
             )}
@@ -666,8 +726,8 @@ const HospitalInformation: React.FC<HospitalInformationProps> = ({
         </div>
         <div className="relative">
           <ContactPhoneInput
-            value={localData.phoneNumber}
-            onChange={(val) => handleLocalDataChange("phoneNumber", val)}
+            value={hospitalData.phoneNumber}
+            onChange={(val) => handleHospitalDataChange("phoneNumber", val)}
             onValidationChange={setIsPhoneValid}
             defaultCountry="BD"
             isAutofilled={autofilledFields.phoneNumber}
@@ -701,12 +761,14 @@ const HospitalInformation: React.FC<HospitalInformationProps> = ({
         <div className="relative">
           <textarea
             className={`${inputClassName(
-              localData.address,
+              hospitalData.address,
               true,
               autofilledFields.address
             )} resize-none`}
-            value={localData.address}
-            onChange={(e) => handleLocalDataChange("address", e.target.value)}
+            value={hospitalData.address}
+            onChange={(e) =>
+              handleHospitalDataChange("address", e.target.value)
+            }
             placeholder="Hospital address"
             rows={2}
             disabled={autofilledFields.address}
@@ -741,8 +803,8 @@ const HospitalInformation: React.FC<HospitalInformationProps> = ({
           </div>
           <div className="relative">
             <ContactEmailInput
-              value={localData.email}
-              onChange={(val) => handleLocalDataChange("email", val)}
+              value={hospitalData.email}
+              onChange={(val) => handleHospitalDataChange("email", val)}
               onValidationChange={setIsEmailValid}
               placeholder="Hospital email"
               isAutofilled={autofilledFields.email}
@@ -777,12 +839,14 @@ const HospitalInformation: React.FC<HospitalInformationProps> = ({
             <input
               type="url"
               className={inputClassName(
-                localData.website,
+                hospitalData.website,
                 true,
                 autofilledFields.website
               )}
-              value={localData.website}
-              onChange={(e) => handleLocalDataChange("website", e.target.value)}
+              value={hospitalData.website}
+              onChange={(e) =>
+                handleHospitalDataChange("website", e.target.value)
+              }
               placeholder="Hospital website"
               disabled={autofilledFields.website}
             />

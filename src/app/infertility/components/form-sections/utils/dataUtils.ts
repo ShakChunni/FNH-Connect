@@ -1,4 +1,4 @@
-import { InfertilityPatient } from "../types";
+import { InfertilityPatient } from "../../../types";
 
 const calculateAge = (dateOfBirth: Date | string | null): number | null => {
   if (!dateOfBirth) return null;
@@ -53,8 +53,10 @@ export const normalizePatientData = (
     yearsMarried: row.yearsMarried,
     yearsTrying: row.yearsTrying,
     para: row.para,
-    alc: null, // Not in schema, perhaps remove or add to schema
+    alc: row.gravida,
     weight: row.weight,
+    height: row.height,
+    bmi: row.bmi,
     bp: row.bloodPressure,
     infertilityType: row.infertilityType,
     notes: row.notes,

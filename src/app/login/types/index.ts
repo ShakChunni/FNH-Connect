@@ -2,6 +2,7 @@
  * Login Page Type Definitions
  * Centralized types for login form, validation, and API communication
  */
+import { SessionUser } from "@/types/auth";
 
 export interface LoginFormData {
   username: string;
@@ -14,21 +15,10 @@ export interface LoginFormErrors {
   submit?: string;
 }
 
+// Sync with global LoginResponse but ensure strict typing for the form handler
 export interface LoginResponse {
   success: boolean;
-  user?: {
-    id: number;
-    staffId: number;
-    username: string;
-    email: string;
-    firstName: string;
-    lastName: string;
-    fullName: string;
-    role: "SysAdmin" | "Admin" | "Employee";
-    department?: string;
-    specialization?: string;
-    isActive: boolean;
-  };
+  user?: SessionUser;
   error?: string;
   message?: string;
 }
