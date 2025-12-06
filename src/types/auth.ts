@@ -24,6 +24,7 @@ export interface LoginRequest {
   password: string;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface VerifySessionRequest {
   // No request body needed, uses httpOnly session cookie
 }
