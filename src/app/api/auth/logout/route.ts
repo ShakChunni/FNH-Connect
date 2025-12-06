@@ -2,13 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { cookies } from "next/headers";
 import { validateCSRFToken } from "@/lib/csrfProtection";
+import type { LogoutResponse } from "@/types/auth";
 
 export async function POST(request: NextRequest) {
   try {
     // ✅ CSRF Validation for state-changing request
     const csrfValid = validateCSRFToken(request);
     if (!csrfValid) {
-      return NextResponse.json(
+      return NextResponse.json<LogoutResponse>(
         { success: false, error: "Invalid CSRF token" },
         { status: 403 }
       );
@@ -18,7 +19,7 @@ export async function POST(request: NextRequest) {
     const sessionToken = cookieStore.get("session")?.value;
 
     if (!sessionToken) {
-      return NextResponse.json(
+      return NextResponse.json<LogoutResponse>(
         { success: false, error: "No active session" },
         { status: 401 }
       );
@@ -66,7 +67,7 @@ export async function POST(request: NextRequest) {
       });
     });
 
-    const response = NextResponse.json(
+    const response = NextResponse.json<LogoutResponse>(
       {
         success: true,
         message: "Logged out successfully",
@@ -92,7 +93,7 @@ export async function POST(request: NextRequest) {
       stack: error instanceof Error ? error.stack : undefined,
     });
 
-    return NextResponse.json(
+    return NextResponse.json<LogoutResponse>(
       {
         success: false,
         error:

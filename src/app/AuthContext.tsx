@@ -108,11 +108,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           const validatedUser: SessionUser = {
             id: data.user.id,
             username: data.user.username,
+            staffId: data.user.staffId,
             firstName: data.user.firstName,
             lastName: data.user.lastName,
             fullName: data.user.fullName,
             role: data.user.role,
-            systemRole: data.user.systemRole,
+            staffRole: data.user.staffRole,
             specialization: data.user.specialization,
             email: data.user.email,
             phoneNumber: data.user.phoneNumber,

@@ -34,12 +34,20 @@ export interface ApiResponse<T = any> {
   data?: T;
   message?: string;
   error?: string;
+  details?: any;
 }
 
 export interface LoginResponse {
   success: boolean;
   message?: string;
   user?: SessionUser;
+  error?: string;
+  details?: any;
+}
+
+export interface LogoutResponse {
+  success: boolean;
+  message?: string;
   error?: string;
 }
 

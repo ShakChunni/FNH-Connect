@@ -22,7 +22,7 @@ import {
   FlaskConical,
 } from "lucide-react";
 import Avatar from "./Avatar";
-import TableSelector from "@/app/home/filters/TableSelector";
+// import TableSelector from "@/app/home/filters/TableSelector";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -219,9 +219,9 @@ const HeaderNavigation = ({
         )}
 
         <div className="flex items-center gap-3">
-          {showTableSelector && tableSelectorValue && (
+          {/* {showTableSelector && tableSelectorValue && (
             <TableSelector defaultValue={tableSelectorValue} />
-          )}
+          )} */}
           <Avatar
             src={user && userProfileImage ? userProfileImage : undefined}
             alt={user ? `${user.username}'s profile` : "User avatar"}

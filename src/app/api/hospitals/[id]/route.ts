@@ -4,7 +4,7 @@ import {
   validateCSRFToken,
   addCSRFTokenToResponse,
 } from "@/lib/csrfProtection";
-import { getUserFromSession } from "@/lib/auth";
+import { getAuthenticatedUserForAPI } from "@/lib/auth-validation";
 import { prisma } from "@/lib/prisma";
 
 // ═══════════════════════════════════════════════════════════════
@@ -13,12 +13,18 @@ import { prisma } from "@/lib/prisma";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    await getUserFromSession(request);
+    const user = await getAuthenticatedUserForAPI();
+    if (!user) {
+      return NextResponse.json(
+        { success: false, error: "Unauthorized" },
+        { status: 401 }
+      );
+    }
 
-    const { id } = params;
+    const { id } = await params;
 
     // Validate ID format
     const hospitalId = parseInt(id);
@@ -59,13 +65,6 @@ export async function GET(
   } catch (error) {
     console.error("GET /api/hospitals/[id] error:", error);
 
-    if (error instanceof Error && error.message.includes("Unauthorized")) {
-      return NextResponse.json(
-        { success: false, error: error.message },
-        { status: 401 }
-      );
-    }
-
     return NextResponse.json(
       {
         success: false,
@@ -92,7 +91,7 @@ const updateHospitalSchema = z.object({
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     if (!validateCSRFToken(request)) {
@@ -102,9 +101,15 @@ export async function PATCH(
       );
     }
 
-    const { userId, staffId } = await getUserFromSession(request);
+    const user = await getAuthenticatedUserForAPI();
+    if (!user) {
+      return NextResponse.json(
+        { success: false, error: "Unauthorized" },
+        { status: 401 }
+      );
+    }
 
-    const { id } = params;
+    const { id } = await params;
     const hospitalId = parseInt(id);
     if (isNaN(hospitalId)) {
       return NextResponse.json(
@@ -202,13 +207,6 @@ export async function PATCH(
   } catch (error) {
     console.error("PATCH /api/hospitals/[id] error:", error);
 
-    if (error instanceof Error && error.message.includes("Unauthorized")) {
-      return NextResponse.json(
-        { success: false, error: error.message },
-        { status: 401 }
-      );
-    }
-
     return NextResponse.json(
       {
         success: false,
@@ -226,7 +224,7 @@ export async function PATCH(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     if (!validateCSRFToken(request)) {
@@ -236,9 +234,15 @@ export async function DELETE(
       );
     }
 
-    const { userId, staffId } = await getUserFromSession(request);
+    const user = await getAuthenticatedUserForAPI();
+    if (!user) {
+      return NextResponse.json(
+        { success: false, error: "Unauthorized" },
+        { status: 401 }
+      );
+    }
 
-    const { id } = params;
+    const { id } = await params;
     const hospitalId = parseInt(id);
     if (isNaN(hospitalId)) {
       return NextResponse.json(

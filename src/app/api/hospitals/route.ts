@@ -3,7 +3,7 @@ import {
   validateCSRFToken,
   addCSRFTokenToResponse,
 } from "@/lib/csrfProtection";
-import { getUserFromSession } from "@/lib/auth";
+import { getAuthenticatedUserForAPI } from "@/lib/auth-validation";
 import { prisma } from "@/lib/prisma";
 import {
   hospitalQuerySchema,
@@ -16,7 +16,13 @@ import {
 
 export async function GET(request: NextRequest) {
   try {
-    await getUserFromSession(request);
+    const user = await getAuthenticatedUserForAPI();
+    if (!user) {
+      return NextResponse.json(
+        { success: false, error: "Unauthorized" },
+        { status: 401 }
+      );
+    }
 
     const { searchParams } = new URL(request.url);
     const validation = hospitalQuerySchema.safeParse({
@@ -75,13 +81,6 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error("GET /api/hospitals error:", error);
 
-    if (error instanceof Error && error.message.includes("Unauthorized")) {
-      return NextResponse.json(
-        { success: false, error: error.message },
-        { status: 401 }
-      );
-    }
-
     return NextResponse.json(
       {
         success: false,
@@ -106,7 +105,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { userId, staffId } = await getUserFromSession(request);
+    const user = await getAuthenticatedUserForAPI();
+    if (!user) {
+      return NextResponse.json(
+        { success: false, error: "Unauthorized" },
+        { status: 401 }
+      );
+    }
+    const { staffId } = user;
 
     const body = await request.json();
     const validation = importedCreateHospitalSchema.safeParse(body);
@@ -172,13 +178,6 @@ export async function POST(request: NextRequest) {
     return addCSRFTokenToResponse(response);
   } catch (error) {
     console.error("POST /api/hospitals error:", error);
-
-    if (error instanceof Error && error.message.includes("Unauthorized")) {
-      return NextResponse.json(
-        { success: false, error: error.message },
-        { status: 401 }
-      );
-    }
 
     return NextResponse.json(
       {
