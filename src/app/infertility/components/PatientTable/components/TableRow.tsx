@@ -1,5 +1,5 @@
 import React from "react";
-import { Edit2 } from "lucide-react";
+import { Edit2, Phone, MapPin, Calendar, Heart } from "lucide-react";
 import { InfertilityPatientData } from "../../../types";
 import { formatDate, TableHeader } from "../utils/tableUtils";
 
@@ -10,14 +10,13 @@ interface TableRowProps {
   onEdit?: (patient: InfertilityPatientData) => void;
 }
 
-// Pinned column styles - darker background on md+ screens
-const pinnedBaseStyles = "sticky z-20 bg-slate-50 md:bg-slate-100/80";
+// Fixed widths for pinned columns - must match header widths
+const FIRST_COL_WIDTH = "w-[90px] min-w-[90px]";
+const SECOND_COL_WIDTH = "w-[180px] min-w-[180px]";
 
-// Position for first pinned column
-const firstPinnedStyles = `${pinnedBaseStyles} left-0`;
-
-// Position for second pinned column (offset by first column width)
-const secondPinnedStyles = `${pinnedBaseStyles} left-[70px] sm:left-[80px] md:left-[90px]`;
+// Pinned column styles - only on lg+ screens with slate bg
+const firstPinnedStyles = `lg:sticky lg:z-10 lg:left-0 lg:bg-slate-100 ${FIRST_COL_WIDTH}`;
+const secondPinnedStyles = `lg:sticky lg:z-10 lg:left-[90px] lg:bg-slate-100 ${SECOND_COL_WIDTH}`;
 
 const TableRow: React.FC<TableRowProps> = ({ row, index, headers, onEdit }) => {
   // Get value for a header key
@@ -68,14 +67,111 @@ const TableRow: React.FC<TableRowProps> = ({ row, index, headers, onEdit }) => {
     }
   };
 
+  // Render cell content with styling based on field type
+  const renderCellContent = (
+    header: TableHeader,
+    value: string | number | null
+  ) => {
+    if (value === null || value === "")
+      return <span className="text-gray-400">—</span>;
+
+    switch (header.key) {
+      case "mobileNumber":
+        return (
+          <div className="flex items-center gap-1.5">
+            <Phone className="w-3 h-3 text-gray-400" />
+            <span>{value}</span>
+          </div>
+        );
+
+      case "address":
+        return (
+          <div
+            className="flex items-center gap-1.5 max-w-[150px]"
+            title={String(value)}
+          >
+            <MapPin className="w-3 h-3 text-gray-400 shrink-0" />
+            <span className="truncate">{value}</span>
+          </div>
+        );
+
+      case "patientDOB":
+      case "husbandDOB":
+      case "createdAt":
+      case "updatedAt":
+        return (
+          <div className="flex items-center gap-1.5">
+            <Calendar className="w-3 h-3 text-gray-400" />
+            <span>{value}</span>
+          </div>
+        );
+
+      case "infertilityType":
+        const typeColor =
+          value === "Primary"
+            ? "bg-purple-100 text-purple-700"
+            : "bg-amber-100 text-amber-700";
+        return (
+          <span
+            className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-medium ${typeColor}`}
+          >
+            {value}
+          </span>
+        );
+
+      case "patientAge":
+      case "husbandAge":
+        return (
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-medium bg-blue-50 text-blue-700">
+            {value} yrs
+          </span>
+        );
+
+      case "yearsMarried":
+      case "yearsTrying":
+        return (
+          <span className="inline-flex items-center gap-1 text-gray-600">
+            <Heart className="w-3 h-3 text-pink-400" />
+            {value}
+          </span>
+        );
+
+      case "weight":
+        return value ? (
+          <span>{value} kg</span>
+        ) : (
+          <span className="text-gray-400">—</span>
+        );
+
+      case "bloodPressure":
+        return value ? (
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-medium bg-red-50 text-red-700">
+            {value}
+          </span>
+        ) : (
+          <span className="text-gray-400">—</span>
+        );
+
+      case "hospitalName":
+        return (
+          <span className="inline-flex items-center px-2 py-0.5 rounded-lg text-[10px] sm:text-xs font-medium bg-fnh-navy/10 text-fnh-navy-dark">
+            {value}
+          </span>
+        );
+
+      default:
+        return value;
+    }
+  };
+
   return (
-    <tr className="hover:bg-blue-50/50 transition-colors duration-200 border-b border-gray-200">
+    <tr className="hover:bg-gray-50 transition-colors duration-200 border-b border-gray-100 group">
       {headers.map((header, colIndex) => {
         const value = getValue(header.key);
         const isFirstPinned = colIndex === 0;
         const isSecondPinned = colIndex === 1;
 
-        // Responsive text and padding classes
+        // Base cell classes
         const cellClasses = `
           px-2 py-2 sm:px-3 sm:py-3 md:px-4 md:py-3.5
           text-[10px] sm:text-xs md:text-sm
@@ -83,9 +179,14 @@ const TableRow: React.FC<TableRowProps> = ({ row, index, headers, onEdit }) => {
           whitespace-nowrap
           ${isFirstPinned ? firstPinnedStyles : ""}
           ${isSecondPinned ? secondPinnedStyles : ""}
-          ${header.key === "patientFullName" ? "font-medium text-gray-900" : ""}
+          ${isFirstPinned || isSecondPinned ? "group-hover:bg-gray-50" : ""}
           ${
-            header.key === "address" || header.key === "notes"
+            header.key === "patientFullName"
+              ? "font-semibold text-fnh-navy-dark"
+              : ""
+          }
+          ${
+            header.key === "notes"
               ? "max-w-[120px] sm:max-w-[150px] md:max-w-xs truncate"
               : ""
           }
@@ -96,13 +197,13 @@ const TableRow: React.FC<TableRowProps> = ({ row, index, headers, onEdit }) => {
           return (
             <td key={header.key} className={cellClasses}>
               <div className="flex items-center gap-1.5 sm:gap-2">
-                <span className="font-medium text-gray-700 min-w-[20px] sm:min-w-[24px]">
+                <span className="font-medium text-gray-500 min-w-[20px] sm:min-w-[24px] text-center">
                   {index}
                 </span>
                 {onEdit && (
                   <button
                     onClick={() => onEdit(row)}
-                    className="inline-flex items-center justify-center w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 rounded-lg bg-blue-100 text-blue-600 hover:bg-blue-200 hover:text-blue-700 transition-colors duration-150 cursor-pointer"
+                    className="inline-flex items-center justify-center w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 rounded-lg bg-fnh-blue/10 text-fnh-blue hover:bg-fnh-blue hover:text-white transition-colors duration-150 cursor-pointer"
                     title="Edit patient"
                     aria-label={`Edit ${row.patientFullName}`}
                   >
@@ -114,10 +215,10 @@ const TableRow: React.FC<TableRowProps> = ({ row, index, headers, onEdit }) => {
           );
         }
 
-        // Regular cell rendering
+        // Regular cell rendering with styled content
         return (
           <td key={header.key} className={cellClasses}>
-            {value ?? "-"}
+            {renderCellContent(header, value)}
           </td>
         );
       })}

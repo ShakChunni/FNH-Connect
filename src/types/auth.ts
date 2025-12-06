@@ -15,6 +15,7 @@ export interface SessionUser {
   specialization?: string;
   email?: string;
   phoneNumber?: string;
+  photoUrl?: string; // Staff profile photo URL
 }
 
 // Authentication Flow Types

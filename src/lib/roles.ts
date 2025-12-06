@@ -1,21 +1,25 @@
 /**
  * Role-based Access Control System
  *
- * System Roles (User.role):
+ * System Roles (User.role) - These are stored in the database:
  * - system-admin: Full system access, can manage everything
  * - admin: Administrative access, can manage users and system settings
  * - staff: Regular staff access, limited to their department/patient data
  *
+ * Note: We also handle legacy formats like "SysAdmin", "System Admin", etc.
+ *
  * Hospital Roles (Staff.role):
- * - System Admin, Admin, Doctor, Nurse, PIC, etc.
+ * - System Admin, Admin, Doctor, Nurse, PIC, Receptionist, etc.
  */
 
+// System roles - canonical values (lowercase with hyphens)
 export enum SystemRole {
   SYSTEM_ADMIN = "system-admin",
   ADMIN = "admin",
   STAFF = "staff",
 }
 
+// Hospital/Staff roles (display names)
 export enum HospitalRole {
   SYSTEM_ADMIN = "System Admin",
   ADMIN = "Admin",
@@ -26,31 +30,57 @@ export enum HospitalRole {
 }
 
 /**
+ * Normalize role string to check against canonical values
+ * Handles various formats: "system-admin", "SysAdmin", "System Admin", "systemadmin", etc.
+ */
+function normalizeRole(role: string): string {
+  const lower = role.toLowerCase().replace(/[\s_-]/g, "");
+
+  // Map to canonical values
+  if (lower === "systemadmin" || lower === "sysadmin") {
+    return SystemRole.SYSTEM_ADMIN;
+  }
+  if (lower === "admin" || lower === "administrator") {
+    return SystemRole.ADMIN;
+  }
+  if (lower === "staff" || lower === "employee") {
+    return SystemRole.STAFF;
+  }
+
+  return role; // Return as-is if no match
+}
+
+/**
  * Check if user has admin privileges (system-admin or admin)
  */
 export function isAdminRole(role: string): boolean {
-  return role === SystemRole.SYSTEM_ADMIN || role === SystemRole.ADMIN;
+  const normalized = normalizeRole(role);
+  return (
+    normalized === SystemRole.SYSTEM_ADMIN || normalized === SystemRole.ADMIN
+  );
 }
 
 /**
  * Check if user has system admin privileges
  */
 export function isSystemAdminRole(role: string): boolean {
-  return role === SystemRole.SYSTEM_ADMIN;
+  return normalizeRole(role) === SystemRole.SYSTEM_ADMIN;
 }
 
 /**
  * Check if user has staff privileges
  */
 export function isStaffRole(role: string): boolean {
-  return role === SystemRole.STAFF;
+  return normalizeRole(role) === SystemRole.STAFF;
 }
 
 /**
  * Get role display name
  */
 export function getRoleDisplayName(role: string): string {
-  switch (role) {
+  const normalized = normalizeRole(role);
+
+  switch (normalized) {
     case SystemRole.SYSTEM_ADMIN:
       return "System Administrator";
     case SystemRole.ADMIN:

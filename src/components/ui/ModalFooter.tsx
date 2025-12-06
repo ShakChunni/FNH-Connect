@@ -53,7 +53,7 @@ export function ModalFooter({
           type="button"
           onClick={onCancel}
           disabled={isSubmitting}
-          className="px-3 sm:px-4 md:px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed text-xs sm:text-sm font-medium"
+          className="px-3 sm:px-4 md:px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed text-xs sm:text-sm font-medium cursor-pointer"
         >
           {cancelText}
         </button>
@@ -63,7 +63,7 @@ export function ModalFooter({
           type="button"
           onClick={onSubmit}
           disabled={isButtonDisabled}
-          className={`px-3 sm:px-4 md:px-6 py-2 ${buttonColors[theme]} text-white rounded-lg transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm font-medium`}
+          className={`px-3 sm:px-4 md:px-6 py-2 ${buttonColors[theme]} text-white rounded-lg transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm font-medium cursor-pointer`}
         >
           {isSubmitting ? (
             <>

@@ -4,7 +4,9 @@ import { useEffect } from "react";
 import { usePathname } from "next/navigation";
 
 const titleMap: { [key: string]: string } = {
-  "/home": "Dashboard",
+  "/dashboard": "Dashboard",
+  "/patient-records": "Patient Records",
+  "/general-admission": "General Admission",
   "/infertility": "Infertility",
   "/pathology": "Pathology",
   "/admin-dashboard": "Admin Dashboard",

@@ -391,7 +391,13 @@ export async function middleware(request: NextRequest) {
 
   // REDIRECT 5: Admin routes with session but insufficient privileges → /dashboard
   if (isAdminRoute && hasValidSession) {
-    const isAdmin = userRole === "system-admin" || userRole === "admin";
+    // Normalize role and check for admin access
+    // Handles: system-admin, SysAdmin, admin, Admin, etc.
+    const normalizedRole = userRole?.toLowerCase().replace(/[\s_-]/g, "") || "";
+    const isAdmin =
+      normalizedRole === "systemadmin" ||
+      normalizedRole === "sysadmin" ||
+      normalizedRole === "admin";
 
     if (!isAdmin) {
       if (isAPIRoute) {

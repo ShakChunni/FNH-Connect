@@ -9,12 +9,12 @@ datasource db {
 
 // Core Models
 model Patient {
-  id           Int       @id @default(autoincrement())
-  firstName    String
-  lastName     String?
-  fullName     String // Pre-computed for easier querying
-  gender       String
-  
+  id        Int     @id @default(autoincrement())
+  firstName String
+  lastName  String?
+  fullName  String // Pre-computed for easier querying
+  gender    String
+
   dateOfBirth  DateTime?
   guardianName String? // For infertility patients, this is spouse name
   address      String?
@@ -23,7 +23,7 @@ model Patient {
   bloodGroup   String?
 
   // Spouse information (primarily for infertility patients)
- 
+
   spouseDOB    DateTime?
   spouseGender String?
 
@@ -63,6 +63,7 @@ model Staff {
   specialization String?
   phoneNumber    String?
   email          String?
+  photoUrl       String? // Profile photo URL
   isActive       Boolean  @default(true)
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
@@ -102,7 +103,7 @@ model User {
   username  String   @unique
   password  String
   staffId   Int      @unique
-  role      String
+  role      String // staff, admin, system-admin
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

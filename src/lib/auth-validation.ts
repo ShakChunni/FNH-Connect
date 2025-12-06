@@ -79,6 +79,7 @@ export async function validateServerSession() {
       specialization: session.user.staff.specialization || undefined,
       email: session.user.staff.email || undefined,
       phoneNumber: session.user.staff.phoneNumber || undefined,
+      photoUrl: session.user.staff.photoUrl || undefined,
     };
 
     // Return user data for use in layout
@@ -182,6 +183,7 @@ export async function getAuthenticatedUserForAPI() {
       specialization: session.user.staff.specialization || undefined,
       email: session.user.staff.email || undefined,
       phoneNumber: session.user.staff.phoneNumber || undefined,
+      photoUrl: session.user.staff.photoUrl || undefined,
     };
 
     // Return user data
