@@ -65,6 +65,11 @@ export async function validateServerSession() {
       redirect("/login");
     }
 
+    // Check staff status
+    if (!session.user.staff.isActive) {
+      redirect("/login");
+    }
+
     // Map to SessionUser type
     const user: SessionUser = {
       id: session.user.id,
@@ -166,6 +171,11 @@ export async function getAuthenticatedUserForAPI() {
 
     // Check user status
     if (!session.user.isActive) {
+      return null;
+    }
+
+    // Check staff status
+    if (!session.user.staff.isActive) {
       return null;
     }
 

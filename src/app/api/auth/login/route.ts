@@ -17,6 +17,7 @@ import {
   blockIP,
   trackSuspiciousActivity,
 } from "@/lib/securityActions";
+import type { SessionUser, LoginResponse } from "@/types/auth";
 
 const SECRET_KEY = process.env.SECRET_KEY as string;
 const EXPIRATION_TIME = 60 * 60 * 24; // 1 day in seconds
@@ -165,7 +166,7 @@ export async function POST(request: NextRequest) {
     // ✅ CSRF Validation for state-changing request
     const csrfValid = validateCSRFToken(request);
     if (!csrfValid) {
-      return NextResponse.json(
+      return NextResponse.json<LoginResponse>(
         { success: false, error: "Invalid CSRF token" },
         { status: 403 }
       );
@@ -200,7 +201,7 @@ export async function POST(request: NextRequest) {
         },
       });
 
-      return NextResponse.json(
+      return NextResponse.json<LoginResponse>(
         {
           success: false,
           error:
@@ -215,7 +216,7 @@ export async function POST(request: NextRequest) {
     // ✅ Validate with Zod
     const validation = loginSchema.safeParse(body);
     if (!validation.success) {
-      return NextResponse.json(
+      return NextResponse.json<LoginResponse>(
         {
           success: false,
           error: "Invalid request data",
@@ -255,7 +256,7 @@ export async function POST(request: NextRequest) {
         },
       });
 
-      return NextResponse.json(
+      return NextResponse.json<LoginResponse>(
         {
           success: false,
           error:
@@ -436,25 +437,28 @@ export async function POST(request: NextRequest) {
         },
       });
 
+      const sessionUser: SessionUser = {
+        id: user.id,
+        username: user.username,
+        role: user.role, // System role
+        isActive: user.isActive,
+        staffId: user.staff.id,
+        firstName: user.staff.firstName,
+        lastName: user.staff.lastName,
+        fullName: user.staff.fullName,
+        staffRole: user.staff.role, // Hospital role
+        specialization: user.staff.specialization || undefined,
+        email: user.staff.email || undefined,
+        phoneNumber: user.staff.phoneNumber || undefined,
+      };
+
       return {
-        user: {
-          id: user.id,
-          username: user.username,
-          firstName: user.staff.firstName,
-          lastName: user.staff.lastName,
-          fullName: user.staff.fullName,
-          role: user.staff.role, // Hospital role
-          systemRole: user.role, // System role for permissions
-          specialization: user.staff.specialization,
-          email: user.staff.email,
-          phoneNumber: user.staff.phoneNumber,
-          isActive: user.isActive,
-        },
+        user: sessionUser,
         sessionToken,
       };
     });
 
-    const response = NextResponse.json(
+    const response = NextResponse.json<LoginResponse>(
       {
         success: true,
         message: "Login successful",
@@ -512,7 +516,7 @@ export async function POST(request: NextRequest) {
         error.message.includes("deactivated") ||
         error.message.includes("inactive"));
 
-    return NextResponse.json(
+    return NextResponse.json<LoginResponse>(
       {
         success: false,
         error:

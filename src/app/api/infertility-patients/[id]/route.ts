@@ -4,7 +4,7 @@ import {
   validateCSRFToken,
   addCSRFTokenToResponse,
 } from "@/lib/csrfProtection";
-import { getUserFromSession } from "@/lib/auth";
+import { getAuthenticatedUserForAPI } from "@/lib/auth-validation";
 import * as infertilityService from "@/services/infertilityService";
 
 // ═══════════════════════════════════════════════════════════════
@@ -16,7 +16,13 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    await getUserFromSession(request);
+    const user = await getAuthenticatedUserForAPI();
+    if (!user) {
+      return NextResponse.json(
+        { success: false, error: "Unauthorized" },
+        { status: 401 }
+      );
+    }
 
     const { id } = await params;
     const patientId = parseInt(id);
@@ -44,13 +50,6 @@ export async function GET(
     });
   } catch (error) {
     console.error("GET /api/infertility-patients/[id] error:", error);
-
-    if (error instanceof Error && error.message.includes("Unauthorized")) {
-      return NextResponse.json(
-        { success: false, error: error.message },
-        { status: 401 }
-      );
-    }
 
     return NextResponse.json(
       {
@@ -85,7 +84,14 @@ export async function PATCH(
       );
     }
 
-    const { userId, staffId } = await getUserFromSession(request);
+    const user = await getAuthenticatedUserForAPI();
+    if (!user) {
+      return NextResponse.json(
+        { success: false, error: "Unauthorized" },
+        { status: 401 }
+      );
+    }
+    const { id: userId, staffId } = user;
 
     const { id } = await params;
     const patientId = parseInt(id);
@@ -132,13 +138,6 @@ export async function PATCH(
   } catch (error) {
     console.error("PATCH /api/infertility-patients/[id] error:", error);
 
-    if (error instanceof Error && error.message.includes("Unauthorized")) {
-      return NextResponse.json(
-        { success: false, error: error.message },
-        { status: 401 }
-      );
-    }
-
     if (error instanceof Error && error.message.includes("not found")) {
       return NextResponse.json(
         { success: false, error: error.message },
@@ -173,7 +172,14 @@ export async function DELETE(
       );
     }
 
-    const { userId } = await getUserFromSession(request);
+    const user = await getAuthenticatedUserForAPI();
+    if (!user) {
+      return NextResponse.json(
+        { success: false, error: "Unauthorized" },
+        { status: 401 }
+      );
+    }
+    const { id: userId } = user;
 
     const { id } = await params;
     const patientId = parseInt(id);
@@ -194,13 +200,6 @@ export async function DELETE(
     return addCSRFTokenToResponse(response);
   } catch (error) {
     console.error("DELETE /api/infertility-patients/[id] error:", error);
-
-    if (error instanceof Error && error.message.includes("Unauthorized")) {
-      return NextResponse.json(
-        { success: false, error: error.message },
-        { status: 401 }
-      );
-    }
 
     if (error instanceof Error && error.message.includes("not found")) {
       return NextResponse.json(
