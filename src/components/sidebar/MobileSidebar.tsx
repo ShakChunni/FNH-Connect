@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LogOut, Menu, Settings } from "lucide-react";
 import Image from "next/image";
-import { navigationItems } from "./navigation";
+import { getNavigationItems } from "./navigation";
 import { useAuth } from "@/app/AuthContext";
 import ViewSwitcher from "./ViewSwitcher";
 
@@ -39,7 +39,7 @@ export default function MobileSidebar() {
 
   const displayName = useMemo(() => {
     if (!user) return "";
-    return user.preferredName?.trim() || `${user.firstName} ${user.lastName}`;
+    return user.fullName || `${user.firstName} ${user.lastName}`;
   }, [user]);
 
   const handleToggle = useCallback(() => {
@@ -94,10 +94,8 @@ export default function MobileSidebar() {
   return (
     <>
       <header
-        className={`lg:hidden fixed top-0 left-0 right-0 z-40 flex h-20 items-center gap-4 px-5 text-jd-rich-black shadow-sm transition-all duration-500 ease-[cubic-bezier(0.25,0.1,0.25,1)] ${
-          isOpen
-            ? "bg-jd-white/50 shadow-xl backdrop-blur-sm opacity-50"
-            : "bg-jd-white/95"
+        className={`lg:hidden fixed top-0 left-0 right-0 z-40 flex h-16 items-center gap-4 px-4 text-fnh-navy shadow-md transition-all duration-300 ${
+          isOpen ? "bg-white/80 backdrop-blur-sm" : "bg-white"
         }`}
       >
         <button
@@ -124,7 +122,7 @@ export default function MobileSidebar() {
       )}
 
       <aside
-        className={`lg:hidden fixed left-0 top-0 z-40 h-dvh w-[18rem] transform bg-sidebar text-sidebar-foreground transition-all duration-500 ease-[cubic-bezier(0.25,0.1,0.25,1)] ${
+        className={`lg:hidden fixed left-0 top-0 z-40 h-dvh w-full max-w-[20rem] transform bg-sidebar text-sidebar-foreground transition-all duration-300 ${
           isOpen ? "translate-x-0" : "-translate-x-full"
         }`}
         style={{ background: SIDEBAR_BG }}
@@ -158,7 +156,7 @@ export default function MobileSidebar() {
             </div>
             {/* Navigation inside first container */}
             <ul className="space-y-2">
-              {navigationItems.map((item) => {
+              {getNavigationItems(user?.role).map((item) => {
                 const isActive = pathname === item.href;
                 const Icon = item.icon;
 

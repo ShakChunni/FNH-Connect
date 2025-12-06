@@ -88,10 +88,10 @@ export function Pagination({
     onNext || (() => onPageChange(Math.min(totalPages, currentPage + 1)));
 
   return (
-    <footer className="flex flex-col gap-2 md:gap-3 border-t border-fnh-grey-light px-4 md:px-6 py-3 md:py-4 text-[11px] md:text-sm font-medium text-fnh-grey">
+    <div className="flex flex-col gap-2 md:gap-3 px-4 md:px-6 py-3 md:py-4 text-sm font-medium text-gray-500">
       {showResultsText &&
         (totalResults !== undefined || startIndex !== undefined) && (
-          <p className="text-[10px] md:text-xs">
+          <p className="text-xs text-gray-500">
             {totalResults !== undefined &&
             startIndex !== undefined &&
             endIndex !== undefined
@@ -101,14 +101,15 @@ export function Pagination({
               : totalResults !== undefined
               ? totalResults === 0
                 ? "Showing 0 results"
-                : `Showing results`
+                : `${totalResults} total results`
               : null}
           </p>
         )}
       <nav
-        className="flex items-center justify-center md:justify-end gap-1"
+        className="flex items-center justify-center md:justify-end gap-1.5"
         aria-label="Pagination"
       >
+        {/* Previous Button */}
         <button
           type="button"
           onClick={() => {
@@ -117,16 +118,17 @@ export function Pagination({
           }}
           disabled={currentPage === 1}
           className={cn(
-            "flex h-8 md:h-9 items-center rounded-full border border-fnh-grey-light px-2 md:px-3 text-xs md:text-sm font-semibold text-fnh-grey-dark transition-colors duration-150 cursor-pointer whitespace-nowrap",
+            "flex h-9 items-center rounded-xl border px-3 md:px-4 text-xs md:text-sm font-medium transition-all duration-200 cursor-pointer whitespace-nowrap",
             currentPage === 1
-              ? "cursor-not-allowed bg-fnh-grey-lighter text-fnh-grey"
-              : "bg-white hover:border-fnh-yellow hover:text-fnh-black"
+              ? "cursor-not-allowed bg-gray-100 text-gray-400 border-gray-200"
+              : "bg-white border-gray-200 text-fnh-navy hover:bg-fnh-navy hover:text-white hover:border-fnh-navy"
           )}
         >
           <span className="hidden sm:inline">Previous</span>
           <span className="sm:hidden">←</span>
         </button>
 
+        {/* Page Numbers */}
         {visiblePages.map((page, index) =>
           typeof page === "number" ? (
             <button
@@ -137,10 +139,10 @@ export function Pagination({
                 window.scrollTo({ top: 100, behavior: "smooth" });
               }}
               className={cn(
-                "flex h-8 w-8 md:h-9 md:w-9 items-center justify-center rounded-full border text-xs md:text-sm font-semibold transition-colors duration-150 cursor-pointer",
+                "flex h-9 w-9 items-center justify-center rounded-full border text-xs md:text-sm font-semibold transition-all duration-200 cursor-pointer",
                 page === currentPage
-                  ? "border-fnh-yellow bg-fnh-yellow text-fnh-black shadow-[0_18px_30px_rgba(251,191,36,0.35)]"
-                  : "border-fnh-grey-light bg-white text-fnh-grey-dark hover:border-fnh-yellow hover:text-fnh-black"
+                  ? "border-fnh-navy bg-fnh-navy text-white shadow-md"
+                  : "border-gray-200 bg-white text-fnh-navy-dark hover:bg-fnh-navy/10 hover:border-fnh-navy"
               )}
             >
               {page}
@@ -148,13 +150,14 @@ export function Pagination({
           ) : (
             <span
               key={`ellipsis-${index}`}
-              className="flex h-8 w-8 md:h-9 md:w-9 items-center justify-center text-xs md:text-sm font-semibold text-fnh-grey"
+              className="flex h-9 w-9 items-center justify-center text-xs md:text-sm font-semibold text-gray-400"
             >
               {page}
             </span>
           )
         )}
 
+        {/* Next Button */}
         <button
           type="button"
           onClick={() => {
@@ -163,16 +166,16 @@ export function Pagination({
           }}
           disabled={currentPage === totalPages || totalResults === 0}
           className={cn(
-            "flex h-8 md:h-9 items-center rounded-full border border-fnh-grey-light px-2 md:px-3 text-xs md:text-sm font-semibold text-fnh-grey-dark transition-colors duration-150 cursor-pointer whitespace-nowrap",
+            "flex h-9 items-center rounded-xl border px-3 md:px-4 text-xs md:text-sm font-medium transition-all duration-200 cursor-pointer whitespace-nowrap",
             currentPage === totalPages || totalResults === 0
-              ? "cursor-not-allowed bg-fnh-grey-lighter text-fnh-grey"
-              : "bg-white hover:border-fnh-yellow hover:text-fnh-black"
+              ? "cursor-not-allowed bg-gray-100 text-gray-400 border-gray-200"
+              : "bg-white border-gray-200 text-fnh-navy hover:bg-fnh-navy hover:text-white hover:border-fnh-navy"
           )}
         >
           <span className="hidden sm:inline">Next</span>
           <span className="sm:hidden">→</span>
         </button>
       </nav>
-    </footer>
+    </div>
   );
 }

@@ -41,6 +41,8 @@ export interface SearchBarProps {
   onSearch?: (value: string) => void;
   /** Placeholder for search input */
   placeholder?: string;
+  /** Whether to show department filter dropdown */
+  showDepartmentFilter?: boolean;
   /** Whether to show date filter pill */
   showDateFilter?: boolean;
   /** Selected date range */
@@ -59,6 +61,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
   onSearchChange,
   onSearch,
   placeholder = "Search by patient name or mobile number...",
+  showDepartmentFilter = true,
   showDateFilter = true,
   selectedDateRange = "all",
   onDateRangeChange,
@@ -131,48 +134,53 @@ export const SearchBar: React.FC<SearchBarProps> = ({
         `}
       >
         {/* Left: Department Dropdown - integrated into bar */}
-        <div className="relative shrink-0 h-full">
-          <button
-            ref={departmentButtonRef}
-            onClick={() => setIsDepartmentOpen(!isDepartmentOpen)}
-            className="flex items-center gap-1.5 sm:gap-2 h-full px-4 sm:px-5 bg-fnh-navy-dark rounded-l-full text-white text-xs sm:text-sm font-medium hover:bg-fnh-navy transition-colors duration-200 min-w-[90px] sm:min-w-[110px] justify-between cursor-pointer border-r border-fnh-navy-light/30"
-          >
-            <span className="truncate">{selectedDepartmentLabel}</span>
-            <ChevronDown
-              className={`w-3.5 h-3.5 sm:w-4 sm:h-4 transition-transform duration-200 shrink-0 ${
-                isDepartmentOpen ? "rotate-180" : ""
-              }`}
-            />
-          </button>
+        {showDepartmentFilter && (
+          <div className="relative shrink-0 h-full">
+            <button
+              ref={departmentButtonRef}
+              onClick={() => setIsDepartmentOpen(!isDepartmentOpen)}
+              className="flex items-center gap-1.5 sm:gap-2 h-full px-4 sm:px-5 bg-fnh-navy-dark rounded-l-full text-white text-xs sm:text-sm font-medium hover:bg-fnh-navy transition-colors duration-200 min-w-[90px] sm:min-w-[110px] justify-between cursor-pointer border-r border-fnh-navy-light/30"
+            >
+              <span className="truncate">{selectedDepartmentLabel}</span>
+              <ChevronDown
+                className={`w-3.5 h-3.5 sm:w-4 sm:h-4 transition-transform duration-200 shrink-0 ${
+                  isDepartmentOpen ? "rotate-180" : ""
+                }`}
+              />
+            </button>
 
-          <DropdownPortal
-            isOpen={isDepartmentOpen}
-            onClose={() => setIsDepartmentOpen(false)}
-            buttonRef={departmentButtonRef}
-            className="w-52"
-          >
-            <div className="py-1 max-h-[300px] overflow-y-auto">
-              {departments.map((dept) => (
-                <button
-                  key={dept.value}
-                  onClick={() => handleDepartmentSelect(dept.value)}
-                  className={`w-full text-left px-4 py-2.5 text-sm transition-colors duration-150 cursor-pointer ${
-                    selectedDepartment === dept.value
-                      ? "bg-fnh-navy text-white font-medium"
-                      : "text-gray-700 hover:bg-slate-100"
-                  }`}
-                >
-                  {dept.label}
-                </button>
-              ))}
-            </div>
-          </DropdownPortal>
-        </div>
-
-      
+            <DropdownPortal
+              isOpen={isDepartmentOpen}
+              onClose={() => setIsDepartmentOpen(false)}
+              buttonRef={departmentButtonRef}
+              className="w-52"
+            >
+              <div className="py-1 max-h-[300px] overflow-y-auto">
+                {departments.map((dept) => (
+                  <button
+                    key={dept.value}
+                    onClick={() => handleDepartmentSelect(dept.value)}
+                    className={`w-full text-left px-4 py-2.5 text-sm transition-colors duration-150 cursor-pointer ${
+                      selectedDepartment === dept.value
+                        ? "bg-fnh-navy text-white font-medium"
+                        : "text-gray-700 hover:bg-slate-100"
+                    }`}
+                  >
+                    {dept.label}
+                  </button>
+                ))}
+              </div>
+            </DropdownPortal>
+          </div>
+        )}
 
         {/* Center: Search Input */}
-        <form onSubmit={handleSearchSubmit} className="flex-1 min-w-0 h-full">
+        <form
+          onSubmit={handleSearchSubmit}
+          className={`flex-1 min-w-0 h-full ${
+            !showDepartmentFilter ? "rounded-l-full overflow-hidden" : ""
+          }`}
+        >
           <div className="relative flex items-center h-full">
             <Search
               className={`absolute left-3 sm:left-4 w-4 h-4 sm:w-5 sm:h-5 pointer-events-none transition-colors duration-200 ${
@@ -187,12 +195,12 @@ export const SearchBar: React.FC<SearchBarProps> = ({
               onFocus={() => setIsFocused(true)}
               onBlur={() => setIsFocused(false)}
               placeholder={placeholder}
-              className="w-full h-full pl-10 sm:pl-12 pr-4 bg-transparent border-0 focus:ring-0 focus:outline-none text-gray-700 text-sm sm:text-base placeholder:text-gray-400 placeholder:text-sm"
+              className={`w-full h-full pl-10 sm:pl-12 pr-4 bg-transparent border-0 focus:ring-0 focus:outline-none text-gray-700 text-sm sm:text-base placeholder:text-gray-400 placeholder:text-sm ${
+                !showDepartmentFilter ? "rounded-l-full" : ""
+              }`}
             />
           </div>
         </form>
-
-        
 
         {/* Right: Date Range - integrated into bar */}
         {showDateFilter && (

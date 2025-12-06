@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LogOut, Pin, Settings } from "lucide-react";
-import { navigationItems } from "./navigation";
+import { navigationItems, getNavigationItems } from "./navigation";
 import { SidebarProps } from "./types";
 import Image from "next/image";
 import { useAuth } from "@/app/AuthContext";
@@ -232,7 +232,7 @@ export default function DesktopSidebar({
           {/* Navigation inside first container */}
           <nav className="overflow-y-auto">
             <ul className="space-y-3">
-              {navigationItems.map((item) => {
+              {getNavigationItems(user?.role).map((item) => {
                 const isActive = pathname === item.href;
                 const Icon = item.icon;
 
