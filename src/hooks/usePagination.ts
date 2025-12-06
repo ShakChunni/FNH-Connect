@@ -33,6 +33,7 @@ export function usePagination({
   // Reset to first page when filters change
   useEffect(() => {
     setCurrentPage(1);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, resetOn);
 
   // Ensure current page doesn't exceed total pages

@@ -1,3 +1,5 @@
+import crypto from "crypto";
+
 /**
  * Security Configuration
  * Centralized security constants and utilities
@@ -162,7 +164,6 @@ export function sanitizeError(error: unknown): string {
  * Generate cryptographically secure random OTP
  */
 export function generateSecureOTP(length: number = OTP_CONFIG.LENGTH): string {
-  const crypto = require("crypto");
   const max = Math.pow(10, length);
   const min = Math.pow(10, length - 1);
 
