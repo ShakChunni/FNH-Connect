@@ -4,6 +4,17 @@ import { cookies } from "next/headers";
 import { validateCSRFToken } from "@/lib/csrfProtection";
 import type { LogoutResponse } from "@/types/auth";
 
+const COOKIE_SECURE = process.env.SESSION_COOKIE_SECURE
+  ? process.env.SESSION_COOKIE_SECURE === "true"
+  : process.env.NODE_ENV === "production";
+
+const COOKIE_HTTP_ONLY = process.env.SESSION_COOKIE_HTTP_ONLY
+  ? process.env.SESSION_COOKIE_HTTP_ONLY === "true"
+  : true;
+
+const COOKIE_SAME_SITE = (process.env.SESSION_COOKIE_SAME_SITE ||
+  "strict") as "strict";
+
 export async function POST(request: NextRequest) {
   try {
     // ✅ CSRF Validation for state-changing request
@@ -81,9 +92,9 @@ export async function POST(request: NextRequest) {
       value: "",
       expires: new Date(0),
       path: "/",
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
+      httpOnly: COOKIE_HTTP_ONLY,
+      secure: COOKIE_SECURE,
+      sameSite: COOKIE_SAME_SITE,
     });
 
     return response;
