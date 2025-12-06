@@ -20,7 +20,24 @@ import {
 import type { SessionUser, LoginResponse } from "@/types/auth";
 
 const SECRET_KEY = process.env.SECRET_KEY as string;
-const EXPIRATION_TIME = 60 * 60 * 24; // 1 day in seconds
+
+// Session Configuration
+const SESSION_EXPIRATION_HOURS = parseInt(
+  process.env.SESSION_EXPIRATION_HOURS || "24",
+  10
+);
+const EXPIRATION_TIME = 60 * 60 * SESSION_EXPIRATION_HOURS; // in seconds
+
+const COOKIE_SECURE = process.env.SESSION_COOKIE_SECURE
+  ? process.env.SESSION_COOKIE_SECURE === "true"
+  : process.env.NODE_ENV === "production";
+
+const COOKIE_HTTP_ONLY = process.env.SESSION_COOKIE_HTTP_ONLY
+  ? process.env.SESSION_COOKIE_HTTP_ONLY === "true"
+  : true;
+
+const COOKIE_SAME_SITE = (process.env.SESSION_COOKIE_SAME_SITE ||
+  "strict") as "strict";
 
 if (!SECRET_KEY) {
   throw new Error("SECRET_KEY is not defined in environment variables");
@@ -474,10 +491,10 @@ export async function POST(request: NextRequest) {
     response.cookies.set({
       name: "session",
       value: result.sessionToken,
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
+      httpOnly: COOKIE_HTTP_ONLY,
+      secure: COOKIE_SECURE,
       expires: cookieExpiry,
-      sameSite: "strict",
+      sameSite: COOKIE_SAME_SITE,
       path: "/",
     });
 
