@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/axios";
 import { useDebounce } from "@/hooks/useDebounce";
-import type { Hospital } from "@/app/infertility/types";
+import type { Hospital } from "@/app/(staff)/infertility/types";
 
 export function useFetchHospitalInformation(searchQuery: string) {
   // Use the global debounce hook
