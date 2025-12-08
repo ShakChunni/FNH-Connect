@@ -5,5 +5,5 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return <AppShell title="Dashboard">{children}</AppShell>;
+  return <AppShell title="FNH Connect">{children}</AppShell>;
 }

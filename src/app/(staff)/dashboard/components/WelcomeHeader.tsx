@@ -13,6 +13,7 @@ interface WelcomeHeaderProps {
 
 const getGreeting = (): string => {
   const hour = new Date().getHours();
+  if (hour < 5) return "Greetings";
   if (hour < 12) return "Good Morning";
   if (hour < 17) return "Good Afternoon";
   return "Good Evening";
@@ -36,7 +37,7 @@ export const WelcomeHeader: React.FC<WelcomeHeaderProps> = ({
   const { statsViewMode, toggleStatsViewMode } = useDashboardStore();
   const { showNotification } = useNotificationContext();
 
-  const displayName = user?.firstName || "User";
+  const displayName = user?.lastName || "User";
   const isAllTime = statsViewMode === "allTime";
 
   const handleToggle = () => {

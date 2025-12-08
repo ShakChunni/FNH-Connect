@@ -1,7 +1,7 @@
 "use client";
 import { useAuth } from "./AuthContext";
 import LoadingState from "./LoadingState";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 export default function MainContent({
@@ -10,49 +10,57 @@ export default function MainContent({
   children: React.ReactNode;
 }) {
   const { loading, user } = useAuth();
-  const pathname = usePathname(); // ✅ Use Next.js hook instead of window.location
-  const [mounted, setMounted] = useState(false);
+  const pathname = usePathname();
+  const router = useRouter();
 
-  // ✅ Wait for client hydration to prevent SSR mismatch
+  // Use state instead of refs/globals to track hydration
+  // Start with false to match server render
+  const [hasHydrated, setHasHydrated] = useState(false);
+  const [initialAuthCompleted, setInitialAuthCompleted] = useState(false);
+
+  // Mark as hydrated after first client render
   useEffect(() => {
-    setMounted(true);
+    setHasHydrated(true);
   }, []);
 
-  // ✅ Show loading during hydration
-  if (!mounted) {
-    return null; // or return a static loading skeleton
+  // Track when initial auth check completes
+  useEffect(() => {
+    if (hasHydrated && !loading && !initialAuthCompleted) {
+      setInitialAuthCompleted(true);
+    }
+  }, [hasHydrated, loading, initialAuthCompleted]);
+
+  // Determine page types
+  const isPublicAuthPage =
+    pathname.startsWith("/login") ||
+    pathname.startsWith("/register") ||
+    pathname.startsWith("/forgot-password") ||
+    pathname.startsWith("/reset-password");
+
+  // Redirect authenticated users away from auth pages
+  useEffect(() => {
+    if (hasHydrated && !loading && user && isPublicAuthPage) {
+      router.replace("/dashboard");
+    }
+  }, [hasHydrated, loading, user, isPublicAuthPage, router]);
+
+  // Show loading only during initial hydration/auth
+  // Use suppressHydrationWarning on the container to prevent mismatch warnings
+  if (!hasHydrated) {
+    return <LoadingState type="loading" />;
   }
 
-  const isLoginPage = pathname.startsWith("/login");
-
-  // ✅ Auth pages: Check session FIRST before rendering
-  // This prevents race condition where client renders before middleware redirect
-  if (isLoginPage) {
-    // If still loading, show nothing (wait for session check)
-    if (loading) {
-      return <LoadingState type="authenticating" />;
-    }
-
-    // If user exists, show loading while middleware redirects to /dashboard
-    if (user) {
-      return <LoadingState type="authenticating" />;
-    }
-
-    // No user = render login page
-    return <main>{children}</main>;
-  }
-
-  // ✅ Protected pages: show loading while checking auth
-  if (loading) {
+  const showInitialLoading = loading && !initialAuthCompleted;
+  if (showInitialLoading) {
     return <LoadingState type="authenticating" />;
   }
 
-  // ✅ Protected pages: user authenticated, show content
-  if (user) {
-    return <main>{children}</main>;
+  // Authenticated user on auth page - show loading while redirecting
+  if (isPublicAuthPage && user) {
+    return <LoadingState type="authenticating" />;
   }
 
-  // ✅ Protected pages: no user, middleware will redirect
-  // Show loading to prevent flash of wrong content
-  return <LoadingState type="authenticating" />;
+  // Always render children - layouts handle the shell
+  // Don't wrap in <main> - route-specific shells provide their own main element
+  return <>{children}</>;
 }

@@ -8,7 +8,7 @@ import * as infertilityService from "@/services/infertilityService";
 import {
   infertilityFiltersSchema,
   addPatientSchema as importedAddPatientSchema,
-} from "@/app/infertility/types/schemas";
+} from "@/app/(staff)/infertility/types/schemas";
 
 // ═══════════════════════════════════════════════════════════════
 // GET /api/infertility-patients - List with filters

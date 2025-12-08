@@ -66,7 +66,7 @@ export async function GET(
 // PATCH /api/infertility-patients/[id] - Update patient
 // ═══════════════════════════════════════════════════════════════
 
-import { editPatientSchema } from "@/app/infertility/types/schemas";
+import { editPatientSchema } from "@/app/(staff)/infertility/types/schemas";
 
 // ═══════════════════════════════════════════════════════════════
 // PATCH /api/infertility-patients/[id] - Update patient

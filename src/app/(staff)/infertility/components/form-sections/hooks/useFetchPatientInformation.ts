@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/axios";
 import { useDebounce } from "@/hooks/useDebounce";
 import { getAgeInYears } from "../utils/dateUtils";
-import type { InfertilityPatientBasic } from "@/app/infertility/types";
+import type { InfertilityPatientBasic } from "@/app/(staff)/infertility/types";
 
 export function useFetchPatientInformation(searchQuery: string) {
   // Use the global debounce hook
