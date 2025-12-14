@@ -16,7 +16,7 @@ import { InfertilitySearch } from "./components/InfertilitySearch";
 import { InfertilityPatientData } from "./types";
 import { useFetchInfertilityData } from "./hooks";
 import type { InfertilityFilters } from "./types";
-import { normalizePatientData } from "./components/form-sections/utils/dataUtils";
+import { normalizePatientData } from "../../../components/form-sections/utils/dataUtils";
 import { useInfertilityModals, useInfertilityActions } from "./stores";
 
 const InfertilityManagement = React.memo(() => {

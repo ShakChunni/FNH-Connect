@@ -4,7 +4,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
+  url      = env("DATABASE_URL_NON_POOLING")
 }
 
 // Core Models
@@ -189,12 +189,11 @@ model PathologyTest {
   isCompleted  Boolean   @default(false)
 
   // Financial
-  testCharge     Decimal @default(0)
-  discountAmount Decimal @default(0)
-  grandTotal     Decimal @default(0)
-  paidAmount     Decimal @default(0) // Sum of all payments
-  dueAmount      Decimal @default(0) // Calculated: grandTotal - paidAmount
-  initialPayment Decimal @default(0) // First payment when test ordered
+  testCharge     Decimal  @default(0)
+  discountAmount Decimal?
+  grandTotal     Decimal  @default(0)
+  paidAmount     Decimal  @default(0) // Sum of all payments
+  dueAmount      Decimal  @default(0) // Calculated: grandTotal - paidAmount
 
   // Tracking
   createdAt      DateTime @default(now())

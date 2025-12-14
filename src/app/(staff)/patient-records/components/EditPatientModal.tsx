@@ -6,8 +6,8 @@ import { User, Phone, MapPin, Save } from "lucide-react";
 import { ModalHeader, ModalFooter } from "@/components/ui";
 
 // Existing field components from infertility
-import GenderDropdown from "@/app/(staff)/infertility/components/form-sections/Fields/GenderDropdown";
-import DobDropdown from "@/app/(staff)/infertility/components/form-sections/Fields/DobDropdown";
+import GenderDropdown from "@/components/form-sections/Fields/GenderDropdown";
+import DobDropdown from "@/components/form-sections/Fields/DobDropdown";
 
 import type { PatientData } from "../types";
 import { useUpdatePatient } from "../hooks";

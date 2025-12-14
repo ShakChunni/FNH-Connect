@@ -1,62 +1,72 @@
 "use client";
 import React, { useCallback, useMemo, useRef, useEffect } from "react";
-import { Save, Building2, User, Stethoscope } from "lucide-react";
+import { Save, Building2, User, Beaker } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/app/AuthContext";
-import { useAddInfertilityData } from "../../hooks/useAddInfertilityData";
+import { useEditPathologyData } from "../../hooks/useEditPathologyData";
 import {
   modalVariants,
   backdropVariants,
 } from "@/components/ui/modal-animations";
 import { ModalHeader } from "@/components/ui/ModalHeader";
 import { ModalFooter } from "@/components/ui/ModalFooter";
-import { getTabColors } from "./utils/modalUtils";
+import { getTabColors } from "../AddNewData/utils/modalUtils";
 import HospitalInformation from "../../../../../components/form-sections/HospitalInformation";
-import PatientInformation from "../../../../../components/form-sections/PatientInformation";
-import MedicalInformation from "../../../../../components/form-sections/MedicalInformation";
+import PathologyPatientInformation from "../../../../../components/form-sections/PathologyPatientInformation";
+import PathologyInformation from "../../../../../components/form-sections/PathologyInformation";
 import {
-  useInfertilityHospitalData,
-  useInfertilityPatientData,
-  useInfertilitySpouseData,
-  useInfertilityMedicalInfo,
-  useInfertilityValidationStatus,
-  useInfertilityActions,
+  usePathologyHospitalData,
+  usePathologyPatientData,
+  usePathologyGuardianData,
+  usePathologyPathologyInfo,
+  usePathologyValidationStatus,
+  usePathologyActions,
 } from "../../stores";
-import { useInfertilityBMI } from "../../hooks/useInfertilityBMI";
-import { useInfertilityScrollSpy } from "../../hooks/useInfertilityScrollSpy";
-import { transformInfertilityDataForApi } from "../../utils/formTransformers";
+import { usePathologyScrollSpy } from "../../hooks/usePathologyScrollSpy";
+import { transformPathologyDataForEdit } from "../../utils/formTransformers";
+import { PathologyPatientData } from "../../types";
 
-interface AddNewDataProps {
+interface EditDataProps {
   isOpen: boolean;
   onClose: () => void;
+  patientData: PathologyPatientData;
 }
 
-const SECTION_IDS = ["hospital", "patient", "medical"];
+const SECTION_IDS = ["hospital", "patient", "pathology"];
 
-const AddNewDataInfertility: React.FC<AddNewDataProps> = ({
+const EditDataPathology: React.FC<EditDataProps> = ({
   isOpen,
   onClose,
+  patientData: initialPatientData,
 }) => {
   const { user } = useAuth();
   const popupRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   // Store access
-  const hospitalData = useInfertilityHospitalData();
-  const patientData = useInfertilityPatientData();
-  const spouseData = useInfertilitySpouseData();
-  const medicalInfo = useInfertilityMedicalInfo();
-  const validationStatus = useInfertilityValidationStatus();
-  const { resetFormState } = useInfertilityActions();
+  const hospitalData = usePathologyHospitalData();
+  const patientData = usePathologyPatientData();
+  const guardianData = usePathologyGuardianData();
+  const pathologyInfo = usePathologyPathologyInfo();
+  const validationStatus = usePathologyValidationStatus();
+  const { resetFormState, initializeFormForEdit } = usePathologyActions();
+
+  // Initialize form when modal opens
+  useEffect(() => {
+    if (isOpen && initialPatientData) {
+      initializeFormForEdit(initialPatientData);
+    }
+  }, [isOpen, initialPatientData, initializeFormForEdit]);
 
   // Custom Hooks
-  useInfertilityBMI(); // Logic encapsulated
-  const { activeSection, scrollToSection } = useInfertilityScrollSpy(
+  const { activeSection, scrollToSection } = usePathologyScrollSpy(
     SECTION_IDS,
+    scrollContainerRef,
     isOpen
   );
 
   // Mutation Hook
-  const { addPatient, isLoading: isSubmitting } = useAddInfertilityData({
+  const { editPatient, isLoading: isSubmitting } = useEditPathologyData({
     onSuccess: () => {
       onClose();
       resetFormState();
@@ -68,10 +78,16 @@ const AddNewDataInfertility: React.FC<AddNewDataProps> = ({
     return (
       hospitalData.name.trim() !== "" &&
       patientData.firstName.trim() !== "" &&
+      pathologyInfo.selectedTests.length > 0 &&
       validationStatus.phone &&
       validationStatus.email
     );
-  }, [hospitalData.name, patientData.firstName, validationStatus]);
+  }, [
+    hospitalData.name,
+    patientData.firstName,
+    pathologyInfo.selectedTests,
+    validationStatus,
+  ]);
 
   // Handlers
   const handleClose = useCallback(() => {
@@ -82,22 +98,24 @@ const AddNewDataInfertility: React.FC<AddNewDataProps> = ({
   const handleSubmit = useCallback(() => {
     if (!isFormValid || isSubmitting) return;
 
-    const payload = transformInfertilityDataForApi(
+    const payload = transformPathologyDataForEdit(
+      initialPatientData.id,
       hospitalData,
       patientData,
-      spouseData,
-      medicalInfo
+      guardianData,
+      pathologyInfo
     );
 
-    addPatient(payload);
+    editPatient(payload);
   }, [
     isFormValid,
     isSubmitting,
+    initialPatientData.id,
     hospitalData,
     patientData,
-    spouseData,
-    medicalInfo,
-    addPatient,
+    guardianData,
+    pathologyInfo,
+    editPatient,
   ]);
 
   // Keyboard handling
@@ -131,10 +149,10 @@ const AddNewDataInfertility: React.FC<AddNewDataProps> = ({
       color: "indigo",
     },
     {
-      id: "medical",
-      label: "Medical Information",
-      icon: Stethoscope,
-      color: "purple",
+      id: "pathology",
+      label: "Pathology Tests",
+      icon: Beaker,
+      color: "green",
     },
   ];
 
@@ -170,10 +188,10 @@ const AddNewDataInfertility: React.FC<AddNewDataProps> = ({
             }}
           >
             <ModalHeader
-              icon={Stethoscope}
-              iconColor="blue"
-              title="Add New Patient"
-              subtitle="Enter all required details to register a new infertility case."
+              icon={Beaker}
+              iconColor="green"
+              title={`Edit Pathology Test - ${initialPatientData.testNumber}`}
+              subtitle="Update test details and patient information."
               onClose={handleClose}
               isDisabled={isSubmitting}
             >
@@ -202,16 +220,19 @@ const AddNewDataInfertility: React.FC<AddNewDataProps> = ({
               </div>
             </ModalHeader>
 
-            <div className="flex-1 overflow-y-auto p-3 sm:p-4 md:p-6">
+            <div
+              ref={scrollContainerRef}
+              className="flex-1 overflow-y-auto p-3 sm:p-4 md:p-6"
+            >
               <div className="space-y-6 sm:space-y-8 md:space-y-10">
                 <div id="hospital">
                   <HospitalInformation />
                 </div>
                 <div id="patient">
-                  <PatientInformation />
+                  <PathologyPatientInformation />
                 </div>
-                <div id="medical">
-                  <MedicalInformation />
+                <div id="pathology">
+                  <PathologyInformation />
                 </div>
               </div>
             </div>
@@ -222,10 +243,10 @@ const AddNewDataInfertility: React.FC<AddNewDataProps> = ({
               isSubmitting={isSubmitting}
               isDisabled={!isFormValid}
               cancelText="Cancel"
-              submitText="Save Patient"
-              loadingText="Saving..."
+              submitText="Update Patient"
+              loadingText="Updating..."
               submitIcon={Save}
-              theme="blue"
+              theme="green"
             />
           </motion.div>
         </motion.div>
@@ -234,4 +255,4 @@ const AddNewDataInfertility: React.FC<AddNewDataProps> = ({
   );
 };
 
-export default AddNewDataInfertility;
+export default EditDataPathology;

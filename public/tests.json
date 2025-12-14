@@ -1,0 +1,346 @@
+[
+  {
+    "Test Name (Investigation)":"TC,DC,HB%,ESR (Blood CP)",
+    "Price":200
+  },
+  {
+    "Test Name (Investigation)":"Prothombin Time",
+    "Price":1000
+  },
+  {
+    "Test Name (Investigation)":"HB%",
+    "Price":200
+  },
+  {
+    "Test Name (Investigation)":"BT, CT",
+    "Price":350
+  },
+  {
+    "Test Name (Investigation)":"CE (Circulating Eosin Phil)",
+    "Price":200
+  },
+  {
+    "Test Name (Investigation)":"Platelet Count",
+    "Price":200
+  },
+  {
+    "Test Name (Investigation)":"Blood Group & Rh Factor",
+    "Price":100
+  },
+  {
+    "Test Name (Investigation)":"Cross Match (Screening Test)",
+    "Price":1000
+  },
+  {
+    "Test Name (Investigation)":"RBS (Random Blood Sugar)",
+    "Price":100
+  },
+  {
+    "Test Name (Investigation)":"RBS (Random Blood Sugar) with CUS",
+    "Price":200
+  },
+  {
+    "Test Name (Investigation)":"Fasting Blood Sugar",
+    "Price":100
+  },
+  {
+    "Test Name (Investigation)":"2 Hours After Breakfast (2HABF)",
+    "Price":100
+  },
+  {
+    "Test Name (Investigation)":"2 Hours After Breakfast (2HABF) with CUS",
+    "Price":200
+  },
+  {
+    "Test Name (Investigation)":"2 Hours After 75gm Glucose Drink",
+    "Price":100
+  },
+  {
+    "Test Name (Investigation)":"2 Hours After 75gm Glucose Drink with CUS",
+    "Price":200
+  },
+  {
+    "Test Name (Investigation)":"OGTT",
+    "Price":300
+  },
+  {
+    "Test Name (Investigation)":"ICT Malaria",
+    "Price":600
+  },
+  {
+    "Test Name (Investigation)":"MP (Malaria Parasite)",
+    "Price":200
+  },
+  {
+    "Test Name (Investigation)":"ASO Titre",
+    "Price":500
+  },
+  {
+    "Test Name (Investigation)":"CRP",
+    "Price":500
+  },
+  {
+    "Test Name (Investigation)":"R.A. Test",
+    "Price":500
+  },
+  {
+    "Test Name (Investigation)":"R.A. Test (Turbidimetric)",
+    "Price":600
+  },
+  {
+    "Test Name (Investigation)":"TPHA",
+    "Price":500
+  },
+  {
+    "Test Name (Investigation)":"VDRL",
+    "Price":300
+  },
+  {
+    "Test Name (Investigation)":"S. Bilirubin",
+    "Price":250
+  },
+  {
+    "Test Name (Investigation)":"HBsAg",
+    "Price":500
+  },
+  {
+    "Test Name (Investigation)":"HBsAg (Ellsa)",
+    "Price":1200
+  },
+  {
+    "Test Name (Investigation)":"SGPT (ALT)",
+    "Price":400
+  },
+  {
+    "Test Name (Investigation)":"SGOT (AST)",
+    "Price":400
+  },
+  {
+    "Test Name (Investigation)":"Serum Amylase",
+    "Price":1000
+  },
+  {
+    "Test Name (Investigation)":"Serum Creatinine",
+    "Price":400
+  },
+  {
+    "Test Name (Investigation)":"Serum Urea",
+    "Price":400
+  },
+  {
+    "Test Name (Investigation)":"Serum Uric Acid",
+    "Price":500
+  },
+  {
+    "Test Name (Investigation)":"Lipid Profile",
+    "Price":1000
+  },
+  {
+    "Test Name (Investigation)":"Semen Analysis",
+    "Price":600
+  },
+  {
+    "Test Name (Investigation)":"ICT for TB",
+    "Price":600
+  },
+  {
+    "Test Name (Investigation)":"ICT for Kala-Azar (Ag\/Ab)",
+    "Price":800
+  },
+  {
+    "Test Name (Investigation)":"Anti HIV (ICT)",
+    "Price":700
+  },
+  {
+    "Test Name (Investigation)":"Urine for C\/S",
+    "Price":1000
+  },
+  {
+    "Test Name (Investigation)":"Widal Test",
+    "Price":500
+  },
+  {
+    "Test Name (Investigation)":"Electrolyte",
+    "Price":1000
+  },
+  {
+    "Test Name (Investigation)":"Free Trilodothyorine (FT3)",
+    "Price":1000
+  },
+  {
+    "Test Name (Investigation)":"Free Thyroxine (FT4)",
+    "Price":1000
+  },
+  {
+    "Test Name (Investigation)":"T3, T4 & TSH",
+    "Price":2400
+  },
+  {
+    "Test Name (Investigation)":"TSH",
+    "Price":900
+  },
+  {
+    "Test Name (Investigation)":"LH",
+    "Price":1200
+  },
+  {
+    "Test Name (Investigation)":"FSH",
+    "Price":1200
+  },
+  {
+    "Test Name (Investigation)":"Prolactin",
+    "Price":1200
+  },
+  {
+    "Test Name (Investigation)":"Testosterone",
+    "Price":1200
+  },
+  {
+    "Test Name (Investigation)":"CA-125",
+    "Price":1200
+  },
+  {
+    "Test Name (Investigation)":"Beta HCG",
+    "Price":1200
+  },
+  {
+    "Test Name (Investigation)":"CBC",
+    "Price":200
+  },
+  {
+    "Test Name (Investigation)":"FBS",
+    "Price":100
+  },
+  {
+    "Test Name (Investigation)":"AMH",
+    "Price":3000
+  },
+  {
+    "Test Name (Investigation)":"CEA",
+    "Price":1200
+  },
+  {
+    "Test Name (Investigation)":"C-A 19-9",
+    "Price":1200
+  },
+  {
+    "Test Name (Investigation)":"\u03b1-Fetoprotein",
+    "Price":1200
+  },
+  {
+    "Test Name (Investigation)":"Blood Urea",
+    "Price":400
+  },
+  {
+    "Test Name (Investigation)":"Pregnancy",
+    "Price":250
+  },
+  {
+    "Test Name (Investigation)":"Urine R\/E",
+    "Price":200
+  },
+  {
+    "Test Name (Investigation)":"R\/A test",
+    "Price":200
+  },
+  {
+    "Test Name (Investigation)":"High Vag Swab C\/S",
+    "Price":1000
+  },
+  {
+    "Test Name (Investigation)":"Semen C\/S",
+    "Price":1000
+  },
+  {
+    "Test Name (Investigation)":"ECG",
+    "Price":300
+  },
+  {
+    "Test Name (Investigation)":"Colonoscopy",
+    "Price":5000
+  },
+  {
+    "Test Name (Investigation)":"HPV DNA Test",
+    "Price":3000
+  },
+  {
+    "Test Name (Investigation)":"Whole Abdomen",
+    "Price":1000
+  },
+  {
+    "Test Name (Investigation)":"Lower Abdomen",
+    "Price":800
+  },
+  {
+    "Test Name (Investigation)":"HBS\/Liver & Gall Bladder",
+    "Price":900
+  },
+  {
+    "Test Name (Investigation)":"Pelvic Organs",
+    "Price":900
+  },
+  {
+    "Test Name (Investigation)":"Pregnancy Profile",
+    "Price":900
+  },
+  {
+    "Test Name (Investigation)":"Kidney & Urinary Bladder (KUB)",
+    "Price":900
+  },
+  {
+    "Test Name (Investigation)":"Biophysical Profile",
+    "Price":1100
+  },
+  {
+    "Test Name (Investigation)":"Breast",
+    "Price":1000
+  },
+  {
+    "Test Name (Investigation)":"Breast (Both)",
+    "Price":2000
+  },
+  {
+    "Test Name (Investigation)":"Color Duplex-4D (Right\/Left)",
+    "Price":2000
+  },
+  {
+    "Test Name (Investigation)":"TVS",
+    "Price":2000
+  },
+  {
+    "Test Name (Investigation)":"Oestrogen",
+    "Price":1200
+  },
+  {
+    "Test Name (Investigation)":"P\/s",
+    "Price":500
+  },
+  {
+    "Test Name (Investigation)":"HCV",
+    "Price":600
+  },
+  {
+    "Test Name (Investigation)":"S.Albumin",
+    "Price":500
+  },
+  {
+    "Test Name (Investigation)":"Total Esonophil Count",
+    "Price":300
+  },
+  {
+    "Test Name (Investigation)":"S. Alkaline Phosphatase",
+    "Price":500
+  },
+  {
+    "Test Name (Investigation)":"HbA1C",
+    "Price":1000
+  },
+  {
+    "Test Name (Investigation)":"Ps Exam",
+    "Price":500
+  },
+  {
+    "Test Name (Investigation)":"Vitamin D (25-OH Vit-D Total)",
+    "Price":2200
+  }
+]
