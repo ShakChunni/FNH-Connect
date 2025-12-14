@@ -10,9 +10,9 @@ import {
 import { ModalHeader } from "@/components/ui/ModalHeader";
 import { ModalFooter } from "@/components/ui/ModalFooter";
 import { getTabColors } from "./utils/modalUtils";
-import HospitalInformation from "../form-sections/HospitalInformation";
-import PatientInformation from "../form-sections/PatientInformation";
-import MedicalInformation from "../form-sections/MedicalInformation";
+import HospitalInformation from "../../../../../components/form-sections/HospitalInformation";
+import PatientInformation from "../../../../../components/form-sections/PatientInformation";
+import MedicalInformation from "../../../../../components/form-sections/MedicalInformation";
 import {
   useInfertilityHospitalData,
   useInfertilityPatientData,
