@@ -37,15 +37,15 @@ export const normalizePatientData = (
         : row.patient.dateOfBirth
       : null,
     husbandName: row.patient.guardianName,
-    husbandAge: row.patient.spouseDOB
-      ? calculateAge(row.patient.spouseDOB)
+    husbandAge: row.patient.guardianDOB
+      ? calculateAge(row.patient.guardianDOB)
       : null,
-    husbandDOB: row.patient.spouseDOB
-      ? row.patient.spouseDOB instanceof Date
-        ? row.patient.spouseDOB.toISOString()
-        : row.patient.spouseDOB
+    husbandDOB: row.patient.guardianDOB
+      ? row.patient.guardianDOB instanceof Date
+        ? row.patient.guardianDOB.toISOString()
+        : row.patient.guardianDOB
       : null,
-    spouseGender: row.patient.spouseGender || "Male",
+    spouseGender: row.patient.guardianGender || "Male",
     mobileNumber: row.patient.phoneNumber,
     email: row.patient.email,
     address: row.patient.address,

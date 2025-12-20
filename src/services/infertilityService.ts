@@ -127,10 +127,10 @@ export async function getInfertilityPatients(filters: InfertilityFilters) {
           gender: true,
           dateOfBirth: true,
           guardianName: true,
+          guardianDOB: true,
+          guardianGender: true,
           address: true,
           bloodGroup: true,
-          spouseDOB: true,
-          spouseGender: true,
         },
       },
       hospital: {
@@ -200,8 +200,8 @@ export async function createInfertilityPatient(
           phoneNumber: patientData.phoneNumber,
           email: patientData.email,
           bloodGroup: patientData.bloodGroup,
-          spouseDOB: spouseData.dateOfBirth,
-          spouseGender: spouseData.gender,
+          guardianDOB: spouseData.dateOfBirth, // For infertility, guardian = spouse
+          guardianGender: spouseData.gender,
         },
       });
     } else {
@@ -217,8 +217,8 @@ export async function createInfertilityPatient(
           phoneNumber: patientData.phoneNumber,
           email: patientData.email,
           bloodGroup: patientData.bloodGroup,
-          spouseDOB: spouseData.dateOfBirth,
-          spouseGender: spouseData.gender,
+          guardianDOB: spouseData.dateOfBirth, // For infertility, guardian = spouse
+          guardianGender: spouseData.gender,
           createdBy: staffId,
         },
       });
@@ -346,8 +346,8 @@ export async function updateInfertilityPatient(
         phoneNumber: patientData.phoneNumber,
         email: patientData.email,
         bloodGroup: patientData.bloodGroup,
-        spouseDOB: spouseData.dateOfBirth,
-        spouseGender: spouseData.gender,
+        guardianDOB: spouseData.dateOfBirth,
+        guardianGender: spouseData.gender,
       },
     });
 

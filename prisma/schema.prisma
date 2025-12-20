@@ -4,28 +4,28 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL_NON_POOLING")
+  url      = env("DATABASE_URL")
 }
 
 // Core Models
 model Patient {
-  id        Int     @id @default(autoincrement())
-  firstName String
-  lastName  String?
-  fullName  String // Pre-computed for easier querying
-  gender    String
+  id          Int       @id @default(autoincrement())
+  firstName   String
+  lastName    String?
+  fullName    String // Pre-computed for easier querying
+  gender      String
+  address     String?
+  phoneNumber String?
+  email       String?
+  bloodGroup  String?
+  dateOfBirth DateTime?
 
-  dateOfBirth  DateTime?
-  guardianName String? // For infertility patients, this is spouse name
-  address      String?
-  phoneNumber  String?
-  email        String?
-  bloodGroup   String?
-
-  // Spouse information (primarily for infertility patients)
-
-  spouseDOB    DateTime?
-  spouseGender String?
+  guardianName    String? // For infertility patients, this is spouse name
+  guardianGender  String? // For infertility patients, this is spouse gender
+  guardianPhone   String?
+  guardianAddress String?
+  guardianEmail   String?
+  guardianDOB     DateTime?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -138,7 +138,6 @@ model Admission {
   grandTotal     Decimal @default(0)
   paidAmount     Decimal @default(0) // Sum of all payments
   dueAmount      Decimal @default(0) // Calculated: grandTotal - paidAmount
-  initialPayment Decimal @default(0) // First payment at admission
 
   // Room details
   seatNumber String?

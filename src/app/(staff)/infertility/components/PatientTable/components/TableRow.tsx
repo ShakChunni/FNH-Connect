@@ -1,7 +1,7 @@
 import React from "react";
-import { Edit2, Phone, MapPin, Calendar, Heart } from "lucide-react";
+import { Edit2 } from "lucide-react";
 import { InfertilityPatientData } from "../../../types";
-import { formatDate, TableHeader } from "../utils/tableUtils";
+import { TableHeader, formatDate } from "../utils";
 
 interface TableRowProps {
   row: InfertilityPatientData;
@@ -10,220 +10,145 @@ interface TableRowProps {
   onEdit?: (patient: InfertilityPatientData) => void;
 }
 
-// Fixed widths for pinned columns - must match header widths
-const FIRST_COL_WIDTH = "w-[90px] min-w-[90px]";
-const SECOND_COL_WIDTH = "w-[180px] min-w-[180px]";
-
-// Pinned column styles - only on lg+ screens with slate bg
-const firstPinnedStyles = `lg:sticky lg:z-10 lg:left-0 lg:bg-slate-100 ${FIRST_COL_WIDTH}`;
-const secondPinnedStyles = `lg:sticky lg:z-10 lg:left-[90px] lg:bg-slate-100 ${SECOND_COL_WIDTH}`;
-
 const TableRow: React.FC<TableRowProps> = ({ row, index, headers, onEdit }) => {
-  // Get value for a header key
-  const getValue = (key: string): string | number | null => {
-    switch (key) {
-      case "id":
-        return index;
-      case "patientFullName":
-        return row.patientFullName;
-      case "hospitalName":
-        return row.hospitalName;
-      case "patientAge":
-        return row.patientAge;
-      case "patientDOB":
-        return formatDate(row.patientDOB);
-      case "husbandName":
-        return row.husbandName;
-      case "husbandAge":
-        return row.husbandAge;
-      case "husbandDOB":
-        return formatDate(row.husbandDOB);
-      case "mobileNumber":
-        return row.mobileNumber;
-      case "address":
-        return row.address;
-      case "yearsMarried":
-        return row.yearsMarried;
-      case "yearsTrying":
-        return row.yearsTrying;
-      case "para":
-        return row.para;
-      case "gravida":
-        return row.gravida;
-      case "weight":
-        return row.weight;
-      case "bloodPressure":
-        return row.bloodPressure;
-      case "infertilityType":
-        return row.infertilityType;
-      case "notes":
-        return row.notes;
-      case "createdAt":
-        return formatDate(row.createdAt);
-      case "updatedAt":
-        return formatDate(row.updatedAt);
-      default:
-        return null;
+  const FIRST_COL_WIDTH = "w-[90px] min-w-[90px]";
+  const SECOND_COL_WIDTH = "w-[180px] min-w-[180px]";
+
+  const getCellClasses = (headerIndex: number) => {
+    const baseClasses =
+      "px-2 py-2 sm:px-3 sm:py-3 md:px-4 md:py-4 text-xs sm:text-sm text-gray-900 whitespace-nowrap";
+
+    if (headerIndex === 0) {
+      return `${baseClasses} ${FIRST_COL_WIDTH} lg:sticky lg:z-10 lg:left-0 lg:bg-white`;
     }
+    if (headerIndex === 1) {
+      return `${baseClasses} ${SECOND_COL_WIDTH} lg:sticky lg:z-10 lg:left-[90px] lg:bg-white`;
+    }
+    return baseClasses;
   };
 
-  // Render cell content with styling based on field type
-  const renderCellContent = (
-    header: TableHeader,
-    value: string | number | null
-  ) => {
-    if (value === null || value === "")
-      return <span className="text-gray-400">—</span>;
-
+  const renderCellContent = (header: TableHeader) => {
     switch (header.key) {
-      case "mobileNumber":
+      case "id":
         return (
-          <div className="flex items-center gap-1.5">
-            <Phone className="w-3 h-3 text-gray-400" />
-            <span>{value}</span>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => onEdit?.(row)}
+              className="inline-flex items-center gap-1 px-2 py-1 bg-fnh-navy text-white rounded-lg hover:bg-fnh-navy-dark transition-colors cursor-pointer"
+              title="Edit patient"
+            >
+              <Edit2 size={12} />
+            </button>
+            <span className="font-semibold text-fnh-navy">{index}</span>
           </div>
         );
 
-      case "address":
+      case "patientFullName":
         return (
-          <div
-            className="flex items-center gap-1.5 max-w-[150px]"
-            title={String(value)}
-          >
-            <MapPin className="w-3 h-3 text-gray-400 shrink-0" />
-            <span className="truncate">{value}</span>
+          <div className="font-medium">
+            <div className="text-gray-900">{row.patientFullName}</div>
+            {row.mobileNumber && (
+              <div className="text-xs text-gray-500">{row.mobileNumber}</div>
+            )}
           </div>
-        );
-
-      case "patientDOB":
-      case "husbandDOB":
-      case "createdAt":
-      case "updatedAt":
-        return (
-          <div className="flex items-center gap-1.5">
-            <Calendar className="w-3 h-3 text-gray-400" />
-            <span>{value}</span>
-          </div>
-        );
-
-      case "infertilityType":
-        const typeColor =
-          value === "Primary"
-            ? "bg-purple-100 text-purple-700"
-            : "bg-amber-100 text-amber-700";
-        return (
-          <span
-            className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-medium ${typeColor}`}
-          >
-            {value}
-          </span>
-        );
-
-      case "patientAge":
-      case "husbandAge":
-        return (
-          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-medium bg-blue-50 text-blue-700">
-            {value} yrs
-          </span>
-        );
-
-      case "yearsMarried":
-      case "yearsTrying":
-        return (
-          <span className="inline-flex items-center gap-1 text-gray-600">
-            <Heart className="w-3 h-3 text-pink-400" />
-            {value}
-          </span>
-        );
-
-      case "weight":
-        return value ? (
-          <span>{value} kg</span>
-        ) : (
-          <span className="text-gray-400">—</span>
-        );
-
-      case "bloodPressure":
-        return value ? (
-          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-medium bg-red-50 text-red-700">
-            {value}
-          </span>
-        ) : (
-          <span className="text-gray-400">—</span>
         );
 
       case "hospitalName":
         return (
-          <span className="inline-flex items-center px-2 py-0.5 rounded-lg text-[10px] sm:text-xs font-medium bg-fnh-navy/10 text-fnh-navy-dark">
-            {value}
+          <span className="text-gray-700">{row.hospitalName || "N/A"}</span>
+        );
+
+      case "patientAge":
+        return row.patientAge ?? "N/A";
+
+      case "patientDOB":
+        return formatDate(row.patientDOB);
+
+      case "husbandName":
+        return row.husbandName || "N/A";
+
+      case "husbandAge":
+        return row.husbandAge ?? "N/A";
+
+      case "husbandDOB":
+        return formatDate(row.husbandDOB);
+
+      case "mobileNumber":
+        return row.mobileNumber || "N/A";
+
+      case "address":
+        return (
+          <span
+            className="max-w-[150px] truncate block"
+            title={row.address || undefined}
+          >
+            {row.address || "N/A"}
           </span>
         );
 
+      case "yearsMarried":
+        return row.yearsMarried ?? "N/A";
+
+      case "yearsTrying":
+        return row.yearsTrying ?? "N/A";
+
+      case "para":
+        return row.para || "N/A";
+
+      case "gravida":
+        return row.gravida || "N/A";
+
+      case "weight":
+        return row.weight ? `${row.weight} kg` : "N/A";
+
+      case "bloodPressure":
+        return row.bloodPressure || "N/A";
+
+      case "infertilityType":
+        return row.infertilityType ? (
+          <span
+            className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+              row.infertilityType.toLowerCase() === "primary"
+                ? "bg-purple-100 text-purple-800"
+                : "bg-indigo-100 text-indigo-800"
+            }`}
+          >
+            {row.infertilityType}
+          </span>
+        ) : (
+          "N/A"
+        );
+
+      case "notes":
+        return (
+          <span
+            className="max-w-[150px] truncate block"
+            title={row.notes || undefined}
+          >
+            {row.notes || "N/A"}
+          </span>
+        );
+
+      case "createdAt":
+        return formatDate(row.createdAt);
+
+      case "updatedAt":
+        return formatDate(row.updatedAt);
+
       default:
-        return value;
+        return row[header.key as keyof InfertilityPatientData] || "N/A";
     }
   };
 
   return (
-    <tr className="hover:bg-gray-50 transition-colors duration-200 border-b border-gray-100 group">
-      {headers.map((header, colIndex) => {
-        const value = getValue(header.key);
-        const isFirstPinned = colIndex === 0;
-        const isSecondPinned = colIndex === 1;
-
-        // Base cell classes
-        const cellClasses = `
-          px-2 py-2 sm:px-3 sm:py-3 md:px-4 md:py-3.5
-          text-[10px] sm:text-xs md:text-sm
-          text-gray-700
-          whitespace-nowrap
-          ${isFirstPinned ? firstPinnedStyles : ""}
-          ${isSecondPinned ? secondPinnedStyles : ""}
-          ${isFirstPinned || isSecondPinned ? "group-hover:bg-gray-50" : ""}
-          ${
-            header.key === "patientFullName"
-              ? "font-semibold text-fnh-navy-dark"
-              : ""
-          }
-          ${
-            header.key === "notes"
-              ? "max-w-[120px] sm:max-w-[150px] md:max-w-xs truncate"
-              : ""
-          }
-        `;
-
-        // Special rendering for # column (includes edit button)
-        if (header.key === "id") {
-          return (
-            <td key={header.key} className={cellClasses}>
-              <div className="flex items-center gap-1.5 sm:gap-2">
-                <span className="font-medium text-gray-500 min-w-[20px] sm:min-w-[24px] text-center">
-                  {index}
-                </span>
-                {onEdit && (
-                  <button
-                    onClick={() => onEdit(row)}
-                    className="inline-flex items-center justify-center w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 rounded-lg bg-fnh-blue/10 text-fnh-blue hover:bg-fnh-blue hover:text-white transition-colors duration-150 cursor-pointer"
-                    title="Edit patient"
-                    aria-label={`Edit ${row.patientFullName}`}
-                  >
-                    <Edit2 className="w-3 h-3 sm:w-3.5 sm:h-3.5 md:w-4 md:h-4" />
-                  </button>
-                )}
-              </div>
-            </td>
-          );
-        }
-
-        // Regular cell rendering with styled content
-        return (
-          <td key={header.key} className={cellClasses}>
-            {renderCellContent(header, value)}
-          </td>
-        );
-      })}
+    <tr className="hover:bg-gray-50 transition-colors">
+      {headers.map((header, headerIndex) => (
+        <td key={header.key} className={getCellClasses(headerIndex)}>
+          {renderCellContent(header)}
+        </td>
+      ))}
     </tr>
   );
 };
 
-export default TableRow;
+export default React.memo(TableRow);

@@ -104,8 +104,7 @@ const initialFormState: FormState = {
     testCharge: 0,
     discountAmount: null,
     grandTotal: 0,
-    initialPayment: 0,
-    paidAmount: 0,
+    paidAmount: 0, // Tracks total paid via shifts
     dueAmount: 0,
     testDate: "",
     testCategory: "",
@@ -225,7 +224,6 @@ export const usePathologyFormStore = create<FormState & FormActions>()(
             testCharge: Number(patient.testCharge) || 0,
             discountAmount: Number(patient.discountAmount) || 0,
             grandTotal: Number(patient.grandTotal) || 0,
-            initialPayment: Number(patient.paidAmount) || 0,
             paidAmount: Number(patient.paidAmount) || 0,
             dueAmount: Number(patient.dueAmount) || 0,
             testDate: patient.testDate || "",

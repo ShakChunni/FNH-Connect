@@ -6,6 +6,17 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useDynamicDropdownPosition } from "@/hooks/use-dynamic-dropdown-position";
 import type { DropdownPortalProps } from "../../types/dropdownPortal";
 
+/**
+ * DropdownPortal - Renders dropdown content as a portal to document.body
+ *
+ * Features:
+ * - Dynamic positioning (above/below based on available space)
+ * - Closes on outside click
+ * - Closes on outside scroll
+ * - Smooth animations
+ *
+ * Uses refs for callbacks to prevent effect re-runs with inline functions.
+ */
 export function DropdownPortal({
   isOpen,
   onClose,
@@ -15,6 +26,13 @@ export function DropdownPortal({
 }: DropdownPortalProps) {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [mounted, setMounted] = useState(false);
+
+  // Store onClose in a ref so it doesn't trigger effect re-runs
+  // This allows consumers to pass inline functions like `onClose={() => setIsOpen(false)}`
+  const onCloseRef = useRef(onClose);
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
 
   // Hook for dynamic positioning and outside scroll handling
   const { positionStyle, animationDirection } = useDynamicDropdownPosition(
@@ -32,21 +50,23 @@ export function DropdownPortal({
 
   // Close dropdown on click outside
   useEffect(() => {
+    if (!isOpen) return;
+
     const handleClickOutside = (event: MouseEvent) => {
       if (
-        isOpen &&
         dropdownRef.current &&
         !dropdownRef.current.contains(event.target as Node) &&
         buttonRef.current &&
         !buttonRef.current.contains(event.target as Node)
       ) {
-        onClose();
+        // Use the ref to always call the latest onClose
+        onCloseRef.current();
       }
     };
 
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [isOpen, onClose, buttonRef]);
+  }, [isOpen, buttonRef]); // Note: onClose removed - we use the ref instead
 
   // Animation variants for dynamic direction
   const animationVariants = {

@@ -89,7 +89,7 @@ export function ModalHeader({
           <button
             onClick={onClose}
             disabled={isDisabled}
-            className="bg-red-100 hover:bg-red-200 text-red-500 p-1.5 sm:p-2 rounded-full flex items-center justify-center transition-all duration-200 shrink-0 hover:scale-110 hover:shadow-md group disabled:opacity-50 disabled:cursor-not-allowed"
+            className="bg-red-100 hover:bg-red-200 text-red-500 p-1.5 sm:p-2 rounded-full flex items-center justify-center transition-all duration-200 shrink-0 hover:scale-110 hover:shadow-md group disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
             aria-label="Close"
           >
             <motion.div

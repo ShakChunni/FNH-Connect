@@ -3,6 +3,7 @@ import { usePagination } from "@/hooks/usePagination";
 import { Pagination } from "@/components/pagination/Pagination";
 import TableRow from "./components/TableRow";
 import TableRowSkeleton from "./components/TableRowSkeleton";
+import PatientOverview from "./components/PatientOverview";
 import { PathologyPatientData, SortConfig } from "../../types";
 import { getTableHeaders, TableHeader } from "./utils";
 
@@ -20,7 +21,15 @@ const PatientTable: React.FC<PatientTableProps> = ({
   isLoading = false,
 }) => {
   const [sortConfig, setSortConfig] = useState<SortConfig | null>(null);
+  const [selectedPatient, setSelectedPatient] =
+    useState<PathologyPatientData | null>(null);
+  const [isOverviewOpen, setIsOverviewOpen] = useState(false);
   const tableContainerRef = useRef<HTMLDivElement>(null);
+
+  const handlePatientClick = (patient: PathologyPatientData) => {
+    setSelectedPatient(patient);
+    setIsOverviewOpen(true);
+  };
 
   // Sorting logic
   const sortedData = useMemo(() => {
@@ -113,8 +122,9 @@ const PatientTable: React.FC<PatientTableProps> = ({
     setSortConfig({ key, direction });
   };
 
-  const FIRST_COL_WIDTH = "w-[90px] min-w-[90px]";
-  const SECOND_COL_WIDTH = "w-[180px] min-w-[180px]";
+  const FIRST_COL_WIDTH = "w-[60px] min-w-[60px]";
+  const SECOND_COL_WIDTH = "w-[100px] min-w-[100px]";
+  const THIRD_COL_WIDTH = "w-[200px] min-w-[200px]";
 
   const getHeaderClasses = (header: TableHeader, index: number) => {
     const baseClasses = `
@@ -134,7 +144,10 @@ const PatientTable: React.FC<PatientTableProps> = ({
       return `${baseClasses} ${FIRST_COL_WIDTH} lg:sticky lg:z-30 lg:left-0 lg:bg-fnh-navy`;
     }
     if (index === 1) {
-      return `${baseClasses} ${SECOND_COL_WIDTH} lg:sticky lg:z-30 lg:left-[90px] lg:bg-fnh-navy`;
+      return `${baseClasses} ${SECOND_COL_WIDTH} lg:sticky lg:z-30 lg:left-[60px] lg:bg-fnh-navy`;
+    }
+    if (index === 2) {
+      return `${baseClasses} ${THIRD_COL_WIDTH} lg:sticky lg:z-30 lg:left-[160px] lg:bg-fnh-navy`;
     }
     return baseClasses;
   };
@@ -233,6 +246,7 @@ const PatientTable: React.FC<PatientTableProps> = ({
                     index={(currentPage - 1) * 15 + index + 1}
                     headers={headers}
                     onEdit={onEdit}
+                    onPatientClick={handlePatientClick}
                   />
                 ))}
               </tbody>
@@ -255,6 +269,11 @@ const PatientTable: React.FC<PatientTableProps> = ({
           />
         </div>
       )}
+      <PatientOverview
+        isOpen={isOverviewOpen}
+        onClose={() => setIsOverviewOpen(false)}
+        patient={selectedPatient}
+      />
     </>
   );
 };

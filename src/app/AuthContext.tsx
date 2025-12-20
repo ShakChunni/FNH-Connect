@@ -122,16 +122,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
           setUser(validatedUser);
         } else {
+          // Session invalid - clear everything and redirect
+          console.log("[AuthContext] Session invalid, clearing state");
           setUser(null);
           Cookies.remove("session");
           sessionManager.current.reset();
+          router.replace("/login");
         }
       } catch (error) {
-        console.error("Session check failed:", error);
+        console.error("[AuthContext] Session check failed:", error);
+        // On error (401, network issue, etc.) - clear and redirect
         setUser(null);
         Cookies.remove("session");
         sessionManager.current.reset();
-        // ✅ Middleware handles redirects, no client-side redirect needed
+        router.replace("/login");
       } finally {
         if (initialLoad) {
           setInitialLoad(false);

@@ -37,12 +37,22 @@ export default function MainContent({
     pathname.startsWith("/forgot-password") ||
     pathname.startsWith("/reset-password");
 
+  const isProtectedRoute = !isPublicAuthPage && pathname !== "/";
+
   // Redirect authenticated users away from auth pages
   useEffect(() => {
     if (hasHydrated && !loading && user && isPublicAuthPage) {
       router.replace("/dashboard");
     }
   }, [hasHydrated, loading, user, isPublicAuthPage, router]);
+
+  // Redirect unauthenticated users away from protected routes
+  useEffect(() => {
+    if (hasHydrated && !loading && !user && isProtectedRoute) {
+      console.log("[MainContent] Session invalid, redirecting to login");
+      router.replace("/login");
+    }
+  }, [hasHydrated, loading, user, isProtectedRoute, router]);
 
   // Show loading only during initial hydration/auth
   // Use suppressHydrationWarning on the container to prevent mismatch warnings
@@ -57,6 +67,11 @@ export default function MainContent({
 
   // Authenticated user on auth page - show loading while redirecting
   if (isPublicAuthPage && user) {
+    return <LoadingState type="authenticating" />;
+  }
+
+  // Unauthenticated user on protected route - show loading while redirecting
+  if (isProtectedRoute && !user) {
     return <LoadingState type="authenticating" />;
   }
 

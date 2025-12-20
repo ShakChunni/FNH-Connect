@@ -62,7 +62,8 @@ const PatientRecordsPage = React.memo(() => {
     return patientData.map((p) => ({
       ...p,
       dateOfBirth: p.dateOfBirth ? new Date(p.dateOfBirth) : null,
-      spouseDOB: p.spouseDOB ? new Date(p.spouseDOB) : null,
+      guardianDOB: p.guardianDOB ? new Date(p.guardianDOB) : null,
+      guardianGender: p.guardianGender || null,
       createdAt: p.createdAt ? new Date(p.createdAt) : undefined,
       updatedAt: p.updatedAt ? new Date(p.updatedAt) : undefined,
     }));

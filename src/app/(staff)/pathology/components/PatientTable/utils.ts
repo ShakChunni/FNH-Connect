@@ -8,6 +8,7 @@ export interface TableHeader {
 export function getTableHeaders(): TableHeader[] {
   return [
     { key: "id", label: "#" },
+    { key: "actions", label: "Actions" },
     { key: "patientFullName", label: "Patient Name" },
     { key: "testNumber", label: "Test Number" },
     { key: "testDate", label: "Test Date" },
@@ -16,6 +17,5 @@ export function getTableHeaders(): TableHeader[] {
     { key: "paidAmount", label: "Paid (BDT)" },
     { key: "dueAmount", label: "Due (BDT)" },
     { key: "isCompleted", label: "Status" },
-    { key: "actions", label: "Actions" },
   ];
 }

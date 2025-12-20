@@ -1,17 +1,3 @@
-/**
- * Edge Runtime Middleware - Lightweight Security Layer
- *
- * This middleware runs on Edge Runtime for optimal performance.
- * It handles:
- * - CSRF protection
- * - In-memory rate limiting with aggressive cleanup
- * - Suspicious path detection
- * - IP blocking (synced from database via cron)
- *
- * Memory is managed aggressively to prevent leaks.
- * Database writes happen via /api/security/sync cron endpoint.
- */
-
 import { NextRequest, NextResponse } from "next/server";
 import {
   validateCSRFToken,
