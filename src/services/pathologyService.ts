@@ -4,7 +4,7 @@
  */
 
 import { prisma } from "@/lib/prisma";
-import type { Prisma } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 
 // ═══════════════════════════════════════════════════════════════
 // TYPES
@@ -53,6 +53,8 @@ export interface GuardianData {
 export interface PathologyData {
   selectedTests: string[]; // Array of test codes
   testCharge: number;
+  discountType: string | null;
+  discountValue: number | null;
   discountAmount: number;
   grandTotal: number;
   paidAmount: number; // Amount paid by patient
@@ -312,6 +314,9 @@ export async function createPathologyPatient(
         remarks: pathologyData.remarks,
         isCompleted: pathologyData.isCompleted,
         testCharge: pathologyData.testCharge,
+
+        discountType: pathologyData.discountType,
+        discountValue: pathologyData.discountValue,
         discountAmount: pathologyData.discountAmount,
         grandTotal: pathologyData.grandTotal,
         paidAmount: pathologyData.paidAmount,
@@ -396,9 +401,18 @@ export async function createPathologyPatient(
         data: {
           shiftId: shiftId,
           amount: pathologyData.paidAmount,
-          movementType: "PAYMENT_RECEIVED",
+          movementType: "COLLECTION",
           description: `Pathology test payment - ${testNumber}`,
           paymentId: payment.id,
+        },
+      });
+
+      // Update shift totals
+      await tx.shift.update({
+        where: { id: shiftId },
+        data: {
+          systemCash: { increment: pathologyData.paidAmount },
+          totalCollected: { increment: pathologyData.paidAmount },
         },
       });
     }
@@ -437,7 +451,8 @@ export async function updatePathologyPatient(
   guardianData: GuardianData,
   pathologyData: PathologyData,
   staffId: number,
-  userId: number
+  userId: number,
+  shiftId: number | null
 ) {
   return await prisma.$transaction(async (tx) => {
     // Check if record exists
@@ -492,6 +507,9 @@ export async function updatePathologyPatient(
         remarks: pathologyData.remarks,
         isCompleted: pathologyData.isCompleted,
         testCharge: pathologyData.testCharge,
+
+        discountType: pathologyData.discountType,
+        discountValue: pathologyData.discountValue,
         discountAmount: pathologyData.discountAmount,
         grandTotal: pathologyData.grandTotal,
         paidAmount: pathologyData.paidAmount,
@@ -501,6 +519,74 @@ export async function updatePathologyPatient(
         lastModifiedBy: staffId,
       },
     });
+
+    // 4.5 Handle financial updates (Payments & Refunds)
+    if (paidAmountDiff !== 0 && shiftId) {
+      if (paidAmountDiff > 0) {
+        // ADDITIONAL COLLECTION
+        // Generate receipt number
+        const paymentCount = await tx.payment.count();
+        const receiptNumber = `RCP-${Date.now()}-${paymentCount + 1}`;
+
+        const payment = await tx.payment.create({
+          data: {
+            patientAccountId: existingRecord.patientId, // Note: We need patientAccountId, fetch it below or use relation
+            amount: new Prisma.Decimal(paidAmountDiff),
+            paymentMethod: "Cash",
+            collectedById: staffId,
+            shiftId: shiftId,
+            receiptNumber,
+            notes: `Additional payment for pathology test ${existingRecord.testNumber}`,
+          },
+        });
+
+        // Track cash movement
+        await tx.cashMovement.create({
+          data: {
+            shiftId: shiftId,
+            amount: new Prisma.Decimal(paidAmountDiff),
+            movementType: "COLLECTION",
+            description: `Additional collection for ${existingRecord.testNumber}`,
+            paymentId: payment.id,
+          },
+        });
+
+        // Update shift
+        await tx.shift.update({
+          where: { id: shiftId },
+          data: {
+            systemCash: { increment: paidAmountDiff },
+            totalCollected: { increment: paidAmountDiff },
+          },
+        });
+      } else {
+        // REFUND / CORRECTION (Negative diff)
+        const refundAmount = Math.abs(paidAmountDiff);
+
+        // Track cash movement (Refund)
+        await tx.cashMovement.create({
+          data: {
+            shiftId: shiftId,
+            amount: new Prisma.Decimal(refundAmount),
+            movementType: "REFUND",
+            description: `Refund/Correction for ${existingRecord.testNumber}`,
+            // We don't link a positive payment ID here usually, unless we create a negative payment record.
+            // For now, just tracking the movement.
+          },
+        });
+
+        // Update shift
+        await tx.shift.update({
+          where: { id: shiftId },
+          data: {
+            systemCash: { decrement: refundAmount },
+            totalRefunded: { increment: refundAmount },
+          },
+        });
+      }
+    }
+
+    // 5. Update patient account totals
 
     // 5. Update patient account totals
     const patientAccount = await tx.patientAccount.findUnique({

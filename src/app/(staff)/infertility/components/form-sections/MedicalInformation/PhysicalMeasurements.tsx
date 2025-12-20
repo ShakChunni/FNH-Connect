@@ -45,13 +45,13 @@ const PhysicalMeasurements: React.FC = () => {
     <div className="mb-6 border-t border-gray-200 pt-6 mt-6">
       <div className="flex items-center gap-2 mb-2">
         <Ruler size={20} className="text-purple-500" />
-        <span className="text-md font-semibold text-gray-800">
+        <span className="text-base sm:text-lg font-bold text-gray-800">
           Physical Measurements
         </span>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1.5 sm:mb-2">
             Weight (kg)
           </label>
           <input
@@ -71,7 +71,7 @@ const PhysicalMeasurements: React.FC = () => {
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1.5 sm:mb-2">
             Height (cm)
           </label>
           <input
@@ -91,7 +91,7 @@ const PhysicalMeasurements: React.FC = () => {
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1.5 sm:mb-2">
             BMI
           </label>
           <input
@@ -103,7 +103,7 @@ const PhysicalMeasurements: React.FC = () => {
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1.5 sm:mb-2">
             Blood Group
           </label>
           <BloodGroupDropdown

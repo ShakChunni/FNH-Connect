@@ -48,22 +48,22 @@ const PatientOverview: React.FC<PatientOverviewProps> = ({
     <ModalShell
       isOpen={isOpen}
       onClose={onClose}
-      className="w-full max-w-6xl h-[95vh] sm:h-[90vh] rounded-3xl overflow-hidden flex flex-col"
+      className="w-full max-w-[85%] md:max-w-[80%] h-[95vh] sm:h-[90vh] rounded-3xl overflow-hidden flex flex-col"
     >
       {/* Header with Test Info */}
-      <div className="bg-white border-b px-6 py-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shrink-0 shadow-sm relative z-10">
+      <div className="bg-white border-b px-6 py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shrink-0 shadow-sm relative z-10">
         <div>
-          <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2.5 tracking-tight">
-            <Activity className="text-fnh-teal w-6 h-6" />
+          <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2.5 tracking-tight">
+            <Activity className="text-fnh-teal w-5 h-5" />
             Pathology Overview
           </h2>
-          <div className="flex flex-wrap items-center gap-3 text-sm text-gray-500 mt-2">
+          <div className="flex flex-wrap items-center gap-3 text-xs text-gray-500 mt-1.5">
             <span className="font-mono bg-fnh-navy/5 text-fnh-navy px-2.5 py-1 rounded-md font-semibold border border-fnh-navy/10 whitespace-nowrap">
               {patient.testNumber}
             </span>
             <span className="hidden sm:inline text-gray-300">|</span>
             <span className="flex items-center gap-1.5 whitespace-nowrap bg-gray-50 px-2 py-1 rounded-md border border-gray-100 font-medium text-gray-600">
-              <Clock className="w-3.5 h-3.5 text-gray-400" />
+              <Clock className="w-3 h-3 text-gray-400" />
               {formatDateWithTime(patient.testDate)}
             </span>
           </div>
@@ -110,14 +110,14 @@ const PatientOverview: React.FC<PatientOverviewProps> = ({
       <div className="bg-white border-t p-5 flex flex-col-reverse sm:flex-row justify-end gap-4 shrink-0 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.02)]">
         <button
           onClick={handleEdit}
-          className="flex items-center justify-center gap-2 px-6 py-3 bg-white border border-gray-200 hover:border-fnh-navy hover:text-fnh-navy text-gray-700 font-bold rounded-xl transition-all active:scale-95 shadow-sm hover:shadow-md cursor-pointer w-full sm:w-auto"
+          className="flex items-center justify-center gap-2 px-5 py-2.5 bg-white border border-gray-200 hover:border-fnh-navy hover:text-fnh-navy text-gray-700 font-bold text-sm rounded-xl transition-all active:scale-95 shadow-sm hover:shadow-md cursor-pointer w-full sm:w-auto"
         >
-          <Edit className="w-4 h-4" />
+          <Edit className="w-3.5 h-3.5" />
           Edit Details
         </button>
         <button
           onClick={onClose}
-          className="px-8 py-3 bg-fnh-navy hover:bg-fnh-navy-dark text-white font-bold rounded-xl shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all active:scale-95 active:translate-y-0 cursor-pointer w-full sm:w-auto"
+          className="px-6 py-2.5 bg-fnh-navy hover:bg-fnh-navy-dark text-white font-bold text-sm rounded-xl shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all active:scale-95 active:translate-y-0 cursor-pointer w-full sm:w-auto"
         >
           Close Overview
         </button>

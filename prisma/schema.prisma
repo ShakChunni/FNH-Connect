@@ -191,7 +191,9 @@ model PathologyTest {
 
   // Financial
   testCharge     Decimal  @default(0)
-  discountAmount Decimal?
+  discountType   String? // "percentage" or "value"
+  discountValue  Decimal? // The raw input value (e.g., 10 for 10%)
+  discountAmount Decimal? // The calculated amount to subtract
   grandTotal     Decimal  @default(0)
   paidAmount     Decimal  @default(0) // Sum of all payments
   dueAmount      Decimal  @default(0) // Calculated: grandTotal - paidAmount
@@ -232,6 +234,10 @@ model Shift {
   closingCash Decimal @default(0) // Physical cash at end
   systemCash  Decimal @default(0) // What system says they should have
   variance    Decimal @default(0) // Difference between closing and system
+
+  // Collection summary
+  totalCollected Decimal @default(0)
+  totalRefunded  Decimal @default(0)
 
   notes        String?
   reconciledAt DateTime?

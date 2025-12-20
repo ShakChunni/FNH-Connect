@@ -67,7 +67,7 @@ const InfertilityHospitalDetails: React.FC = () => {
       {/* Type */}
       <div className="mb-3 sm:mb-4 relative">
         <div className="flex items-center justify-between mb-1.5 sm:mb-2">
-          <label className="block text-gray-700 text-sm sm:text-base font-semibold">
+          <label className="block text-gray-700 text-xs sm:text-sm font-semibold">
             Hospital Type<span className="text-red-500">*</span>
           </label>
           {isExisting && hospitalData.type && (
@@ -88,7 +88,7 @@ const InfertilityHospitalDetails: React.FC = () => {
       {/* Phone */}
       <div className="mb-3 sm:mb-4">
         <div className="flex items-center justify-between mb-1.5 sm:mb-2">
-          <label className="block text-gray-700 text-sm sm:text-base font-semibold">
+          <label className="block text-gray-700 text-xs sm:text-sm font-semibold">
             Phone Number
           </label>
           {isExisting && hospitalData.phoneNumber && (

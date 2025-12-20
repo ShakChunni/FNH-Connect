@@ -240,13 +240,10 @@ export async function GET(request: NextRequest) {
     // 7. Transform cash session
     let cashSession = null;
     if (activeShift) {
-      const totalCollected = activeShift.cashMovements
-        .filter((m) => m.movementType === "PAYMENT_RECEIVED")
-        .reduce((sum, m) => sum + m.amount.toNumber(), 0);
-      const totalRefunded = activeShift.cashMovements
-        .filter((m) => m.movementType === "REFUND")
-        .reduce((sum, m) => sum + m.amount.toNumber(), 0);
+      const totalCollected = activeShift.totalCollected.toNumber();
+      const totalRefunded = activeShift.totalRefunded.toNumber();
       const openingCash = activeShift.openingCash.toNumber();
+      // System cash should match this calculation if logic is correct
       const currentCash = openingCash + totalCollected - totalRefunded;
 
       cashSession = {

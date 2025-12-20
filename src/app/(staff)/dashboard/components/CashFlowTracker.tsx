@@ -35,8 +35,9 @@ const formatTime = (dateString: string): string => {
 };
 
 const CashFlowSkeleton: React.FC = () => (
-  <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 sm:p-6 h-full animate-pulse">
-    <div className="flex items-center justify-between mb-4 sm:mb-6">
+  <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 sm:p-6 h-full animate-pulse flex flex-col">
+    {/* Header Skeleton */}
+    <div className="flex items-center justify-between mb-4 sm:mb-6 shrink-0">
       <div className="space-y-1">
         <div className="h-4 sm:h-5 w-28 sm:w-32 bg-gray-200 rounded" />
         <div className="h-3 sm:h-4 w-20 sm:w-24 bg-gray-100 rounded" />
@@ -44,18 +45,34 @@ const CashFlowSkeleton: React.FC = () => (
       <div className="h-8 sm:h-10 w-8 sm:w-10 bg-gray-200 rounded-xl" />
     </div>
 
-    <div className="space-y-3 sm:space-y-4">
-      <div className="p-3 sm:p-4 rounded-xl bg-gray-50">
-        <div className="h-6 sm:h-8 w-24 sm:w-28 bg-gray-200 rounded mb-2" />
-        <div className="h-3 sm:h-4 w-16 sm:w-20 bg-gray-100 rounded" />
+    {/* Content Container to fill height */}
+    <div className="flex-1 flex flex-col gap-4">
+      {/* Current Cash Block Skeleton */}
+      <div className="p-4 sm:p-5 rounded-2xl bg-gray-100 h-24 sm:h-28 shrink-0">
+        <div className="h-3 sm:h-4 w-24 bg-gray-200 rounded mb-3" />
+        <div className="h-8 sm:h-10 w-40 bg-gray-200 rounded" />
       </div>
-      <div className="grid grid-cols-2 gap-2 sm:gap-3">
+
+      {/* Stats Grid Skeleton */}
+      <div className="grid grid-cols-2 gap-2 sm:gap-3 shrink-0">
         {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="p-2.5 sm:p-3 rounded-xl bg-gray-50">
-            <div className="h-3 sm:h-4 w-12 sm:w-16 bg-gray-200 rounded mb-1" />
-            <div className="h-4 sm:h-5 w-10 sm:w-12 bg-gray-100 rounded" />
+          <div
+            key={i}
+            className="p-3 sm:p-4 rounded-xl bg-gray-50 border border-gray-100"
+          >
+            <div className="h-3 w-16 bg-gray-200 rounded mb-2" />
+            <div className="h-5 w-24 bg-gray-200 rounded" />
           </div>
         ))}
+      </div>
+
+      {/* Progress Ring Section Skeleton - Pushing to bottom handled by flex-1 if needed, or just flow */}
+      <div className="mt-auto p-3 sm:p-4 rounded-xl bg-gray-50 border border-gray-100 flex items-center justify-between">
+        <div className="space-y-2">
+          <div className="h-4 w-24 bg-gray-200 rounded" />
+          <div className="h-3 w-32 bg-gray-100 rounded" />
+        </div>
+        <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-gray-200" />
       </div>
     </div>
   </div>

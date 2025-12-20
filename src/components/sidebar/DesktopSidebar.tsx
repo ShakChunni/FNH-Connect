@@ -64,7 +64,7 @@ function UserProfileSection({
           }`}
           onClick={() => setIsDropdownOpen(!isDropdownOpen)}
         >
-          <div className="flex h-12 w-12 min-w-[3rem] items-center justify-center rounded-full bg-white/15 text-base font-semibold text-white flex-shrink-0 overflow-hidden">
+          <div className="flex h-12 w-12 min-w-12 items-center justify-center rounded-full bg-white/15 text-base font-semibold text-white shrink-0 overflow-hidden">
             {user.photoUrl ? (
               <img
                 src={user.photoUrl}
@@ -97,6 +97,10 @@ function UserProfileSection({
   );
 }
 
+import ConfirmModal from "@/components/ui/ConfirmModal";
+
+// ... existing imports
+
 export default function DesktopSidebar({
   isExpanded,
   isPinned,
@@ -107,6 +111,7 @@ export default function DesktopSidebar({
   const { user, logout } = useAuth();
   const expandTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const collapseTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   const initials = useMemo(() => {
     if (!user) return "";
@@ -148,153 +153,194 @@ export default function DesktopSidebar({
     onPinnedChange(!isPinned);
   }, [isPinned, onPinnedChange]);
 
-  const labelAnimationClass = isExpanded
-    ? "max-w-[14rem] opacity-100 translate-x-0"
-    : "max-w-0 opacity-0 -translate-x-3";
+  const handleLogoutClick = () => {
+    // Check if user has a role that typically has shifts
+    // You might want to refine this check based on actual shift data if available
+    const role = user?.role?.toLowerCase();
+    const staffRole = (user as any)?.staffRole?.toLowerCase() || ""; // Assuming staffRole might be available on user or we check generic role
+
+    // Check system roles that use shifts
+    if (
+      role === "system-admin" ||
+      role === "operator" ||
+      staffRole === "system-admin" ||
+      staffRole === "operator"
+    ) {
+      setShowLogoutConfirm(true);
+    } else {
+      logout();
+    }
+  };
+
+  const confirmLogout = () => {
+    logout();
+    setShowLogoutConfirm(false);
+  };
 
   return (
-    <aside
-      className={`hidden lg:flex fixed top-0 left-0 h-screen flex-col overflow-hidden rounded-3xl transition-all duration-300 ease-[cubic-bezier(0.25,0.1,0.25,1)] ${
-        isExpanded
-          ? "w-[var(--sidebar-expanded-width)]"
-          : "w-[var(--sidebar-collapsed-width)]"
-      }`}
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
-      style={{
-        background: SIDEBAR_BG,
-        zIndex: isPinned ? 70 : 60,
-      }}
-    >
-      <div
-        className={`flex flex-1 flex-col gap-5 pb-6 pt-3 text-white transition-all duration-300 ${
-          isExpanded ? "px-2" : "px-4"
+    <>
+      <aside
+        className={`hidden lg:flex fixed top-0 left-0 h-screen flex-col overflow-hidden rounded-3xl transition-all duration-300 ease-[cubic-bezier(0.25,0.1,0.25,1)] ${
+          isExpanded
+            ? "w-[var(--sidebar-expanded-width)]"
+            : "w-[var(--sidebar-collapsed-width)]"
         }`}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+        style={{
+          background: SIDEBAR_BG,
+          zIndex: isPinned ? 70 : 60,
+        }}
       >
-        {/* First Container: Logo, Text, Pin Button, and Navigation */}
-        {/* First Container: Logo, Text, Pin Button, and Navigation */}
         <div
-          className="relative rounded-3xl p-4 overflow-hidden"
-          style={{ background: CONTAINER_BG }}
+          className={`flex flex-1 flex-col gap-5 pb-6 pt-3 text-white transition-all duration-300 ${
+            isExpanded ? "px-2" : "px-4"
+          }`}
         >
+          {/* First Container: Logo, Text, Pin Button, and Navigation */}
           <div
-            className={`flex items-start gap-3 mb-3 relative z-10 ${
-              isExpanded ? "justify-between" : "justify-center"
-            }`}
+            className="relative rounded-3xl p-4 overflow-hidden"
+            style={{ background: CONTAINER_BG }}
           >
-            {!isExpanded ? (
-              <div className="relative h-10 w-10 shrink-0 flex items-center justify-center">
-                <Image
-                  src="/fnh-logo.svg"
-                  alt="FNH Healthcare"
-                  width={40}
-                  height={40}
-                  className="object-contain brightness-0 invert"
-                  priority
-                />
-              </div>
-            ) : (
-              <>
-                <Link
-                  href="/dashboard"
-                  className="flex items-center gap-3 flex-1 min-w-0"
-                >
+            <div
+              className={`flex items-start gap-3 mb-3 relative z-10 ${
+                isExpanded ? "justify-between" : "justify-center"
+              }`}
+            >
+              {!isExpanded ? (
+                <div className="relative h-10 w-10 shrink-0 flex items-center justify-center">
                   <Image
                     src="/fnh-logo.svg"
                     alt="FNH Healthcare"
                     width={40}
                     height={40}
-                    className="h-10 w-10 shrink-0 object-contain brightness-0 invert"
+                    className="object-contain brightness-0 invert"
                     priority
                   />
-                  <div className="flex items-center gap-1 leading-tight min-w-0">
-                    <span className="text-sm font-bold uppercase tracking-[0.25em] text-white/80 whitespace-nowrap">
-                      FNH Connect
-                    </span>
-                  </div>
-                </Link>
-                <button
-                  onClick={handlePinToggle}
-                  className="inline-flex h-6 w-6 items-center justify-center text-white/40 transition-all duration-200 hover:text-white hover:cursor-pointer shrink-0"
-                  title={isPinned ? "Unpin sidebar" : "Pin sidebar"}
-                  aria-label={isPinned ? "Unpin sidebar" : "Pin sidebar"}
-                >
-                  <Pin
-                    className={`h-4 w-4 transition-transform duration-300 ${
-                      isPinned ? "rotate-45 text-white" : ""
-                    }`}
-                  />
-                </button>
-              </>
-            )}
+                </div>
+              ) : (
+                <>
+                  <Link
+                    href="/dashboard"
+                    className="flex items-center gap-3 flex-1 min-w-0"
+                  >
+                    <Image
+                      src="/fnh-logo.svg"
+                      alt="FNH Healthcare"
+                      width={40}
+                      height={40}
+                      className="h-10 w-10 shrink-0 object-contain brightness-0 invert"
+                      priority
+                    />
+                    <div className="flex items-center gap-1 leading-tight min-w-0">
+                      <span className="text-sm font-bold uppercase tracking-[0.25em] text-white/80 whitespace-nowrap">
+                        FNH Connect
+                      </span>
+                    </div>
+                  </Link>
+                  <button
+                    onClick={handlePinToggle}
+                    className="inline-flex h-6 w-6 items-center justify-center text-white/40 transition-all duration-200 hover:text-white hover:cursor-pointer shrink-0"
+                    title={isPinned ? "Unpin sidebar" : "Pin sidebar"}
+                    aria-label={isPinned ? "Unpin sidebar" : "Pin sidebar"}
+                  >
+                    <Pin
+                      className={`h-4 w-4 transition-transform duration-300 ${
+                        isPinned ? "rotate-45 text-white" : ""
+                      }`}
+                    />
+                  </button>
+                </>
+              )}
+            </div>
+
+            {/* Navigation inside first container */}
+            <nav className="overflow-y-auto">
+              <ul className="space-y-3">
+                {getNavigationItems(user?.role).map((item) => {
+                  const isActive = pathname === item.href;
+                  const Icon = item.icon;
+
+                  return (
+                    <li key={item.href}>
+                      <Link
+                        href={item.href}
+                        className={`group flex items-center rounded-2xl px-3 py-2.5 text-sm font-medium transition-all duration-200 ease-[cubic-bezier(0.25,0.1,0.25,1)] ${
+                          isActive
+                            ? "text-white shadow-lg"
+                            : "text-white/70 hover:text-white"
+                        } ${isExpanded ? "gap-3" : "justify-center"}`}
+                        style={{
+                          background: isActive ? ACTIVE_BG : "transparent",
+                          borderLeft: isActive
+                            ? `4px solid ${ACTIVE_INDICATOR}`
+                            : "4px solid transparent",
+                        }}
+                        onMouseEnter={(e) => {
+                          if (!isActive) {
+                            e.currentTarget.style.background = HOVER_BG;
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          if (!isActive) {
+                            e.currentTarget.style.background = "transparent";
+                          }
+                        }}
+                      >
+                        <span
+                          className={`flex h-9 w-9 min-w-9 shrink-0 items-center justify-center rounded-xl transition-all duration-200 ${
+                            isActive
+                              ? "text-white"
+                              : "text-white/60 group-hover:text-white"
+                          }`}
+                        >
+                          <Icon className="h-5 w-5" />
+                        </span>
+                        {isExpanded && (
+                          <span className="overflow-hidden whitespace-nowrap text-sm font-medium">
+                            {item.label}
+                          </span>
+                        )}
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+            </nav>
           </div>
 
-          {/* Navigation inside first container */}
-          <nav className="overflow-y-auto">
-            <ul className="space-y-3">
-              {getNavigationItems(user?.role).map((item) => {
-                const isActive = pathname === item.href;
-                const Icon = item.icon;
-
-                return (
-                  <li key={item.href}>
-                    <Link
-                      href={item.href}
-                      className={`group flex items-center rounded-2xl px-3 py-2.5 text-sm font-medium transition-all duration-200 ease-[cubic-bezier(0.25,0.1,0.25,1)] ${
-                        isActive
-                          ? "text-white shadow-lg"
-                          : "text-white/70 hover:text-white"
-                      } ${isExpanded ? "gap-3" : "justify-center"}`}
-                      style={{
-                        background: isActive ? ACTIVE_BG : "transparent",
-                        borderLeft: isActive
-                          ? `4px solid ${ACTIVE_INDICATOR}`
-                          : "4px solid transparent",
-                      }}
-                      onMouseEnter={(e) => {
-                        if (!isActive) {
-                          e.currentTarget.style.background = HOVER_BG;
-                        }
-                      }}
-                      onMouseLeave={(e) => {
-                        if (!isActive) {
-                          e.currentTarget.style.background = "transparent";
-                        }
-                      }}
-                    >
-                      <span
-                        className={`flex h-9 w-9 min-w-9 shrink-0 items-center justify-center rounded-xl transition-all duration-200 ${
-                          isActive
-                            ? "text-white"
-                            : "text-white/60 group-hover:text-white"
-                        }`}
-                      >
-                        <Icon className="h-5 w-5" />
-                      </span>
-                      {isExpanded && (
-                        <span className="overflow-hidden whitespace-nowrap text-sm font-medium">
-                          {item.label}
-                        </span>
-                      )}
-                    </Link>
-                  </li>
-                );
-              })}
-            </ul>
-          </nav>
+          {/* Third Container: User Info - separate at bottom */}
+          {user && (
+            <UserProfileSection
+              user={user}
+              isExpanded={isExpanded}
+              initials={initials}
+              displayName={displayName}
+              onLogout={handleLogoutClick}
+            />
+          )}
         </div>
+      </aside>
 
-        {/* Third Container: User Info - separate at bottom */}
-        {user && (
-          <UserProfileSection
-            user={user}
-            isExpanded={isExpanded}
-            initials={initials}
-            displayName={displayName}
-            onLogout={logout}
-          />
-        )}
-      </div>
-    </aside>
+      <ConfirmModal
+        isOpen={showLogoutConfirm}
+        onClose={() => setShowLogoutConfirm(false)}
+        onConfirm={confirmLogout}
+        title="End Shift & Logout"
+        variant="warning"
+        confirmLabel="Yes, I have"
+        cancelLabel="No, return"
+      >
+        <div className="space-y-2">
+          <p className="font-semibold text-fnh-navy-dark">
+            Have you handed over all collected cash to the manager?
+          </p>
+          <p>
+            You cannot logout until the cash handover is complete. Please ensure
+            all finances are settled before leaving.
+          </p>
+        </div>
+      </ConfirmModal>
+    </>
   );
 }

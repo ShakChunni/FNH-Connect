@@ -38,7 +38,7 @@ const SpouseDetails: React.FC = () => {
       </h4>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label className="block text-gray-700 text-sm sm:text-base font-semibold mb-1.5 sm:mb-2">
+          <label className="block text-gray-700 text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2">
             Spouse Name
           </label>
           <input
@@ -52,7 +52,7 @@ const SpouseDetails: React.FC = () => {
           />
         </div>
         <div>
-          <label className="block text-gray-700 text-sm sm:text-base font-semibold mb-1.5 sm:mb-2">
+          <label className="block text-gray-700 text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2">
             Spouse Date of Birth
           </label>
           <div className="relative">
@@ -63,7 +63,7 @@ const SpouseDetails: React.FC = () => {
           </div>
         </div>
         <div>
-          <label className="block text-gray-700 text-sm sm:text-base font-semibold mb-1.5 sm:mb-2">
+          <label className="block text-gray-700 text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2">
             Spouse Age
           </label>
           <input

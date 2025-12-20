@@ -105,7 +105,7 @@ const PatientInformation: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Gender */}
           <div>
-            <label className="block text-gray-700 text-sm sm:text-base font-semibold mb-1.5 sm:mb-2">
+            <label className="block text-gray-700 text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2">
               Patient Gender<span className="text-red-500">*</span>
             </label>
             <GenderDropdown
@@ -119,7 +119,7 @@ const PatientInformation: React.FC = () => {
           {/* Date of Birth + Age Boxes */}
           <div>
             <div className="flex items-center justify-between mb-1.5 sm:mb-2">
-              <label className="block text-gray-700 text-sm sm:text-base font-semibold">
+              <label className="block text-gray-700 text-xs sm:text-sm font-semibold">
                 Date of Birth
               </label>
               {isExisting && patientData.dateOfBirth && (
@@ -141,7 +141,7 @@ const PatientInformation: React.FC = () => {
           {/* Phone Number */}
           <div>
             <div className="flex items-center justify-between mb-1.5 sm:mb-2">
-              <label className="block text-gray-700 text-sm sm:text-base font-semibold">
+              <label className="block text-gray-700 text-xs sm:text-sm font-semibold">
                 Phone Number
               </label>
               {isExisting && patientData.phoneNumber && (
@@ -164,7 +164,7 @@ const PatientInformation: React.FC = () => {
           {/* Email */}
           <div>
             <div className="flex items-center justify-between mb-1.5 sm:mb-2">
-              <label className="block text-gray-700 text-sm sm:text-base font-semibold">
+              <label className="block text-gray-700 text-xs sm:text-sm font-semibold">
                 Email
               </label>
               {isExisting && patientData.email && (
@@ -192,7 +192,7 @@ const PatientInformation: React.FC = () => {
 
           {/* Row 4: Spouse Name (full width) */}
           <div className="mb-4">
-            <label className="block text-gray-700 text-sm sm:text-base font-semibold mb-1.5 sm:mb-2">
+            <label className="block text-gray-700 text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2">
               Spouse Name
             </label>
             <input
@@ -211,7 +211,7 @@ const PatientInformation: React.FC = () => {
 
           {/* Row 5: Spouse Date of Birth + Age Boxes (full width, calendar half + age boxes half) */}
           <div>
-            <label className="block text-gray-700 text-sm sm:text-base font-semibold mb-1.5 sm:mb-2">
+            <label className="block text-gray-700 text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2">
               Spouse Date of Birth
             </label>
             <DateOfBirthDropdown
@@ -226,7 +226,7 @@ const PatientInformation: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Address */}
             <div className="md:col-span-2">
-              <label className="block text-gray-700 text-sm sm:text-base font-semibold mb-1.5 sm:mb-2">
+              <label className="block text-gray-700 text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2">
                 Address
               </label>
               <textarea

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Edit2, CheckCircle, Clock } from "lucide-react";
+import { Edit2, ArrowLeftRight } from "lucide-react";
 import { PathologyPatientData } from "../../../types";
 import { TableHeader } from "../utils";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
@@ -31,16 +31,16 @@ const TableRow: React.FC<TableRowProps> = ({
 
   const getCellClasses = (headerIndex: number) => {
     const baseClasses =
-      "px-2 py-2 sm:px-3 sm:py-3 md:px-4 md:py-4 text-xs sm:text-sm text-gray-900 whitespace-nowrap transition-colors";
+      "px-2 py-2 sm:px-3 sm:py-3 md:px-4 md:py-4 text-[11px] sm:text-xs text-gray-900 whitespace-nowrap transition-colors";
 
     if (headerIndex === 0) {
-      return `${baseClasses} ${FIRST_COL_WIDTH} lg:sticky lg:z-10 lg:left-0 lg:bg-white`;
+      return `${baseClasses} ${FIRST_COL_WIDTH} lg:sticky lg:z-10 lg:left-0 lg:bg-gray-50/95 group-hover:lg:bg-gray-100`;
     }
     if (headerIndex === 1) {
-      return `${baseClasses} ${SECOND_COL_WIDTH} lg:sticky lg:z-10 lg:left-[60px] lg:bg-white`;
+      return `${baseClasses} ${SECOND_COL_WIDTH} lg:sticky lg:z-10 lg:left-[60px] lg:bg-gray-50/95 group-hover:lg:bg-gray-100`;
     }
     if (headerIndex === 2) {
-      return `${baseClasses} ${THIRD_COL_WIDTH} lg:sticky lg:z-10 lg:left-[160px] lg:bg-white`;
+      return `${baseClasses} ${THIRD_COL_WIDTH} lg:sticky lg:z-10 lg:left-[160px] lg:bg-gray-50/95 group-hover:lg:bg-gray-100`;
     }
     return baseClasses;
   };
@@ -80,7 +80,7 @@ const TableRow: React.FC<TableRowProps> = ({
               {row.patientFullName}
             </div>
             {row.guardianName && (
-              <div className="text-xs text-gray-500">
+              <div className="text-[10px] text-gray-500 leading-none mt-0.5">
                 Guardian: {row.guardianName}
               </div>
             )}
@@ -126,7 +126,7 @@ const TableRow: React.FC<TableRowProps> = ({
       case "isCompleted":
         return (
           <span
-            className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+            className={`inline-flex px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded-md ${
               row.isCompleted
                 ? "bg-green-100 text-green-800"
                 : "bg-yellow-100 text-yellow-800"
@@ -154,16 +154,12 @@ const TableRow: React.FC<TableRowProps> = ({
               disabled={isUpdating}
               className={`p-1.5 rounded-lg transition-all cursor-pointer disabled:opacity-50 shadow-sm hover:shadow-md active:scale-95 ${
                 row.isCompleted
-                  ? "bg-yellow-100 text-yellow-700 hover:bg-yellow-200"
-                  : "bg-green-100 text-green-700 hover:bg-green-200"
+                  ? "bg-purple-100 text-purple-700 hover:bg-purple-200"
+                  : "bg-blue-100 text-blue-700 hover:bg-blue-200"
               }`}
               title={row.isCompleted ? "Mark as Pending" : "Mark as Completed"}
             >
-              {row.isCompleted ? (
-                <Clock size={16} />
-              ) : (
-                <CheckCircle size={16} />
-              )}
+              <ArrowLeftRight size={16} />
             </button>
           </div>
         );

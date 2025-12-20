@@ -63,6 +63,11 @@ interface FormActions {
   // Form management
   resetForm: () => void;
   initializeFormForEdit: (patient: PathologyPatientData) => void;
+
+  // Smart actions for financial calculations
+  setTestCharge: (charge: number) => void;
+  setDiscount: (type: "percentage" | "value", value: number | null) => void;
+  setPaidAmount: (amount: number) => void;
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -102,6 +107,8 @@ const initialFormState: FormState = {
   pathologyInfo: {
     selectedTests: [],
     testCharge: 0,
+    discountType: "percentage",
+    discountValue: null,
     discountAmount: null,
     grandTotal: 0,
     paidAmount: 0, // Tracks total paid via shifts
@@ -222,6 +229,9 @@ export const usePathologyFormStore = create<FormState & FormActions>()(
           pathologyInfo: {
             selectedTests,
             testCharge: Number(patient.testCharge) || 0,
+            discountType:
+              (patient.discountType as "percentage" | "value") || "percentage",
+            discountValue: Number(patient.discountValue) || null,
             discountAmount: Number(patient.discountAmount) || 0,
             grandTotal: Number(patient.grandTotal) || 0,
             paidAmount: Number(patient.paidAmount) || 0,
@@ -239,6 +249,74 @@ export const usePathologyFormStore = create<FormState & FormActions>()(
           },
         });
       },
+
+      setTestCharge: (charge) =>
+        set((state) => {
+          const { discountType, discountValue, paidAmount } =
+            state.pathologyInfo;
+          let discountAmount = 0;
+          if (discountValue) {
+            if (discountType === "percentage") {
+              discountAmount = (charge * discountValue) / 100;
+            } else {
+              discountAmount = discountValue;
+            }
+          }
+          const grandTotal = Math.max(0, charge - discountAmount);
+          const dueAmount = Math.max(0, grandTotal - paidAmount);
+
+          return {
+            pathologyInfo: {
+              ...state.pathologyInfo,
+              testCharge: charge,
+              discountAmount,
+              grandTotal,
+              dueAmount,
+            },
+          };
+        }),
+
+      setDiscount: (type, value) =>
+        set((state) => {
+          const { testCharge, paidAmount } = state.pathologyInfo;
+          let discountAmount = 0;
+          if (value !== null) {
+            if (type === "percentage") {
+              discountAmount = (testCharge * value) / 100;
+            } else {
+              discountAmount = value;
+            }
+          }
+          const grandTotal = Math.max(0, testCharge - discountAmount);
+          const dueAmount = Math.max(0, grandTotal - paidAmount);
+
+          return {
+            pathologyInfo: {
+              ...state.pathologyInfo,
+              discountType: type,
+              discountValue: value,
+              discountAmount,
+              grandTotal,
+              dueAmount,
+            },
+          };
+        }),
+
+      setPaidAmount: (amount) =>
+        set((state) => {
+          const { grandTotal } = state.pathologyInfo;
+          // Cap paid amount at grand total
+          const finalPaid = Math.min(amount, grandTotal);
+          const dueAmount = Math.max(0, grandTotal - finalPaid);
+
+          return {
+            pathologyInfo: {
+              ...state.pathologyInfo,
+              paidAmount: finalPaid,
+              dueAmount,
+            },
+          };
+        }),
     }),
     { name: "pathology-form-store" }
   )
@@ -279,5 +357,8 @@ export const useFormActions = () =>
       updateValidation: state.updateValidation,
       resetForm: state.resetForm,
       initializeFormForEdit: state.initializeFormForEdit,
+      setTestCharge: state.setTestCharge,
+      setDiscount: state.setDiscount,
+      setPaidAmount: state.setPaidAmount,
     }))
   );

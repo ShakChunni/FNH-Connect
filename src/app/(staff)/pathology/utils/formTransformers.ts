@@ -29,7 +29,11 @@ export function transformPathologyDataForApi(
     },
     hospital: hospitalData,
     guardianInfo: guardianData,
-    pathologyInfo: pathologyInfo,
+    pathologyInfo: {
+      ...pathologyInfo,
+      discountType: pathologyInfo.discountType,
+      discountValue: pathologyInfo.discountValue,
+    },
   };
 }
 
@@ -51,7 +55,11 @@ export function transformPathologyDataForEdit(
     },
     hospital: hospitalData,
     guardianInfo: guardianData,
-    pathologyInfo: pathologyInfo,
+    pathologyInfo: {
+      ...pathologyInfo,
+      discountType: pathologyInfo.discountType,
+      discountValue: pathologyInfo.discountValue,
+    },
   };
 }
 

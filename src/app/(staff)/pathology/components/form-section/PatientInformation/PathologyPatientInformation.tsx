@@ -85,11 +85,11 @@ const PathologyPatientInformation: React.FC = () => {
           </div>
           <div className="flex flex-col">
             <div className="flex items-center">
-              <h3 className="text-md sm:text-lg md:text-2xl font-bold text-gray-800 mb-0.5 sm:mb-1 leading-tight">
+              <h3 className="text-base sm:text-lg md:text-xl font-bold text-gray-800 mb-0.5 sm:mb-1 leading-tight">
                 Patient Information
               </h3>
             </div>
-            <p className="text-indigo-700 text-xs sm:text-sm font-medium leading-tight transition-colors duration-300 mt-1">
+            <p className="text-indigo-700 text-[11px] sm:text-xs font-medium leading-tight transition-colors duration-300 mt-1">
               {getDescription()}
             </p>
           </div>
@@ -106,7 +106,7 @@ const PathologyPatientInformation: React.FC = () => {
           {/* Gender - No default selection for pathology */}
           <div>
             <div className="flex items-center justify-between mb-1.5 sm:mb-2">
-              <label className="block text-gray-700 text-sm sm:text-base font-semibold">
+              <label className="block text-gray-700 text-xs sm:text-sm font-semibold">
                 Patient Gender<span className="text-red-500">*</span>
               </label>
               {isExisting && patientData.gender && (
@@ -126,7 +126,7 @@ const PathologyPatientInformation: React.FC = () => {
           {/* Date of Birth + Age Boxes */}
           <div>
             <div className="flex items-center justify-between mb-1.5 sm:mb-2">
-              <label className="block text-gray-700 text-sm sm:text-base font-semibold">
+              <label className="block text-gray-700 text-xs sm:text-sm font-semibold">
                 Date of Birth
               </label>
               {isExisting && patientData.dateOfBirth && (
@@ -148,7 +148,7 @@ const PathologyPatientInformation: React.FC = () => {
           {/* Phone Number */}
           <div>
             <div className="flex items-center justify-between mb-1.5 sm:mb-2">
-              <label className="block text-gray-700 text-sm sm:text-base font-semibold">
+              <label className="block text-gray-700 text-xs sm:text-sm font-semibold">
                 Phone Number
               </label>
               {isExisting && patientData.phoneNumber && (
@@ -171,7 +171,7 @@ const PathologyPatientInformation: React.FC = () => {
           {/* Email */}
           <div>
             <div className="flex items-center justify-between mb-1.5 sm:mb-2">
-              <label className="block text-gray-700 text-sm sm:text-base font-semibold">
+              <label className="block text-gray-700 text-xs sm:text-sm font-semibold">
                 Email
               </label>
               {isExisting && patientData.email && (
@@ -192,15 +192,15 @@ const PathologyPatientInformation: React.FC = () => {
 
         {/* Guardian Information Section */}
         <div className="mt-6 pt-6 border-t border-gray-200">
-          <h4 className="text-md font-bold text-gray-800 mb-4 flex items-center gap-2">
-            <UserCheck className="text-indigo-500 w-5 h-5" />
+          <h4 className="text-sm font-bold text-gray-800 mb-4 flex items-center gap-2">
+            <UserCheck className="text-indigo-500 w-4 h-4" />
             Guardian Information
           </h4>
 
           {/* Guardian Name (full width) */}
           <div className="mb-4">
             <div className="flex items-center justify-between mb-1.5 sm:mb-2">
-              <label className="block text-gray-700 text-sm sm:text-base font-semibold">
+              <label className="block text-gray-700 text-xs sm:text-sm font-semibold">
                 Guardian Name
               </label>
               {isExisting && guardianData.name && (
@@ -228,7 +228,7 @@ const PathologyPatientInformation: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Guardian Gender */}
             <div>
-              <label className="block text-gray-700 text-sm sm:text-base font-semibold mb-1.5 sm:mb-2">
+              <label className="block text-gray-700 text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2">
                 Guardian Gender
               </label>
               <GenderDropdown
@@ -243,7 +243,7 @@ const PathologyPatientInformation: React.FC = () => {
 
             {/* Guardian Date of Birth */}
             <div>
-              <label className="block text-gray-700 text-sm sm:text-base font-semibold mb-1.5 sm:mb-2">
+              <label className="block text-gray-700 text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2">
                 Guardian Date of Birth
               </label>
               <DateOfBirthDropdown
@@ -259,7 +259,7 @@ const PathologyPatientInformation: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Address */}
             <div className="md:col-span-2">
-              <label className="block text-gray-700 text-sm sm:text-base font-semibold mb-1.5 sm:mb-2">
+              <label className="block text-gray-700 text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2">
                 Address
               </label>
               <textarea

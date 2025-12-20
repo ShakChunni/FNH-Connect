@@ -44,13 +44,13 @@ const MarriageFertility: React.FC = () => {
     <div className="mb-6">
       <div className="flex items-center gap-2 mb-2">
         <Baby size={20} className="text-purple-500" />
-        <span className="text-md font-semibold text-gray-800">
+        <span className="text-base sm:text-lg font-bold text-gray-800">
           Marriage & Fertility History
         </span>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1.5 sm:mb-2">
             Years Married
           </label>
           <input
@@ -70,7 +70,7 @@ const MarriageFertility: React.FC = () => {
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1.5 sm:mb-2">
             Years Trying to Conceive
           </label>
           <input
@@ -90,7 +90,7 @@ const MarriageFertility: React.FC = () => {
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1.5 sm:mb-2">
             Infertility Type
           </label>
           <InfertilityTypeDropdown

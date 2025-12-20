@@ -107,6 +107,10 @@ const PathologyManagement = React.memo(() => {
       remarks: patient.remarks,
       isCompleted: patient.isCompleted,
       testCharge: Number(patient.testCharge),
+      discountType: patient.discountType,
+      discountValue: patient.discountValue
+        ? Number(patient.discountValue)
+        : null,
       discountAmount: Number(patient.discountAmount),
       grandTotal: Number(patient.grandTotal),
       paidAmount: Number(patient.paidAmount),

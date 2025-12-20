@@ -52,7 +52,7 @@ const PatientContactDetails: React.FC = () => {
     <>
       <div className="mb-3 sm:mb-4">
         <div className="flex items-center justify-between mb-1.5 sm:mb-2">
-          <label className="block text-gray-700 text-sm sm:text-base font-semibold">
+          <label className="block text-gray-700 text-xs sm:text-sm font-semibold">
             Phone Number
           </label>
           {isExisting && patientData.phoneNumber && (
@@ -74,7 +74,7 @@ const PatientContactDetails: React.FC = () => {
 
       <div className="mb-3 sm:mb-4">
         <div className="flex items-center justify-between mb-1.5 sm:mb-2">
-          <label className="block text-gray-700 text-sm sm:text-base font-semibold">
+          <label className="block text-gray-700 text-xs sm:text-sm font-semibold">
             Email
           </label>
           {isExisting && patientData.email && (
@@ -94,7 +94,7 @@ const PatientContactDetails: React.FC = () => {
 
       {/* Guardian Name - often for minors or specific contexts, but part of patient info */}
       <div className="mb-3 sm:mb-4">
-        <label className="block text-gray-700 text-sm sm:text-base font-semibold mb-1.5 sm:mb-2">
+        <label className="block text-gray-700 text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2">
           Guardian Name
         </label>
         <input

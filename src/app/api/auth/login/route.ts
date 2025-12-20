@@ -18,6 +18,7 @@ import {
   trackSuspiciousActivity,
 } from "@/lib/securityActions";
 import type { SessionUser, LoginResponse } from "@/types/auth";
+import { shiftService } from "@/services/shiftService";
 
 const SECRET_KEY = process.env.SECRET_KEY as string;
 
@@ -440,6 +441,19 @@ export async function POST(request: NextRequest) {
           timestamp: new Date(),
         },
       });
+
+      // ✅ Auto-create/Ensure active shift for specific roles
+      const userRole = user.role.toLowerCase();
+      const staffRole = user.staff.role.toLowerCase();
+
+      if (
+        userRole === "system-admin" ||
+        userRole === "operator" ||
+        staffRole === "system-admin" ||
+        staffRole === "operator"
+      ) {
+        await shiftService.ensureActiveShift(user.staff.id, tx);
+      }
 
       // ✅ Track successful login attempt
       await trackLoginAttempt({

@@ -9,16 +9,36 @@ import OrderingDoctorDropdown from "./OrderingDoctorDropdown";
 
 const PathologyInformation: React.FC = () => {
   const pathologyInfo = usePathologyPathologyInfo();
-  const { setPathologyInfo } = usePathologyActions();
+  // Destructure smart actions
+  const { setPathologyInfo, setTestCharge, setDiscount, setPaidAmount } =
+    usePathologyActions();
 
-  // Discount type: 'percentage' or 'value'
-  // Initialize from store to preserve existing values during edit
-  const [discountType, setDiscountType] = useState<"percentage" | "value">(
-    pathologyInfo.discountAmount ? "value" : "percentage"
-  );
-  const [discountInput, setDiscountInput] = useState<number | "">(
-    pathologyInfo.discountAmount ?? ""
-  );
+  // Destructure needed fields to avoid full object dependency
+  const {
+    testCharge,
+    // paidAmount, // Not used directly in rendering input value (we use pathologyInfo.paidAmount) to avoid stale closure if we destructured
+    // discountType, // We rely on store value
+    // discountValue, // We rely on store value
+    discountAmount,
+    grandTotal,
+    dueAmount,
+  } = pathologyInfo;
+
+  // Local state for discount input to handle empty strings gracefully while user types
+  const [discountInput, setDiscountInput] = useState<number | "">("");
+
+  // Sync local input with store ONLY when store changes (e.g. initial load or reset)
+  // We use a ref to track if the change came from a local user event to avoid cursor jumps or fighting
+  useEffect(() => {
+    // Only check if it's strictly different null/undefined logic
+    const storeVal = pathologyInfo.discountValue;
+    if (storeVal === null && discountInput !== "") {
+      setDiscountInput("");
+    } else if (storeVal !== null && storeVal !== discountInput) {
+      setDiscountInput(storeVal);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathologyInfo.discountValue]);
 
   // Auto-fill test date with current BDT time on component mount
   useEffect(() => {
@@ -37,65 +57,44 @@ const PathologyInformation: React.FC = () => {
         testDate: dateString,
       });
     }
-  }, []); // Only run on mount
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  // Calculate financial fields automatically
-  // Using specific values to avoid stale closure issues
-  const testCharge = pathologyInfo.testCharge || 0;
-
-  useEffect(() => {
-    let newDiscountAmount: number | null = null;
-    let effectiveDiscount = 0;
-
-    // Calculate discount based on type if input is present
-    if (discountInput !== "") {
-      if (discountType === "percentage") {
-        newDiscountAmount = (testCharge * discountInput) / 100;
-      } else {
-        newDiscountAmount = discountInput;
-      }
-      effectiveDiscount = newDiscountAmount;
-    }
-
-    const grandTotal = Math.max(0, testCharge - effectiveDiscount);
-    // Calculate dueAmount based on current paidAmount
-    const currentPaidAmount = pathologyInfo.paidAmount || 0;
-    const dueAmount = Math.max(0, grandTotal - currentPaidAmount);
-
-    // Only update if values actually changed to avoid infinite loop
-    if (
-      (pathologyInfo.discountAmount ?? null) !== newDiscountAmount ||
-      pathologyInfo.grandTotal !== grandTotal ||
-      pathologyInfo.dueAmount !== dueAmount
-    ) {
-      setPathologyInfo({
-        ...pathologyInfo,
-        discountAmount: newDiscountAmount,
-        grandTotal,
-        dueAmount,
-      });
-    }
-  }, [
-    testCharge,
-    discountInput,
-    discountType,
-    pathologyInfo,
-    setPathologyInfo,
-  ]);
-
-  // Handle payment input change
-  const handlePaymentChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = Number(e.target.value) || 0;
-    const grandTotal = pathologyInfo.grandTotal || 0;
-    // Don't allow payment exceeding grand total
-    const paidAmount = Math.min(value, grandTotal);
-    const dueAmount = Math.max(0, grandTotal - paidAmount);
-
+  // Handlers
+  const handleTestsChange = (tests: string[], total: number) => {
+    // This helper both updates specific fields via setPathologyInfo AND sets the charge for recalc
     setPathologyInfo({
       ...pathologyInfo,
-      paidAmount,
-      dueAmount,
+      selectedTests: tests,
+      testCharge: total, // Still update this just in case
     });
+    // Trigger calculation using smart action
+    setTestCharge(total);
+  };
+
+  const handleDiscountTypeChange = (type: "percentage" | "value") => {
+    // Use smart action
+    const currentVal = discountInput === "" ? null : discountInput;
+    setDiscount(type, currentVal);
+  };
+
+  const handleDiscountInputChange = (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const val = e.target.value;
+    if (val === "") {
+      setDiscountInput("");
+      setDiscount(pathologyInfo.discountType as "percentage" | "value", null);
+    } else {
+      const numVal = Number(val);
+      setDiscountInput(numVal);
+      setDiscount(pathologyInfo.discountType as "percentage" | "value", numVal);
+    }
+  };
+
+  const handlePaymentChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value === "" ? 0 : Number(e.target.value);
+    setPaidAmount(value);
   };
 
   const inputClassName = useMemo(() => {
@@ -130,10 +129,10 @@ const PathologyInformation: React.FC = () => {
             <Beaker className="text-green-600" size={28} />
           </div>
           <div className="flex flex-col">
-            <h3 className="text-md sm:text-lg md:text-2xl font-bold text-gray-800 mb-0.5 sm:mb-1 leading-tight">
+            <h3 className="text-base sm:text-lg md:text-xl font-bold text-gray-800 mb-0.5 sm:mb-1 leading-tight">
               Pathology Test Information
             </h3>
-            <p className="text-green-700 text-xs sm:text-sm font-medium leading-tight">
+            <p className="text-green-700 text-[11px] sm:text-xs font-medium leading-tight">
               Select tests and configure payment details
             </p>
           </div>
@@ -142,11 +141,11 @@ const PathologyInformation: React.FC = () => {
 
       {/* Ordered By Doctor - At the top */}
       <div className="mb-6">
-        <h4 className="text-md font-bold text-gray-800 mb-4">
+        <h4 className="text-sm font-bold text-gray-800 mb-4">
           Ordering Doctor
         </h4>
         <div>
-          <label className="block text-gray-700 text-sm sm:text-base font-semibold mb-1.5 sm:mb-2">
+          <label className="block text-gray-700 text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2">
             Ordered By<span className="text-red-500">*</span>
           </label>
           <OrderingDoctorDropdown
@@ -172,23 +171,17 @@ const PathologyInformation: React.FC = () => {
       <div className="mb-6">
         <PathologyTestsDropdown
           selectedTests={pathologyInfo.selectedTests}
-          onTestsChange={(tests, total) =>
-            setPathologyInfo({
-              ...pathologyInfo,
-              selectedTests: tests,
-              testCharge: total,
-            })
-          }
+          onTestsChange={handleTestsChange}
         />
       </div>
 
       {/* Test Date - Auto-filled, readonly */}
       <div className="mb-6 pt-6 border-t border-gray-200">
-        <h4 className="text-md font-bold text-gray-800 mb-4">Test Details</h4>
+        <h4 className="text-sm font-bold text-gray-800 mb-4">Test Details</h4>
         <div>
-          <label className="block text-gray-700 text-sm sm:text-base font-semibold mb-1.5 sm:mb-2">
+          <label className="block text-gray-700 text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2">
             Test Date{" "}
-            <span className="text-xs font-normal text-gray-500">
+            <span className="text-[10px] font-normal text-gray-500">
               (Auto-filled)
             </span>
           </label>
@@ -218,16 +211,16 @@ const PathologyInformation: React.FC = () => {
 
       {/* Financial Information - Simplified Layout */}
       <div className="mt-6 pt-6 border-t border-gray-200">
-        <h4 className="text-md font-bold text-gray-800 mb-4">
+        <h4 className="text-sm font-bold text-gray-800 mb-4">
           Financial Information
         </h4>
 
         <div className="space-y-4">
           {/* Test Charge (Auto-calculated - Readonly) - Full Width */}
           <div>
-            <label className="block text-gray-700 text-sm sm:text-base font-semibold mb-1.5 sm:mb-2">
+            <label className="block text-gray-700 text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2">
               Test Charge (BDT){" "}
-              <span className="text-xs font-normal text-gray-500">
+              <span className="text-[10px] font-normal text-gray-500">
                 (Auto-calculated)
               </span>
             </label>
@@ -250,7 +243,7 @@ const PathologyInformation: React.FC = () => {
 
           {/* Discount with Integrated Type Switcher - Full Width */}
           <div>
-            <label className="block text-gray-700 text-sm sm:text-base font-semibold mb-1.5 sm:mb-2">
+            <label className="block text-gray-700 text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2">
               Discount
             </label>
 
@@ -261,11 +254,13 @@ const PathologyInformation: React.FC = () => {
                 type="number"
                 className="flex-1 px-4 py-2 text-gray-700 font-normal outline-none text-xs sm:text-sm bg-transparent cursor-pointer"
                 value={discountInput}
-                onChange={handleDiscountChange}
+                onChange={handleDiscountInputChange}
                 placeholder="Enter discount amount"
                 min="0"
                 max={
-                  discountType === "percentage" ? 100 : pathologyInfo.testCharge
+                  pathologyInfo.discountType === "percentage"
+                    ? 100
+                    : pathologyInfo.testCharge
                 }
               />
 
@@ -273,9 +268,9 @@ const PathologyInformation: React.FC = () => {
               <div className="flex items-center border-l border-gray-200 bg-gray-50">
                 <button
                   type="button"
-                  onClick={() => setDiscountType("percentage")}
+                  onClick={() => handleDiscountTypeChange("percentage")}
                   className={`px-3 sm:px-4 h-full text-xs sm:text-sm font-medium transition-all cursor-pointer ${
-                    discountType === "percentage"
+                    pathologyInfo.discountType === "percentage"
                       ? "bg-green-600 text-white"
                       : "text-gray-600 hover:bg-gray-100"
                   }`}
@@ -284,9 +279,9 @@ const PathologyInformation: React.FC = () => {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setDiscountType("value")}
+                  onClick={() => handleDiscountTypeChange("value")}
                   className={`px-3 sm:px-4 h-full text-xs sm:text-sm font-medium transition-all cursor-pointer ${
-                    discountType === "value"
+                    pathologyInfo.discountType === "value"
                       ? "bg-green-600 text-white"
                       : "text-gray-600 hover:bg-gray-100"
                   }`}
@@ -299,11 +294,11 @@ const PathologyInformation: React.FC = () => {
             {/* Discount Summary - Always visible when there's a test charge */}
             {pathologyInfo.testCharge > 0 && (
               <div className="mt-2 p-2.5 bg-green-50 rounded-lg border border-green-200">
-                <div className="flex items-center justify-between text-sm">
+                <div className="flex items-center justify-between text-xs">
                   <span className="text-gray-600">Patient saves:</span>
                   <span className="font-bold text-green-600">
                     ৳{(pathologyInfo.discountAmount || 0).toLocaleString()}
-                    {discountType === "percentage" &&
+                    {pathologyInfo.discountType === "percentage" &&
                       discountInput !== "" &&
                       discountInput > 0 && (
                         <span className="text-gray-500 font-normal ml-1">
@@ -318,9 +313,9 @@ const PathologyInformation: React.FC = () => {
 
           {/* Grand Total (Auto-calculated - Readonly) - Full Width */}
           <div>
-            <label className="block text-gray-700 text-sm sm:text-base font-semibold mb-1.5 sm:mb-2">
+            <label className="block text-gray-700 text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2">
               Grand Total (BDT){" "}
-              <span className="text-xs font-normal text-gray-500">
+              <span className="text-[10px] font-normal text-gray-500">
                 (After Discount)
               </span>
             </label>
@@ -345,7 +340,7 @@ const PathologyInformation: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Amount Paid (Editable) */}
             <div>
-              <label className="block text-gray-700 text-sm sm:text-base font-semibold mb-1.5 sm:mb-2">
+              <label className="block text-gray-700 text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2">
                 Amount Paid (BDT)
               </label>
               <div className="relative">
@@ -372,9 +367,9 @@ const PathologyInformation: React.FC = () => {
 
             {/* Due Amount (Auto-calculated - Readonly) */}
             <div>
-              <label className="block text-gray-700 text-sm sm:text-base font-semibold mb-1.5 sm:mb-2">
+              <label className="block text-gray-700 text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2">
                 Due Amount (BDT){" "}
-                <span className="text-xs font-normal text-gray-500">
+                <span className="text-[10px] font-normal text-gray-500">
                   (Auto-calculated)
                 </span>
               </label>
@@ -409,14 +404,14 @@ const PathologyInformation: React.FC = () => {
 
       {/* Additional Notes */}
       <div className="mt-6 pt-6 border-t border-gray-200">
-        <h4 className="text-md font-bold text-gray-800 mb-4">
+        <h4 className="text-sm font-bold text-gray-800 mb-4">
           Additional Information
         </h4>
 
         <div className="grid grid-cols-1 gap-4">
           {/* Remarks */}
           <div>
-            <label className="block text-gray-700 text-sm sm:text-base font-semibold mb-1.5 sm:mb-2">
+            <label className="block text-gray-700 text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2">
               Remarks / Notes
             </label>
             <textarea
