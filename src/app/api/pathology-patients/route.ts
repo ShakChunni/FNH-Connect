@@ -130,6 +130,9 @@ export async function POST(request: NextRequest) {
       ...pathologyInfo,
       orderedById: pathologyInfo.orderedById ?? null,
       doneById: pathologyInfo.doneById ?? null,
+      discountType: pathologyInfo.discountType ?? null,
+      discountValue: pathologyInfo.discountValue ?? null,
+      discountAmount: pathologyInfo.discountAmount ?? 0,
     };
 
     const result = await pathologyService.createPathologyPatient(

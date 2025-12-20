@@ -141,13 +141,13 @@ const PatientTable: React.FC<PatientTableProps> = ({
     `;
 
     if (index === 0) {
-      return `${baseClasses} ${FIRST_COL_WIDTH} lg:sticky lg:z-30 lg:left-0 lg:bg-fnh-navy`;
+      return `${baseClasses} ${FIRST_COL_WIDTH} lg:sticky lg:z-30 lg:left-0 lg:bg-[#111827]`;
     }
     if (index === 1) {
-      return `${baseClasses} ${SECOND_COL_WIDTH} lg:sticky lg:z-30 lg:left-[60px] lg:bg-fnh-navy`;
+      return `${baseClasses} ${SECOND_COL_WIDTH} lg:sticky lg:z-30 lg:left-[60px] lg:bg-[#111827]`;
     }
     if (index === 2) {
-      return `${baseClasses} ${THIRD_COL_WIDTH} lg:sticky lg:z-30 lg:left-[160px] lg:bg-fnh-navy`;
+      return `${baseClasses} ${THIRD_COL_WIDTH} lg:sticky lg:z-30 lg:left-[160px] lg:bg-[#111827]`;
     }
     return baseClasses;
   };

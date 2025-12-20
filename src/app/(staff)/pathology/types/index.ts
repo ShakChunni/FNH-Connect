@@ -63,6 +63,8 @@ export interface GuardianInfo {
 export interface PathologyInfo {
   selectedTests: string[]; // Array of test codes
   testCharge: number;
+  discountType: "percentage" | "value" | null;
+  discountValue: number | null;
   discountAmount: number | null;
   grandTotal: number;
   paidAmount: number; // Tracks total paid - managed via shifts/payments
@@ -167,6 +169,8 @@ export interface PathologyPatient {
   remarks: string | null;
   isCompleted: boolean;
   testCharge: number;
+  discountType: string | null;
+  discountValue: number | null;
   discountAmount: number | null;
   grandTotal: number;
   paidAmount: number;
@@ -280,6 +284,8 @@ export interface PathologyPatientData {
   remarks: string | null;
   isCompleted: boolean;
   testCharge: number;
+  discountType: string | null;
+  discountValue: number | null;
   discountAmount: number | null;
   grandTotal: number;
   paidAmount: number;

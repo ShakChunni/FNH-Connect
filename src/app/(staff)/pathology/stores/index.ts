@@ -70,6 +70,9 @@ export const usePathologyActions = () => {
       setValidationStatus: state.setValidationStatus,
       resetForm: state.resetForm,
       initializeFormForEdit: state.initializeFormForEdit,
+      setTestCharge: state.setTestCharge,
+      setDiscount: state.setDiscount,
+      setPaidAmount: state.setPaidAmount,
     }))
   );
 
@@ -105,6 +108,9 @@ export const usePathologyActions = () => {
       setValidationStatus: formActions.setValidationStatus,
       resetFormState: formActions.resetForm,
       initializeFormForEdit: formActions.initializeFormForEdit,
+      setTestCharge: formActions.setTestCharge,
+      setDiscount: formActions.setDiscount,
+      setPaidAmount: formActions.setPaidAmount,
 
       // UI actions - openAddModal now resets form first for clean state
       openAddModal: () => {

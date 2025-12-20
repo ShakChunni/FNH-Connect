@@ -20,23 +20,27 @@ export const TestDetails: React.FC<TestDetailsProps> = ({ patient }) => {
 
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 h-full">
-      <h4 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-4">
+      <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-4">
         Test Details
       </h4>
 
       <div className="space-y-4">
         <div className="pb-4 border-b border-gray-100">
-          <p className="text-xs text-gray-400 mb-1">Test Category</p>
-          <p className="font-semibold text-gray-800 flex items-center gap-2">
-            <Activity className="w-4 h-4 text-fnh-teal" />
+          <p className="text-[10px] text-gray-400 mb-1 uppercase tracking-tight">
+            Test Category
+          </p>
+          <p className="text-sm font-semibold text-gray-800 flex items-center gap-2">
+            <Activity className="w-3.5 h-3.5 text-fnh-teal" />
             {patient.testCategory}
           </p>
         </div>
 
         <div className="pb-4 border-b border-gray-100">
-          <p className="text-xs text-gray-400 mb-1">Ordered By</p>
+          <p className="text-[10px] text-gray-400 mb-1 uppercase tracking-tight">
+            Ordered By
+          </p>
           <p
-            className="font-semibold text-gray-800 truncate"
+            className="text-sm font-semibold text-gray-800 truncate"
             title={patient.orderedBy || ""}
           >
             {patient.orderedBy || "Self / N/A"}
@@ -44,7 +48,9 @@ export const TestDetails: React.FC<TestDetailsProps> = ({ patient }) => {
         </div>
 
         <div className="pb-4 border-b border-gray-100">
-          <p className="text-xs text-gray-400 mb-1">Report Status</p>
+          <p className="text-[10px] text-gray-400 mb-1 uppercase tracking-tight">
+            Report Status
+          </p>
           <span
             className={cn(
               "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-bold uppercase tracking-wide",
@@ -58,8 +64,10 @@ export const TestDetails: React.FC<TestDetailsProps> = ({ patient }) => {
         </div>
 
         <div>
-          <p className="text-xs text-gray-400 mb-1">Report Delivery</p>
-          <p className="font-medium text-gray-800 text-sm">
+          <p className="text-[10px] text-gray-400 mb-1 uppercase tracking-tight">
+            Report Delivery
+          </p>
+          <p className="font-semibold text-gray-800 text-[13px]">
             {formatDate(patient.reportDate)}
           </p>
         </div>

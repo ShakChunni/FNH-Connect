@@ -85,6 +85,8 @@ export const pathologyInfoSchema = z.object({
     .min(0, "Discount must be non-negative")
     .nullable()
     .optional(),
+  discountType: z.string().nullable().optional(),
+  discountValue: z.number().nullable().optional(),
   grandTotal: z.number().min(0, "Grand total must be non-negative"),
   // paidAmount tracks total paid - managed via shifts/payments
   paidAmount: z.number().min(0).default(0),

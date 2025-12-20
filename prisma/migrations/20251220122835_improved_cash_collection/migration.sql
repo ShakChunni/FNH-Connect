@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "Shift" ADD COLUMN     "totalCollected" DECIMAL(65,30) NOT NULL DEFAULT 0,
+ADD COLUMN     "totalRefunded" DECIMAL(65,30) NOT NULL DEFAULT 0;

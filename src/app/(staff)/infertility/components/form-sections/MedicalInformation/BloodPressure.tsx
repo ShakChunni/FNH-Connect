@@ -22,7 +22,7 @@ const BloodPressure: React.FC = () => {
     <div className="mb-6 border-t border-gray-200 pt-6 mt-6">
       <div className="flex items-center gap-2 mb-2">
         <Droplets size={20} className="text-purple-500" />
-        <span className="text-md font-semibold text-gray-800">
+        <span className="text-base sm:text-lg font-bold text-gray-800">
           Blood Pressure
         </span>
       </div>

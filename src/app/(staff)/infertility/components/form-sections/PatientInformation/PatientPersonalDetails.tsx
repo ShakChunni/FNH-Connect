@@ -44,7 +44,7 @@ const PatientPersonalDetails: React.FC = () => {
   return (
     <>
       <div className="mb-3 sm:mb-4">
-        <label className="block text-gray-700 text-sm sm:text-base font-semibold mb-1.5 sm:mb-2">
+        <label className="block text-gray-700 text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2">
           Patient Gender<span className="text-red-500">*</span>
         </label>
         <GenderDropdown
@@ -57,7 +57,7 @@ const PatientPersonalDetails: React.FC = () => {
 
       <div className="mb-3 sm:mb-4">
         <div className="flex items-center justify-between mb-1.5 sm:mb-2">
-          <label className="block text-gray-700 text-sm sm:text-base font-semibold">
+          <label className="block text-gray-700 text-xs sm:text-sm font-semibold">
             Patient Date of Birth
           </label>
           {isExisting && patientData.dateOfBirth && (
@@ -75,7 +75,7 @@ const PatientPersonalDetails: React.FC = () => {
       </div>
 
       <div className="mb-3 sm:mb-4">
-        <label className="block text-gray-700 text-sm sm:text-base font-semibold mb-1.5 sm:mb-2">
+        <label className="block text-gray-700 text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2">
           Patient Age (Years)
         </label>
         <input

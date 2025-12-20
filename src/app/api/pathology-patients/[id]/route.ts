@@ -6,6 +6,7 @@ import {
 import { getAuthenticatedUserForAPI } from "@/lib/auth-validation";
 import * as pathologyService from "@/services/pathologyService";
 import { editPatientSchema } from "@/app/(staff)/pathology/types/schemas";
+import { prisma } from "@/lib/prisma";
 
 // ═══════════════════════════════════════════════════════════════
 // PATCH /api/pathology-patients/[id] - Update existing
@@ -61,14 +62,45 @@ export async function PATCH(
 
     const { patient, hospital, guardianInfo, pathologyInfo } = validation.data;
 
+    // Get active shift for staff (for cash tracking)
+    const activeShift = await prisma.shift.findFirst({
+      where: {
+        staffId,
+        isActive: true,
+      },
+    });
+
+    // Ensure all fields are not undefined (sanitize)
+    const safePatient = {
+      ...patient,
+      age: patient.age ?? null,
+      dateOfBirth: patient.dateOfBirth ?? null,
+    };
+
+    const safeGuardian = {
+      ...guardianInfo,
+      age: guardianInfo.age ?? null,
+      dateOfBirth: guardianInfo.dateOfBirth ?? null,
+    };
+
+    const safePathologyInfo = {
+      ...pathologyInfo,
+      orderedById: pathologyInfo.orderedById ?? null,
+      doneById: pathologyInfo.doneById ?? null,
+      discountType: pathologyInfo.discountType ?? null,
+      discountValue: pathologyInfo.discountValue ?? null,
+      discountAmount: pathologyInfo.discountAmount ?? 0,
+    };
+
     const result = await pathologyService.updatePathologyPatient(
       pathologyId,
-      patient,
+      safePatient,
       hospital,
-      guardianInfo,
-      pathologyInfo,
+      safeGuardian,
+      safePathologyInfo,
       staffId,
-      userId
+      userId,
+      activeShift?.id || null
     );
 
     const response = NextResponse.json(

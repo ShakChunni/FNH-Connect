@@ -9,17 +9,10 @@ import { getNavigationItems } from "./navigation";
 import { useAuth } from "@/app/AuthContext";
 import ViewSwitcher from "./ViewSwitcher";
 
+import ConfirmModal from "@/components/ui/ConfirmModal";
+
 const SIDEBAR_BG = "var(--fnh-black)"; // FNH Black
 const CONTAINER_BG = "var(--sidebar)"; // Dark navy
-
-const formatRoleLabel = (role?: string) => {
-  if (!role) return "Employee";
-  return role
-    .replace(/_/g, " ")
-    .split(" ")
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
-    .join(" ");
-};
 
 export default function MobileSidebar() {
   const [isOpen, setIsOpen] = useState(false);
@@ -28,6 +21,7 @@ export default function MobileSidebar() {
   const overlayRef = useRef<HTMLDivElement>(null);
   const profileRef = useRef<HTMLDivElement>(null);
   const { user, logout } = useAuth();
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   const initials = useMemo(() => {
     if (!user) return "";
@@ -90,6 +84,29 @@ export default function MobileSidebar() {
   useEffect(() => {
     handleClose();
   }, [pathname, handleClose]);
+
+  const handleLogoutClick = () => {
+    // Check if user has a role that typically has shifts
+    const role = user?.role?.toLowerCase();
+    const staffRole = (user as any)?.staffRole?.toLowerCase() || "";
+
+    // Check system roles that use shifts
+    if (
+      role === "system-admin" ||
+      role === "operator" ||
+      staffRole === "system-admin" ||
+      staffRole === "operator"
+    ) {
+      setShowLogoutConfirm(true);
+    } else {
+      logout();
+    }
+  };
+
+  const confirmLogout = () => {
+    logout();
+    setShowLogoutConfirm(false);
+  };
 
   return (
     <>
@@ -197,7 +214,7 @@ export default function MobileSidebar() {
                 isExpanded={true}
                 isOpen={isDropdownOpen}
                 onToggle={setIsDropdownOpen}
-                onLogout={logout}
+                onLogout={handleLogoutClick}
                 parentRef={profileRef}
               />
 
@@ -238,6 +255,26 @@ export default function MobileSidebar() {
           )}
         </nav>
       </aside>
+
+      <ConfirmModal
+        isOpen={showLogoutConfirm}
+        onClose={() => setShowLogoutConfirm(false)}
+        onConfirm={confirmLogout}
+        title="End Shift & Logout"
+        variant="warning"
+        confirmLabel="Yes, I have"
+        cancelLabel="No, return"
+      >
+        <div className="space-y-2">
+          <p className="font-semibold text-fnh-navy-dark">
+            Have you handed over all collected cash to the manager?
+          </p>
+          <p>
+            You cannot logout until the cash handover is complete. Please ensure
+            all finances are settled before leaving.
+          </p>
+        </div>
+      </ConfirmModal>
     </>
   );
 }
