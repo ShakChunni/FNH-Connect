@@ -55,7 +55,7 @@ export interface PathologyData {
   testCharge: number;
   discountAmount: number;
   grandTotal: number;
-  initialPayment: number;
+  paidAmount: number; // Amount paid by patient
   dueAmount: number;
   remarks: string;
   isCompleted: boolean;
@@ -119,10 +119,10 @@ export async function getPathologyPatients(filters: PathologyFilters) {
           gender: true,
           dateOfBirth: true,
           guardianName: true,
+          guardianDOB: true,
+          guardianGender: true,
           address: true,
           bloodGroup: true,
-          spouseDOB: true,
-          spouseGender: true,
         },
       },
       department: {
@@ -200,8 +200,8 @@ export async function createPathologyPatient(
           phoneNumber: patientData.phoneNumber,
           email: patientData.email,
           bloodGroup: patientData.bloodGroup,
-          spouseDOB: guardianData.dateOfBirth, // Map guardian to spouse fields
-          spouseGender: guardianData.gender,
+          guardianDOB: guardianData.dateOfBirth,
+          guardianGender: guardianData.gender,
         },
       });
     } else {
@@ -217,8 +217,8 @@ export async function createPathologyPatient(
           phoneNumber: patientData.phoneNumber,
           email: patientData.email,
           bloodGroup: patientData.bloodGroup,
-          spouseDOB: guardianData.dateOfBirth,
-          spouseGender: guardianData.gender,
+          guardianDOB: guardianData.dateOfBirth,
+          guardianGender: guardianData.gender,
           createdBy: staffId,
         },
       });
@@ -243,8 +243,11 @@ export async function createPathologyPatient(
     const testCount = await tx.pathologyTest.count();
     const testNumber = `PATH-${Date.now()}-${testCount + 1}`;
 
-    // 4. Determine orderedById - use orderedById if provided, otherwise fallback to staffId
-    const finalOrderedById = pathologyData.orderedById ?? staffId;
+    // 4. Validate orderedById - required field, must be provided from frontend
+    if (!pathologyData.orderedById) {
+      throw new Error("Ordering doctor/self is required for pathology tests");
+    }
+    const finalOrderedById = pathologyData.orderedById;
 
     // 5. Create pathology test record
     const pathologyTest = await tx.pathologyTest.create({
@@ -262,7 +265,7 @@ export async function createPathologyPatient(
         testCharge: pathologyData.testCharge,
         discountAmount: pathologyData.discountAmount,
         grandTotal: pathologyData.grandTotal,
-        paidAmount: pathologyData.initialPayment,
+        paidAmount: pathologyData.paidAmount,
         dueAmount: pathologyData.dueAmount,
         orderedById: finalOrderedById,
         doneById: pathologyData.doneById ?? undefined,
@@ -281,7 +284,7 @@ export async function createPathologyPatient(
         data: {
           patientId: patient.id,
           totalCharges: pathologyData.grandTotal,
-          totalPaid: pathologyData.initialPayment,
+          totalPaid: pathologyData.paidAmount,
           totalDue: pathologyData.dueAmount,
         },
       });
@@ -291,7 +294,7 @@ export async function createPathologyPatient(
         where: { id: patientAccount.id },
         data: {
           totalCharges: { increment: pathologyData.grandTotal },
-          totalPaid: { increment: pathologyData.initialPayment },
+          totalPaid: { increment: pathologyData.paidAmount },
           totalDue: { increment: pathologyData.dueAmount },
         },
       });
@@ -313,7 +316,7 @@ export async function createPathologyPatient(
     });
 
     // 8. Record initial payment if any
-    if (pathologyData.initialPayment > 0 && shiftId) {
+    if (pathologyData.paidAmount > 0 && shiftId) {
       // Generate unique receipt number
       const paymentCount = await tx.payment.count();
       const receiptNumber = `RCP-${Date.now()}-${paymentCount + 1}`;
@@ -321,7 +324,7 @@ export async function createPathologyPatient(
       const payment = await tx.payment.create({
         data: {
           patientAccountId: patientAccount.id,
-          amount: pathologyData.initialPayment,
+          amount: pathologyData.paidAmount,
           paymentMethod: "Cash", // Default to cash
           collectedById: staffId,
           shiftId: shiftId,
@@ -335,7 +338,7 @@ export async function createPathologyPatient(
         data: {
           paymentId: payment.id,
           serviceChargeId: serviceCharge.id,
-          allocatedAmount: pathologyData.initialPayment,
+          allocatedAmount: pathologyData.paidAmount,
         },
       });
 
@@ -343,7 +346,7 @@ export async function createPathologyPatient(
       await tx.cashMovement.create({
         data: {
           shiftId: shiftId,
-          amount: pathologyData.initialPayment,
+          amount: pathologyData.paidAmount,
           movementType: "PAYMENT_RECEIVED",
           description: `Pathology test payment - ${testNumber}`,
           paymentId: payment.id,
@@ -356,7 +359,7 @@ export async function createPathologyPatient(
       data: {
         userId,
         action: "CREATE",
-        description: `Created pathology test ${testNumber} for ${patient.fullName}. Total: BDT ${pathologyData.grandTotal}, Paid: BDT ${pathologyData.initialPayment}, Due: BDT ${pathologyData.dueAmount}`,
+        description: `Created pathology test ${testNumber} for ${patient.fullName}. Total: BDT ${pathologyData.grandTotal}, Paid: BDT ${pathologyData.paidAmount}, Due: BDT ${pathologyData.dueAmount}`,
         entityType: "PathologyTest",
         entityId: pathologyTest.id,
         timestamp: new Date(),
@@ -412,8 +415,8 @@ export async function updatePathologyPatient(
         phoneNumber: patientData.phoneNumber,
         email: patientData.email,
         bloodGroup: patientData.bloodGroup,
-        spouseDOB: guardianData.dateOfBirth,
-        spouseGender: guardianData.gender,
+        guardianDOB: guardianData.dateOfBirth,
+        guardianGender: guardianData.gender,
       },
     });
 
@@ -423,7 +426,7 @@ export async function updatePathologyPatient(
     const oldDueAmount = Number(existingRecord.dueAmount);
 
     const grandTotalDiff = pathologyData.grandTotal - oldGrandTotal;
-    const paidAmountDiff = pathologyData.initialPayment - oldPaidAmount;
+    const paidAmountDiff = pathologyData.paidAmount - oldPaidAmount;
     const dueAmountDiff = pathologyData.dueAmount - oldDueAmount;
 
     // 3. Determine orderedById - use orderedById if provided, otherwise keep existing
@@ -442,7 +445,7 @@ export async function updatePathologyPatient(
         testCharge: pathologyData.testCharge,
         discountAmount: pathologyData.discountAmount,
         grandTotal: pathologyData.grandTotal,
-        paidAmount: pathologyData.initialPayment,
+        paidAmount: pathologyData.paidAmount,
         dueAmount: pathologyData.dueAmount,
         orderedById: finalOrderedById,
         doneById: pathologyData.doneById ?? undefined,

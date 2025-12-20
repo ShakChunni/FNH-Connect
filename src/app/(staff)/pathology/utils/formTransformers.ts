@@ -61,10 +61,10 @@ export function transformPathologyDataForEdit(
 export function calculateFinancials(
   testCharge: number,
   discountAmount: number,
-  initialPayment: number
+  paidAmount: number = 0
 ) {
   const grandTotal = Math.max(0, testCharge - discountAmount);
-  const dueAmount = Math.max(0, grandTotal - initialPayment);
+  const dueAmount = Math.max(0, grandTotal - paidAmount);
 
   return {
     grandTotal,

@@ -8,11 +8,12 @@ export interface PatientData {
   gender: string;
   dateOfBirth: Date | null;
   guardianName: string | null;
+  guardianDOB: Date | null;
+  guardianGender: string | null;
   address: string | null;
   phoneNumber: string | null;
   email: string | null;
   bloodGroup: string | null;
-  spouseDOB: Date | null;
   createdAt?: Date;
   updatedAt?: Date;
 }

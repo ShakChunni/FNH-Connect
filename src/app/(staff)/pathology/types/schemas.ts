@@ -6,6 +6,21 @@
 import { z } from "zod";
 
 // ═══════════════════════════════════════════════════════════════
+// UTILITY SCHEMAS
+// ═══════════════════════════════════════════════════════════════
+
+// Date preprocessing - handles string dates from JSON payloads
+const datePreprocess = z.preprocess((arg) => {
+  if (arg === null || arg === undefined || arg === "") return null;
+  if (arg instanceof Date) return arg;
+  if (typeof arg === "string") {
+    const parsed = new Date(arg);
+    return isNaN(parsed.getTime()) ? null : parsed;
+  }
+  return null;
+}, z.date().nullable().optional());
+
+// ═══════════════════════════════════════════════════════════════
 // BASE SCHEMAS
 // ═══════════════════════════════════════════════════════════════
 
@@ -38,7 +53,7 @@ export const patientSchema = z.object({
   fullName: z.string().min(1, "Full name is required"),
   gender: z.string().min(1, "Gender is required"),
   age: z.number().nullable().optional(),
-  dateOfBirth: z.date().nullable().optional(),
+  dateOfBirth: datePreprocess, // Use preprocessed date
   guardianName: z.string().optional().default(""),
   address: z.string().optional().default(""),
   phoneNumber: z.string().optional().default(""),
@@ -55,7 +70,7 @@ export const patientSchema = z.object({
 export const guardianInfoSchema = z.object({
   name: z.string().optional().default(""),
   age: z.number().nullable().optional(),
-  dateOfBirth: z.date().nullable().optional(),
+  dateOfBirth: datePreprocess, // Use preprocessed date
   gender: z.string().optional().default(""),
 });
 
@@ -71,7 +86,8 @@ export const pathologyInfoSchema = z.object({
     .nullable()
     .optional(),
   grandTotal: z.number().min(0, "Grand total must be non-negative"),
-  initialPayment: z.number().min(0, "Initial payment must be non-negative"),
+  // paidAmount tracks total paid - managed via shifts/payments
+  paidAmount: z.number().min(0).default(0),
   dueAmount: z.number().min(0, "Due amount must be non-negative"),
   remarks: z.string().optional().default(""),
   isCompleted: z.boolean().default(false),

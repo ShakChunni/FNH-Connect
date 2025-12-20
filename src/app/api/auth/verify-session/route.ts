@@ -9,10 +9,13 @@ export async function GET(request: NextRequest) {
     const sessionToken = cookieStore.get("session")?.value;
 
     if (!sessionToken) {
-      return NextResponse.json<VerifySessionResponse>(
+      // Clear any stale session cookie that might exist
+      const response = NextResponse.json<VerifySessionResponse>(
         { success: false, valid: false, error: "No active session" },
         { status: 401 }
       );
+      response.cookies.delete("session");
+      return response;
     }
 
     // Verify manually to get session object for expiry check
@@ -35,21 +38,27 @@ export async function GET(request: NextRequest) {
       !session.user.isActive ||
       !session.user.staff.isActive
     ) {
-      return NextResponse.json<VerifySessionResponse>(
+      // Delete the session cookie server-side since client can't delete httpOnly cookies
+      const response = NextResponse.json<VerifySessionResponse>(
         { success: false, valid: false, error: "Invalid session" },
         { status: 401 }
       );
+      response.cookies.delete("session");
+      return response;
     }
 
     // Check expiry
     const now = new Date();
     if (session.expiresAt < now) {
-      // Clean up expired session
+      // Clean up expired session from database
       await prisma.session.delete({ where: { id: session.id } });
-      return NextResponse.json<VerifySessionResponse>(
+      // Delete the session cookie server-side since client can't delete httpOnly cookies
+      const response = NextResponse.json<VerifySessionResponse>(
         { success: false, valid: false, error: "Session expired" },
         { status: 401 }
       );
+      response.cookies.delete("session");
+      return response;
     }
 
     const response = NextResponse.json<VerifySessionResponse>(
@@ -131,7 +140,8 @@ export async function GET(request: NextRequest) {
       stack: error instanceof Error ? error.stack : undefined,
     });
 
-    return NextResponse.json<VerifySessionResponse>(
+    // Delete the session cookie on any error
+    const response = NextResponse.json<VerifySessionResponse>(
       {
         success: false,
         valid: false,
@@ -139,5 +149,7 @@ export async function GET(request: NextRequest) {
       },
       { status: 401 }
     );
+    response.cookies.delete("session");
+    return response;
   }
 }

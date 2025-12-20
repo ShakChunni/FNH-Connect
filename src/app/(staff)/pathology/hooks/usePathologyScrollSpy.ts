@@ -22,20 +22,23 @@ export function usePathologyScrollSpy(
       // Skip scroll spy update if manually scrolling (to avoid jitter when clicking tabs)
       if (isManualScroll) return;
 
-      const scrollPosition = scrollContainer.scrollTop + 100; // Offset for better detection
+      const containerHeight = scrollContainer.clientHeight;
+      const scrollPosition = scrollContainer.scrollTop;
+
+      // Use a smaller offset for quicker detection
+      const detectionOffset = containerHeight * 0.3; // 30% of container height
 
       let currentSection = sectionIds[0];
 
       for (const sectionId of sectionIds) {
         const element = document.getElementById(sectionId);
         if (element) {
-          // Verify the element is actually inside our container (optional check)
-          // Adjust offsetTop calculation based on container's position if needed
-          // Assuming elements are direct children or descendants in standard flow
           const { offsetTop, offsetHeight } = element;
 
+          // An element is "active" if its top is within the detection zone
+          // or if we've scrolled past its start but not past its end
           if (
-            scrollPosition >= offsetTop &&
+            scrollPosition + detectionOffset >= offsetTop &&
             scrollPosition < offsetTop + offsetHeight
           ) {
             currentSection = sectionId;

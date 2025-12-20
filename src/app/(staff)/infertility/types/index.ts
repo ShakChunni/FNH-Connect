@@ -141,10 +141,10 @@ export interface InfertilityPatient {
     gender: string;
     dateOfBirth: Date | null;
     guardianName: string | null;
+    guardianDOB: Date | null; // Stores spouse DOB in infertility context
+    guardianGender: string | null; // Stores spouse gender in infertility context
     address: string | null;
     bloodGroup: string | null;
-    spouseDOB: Date | null;
-    spouseGender: string | null;
   };
   hospital: {
     id: number;

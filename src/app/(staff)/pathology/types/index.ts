@@ -42,6 +42,17 @@ export interface HospitalData {
   type: string;
 }
 
+// Hospital type for API responses (hospitals from database have required id)
+export interface Hospital {
+  id: number;
+  name: string;
+  address: string | null;
+  phoneNumber: string | null;
+  email: string | null;
+  website: string | null;
+  type: string | null;
+}
+
 export interface GuardianInfo {
   name: string;
   age: number | null;
@@ -54,8 +65,7 @@ export interface PathologyInfo {
   testCharge: number;
   discountAmount: number | null;
   grandTotal: number;
-  initialPayment: number;
-  paidAmount: number; // Same as initialPayment, kept for consistency
+  paidAmount: number; // Tracks total paid - managed via shifts/payments
   dueAmount: number;
   testDate: string; // ISO date string
   testCategory: string;
@@ -136,10 +146,10 @@ export interface PathologyPatient {
     gender: string;
     dateOfBirth: Date | null;
     guardianName: string | null;
+    guardianDOB: Date | null;
+    guardianGender: string | null;
     address: string | null;
     bloodGroup: string | null;
-    spouseDOB: Date | null; // Maps to guardian DOB
-    spouseGender: string | null; // Maps to guardian gender
   };
   hospital: {
     id: number;

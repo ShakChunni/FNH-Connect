@@ -11,9 +11,9 @@ import {
 import { ModalHeader } from "@/components/ui/ModalHeader";
 import { ModalFooter } from "@/components/ui/ModalFooter";
 import { getTabColors } from "../AddNewData/utils/modalUtils";
-import HospitalInformation from "../../../../../components/form-sections/HospitalInformation";
-import PathologyPatientInformation from "../../../../../components/form-sections/PathologyPatientInformation";
-import PathologyInformation from "../../../../../components/form-sections/PathologyInformation";
+import { PathologyHospitalInformation } from "../form-section/HospitalInformation";
+import PathologyPatientInformation from "../form-section/PatientInformation/PathologyPatientInformation";
+import PathologyInformation from "../form-section/PathologyInformation/PathologyInformation";
 import {
   usePathologyHospitalData,
   usePathologyPatientData,
@@ -25,6 +25,7 @@ import {
 import { usePathologyScrollSpy } from "../../hooks/usePathologyScrollSpy";
 import { transformPathologyDataForEdit } from "../../utils/formTransformers";
 import { PathologyPatientData } from "../../types";
+import { useNotification } from "@/hooks/useNotification";
 
 interface EditDataProps {
   isOpen: boolean;
@@ -74,20 +75,46 @@ const EditDataPathology: React.FC<EditDataProps> = ({
   });
 
   // Validation
-  const isFormValid = useMemo(() => {
-    return (
-      hospitalData.name.trim() !== "" &&
-      patientData.firstName.trim() !== "" &&
-      pathologyInfo.selectedTests.length > 0 &&
-      validationStatus.phone &&
-      validationStatus.email
-    );
+  const { isFormValid, validationErrors } = useMemo(() => {
+    const errors: string[] = [];
+
+    if (!hospitalData.name.trim()) {
+      errors.push("Hospital name is required");
+    }
+    if (!patientData.firstName.trim()) {
+      errors.push("Patient name is required");
+    }
+    if (!patientData.gender.trim()) {
+      errors.push("Patient gender is required");
+    }
+    if (pathologyInfo.selectedTests.length === 0) {
+      errors.push("At least one test must be selected");
+    }
+    if (!pathologyInfo.orderedById) {
+      errors.push("Ordering doctor is required");
+    }
+    if (!validationStatus.phone) {
+      errors.push("Invalid phone number");
+    }
+    if (!validationStatus.email) {
+      errors.push("Invalid email address");
+    }
+
+    return {
+      isFormValid: errors.length === 0,
+      validationErrors: errors,
+    };
   }, [
     hospitalData.name,
     patientData.firstName,
+    patientData.gender,
     pathologyInfo.selectedTests,
+    pathologyInfo.orderedById,
     validationStatus,
   ]);
+
+  // Notification hook for showing validation errors
+  const { showNotification } = useNotification();
 
   // Handlers
   const handleClose = useCallback(() => {
@@ -96,7 +123,17 @@ const EditDataPathology: React.FC<EditDataProps> = ({
   }, [isSubmitting, onClose]);
 
   const handleSubmit = useCallback(() => {
-    if (!isFormValid || isSubmitting) return;
+    if (isSubmitting) return;
+
+    // Show validation errors if form is invalid
+    if (!isFormValid) {
+      const errorMessage =
+        validationErrors.length === 1
+          ? validationErrors[0]
+          : `Please fix the following: ${validationErrors.join(", ")}`;
+      showNotification(errorMessage, "error");
+      return;
+    }
 
     const payload = transformPathologyDataForEdit(
       initialPatientData.id,
@@ -116,6 +153,8 @@ const EditDataPathology: React.FC<EditDataProps> = ({
     guardianData,
     pathologyInfo,
     editPatient,
+    validationErrors,
+    showNotification,
   ]);
 
   // Keyboard handling
@@ -165,7 +204,7 @@ const EditDataPathology: React.FC<EditDataProps> = ({
           variants={backdropVariants}
           initial="hidden"
           animate="visible"
-          exit="hidden"
+          exit="exit"
           style={{
             isolation: "isolate",
             willChange: "opacity",
@@ -180,7 +219,7 @@ const EditDataPathology: React.FC<EditDataProps> = ({
             variants={modalVariants}
             initial="hidden"
             animate="visible"
-            exit="hidden"
+            exit="exit"
             style={{
               willChange: "transform, opacity",
               backfaceVisibility: "hidden",
@@ -226,7 +265,7 @@ const EditDataPathology: React.FC<EditDataProps> = ({
             >
               <div className="space-y-6 sm:space-y-8 md:space-y-10">
                 <div id="hospital">
-                  <HospitalInformation />
+                  <PathologyHospitalInformation />
                 </div>
                 <div id="patient">
                   <PathologyPatientInformation />
@@ -241,9 +280,9 @@ const EditDataPathology: React.FC<EditDataProps> = ({
               onCancel={handleClose}
               onSubmit={handleSubmit}
               isSubmitting={isSubmitting}
-              isDisabled={!isFormValid}
+              isDisabled={false}
               cancelText="Cancel"
-              submitText="Update Patient"
+              submitText="Update Pathology Test"
               loadingText="Updating..."
               submitIcon={Save}
               theme="green"

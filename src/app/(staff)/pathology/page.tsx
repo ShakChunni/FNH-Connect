@@ -8,7 +8,7 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import AddNewDataPathology from "./components/AddNewData/AddNewDataPathology";
 import EditDataPathology from "./components/EditData/EditDataPathology";
 import PatientTable from "./components/PatientTable/PatientTable";
-import { NewPatientButton } from "../infertility/components/NewPatientButton";
+import { NewPatientButton } from "./components/NewPatientButton";
 import { PathologySearch } from "./components/PathologySearch";
 
 // Types and Hooks
@@ -86,10 +86,10 @@ const PathologyManagement = React.memo(() => {
         : null,
       guardianName: patient.patient.guardianName,
       guardianAge: null,
-      guardianDOB: patient.patient.spouseDOB
-        ? new Date(patient.patient.spouseDOB).toISOString()
+      guardianDOB: patient.patient.guardianDOB
+        ? new Date(patient.patient.guardianDOB).toISOString()
         : null,
-      guardianGender: patient.patient.spouseGender || "",
+      guardianGender: patient.patient.guardianGender || "",
       mobileNumber: patient.patient.phoneNumber,
       email: patient.patient.email,
       address: patient.patient.address,
@@ -111,7 +111,6 @@ const PathologyManagement = React.memo(() => {
       grandTotal: Number(patient.grandTotal),
       paidAmount: Number(patient.paidAmount),
       dueAmount: Number(patient.dueAmount),
-      initialPayment: Number(patient.initialPayment),
       referredBy: patient.referredBy || null,
       orderedById: patient.orderedById,
       doneById: patient.doneById,
