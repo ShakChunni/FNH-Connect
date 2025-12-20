@@ -135,7 +135,6 @@ export interface EditPathologyPatientResponse {
 export interface PathologyPatient {
   id: number;
   patientId: number;
-  hospitalId: number;
   testNumber: string;
   patient: {
     id: number;
@@ -150,15 +149,16 @@ export interface PathologyPatient {
     guardianGender: string | null;
     address: string | null;
     bloodGroup: string | null;
-  };
-  hospital: {
-    id: number;
-    name: string;
-    type: string | null;
-    address: string | null;
-    phoneNumber: string | null;
-    email: string | null;
-    website: string | null;
+    hospitalId: number | null;
+    hospital: {
+      id: number;
+      name: string;
+      type: string | null;
+      address: string | null;
+      phoneNumber: string | null;
+      email: string | null;
+      website: string | null;
+    } | null;
   };
   testDate: string;
   reportDate: string | null;
@@ -173,7 +173,15 @@ export interface PathologyPatient {
   dueAmount: number;
   referredBy: number | null;
   orderedById: number;
+  orderedBy: {
+    id: number;
+    fullName: string;
+  } | null;
   doneById: number | null;
+  doneBy: {
+    id: number;
+    fullName: string;
+  } | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -278,7 +286,9 @@ export interface PathologyPatientData {
   dueAmount: number;
   referredBy: number | null;
   orderedById: number;
+  orderedBy: string | null; // Name of ordering doctor
   doneById: number | null;
+  doneBy: string | null; // Name of staff who performed test
   createdAt: string;
   updatedAt: string;
 }

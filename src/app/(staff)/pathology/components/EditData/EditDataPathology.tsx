@@ -7,6 +7,8 @@ import { useEditPathologyData } from "../../hooks/useEditPathologyData";
 import {
   modalVariants,
   backdropVariants,
+  preserveLockBodyScroll,
+  preserveUnlockBodyScroll,
 } from "@/components/ui/modal-animations";
 import { ModalHeader } from "@/components/ui/ModalHeader";
 import { ModalFooter } from "@/components/ui/ModalFooter";
@@ -50,7 +52,7 @@ const EditDataPathology: React.FC<EditDataProps> = ({
   const guardianData = usePathologyGuardianData();
   const pathologyInfo = usePathologyPathologyInfo();
   const validationStatus = usePathologyValidationStatus();
-  const { resetFormState, initializeFormForEdit } = usePathologyActions();
+  const { initializeFormForEdit, afterEditModalClosed } = usePathologyActions();
 
   // Initialize form when modal opens
   useEffect(() => {
@@ -58,6 +60,18 @@ const EditDataPathology: React.FC<EditDataProps> = ({
       initializeFormForEdit(initialPatientData);
     }
   }, [isOpen, initialPatientData, initializeFormForEdit]);
+
+  // Handle body scroll locking
+  useEffect(() => {
+    if (isOpen) {
+      preserveLockBodyScroll();
+    } else {
+      preserveUnlockBodyScroll();
+    }
+    return () => {
+      preserveUnlockBodyScroll();
+    };
+  }, [isOpen]);
 
   // Custom Hooks
   const { activeSection, scrollToSection } = usePathologyScrollSpy(
@@ -69,8 +83,7 @@ const EditDataPathology: React.FC<EditDataProps> = ({
   // Mutation Hook
   const { editPatient, isLoading: isSubmitting } = useEditPathologyData({
     onSuccess: () => {
-      onClose();
-      resetFormState();
+      onClose(); // closeEditModal now resets form internally
     },
   });
 
@@ -81,6 +94,11 @@ const EditDataPathology: React.FC<EditDataProps> = ({
     if (!hospitalData.name.trim()) {
       errors.push("Hospital name is required");
     }
+    // ... [Validation logic remains same, skipping for brevity in replacement]
+    // I should include validation logic or use replacement chunks to avoid overwriting huge blocks if not needed.
+    // But I need to replace from imports to useEffect...
+    // Let's use ReplacementChunks to update imports and useEffect separately.
+
     if (!patientData.firstName.trim()) {
       errors.push("Patient name is required");
     }
@@ -119,7 +137,7 @@ const EditDataPathology: React.FC<EditDataProps> = ({
   // Handlers
   const handleClose = useCallback(() => {
     if (isSubmitting) return;
-    onClose();
+    onClose(); // closeEditModal now resets form internally
   }, [isSubmitting, onClose]);
 
   const handleSubmit = useCallback(() => {
@@ -196,7 +214,7 @@ const EditDataPathology: React.FC<EditDataProps> = ({
   ];
 
   return (
-    <AnimatePresence mode="wait">
+    <AnimatePresence mode="wait" onExitComplete={() => afterEditModalClosed()}>
       {isOpen && (
         <motion.div
           className="fixed inset-0 bg-slate-900/70 flex items-center justify-center z-100000"

@@ -19,17 +19,13 @@ export function useFetchPatientInformation(searchQuery: string) {
         success: boolean;
         data: Array<{
           id: number;
-          patientId: number;
-          patient: {
-            id: number;
-            fullName: string;
-            dateOfBirth: string | null;
-            phoneNumber: string | null;
-            email: string | null;
-          };
+          fullName: string;
+          dateOfBirth: string | null;
+          phoneNumber: string | null;
+          email: string | null;
         }>;
         error?: string;
-      }>("/infertility-patients", {
+      }>("/patient-records", {
         params: {
           search: debouncedQuery.trim(),
           limit: 10,
@@ -43,12 +39,12 @@ export function useFetchPatientInformation(searchQuery: string) {
 
       // Transform the data to match InfertilityPatientBasic format
       return (response.data.data || []).map((record) => ({
-        id: record.patientId,
-        patientFullName: record.patient.fullName,
-        patientAge: getAgeInYears(record.patient.dateOfBirth),
-        dateOfBirth: record.patient.dateOfBirth,
-        mobileNumber: record.patient.phoneNumber,
-        email: record.patient.email,
+        id: record.id,
+        patientFullName: record.fullName,
+        patientAge: getAgeInYears(record.dateOfBirth),
+        dateOfBirth: record.dateOfBirth ?? null, // Ensure explicitly null if undefined
+        mobileNumber: record.phoneNumber,
+        email: record.email,
       }));
     },
     enabled: !!(debouncedQuery && debouncedQuery.trim()),

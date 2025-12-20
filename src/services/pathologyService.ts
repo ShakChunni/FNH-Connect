@@ -123,6 +123,18 @@ export async function getPathologyPatients(filters: PathologyFilters) {
           guardianGender: true,
           address: true,
           bloodGroup: true,
+          hospitalId: true,
+          hospital: {
+            select: {
+              id: true,
+              name: true,
+              address: true,
+              phoneNumber: true,
+              email: true,
+              website: true,
+              type: true,
+            },
+          },
         },
       },
       department: {
@@ -154,7 +166,11 @@ export async function getPathologyPatientById(id: number) {
   return await prisma.pathologyTest.findUnique({
     where: { id },
     include: {
-      patient: true,
+      patient: {
+        include: {
+          hospital: true,
+        },
+      },
       department: true,
       orderedBy: {
         select: {
@@ -184,6 +200,52 @@ export async function createPathologyPatient(
   shiftId: number | null // Current active shift for cash tracking
 ) {
   return await prisma.$transaction(async (tx) => {
+    // 2. Get or create Pathology department
+    let department = await tx.department.findFirst({
+      where: { name: "Pathology" },
+    });
+
+    if (!department) {
+      department = await tx.department.create({
+        data: {
+          name: "Pathology",
+          description: "Pathology and Laboratory Services",
+          isActive: true,
+        },
+      });
+    }
+
+    // 2.5 Handle Hospital - Find existing, create new, or use provided ID
+    let hospitalId: number | null = hospitalData.id || null;
+
+    const cleanHospitalName = hospitalData.name?.trim();
+
+    if (!hospitalId && cleanHospitalName) {
+      // Try to find by name first to avoid duplicates
+      const existingHospital = await tx.hospital.findFirst({
+        where: { name: { equals: cleanHospitalName, mode: "insensitive" } },
+      });
+
+      if (existingHospital) {
+        hospitalId = existingHospital.id;
+      } else {
+        // Create new hospital
+        const newHospital = await tx.hospital.create({
+          data: {
+            name: cleanHospitalName,
+            address: hospitalData.address,
+            phoneNumber: hospitalData.phoneNumber,
+            email: hospitalData.email,
+            website: hospitalData.website,
+            type: hospitalData.type,
+            isActive: true,
+            createdBy: staffId,
+          },
+        });
+        hospitalId = newHospital.id;
+      }
+    }
+
     // 1. Create or update patient
     let patient;
     if (patientData.id) {
@@ -202,6 +264,7 @@ export async function createPathologyPatient(
           bloodGroup: patientData.bloodGroup,
           guardianDOB: guardianData.dateOfBirth,
           guardianGender: guardianData.gender,
+          hospitalId: hospitalId, // Link hospital
         },
       });
     } else {
@@ -219,22 +282,8 @@ export async function createPathologyPatient(
           bloodGroup: patientData.bloodGroup,
           guardianDOB: guardianData.dateOfBirth,
           guardianGender: guardianData.gender,
+          hospitalId: hospitalId, // Link hospital
           createdBy: staffId,
-        },
-      });
-    }
-
-    // 2. Get or create Pathology department
-    let department = await tx.department.findFirst({
-      where: { name: "Pathology" },
-    });
-
-    if (!department) {
-      department = await tx.department.create({
-        data: {
-          name: "Pathology",
-          description: "Pathology and Laboratory Services",
-          isActive: true,
         },
       });
     }

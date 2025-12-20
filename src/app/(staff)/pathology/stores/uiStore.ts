@@ -40,8 +40,10 @@ interface UIActions {
   // Modal actions
   openAddModal: () => void;
   closeAddModal: () => void;
+  afterAddModalClosed: () => void;
   openEditModal: (patient: PathologyPatientData) => void;
   closeEditModal: () => void;
+  afterEditModalClosed: () => void;
 
   // Message actions
   showMessage: (message: string, type: "success" | "error" | "info") => void;
@@ -109,6 +111,11 @@ export const usePathologyUIStore = create<
           };
         }),
 
+      afterAddModalClosed: () =>
+        set({
+          isAddClosing: false,
+        }),
+
       openEditModal: (patient) =>
         set({
           isEditOpen: true,
@@ -122,8 +129,14 @@ export const usePathologyUIStore = create<
           return {
             isEditClosing: true,
             isEditOpen: false,
-            selectedPatient: null,
+            // Keep selectedPatient for exit animation
           };
+        }),
+
+      afterEditModalClosed: () =>
+        set({
+          isEditClosing: false,
+          selectedPatient: null,
         }),
 
       // Message actions

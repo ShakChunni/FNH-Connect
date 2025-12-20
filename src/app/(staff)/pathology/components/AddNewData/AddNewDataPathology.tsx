@@ -4,9 +4,12 @@ import { Save, Building2, User, Beaker } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/app/AuthContext";
 import { useAddPathologyData } from "../../hooks/useAddPathologyData";
+
 import {
   modalVariants,
   backdropVariants,
+  preserveLockBodyScroll,
+  preserveUnlockBodyScroll,
 } from "@/components/ui/modal-animations";
 import { ModalHeader } from "@/components/ui/ModalHeader";
 import { ModalFooter } from "@/components/ui/ModalFooter";
@@ -47,7 +50,8 @@ const AddNewDataPathology: React.FC<AddNewDataProps> = ({
   const guardianData = usePathologyGuardianData();
   const pathologyInfo = usePathologyPathologyInfo();
   const validationStatus = usePathologyValidationStatus();
-  const { resetFormState } = usePathologyActions();
+  // Note: resetFormState is handled internally by closeAddModal
+  const { afterAddModalClosed } = usePathologyActions();
 
   // Custom Hooks
   const { activeSection, scrollToSection } = usePathologyScrollSpy(
@@ -56,11 +60,22 @@ const AddNewDataPathology: React.FC<AddNewDataProps> = ({
     isOpen
   );
 
+  // Handle body scroll locking
+  useEffect(() => {
+    if (isOpen) {
+      preserveLockBodyScroll();
+    } else {
+      preserveUnlockBodyScroll();
+    }
+    return () => {
+      preserveUnlockBodyScroll();
+    };
+  }, [isOpen]);
+
   // Mutation Hook
   const { addPatient, isLoading: isSubmitting } = useAddPathologyData({
     onSuccess: () => {
-      onClose();
-      resetFormState();
+      onClose(); // closeAddModal now resets form internally
     },
   });
 
@@ -109,7 +124,7 @@ const AddNewDataPathology: React.FC<AddNewDataProps> = ({
   // Handlers
   const handleClose = useCallback(() => {
     if (isSubmitting) return;
-    onClose();
+    onClose(); // closeAddModal now resets form internally
   }, [isSubmitting, onClose]);
 
   const handleSubmit = useCallback(() => {
@@ -154,11 +169,9 @@ const AddNewDataPathology: React.FC<AddNewDataProps> = ({
     };
     if (isOpen) {
       document.addEventListener("keydown", handleKeyDown);
-      document.body.style.overflow = "hidden";
     }
     return () => {
       document.removeEventListener("keydown", handleKeyDown);
-      document.body.style.overflow = "unset";
     };
   }, [isOpen, handleClose]);
 
@@ -184,7 +197,7 @@ const AddNewDataPathology: React.FC<AddNewDataProps> = ({
   ];
 
   return (
-    <AnimatePresence mode="wait">
+    <AnimatePresence mode="wait" onExitComplete={() => afterAddModalClosed()}>
       {isOpen && (
         <motion.div
           className="fixed inset-0 bg-slate-900/70 flex items-center justify-center z-100000"
