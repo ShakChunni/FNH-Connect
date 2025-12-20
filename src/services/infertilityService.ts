@@ -184,47 +184,7 @@ export async function createInfertilityPatient(
   userId: number
 ) {
   return await prisma.$transaction(async (tx) => {
-    // 1. Create or update patient
-    let patient;
-    if (patientData.id) {
-      patient = await tx.patient.update({
-        where: { id: patientData.id },
-        data: {
-          firstName: patientData.firstName,
-          lastName: patientData.lastName,
-          fullName: patientData.fullName,
-          gender: patientData.gender,
-          dateOfBirth: patientData.dateOfBirth,
-          guardianName: patientData.guardianName,
-          address: patientData.address,
-          phoneNumber: patientData.phoneNumber,
-          email: patientData.email,
-          bloodGroup: patientData.bloodGroup,
-          guardianDOB: spouseData.dateOfBirth, // For infertility, guardian = spouse
-          guardianGender: spouseData.gender,
-        },
-      });
-    } else {
-      patient = await tx.patient.create({
-        data: {
-          firstName: patientData.firstName,
-          lastName: patientData.lastName,
-          fullName: patientData.fullName,
-          gender: patientData.gender,
-          dateOfBirth: patientData.dateOfBirth,
-          guardianName: patientData.guardianName,
-          address: patientData.address,
-          phoneNumber: patientData.phoneNumber,
-          email: patientData.email,
-          bloodGroup: patientData.bloodGroup,
-          guardianDOB: spouseData.dateOfBirth, // For infertility, guardian = spouse
-          guardianGender: spouseData.gender,
-          createdBy: staffId,
-        },
-      });
-    }
-
-    // 2. Create or get hospital
+    // 1. Create or get hospital (moved to start to link with patient)
     let hospital;
     if (hospitalData.id) {
       hospital = await tx.hospital.findUnique({
@@ -249,6 +209,48 @@ export async function createInfertilityPatient(
           },
         });
       }
+    }
+
+    // 2. Create or update patient
+    let patient;
+    if (patientData.id) {
+      patient = await tx.patient.update({
+        where: { id: patientData.id },
+        data: {
+          firstName: patientData.firstName,
+          lastName: patientData.lastName,
+          fullName: patientData.fullName,
+          gender: patientData.gender,
+          dateOfBirth: patientData.dateOfBirth,
+          guardianName: patientData.guardianName,
+          address: patientData.address,
+          phoneNumber: patientData.phoneNumber,
+          email: patientData.email,
+          bloodGroup: patientData.bloodGroup,
+          guardianDOB: spouseData.dateOfBirth, // For infertility, guardian = spouse
+          guardianGender: spouseData.gender,
+          hospitalId: hospital.id, // Update hospital link
+        },
+      });
+    } else {
+      patient = await tx.patient.create({
+        data: {
+          firstName: patientData.firstName,
+          lastName: patientData.lastName,
+          fullName: patientData.fullName,
+          gender: patientData.gender,
+          dateOfBirth: patientData.dateOfBirth,
+          guardianName: patientData.guardianName,
+          address: patientData.address,
+          phoneNumber: patientData.phoneNumber,
+          email: patientData.email,
+          bloodGroup: patientData.bloodGroup,
+          guardianDOB: spouseData.dateOfBirth, // For infertility, guardian = spouse
+          guardianGender: spouseData.gender,
+          hospitalId: hospital.id, // Link hospital
+          createdBy: staffId,
+        },
+      });
     }
 
     // 3. Create infertility record
@@ -332,26 +334,7 @@ export async function updateInfertilityPatient(
       throw new Error("Infertility patient record not found");
     }
 
-    // 1. Update patient
-    const updatedPatient = await tx.patient.update({
-      where: { id: existingRecord.patientId },
-      data: {
-        firstName: patientData.firstName,
-        lastName: patientData.lastName,
-        fullName: patientData.fullName,
-        gender: patientData.gender,
-        dateOfBirth: patientData.dateOfBirth,
-        guardianName: patientData.guardianName,
-        address: patientData.address,
-        phoneNumber: patientData.phoneNumber,
-        email: patientData.email,
-        bloodGroup: patientData.bloodGroup,
-        guardianDOB: spouseData.dateOfBirth,
-        guardianGender: spouseData.gender,
-      },
-    });
-
-    // 2. Update or create hospital
+    // 1. Update or create hospital (moved to start)
     let hospital;
     if (hospitalData.id && hospitalData.id === existingRecord.hospitalId) {
       hospital = await tx.hospital.update({
@@ -384,6 +367,26 @@ export async function updateInfertilityPatient(
         });
       }
     }
+
+    // 2. Update patient
+    const updatedPatient = await tx.patient.update({
+      where: { id: existingRecord.patientId },
+      data: {
+        firstName: patientData.firstName,
+        lastName: patientData.lastName,
+        fullName: patientData.fullName,
+        gender: patientData.gender,
+        dateOfBirth: patientData.dateOfBirth,
+        guardianName: patientData.guardianName,
+        address: patientData.address,
+        phoneNumber: patientData.phoneNumber,
+        email: patientData.email,
+        bloodGroup: patientData.bloodGroup,
+        guardianDOB: spouseData.dateOfBirth,
+        guardianGender: spouseData.gender,
+        hospitalId: hospital.id, // Update hospital link
+      },
+    });
 
     // 3. Update infertility record
     const updatedRecord = await tx.infertilityPatient.update({

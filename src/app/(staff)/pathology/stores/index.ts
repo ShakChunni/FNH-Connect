@@ -77,8 +77,10 @@ export const usePathologyActions = () => {
     useShallow((state) => ({
       openAddModal: state.openAddModal,
       closeAddModal: state.closeAddModal,
+      afterAddModalClosed: state.afterAddModalClosed,
       openEditModal: state.openEditModal,
       closeEditModal: state.closeEditModal,
+      afterEditModalClosed: state.afterEditModalClosed,
       showMessage: state.showMessage,
       dismissMessage: state.dismissMessage,
       setShowDropdowns: state.setShowDropdowns,
@@ -104,11 +106,22 @@ export const usePathologyActions = () => {
       resetFormState: formActions.resetForm,
       initializeFormForEdit: formActions.initializeFormForEdit,
 
-      // UI actions
-      openAddModal: uiActions.openAddModal,
-      closeAddModal: uiActions.closeAddModal,
+      // UI actions - openAddModal now resets form first for clean state
+      openAddModal: () => {
+        formActions.resetForm(); // Reset form before opening to ensure clean state
+        uiActions.openAddModal();
+      },
+      closeAddModal: () => {
+        formActions.resetForm(); // Also reset on close to ensure clean state
+        uiActions.closeAddModal();
+      },
       openEditModal: uiActions.openEditModal,
-      closeEditModal: uiActions.closeEditModal,
+      closeEditModal: () => {
+        formActions.resetForm(); // Reset form on close
+        uiActions.closeEditModal();
+      },
+      afterAddModalClosed: uiActions.afterAddModalClosed,
+      afterEditModalClosed: uiActions.afterEditModalClosed,
       showMessage: uiActions.showMessage,
       dismissMessage: uiActions.dismissMessage,
       setShowDropdowns: uiActions.setShowDropdowns,

@@ -3,7 +3,7 @@ import { usePagination } from "@/hooks/usePagination";
 import { Pagination } from "@/components/pagination/Pagination";
 import TableRow from "./components/TableRow";
 import TableRowSkeleton from "./components/TableRowSkeleton";
-import PatientOverview from "./components/PatientOverview";
+import PatientOverview from "./components/PatientOverview/PatientOverview";
 import { PathologyPatientData, SortConfig } from "../../types";
 import { getTableHeaders, TableHeader } from "./utils";
 
