@@ -385,5 +385,9 @@ export const generatePathologyReceipt = async (
   );
 
   // Save
-  doc.save(`Receipt-${data.testNumber}.pdf`);
+  // Auto Print & Preview
+  doc.autoPrint();
+  const pdfBlob = doc.output("blob");
+  const pdfUrl = URL.createObjectURL(pdfBlob);
+  window.open(pdfUrl, "_blank");
 };

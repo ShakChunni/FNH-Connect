@@ -2,10 +2,13 @@
 
 import React from "react";
 import { useAuth } from "@/app/AuthContext";
-import { Sparkles, Calendar, RefreshCw } from "lucide-react";
+import { Sparkles, Calendar, RefreshCw, PowerOff } from "lucide-react";
 import { getRoleDisplayName } from "@/lib/roles";
 import { useDashboardStore } from "../store";
 import { useNotificationContext } from "@/app/NotificationProvider";
+import { useEndShift } from "@/hooks/useEndShift";
+import ConfirmModal from "@/components/ui/ConfirmModal";
+import { useState } from "react";
 
 interface WelcomeHeaderProps {
   isLoading?: boolean;
@@ -31,11 +34,14 @@ const formatDate = (): string => {
 export const WelcomeHeader: React.FC<WelcomeHeaderProps> = ({
   isLoading = false,
 }) => {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const greeting = getGreeting();
   const date = formatDate();
   const { statsViewMode, toggleStatsViewMode } = useDashboardStore();
   const { showNotification } = useNotificationContext();
+
+  const { endShift, isEnding } = useEndShift();
+  const [showEndShiftConfirm, setShowEndShiftConfirm] = useState(false);
 
   const displayName = user?.lastName || "User";
   const isAllTime = statsViewMode === "allTime";
@@ -44,6 +50,13 @@ export const WelcomeHeader: React.FC<WelcomeHeaderProps> = ({
     toggleStatsViewMode();
     const newMode = statsViewMode === "today" ? "All Time" : "Today";
     showNotification(`Showing ${newMode} statistics`, "info");
+  };
+
+  const handleEndShift = async () => {
+    await endShift(() => {
+      setShowEndShiftConfirm(false);
+      logout(); // Force logout
+    });
   };
 
   if (isLoading) {
@@ -61,64 +74,100 @@ export const WelcomeHeader: React.FC<WelcomeHeaderProps> = ({
   }
 
   return (
-    <div className="pt-2 sm:pt-0">
-      <div className="flex flex-col gap-4 sm:gap-0 sm:flex-row sm:items-center sm:justify-between">
-        {/* Left: Greeting and Date */}
-        <div className="order-1">
-          <div className="flex items-center gap-2">
-            <h1 className="text-lg lg:text-2xl font-bold text-fnh-navy-dark tracking-tight">
-              {greeting}, <span className="text-fnh-blue">{displayName}</span>
-            </h1>
-            <Sparkles className="w-4 h-4 lg:w-5 lg:h-5 text-amber-400 animate-pulse" />
-          </div>
-          <p className="text-gray-500 mt-1 flex items-center gap-2 text-xs lg:text-sm">
-            <Calendar className="w-3 h-3 lg:w-4 lg:h-4" />
-            {date}
-          </p>
-        </div>
-
-        {/* Right: Toggle + Role/Status */}
-        <div className="order-2 flex flex-col sm:flex-row items-stretch gap-2 sm:gap-3 w-full sm:w-auto">
-          {/* Stats Toggle Button - matches role box height */}
-          <button
-            onClick={handleToggle}
-            className="flex hover:cursor-pointer items-center justify-center gap-2 px-4 rounded-xl bg-white border border-gray-200 hover:bg-gray-50 hover:border-fnh-blue/30 transition-all duration-300 shadow-sm group h-[52px] sm:h-auto"
-          >
-            <RefreshCw className="w-4 h-4 text-fnh-blue group-hover:rotate-180 transition-transform duration-500" />
-            <span className="text-sm font-medium text-fnh-navy-dark">
-              {isAllTime ? "All Time" : "Today"}
-            </span>
-            <div
-              className={`w-2 h-2 rounded-full ${
-                isAllTime ? "bg-purple-500" : "bg-emerald-500"
-              }`}
-            />
-          </button>
-
-          {/* Role Box */}
-          <div className="flex items-center gap-3 px-4 py-2.5 rounded-xl bg-linear-to-r from-fnh-navy to-fnh-navy-dark text-white shadow-lg">
-            <div>
-              <p className="text-[10px] sm:text-xs text-white/70 font-medium">
-                Your Role
-              </p>
-              <p className="text-xs sm:text-sm font-semibold">
-                {user?.role ? getRoleDisplayName(user.role) : "Staff"}
-              </p>
+    <>
+      <div className="pt-2 sm:pt-0">
+        <div className="flex flex-col gap-4 sm:gap-0 sm:flex-row sm:items-center sm:justify-between">
+          {/* Left: Greeting and Date */}
+          <div className="order-1">
+            <div className="flex items-center gap-2">
+              <h1 className="text-lg lg:text-2xl font-bold text-fnh-navy-dark tracking-tight">
+                {greeting}, <span className="text-fnh-blue">{displayName}</span>
+              </h1>
+              <Sparkles className="w-4 h-4 lg:w-5 lg:h-5 text-amber-400 animate-pulse" />
             </div>
-            <div className="w-px h-10 bg-white/20" />
-            <div>
-              <p className="text-[10px] sm:text-xs text-white/70 font-medium">
-                Status
-              </p>
-              <div className="flex items-center gap-1.5">
-                <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                <p className="text-xs sm:text-sm font-semibold">Online</p>
+            <p className="text-gray-500 mt-1 flex items-center gap-2 text-xs lg:text-sm">
+              <Calendar className="w-3 h-3 lg:w-4 lg:h-4" />
+              {date}
+            </p>
+          </div>
+
+          {/* Right: Toggle + Role/Status */}
+          <div className="order-2 flex flex-col sm:flex-row items-stretch gap-2 sm:gap-3 w-full sm:w-auto">
+            {/* End Shift Button */}
+            <button
+              onClick={() => setShowEndShiftConfirm(true)}
+              disabled={isEnding}
+              className="flex hover:cursor-pointer items-center justify-center gap-2 px-4 rounded-xl bg-red-50 border border-red-100 hover:bg-red-100 hover:border-red-200 transition-all duration-300 shadow-sm group h-[52px] sm:h-auto"
+            >
+              <PowerOff className="w-4 h-4 text-red-600" />
+              <span className="text-sm font-medium text-red-700">
+                End Shift
+              </span>
+            </button>
+
+            {/* Stats Toggle Button - matches role box height */}
+            <button
+              onClick={handleToggle}
+              className="flex hover:cursor-pointer items-center justify-center gap-2 px-4 rounded-xl bg-white border border-gray-200 hover:bg-gray-50 hover:border-fnh-blue/30 transition-all duration-300 shadow-sm group h-[52px] sm:h-auto"
+            >
+              <RefreshCw className="w-4 h-4 text-fnh-blue group-hover:rotate-180 transition-transform duration-500" />
+              <span className="text-sm font-medium text-fnh-navy-dark">
+                {isAllTime ? "All" : "Today"}
+              </span>
+              <div
+                className={`w-2 h-2 rounded-full ${
+                  isAllTime ? "bg-purple-500" : "bg-emerald-500"
+                }`}
+              />
+            </button>
+
+            {/* Role Box */}
+            <div className="flex items-center gap-3 px-4 py-2.5 rounded-xl bg-linear-to-r from-fnh-navy to-fnh-navy-dark text-white shadow-lg">
+              <div>
+                <p className="text-[10px] sm:text-xs text-white/70 font-medium">
+                  Your Role
+                </p>
+                <p className="text-xs sm:text-sm font-semibold">
+                  {user?.role ? getRoleDisplayName(user.role) : "Staff"}
+                </p>
+              </div>
+              <div className="w-px h-10 bg-white/20" />
+              <div>
+                <p className="text-[10px] sm:text-xs text-white/70 font-medium">
+                  Status
+                </p>
+                <div className="flex items-center gap-1.5">
+                  <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                  <p className="text-xs sm:text-sm font-semibold">Online</p>
+                </div>
               </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
+
+      {/* End Shift Confirmation Modal */}
+      <ConfirmModal
+        isOpen={showEndShiftConfirm}
+        onClose={() => setShowEndShiftConfirm(false)}
+        onConfirm={handleEndShift}
+        isLoading={isEnding}
+        title="End Shift"
+        variant="warning"
+        confirmLabel="Yes, I have"
+        cancelLabel="Cancel"
+      >
+        <div className="space-y-2">
+          <p className="font-semibold text-fnh-navy-dark">
+            Have you handed over all collected cash to the manager?
+          </p>
+          <p>
+            Ending the shift will close your current session and reset your cash
+            tracking. Ensure all finances are settled.
+          </p>
+        </div>
+      </ConfirmModal>
+    </>
   );
 };
 

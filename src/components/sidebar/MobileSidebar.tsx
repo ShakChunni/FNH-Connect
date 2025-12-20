@@ -8,7 +8,7 @@ import Image from "next/image";
 import { getNavigationItems } from "./navigation";
 import { useAuth } from "@/app/AuthContext";
 import ViewSwitcher from "./ViewSwitcher";
-
+import { useEndShift } from "@/hooks/useEndShift";
 import ConfirmModal from "@/components/ui/ConfirmModal";
 
 const SIDEBAR_BG = "var(--fnh-black)"; // FNH Black
@@ -21,8 +21,10 @@ export default function MobileSidebar() {
   const overlayRef = useRef<HTMLDivElement>(null);
   const profileRef = useRef<HTMLDivElement>(null);
   const { user, logout } = useAuth();
+  const { endShift, isEnding: isEndingShift } = useEndShift();
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
+  // ... (useMemo for initials, displayName)
   const initials = useMemo(() => {
     if (!user) return "";
     const first = user.firstName?.charAt(0) ?? "";
@@ -36,6 +38,7 @@ export default function MobileSidebar() {
     return user.fullName || `${user.firstName} ${user.lastName}`;
   }, [user]);
 
+  // ... (handlers)
   const handleToggle = useCallback(() => {
     setIsOpen((prev) => !prev);
   }, []);
@@ -53,6 +56,7 @@ export default function MobileSidebar() {
     [handleClose]
   );
 
+  // ... (useEffect for body scroll)
   useEffect(() => {
     if (isOpen) {
       const scrollY = window.scrollY;
@@ -103,13 +107,16 @@ export default function MobileSidebar() {
     }
   };
 
-  const confirmLogout = () => {
-    logout();
-    setShowLogoutConfirm(false);
+  const confirmLogout = async () => {
+    await endShift(() => {
+      logout();
+      setShowLogoutConfirm(false);
+    });
   };
 
   return (
     <>
+      {/* ... header ... (omitted for brevity in replacement, but kept logic same) */}
       <header
         className={`lg:hidden fixed top-0 left-0 right-0 z-40 flex h-16 items-center gap-4 px-4 text-fnh-navy shadow-md transition-all duration-300 ${
           isOpen ? "bg-white/80 backdrop-blur-sm" : "bg-white"
@@ -260,6 +267,7 @@ export default function MobileSidebar() {
         isOpen={showLogoutConfirm}
         onClose={() => setShowLogoutConfirm(false)}
         onConfirm={confirmLogout}
+        isLoading={isEndingShift}
         title="End Shift & Logout"
         variant="warning"
         confirmLabel="Yes, I have"
