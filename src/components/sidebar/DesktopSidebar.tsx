@@ -182,8 +182,8 @@ export default function DesktopSidebar({
       <aside
         className={`hidden lg:flex fixed top-0 left-0 h-screen flex-col overflow-hidden rounded-3xl transition-all duration-300 ease-[cubic-bezier(0.25,0.1,0.25,1)] ${
           isExpanded
-            ? "w-[var(--sidebar-expanded-width)]"
-            : "w-[var(--sidebar-collapsed-width)]"
+            ? "w-(--sidebar-expanded-width)"
+            : "w-(--sidebar-collapsed-width)"
         }`}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
