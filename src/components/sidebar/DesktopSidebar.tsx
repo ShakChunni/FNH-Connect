@@ -9,6 +9,7 @@ import { SidebarProps } from "./types";
 import Image from "next/image";
 import { useAuth } from "@/app/AuthContext";
 import ViewSwitcher from "./ViewSwitcher";
+import { useEndShift } from "@/hooks/useEndShift";
 
 const SIDEBAR_BG = "#0f172a"; // FNH Black
 const CONTAINER_BG = "#1e293b"; // FNH Navy - slightly lighter slate 800
@@ -107,8 +108,11 @@ export default function DesktopSidebar({
   onExpandedChange,
   onPinnedChange,
 }: SidebarProps) {
-  const pathname = usePathname();
+  /* import { useEndShift } from "@/hooks/useEndShift"; */ // Add this to top imports or ensure it's imported
+
+  // ... inside component
   const { user, logout } = useAuth();
+  const { endShift, isEnding: isEndingShift } = useEndShift();
   const expandTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const collapseTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
@@ -172,10 +176,14 @@ export default function DesktopSidebar({
     }
   };
 
-  const confirmLogout = () => {
-    logout();
-    setShowLogoutConfirm(false);
+  const confirmLogout = async () => {
+    await endShift(() => {
+      logout();
+      setShowLogoutConfirm(false);
+    });
   };
+
+  const pathname = usePathname();
 
   return (
     <>
@@ -326,6 +334,7 @@ export default function DesktopSidebar({
         isOpen={showLogoutConfirm}
         onClose={() => setShowLogoutConfirm(false)}
         onConfirm={confirmLogout}
+        isLoading={isEndingShift}
         title="End Shift & Logout"
         variant="warning"
         confirmLabel="Yes, I have"
