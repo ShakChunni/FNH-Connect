@@ -1,19 +1,15 @@
 "use client";
 
 import React, { useCallback, useMemo, useState } from "react";
-import { AnimatePresence } from "framer-motion";
 import { createPortal } from "react-dom";
 
 // Modular Components
 import { PageHeader } from "@/components/ui/PageHeader";
 import AddNewDataAdmission from "./components/AddNewData/AddNewDataAdmission";
 import EditDataAdmission from "./components/EditData/EditDataAdmission";
-import PatientTable from "./components/PatientTable";
-import { AdmissionSearch } from "./components/AdmissionSearch";
-import {
-  generateAdmissionReceipt,
-  generateAdmissionInvoice,
-} from "./utils/generateReceipt";
+import { AdmissionTable } from "./components/PatientTable";
+import AdmissionSearch from "./components/AdmissionSearch";
+import { generateAdmissionReceipt } from "./utils/generateReceipt";
 
 // Types and Hooks
 import { AdmissionPatientData, AdmissionFilters } from "./types";
@@ -28,7 +24,7 @@ const NewPatientButton: React.FC<{
   <button
     onClick={onClick}
     disabled={disabled}
-    className="flex items-center justify-center gap-2 px-4 sm:px-6 py-3 bg-gradient-to-r from-emerald-600 to-green-600 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl hover:from-emerald-700 hover:to-green-700 transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+    className="flex items-center justify-center gap-2 px-4 sm:px-6 py-3 bg-linear-to-r from-emerald-600 to-green-600 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl hover:from-emerald-700 hover:to-green-700 transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
   >
     <svg
       className="w-5 h-5"
@@ -103,26 +99,6 @@ const GeneralAdmissionPage = React.memo(() => {
     [initializeFormForEdit, openEditModal]
   );
 
-  // Use jsPDF-based receipt generation directly
-  const handlePrintAdmission = useCallback(
-    async (patient: AdmissionPatientData) => {
-      try {
-        await generateAdmissionReceipt(patient, "Staff");
-      } catch (error) {
-        console.error("Failed to generate admission receipt:", error);
-      }
-    },
-    []
-  );
-
-  const handlePrintFull = useCallback(async (patient: AdmissionPatientData) => {
-    try {
-      await generateAdmissionInvoice(patient, "Staff");
-    } catch (error) {
-      console.error("Failed to generate invoice:", error);
-    }
-  }, []);
-
   const handleAddSuccess = useCallback((data: AdmissionPatientData) => {
     // Generate admission receipt after successful add
     setTimeout(async () => {
@@ -169,12 +145,10 @@ const GeneralAdmissionPage = React.memo(() => {
 
           {/* Table Container */}
           <div className="px-1 sm:px-2 lg:px-4">
-            <PatientTable
-              data={admissions}
+            <AdmissionTable
+              tableData={admissions}
               isLoading={isLoading}
               onEdit={handleEdit}
-              onPrintAdmission={handlePrintAdmission}
-              onPrintFull={handlePrintFull}
             />
           </div>
         </div>

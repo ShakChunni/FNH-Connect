@@ -26,6 +26,11 @@ export const ADMISSION_STATUS_OPTIONS: {
 
 export type DiscountType = "percentage" | "value" | null;
 
+export interface SortConfig {
+  key: string;
+  direction: string;
+}
+
 // ═══════════════════════════════════════════════════════════════
 // Form Data Types
 // ═══════════════════════════════════════════════════════════════
