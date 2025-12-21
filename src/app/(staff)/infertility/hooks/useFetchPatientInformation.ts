@@ -23,6 +23,12 @@ export function useFetchPatientInformation(searchQuery: string) {
           dateOfBirth: string | null;
           phoneNumber: string | null;
           email: string | null;
+          gender: string | null;
+          address: string | null;
+          guardianName: string | null;
+          bloodGroup: string | null;
+          occupation: string | null;
+          guardianOccupation: string | null;
         }>;
         error?: string;
       }>("/patient-records", {
@@ -45,6 +51,12 @@ export function useFetchPatientInformation(searchQuery: string) {
         dateOfBirth: record.dateOfBirth ?? null, // Ensure explicitly null if undefined
         mobileNumber: record.phoneNumber,
         email: record.email,
+        gender: record.gender,
+        address: record.address,
+        guardianName: record.guardianName,
+        bloodGroup: record.bloodGroup,
+        occupation: record.occupation,
+        guardianOccupation: record.guardianOccupation,
       }));
     },
     enabled: !!(debouncedQuery && debouncedQuery.trim()),

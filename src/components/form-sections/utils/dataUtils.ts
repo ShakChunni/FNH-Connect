@@ -50,6 +50,8 @@ export const normalizePatientData = (
     email: row.patient.email,
     address: row.patient.address,
     bloodGroup: row.patient.bloodGroup,
+    patientOccupation: row.patient.occupation,
+    husbandOccupation: row.patient.guardianOccupation,
     yearsMarried: row.yearsMarried,
     yearsTrying: row.yearsTrying,
     para: row.para,

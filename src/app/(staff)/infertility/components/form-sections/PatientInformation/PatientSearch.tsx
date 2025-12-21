@@ -122,7 +122,7 @@ const PatientSearch: React.FC = () => {
       fullName: newQuery,
       firstName: names[0] || "",
       lastName: names.slice(1).join(" ") || "",
-      // Reset others? Maybe.
+      occupation: "",
     });
 
     if (newQuery.length >= 1) {
@@ -140,14 +140,15 @@ const PatientSearch: React.FC = () => {
       firstName: patient.patientFullName.split(" ")[0] || "",
       lastName: patient.patientFullName.split(" ").slice(1).join(" ") || "",
       fullName: patient.patientFullName,
-      gender: "Female",
+      gender: patient.gender || "Female",
       age: patient.patientAge,
       dateOfBirth: dob,
-      address: "", // Often not in basic info?
+      address: patient.address || "",
       phoneNumber: patient.mobileNumber || "",
       email: patient.email || "",
-      guardianName: "",
-      bloodGroup: "",
+      guardianName: patient.guardianName || "",
+      bloodGroup: patient.bloodGroup || "",
+      occupation: patient.occupation || "",
     });
     setSearchQuery(patient.patientFullName);
     setIsDropdownOpen(false);
@@ -172,6 +173,7 @@ const PatientSearch: React.FC = () => {
       phoneNumber: "",
       email: "",
       bloodGroup: "",
+      occupation: "",
     });
     setSearchQuery("");
   };

@@ -65,6 +65,8 @@ export async function GET(request: NextRequest) {
         phoneNumber: true,
         email: true,
         bloodGroup: true,
+        occupation: true,
+        guardianOccupation: true,
         createdAt: true,
         updatedAt: true,
       },

@@ -209,6 +209,12 @@ export interface InfertilityPatientBasic {
   dateOfBirth: Date | string | null;
   mobileNumber: string | null;
   email: string | null;
+  gender: string | null;
+  address: string | null;
+  guardianName: string | null;
+  bloodGroup: string | null;
+  occupation: string | null;
+  guardianOccupation: string | null;
 }
 
 export interface Hospital {
