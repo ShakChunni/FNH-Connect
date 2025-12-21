@@ -131,8 +131,10 @@ export async function getInfertilityPatients(filters: InfertilityFilters) {
           guardianName: true,
           guardianDOB: true,
           guardianGender: true,
+          guardianOccupation: true,
           address: true,
           bloodGroup: true,
+          occupation: true,
         },
       },
       hospital: {

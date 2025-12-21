@@ -31,12 +31,14 @@ export interface InfertilityApiPayload {
     phoneNumber: string;
     email: string;
     bloodGroup: string;
+    occupation: string;
   };
   spouseInfo: {
     name: string;
     age: number | null;
     dateOfBirth: Date | null;
     gender: string;
+    occupation: string;
   };
   medicalInfo: {
     yearsMarried: number | null;
@@ -101,12 +103,14 @@ export const transformInfertilityDataForApi = (
       phoneNumber: patientData.phoneNumber || "",
       email: patientData.email || "",
       bloodGroup: patientData.bloodGroup || "",
+      occupation: patientData.occupation || "",
     },
     spouseInfo: {
       name: spouseData.name || "",
       age: spouseData.age,
       dateOfBirth: spouseData.dateOfBirth,
       gender: spouseData.gender || "Male",
+      occupation: spouseData.occupation || "",
     },
     medicalInfo: {
       yearsMarried: medicalInfo.yearsMarried,
