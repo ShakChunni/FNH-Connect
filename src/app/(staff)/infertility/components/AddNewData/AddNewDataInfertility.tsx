@@ -82,14 +82,14 @@ const AddNewDataInfertility: React.FC<AddNewDataProps> = ({
   const handleSubmit = useCallback(() => {
     if (!isFormValid || isSubmitting) return;
 
-    const payload = transformInfertilityDataForApi(
+    const { id, ...payloadWithoutId } = transformInfertilityDataForApi(
       hospitalData,
       patientData,
       spouseData,
       medicalInfo
     );
 
-    addPatient(payload);
+    addPatient(payloadWithoutId as any);
   }, [
     isFormValid,
     isSubmitting,
