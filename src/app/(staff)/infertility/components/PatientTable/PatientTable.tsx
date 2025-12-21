@@ -3,6 +3,7 @@ import { usePagination } from "@/hooks/usePagination";
 import { Pagination } from "@/components/pagination/Pagination";
 import TableRow from "./components/TableRow";
 import TableRowSkeleton from "./components/TableRowSkeleton";
+import PatientOverview from "./components/PatientOverview/PatientOverview";
 import { InfertilityPatientData, SortConfig } from "../../types";
 import { getTableHeaders, TableHeader } from "./utils";
 
@@ -20,7 +21,15 @@ const PatientTable: React.FC<PatientTableProps> = ({
   isLoading = false,
 }) => {
   const [sortConfig, setSortConfig] = useState<SortConfig | null>(null);
+  const [selectedPatient, setSelectedPatient] =
+    useState<InfertilityPatientData | null>(null);
+  const [isOverviewOpen, setIsOverviewOpen] = useState(false);
   const tableContainerRef = useRef<HTMLDivElement>(null);
+
+  const handleRowClick = (patient: InfertilityPatientData) => {
+    setSelectedPatient(patient);
+    setIsOverviewOpen(true);
+  };
 
   // Sorting logic for infertility patients
   const sortedData = useMemo(() => {
@@ -229,6 +238,7 @@ const PatientTable: React.FC<PatientTableProps> = ({
                     index={(currentPage - 1) * 15 + index + 1}
                     headers={headers}
                     onEdit={onEdit}
+                    onClick={() => handleRowClick(row)}
                   />
                 ))}
               </tbody>
@@ -236,6 +246,12 @@ const PatientTable: React.FC<PatientTableProps> = ({
           </div>
         )}
       </div>
+
+      <PatientOverview
+        isOpen={isOverviewOpen}
+        onClose={() => setIsOverviewOpen(false)}
+        patient={selectedPatient}
+      />
 
       {/* Pagination - Separate from table */}
       {!isLoading && totalPages > 1 && (

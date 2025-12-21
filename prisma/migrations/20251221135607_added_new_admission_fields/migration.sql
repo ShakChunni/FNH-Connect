@@ -1,0 +1,5 @@
+-- AlterTable
+ALTER TABLE "Admission" ADD COLUMN     "anesthesiaFee" DECIMAL(65,30) NOT NULL DEFAULT 0,
+ADD COLUMN     "assistantDoctorFee" DECIMAL(65,30) NOT NULL DEFAULT 0,
+ADD COLUMN     "doctorCharge" DECIMAL(65,30) NOT NULL DEFAULT 0,
+ADD COLUMN     "surgeonCharge" DECIMAL(65,30) NOT NULL DEFAULT 0;

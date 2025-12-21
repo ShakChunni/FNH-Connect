@@ -13,6 +13,7 @@ export interface PatientData {
   phoneNumber: string;
   email: string;
   bloodGroup: string;
+  occupation: string; // Patient's occupation
 }
 
 export interface HospitalData {
@@ -58,6 +59,7 @@ export interface AddInfertilityPatientRequest {
     age: number | null;
     dateOfBirth: Date | null;
     gender: string;
+    occupation: string; // Spouse occupation
   };
 }
 

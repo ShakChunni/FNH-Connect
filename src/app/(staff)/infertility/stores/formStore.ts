@@ -92,12 +92,14 @@ const initialFormState: FormState = {
     phoneNumber: "",
     email: "",
     bloodGroup: "",
+    occupation: "",
   },
   spouseData: {
     name: "",
     age: null,
     dateOfBirth: null,
     gender: "Male",
+    occupation: "",
   },
   medicalInfo: {
     yearsMarried: null,
@@ -210,12 +212,14 @@ export const useInfertilityFormStore = create<FormState & FormActions>()(
             phoneNumber: patient.mobileNumber || "",
             email: patient.email || "",
             bloodGroup: patient.bloodGroup || "",
+            occupation: patient.patientOccupation || "",
           },
           spouseData: {
             name: patient.husbandName || "",
             age: patient.husbandAge,
             dateOfBirth: parseDate(patient.husbandDOB),
             gender: patient.spouseGender || "Male",
+            occupation: patient.husbandOccupation || "",
           },
           medicalInfo: {
             yearsMarried: patient.yearsMarried

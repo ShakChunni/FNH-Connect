@@ -11,7 +11,8 @@ export type AdmissionStatus =
   | "Admitted"
   | "Under Treatment"
   | "Awaiting Discharge"
-  | "Discharged";
+  | "Discharged"
+  | "Canceled";
 
 export const ADMISSION_STATUS_OPTIONS: {
   value: AdmissionStatus;
@@ -22,6 +23,7 @@ export const ADMISSION_STATUS_OPTIONS: {
   { value: "Under Treatment", label: "Under Active Care", color: "amber" },
   { value: "Awaiting Discharge", label: "Pending Discharge", color: "purple" },
   { value: "Discharged", label: "Discharged", color: "green" },
+  { value: "Canceled", label: "Canceled", color: "red" },
 ];
 
 export type DiscountType = "percentage" | "value" | null;
@@ -87,6 +89,10 @@ export interface FinancialData {
   serviceCharge: number;
   seatRent: number;
   otCharge: number;
+  doctorCharge: number;
+  surgeonCharge: number;
+  anesthesiaFee: number;
+  assistantDoctorFee: number;
   medicineCharge: number;
   otherCharges: number;
   totalAmount: number;
@@ -146,6 +152,10 @@ export interface AdmissionPatientData {
   serviceCharge: number;
   seatRent: number;
   otCharge: number;
+  doctorCharge: number;
+  surgeonCharge: number;
+  anesthesiaFee: number;
+  assistantDoctorFee: number;
   medicineCharge: number;
   otherCharges: number;
   totalAmount: number;
@@ -228,6 +238,10 @@ export interface UpdateAdmissionPayload {
   serviceCharge?: number;
   seatRent?: number;
   otCharge?: number;
+  doctorCharge?: number;
+  surgeonCharge?: number;
+  anesthesiaFee?: number;
+  assistantDoctorFee?: number;
   medicineCharge?: number;
   otherCharges?: number;
   discountType?: DiscountType;

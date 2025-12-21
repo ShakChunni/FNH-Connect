@@ -32,6 +32,7 @@ export interface PatientData {
   phoneNumber: string;
   email: string;
   bloodGroup: string;
+  occupation: string; // Patient's occupation
 }
 
 export interface HospitalData {
@@ -49,6 +50,7 @@ export interface SpouseData {
   age: number | null;
   dateOfBirth: Date | null;
   gender: string;
+  occupation: string; // Spouse occupation
 }
 
 export interface MedicalData {
@@ -227,8 +229,10 @@ export async function createInfertilityPatient(
           phoneNumber: patientData.phoneNumber,
           email: patientData.email,
           bloodGroup: patientData.bloodGroup,
+          occupation: patientData.occupation,
           guardianDOB: spouseData.dateOfBirth, // For infertility, guardian = spouse
           guardianGender: spouseData.gender,
+          guardianOccupation: spouseData.occupation,
           hospitalId: hospital.id, // Update hospital link
         },
       });
@@ -245,8 +249,10 @@ export async function createInfertilityPatient(
           phoneNumber: patientData.phoneNumber,
           email: patientData.email,
           bloodGroup: patientData.bloodGroup,
+          occupation: patientData.occupation,
           guardianDOB: spouseData.dateOfBirth, // For infertility, guardian = spouse
           guardianGender: spouseData.gender,
+          guardianOccupation: spouseData.occupation,
           hospitalId: hospital.id, // Link hospital
           createdBy: staffId,
         },
@@ -382,8 +388,10 @@ export async function updateInfertilityPatient(
         phoneNumber: patientData.phoneNumber,
         email: patientData.email,
         bloodGroup: patientData.bloodGroup,
+        occupation: patientData.occupation,
         guardianDOB: spouseData.dateOfBirth,
         guardianGender: spouseData.gender,
+        guardianOccupation: spouseData.occupation,
         hospitalId: hospital.id, // Update hospital link
       },
     });

@@ -1,6 +1,6 @@
 /**
  * Admission Receipt Generator
- * Uses jsPDF like pathology for consistent receipt generation
+ * Uses jsPDF for consistent receipt generation with PAID/DUE watermark
  */
 
 import jsPDF from "jspdf";
@@ -34,6 +34,28 @@ const loadImage = (src: string): Promise<HTMLImageElement> => {
 };
 
 /**
+ * Draw a subtle logo watermark in the center of the page
+ * Professional appearance - visible but not distracting
+ */
+const drawLogoWatermark = async (doc: jsPDF) => {
+  const pageWidth = doc.internal.pageSize.width;
+  const pageHeight = doc.internal.pageSize.height;
+
+  try {
+    const logo = await loadImage("/fnh-logo.png");
+    doc.saveGraphicsState();
+    doc.setGState(new (doc as any).GState({ opacity: 0.05 })); // Subtle but visible
+    const logoSize = 80; // Larger size for better presence
+    const logoX = pageWidth / 2 - logoSize / 2;
+    const logoY = pageHeight / 2 - logoSize / 2;
+    doc.addImage(logo, "PNG", logoX, logoY, logoSize, logoSize);
+    doc.restoreGraphicsState();
+  } catch (e) {
+    // Silently fail if logo not available
+  }
+};
+
+/**
  * Generate Admission Receipt (Simple - just admission fee)
  */
 export const generateAdmissionReceipt = async (
@@ -44,6 +66,9 @@ export const generateAdmissionReceipt = async (
   const pageWidth = doc.internal.pageSize.width;
   const pageHeight = doc.internal.pageSize.height;
   const margin = 15;
+
+  // Draw subtle logo watermark in center
+  await drawLogoWatermark(doc);
 
   // --- Header Section ---
   try {
@@ -127,7 +152,7 @@ export const generateAdmissionReceipt = async (
 
   doc.setFontSize(9);
 
-  // Row 1
+  // Row 1 - Patient Name & Phone
   doc.setFont("helvetica", "bold");
   doc.setTextColor(COLORS.lightText);
   doc.text("Patient Name:", col1X, pY);
@@ -136,15 +161,11 @@ export const generateAdmissionReceipt = async (
 
   doc.setFont("helvetica", "bold");
   doc.setTextColor(COLORS.lightText);
-  doc.text("Patient ID:", col2X, pY);
+  doc.text("Mobile No:", col2X, pY);
   doc.setTextColor(COLORS.primary);
-  doc.text(
-    data.patientId ? data.patientId.toString() : "N/A",
-    col2X + labelXOffset,
-    pY
-  );
+  doc.text(data.patientPhone || "N/A", col2X + labelXOffset, pY);
 
-  // Row 2
+  // Row 2 - Age/Gender & Department
   const pY2 = pY + 8;
   doc.setFont("helvetica", "bold");
   doc.setTextColor(COLORS.lightText);
@@ -155,25 +176,27 @@ export const generateAdmissionReceipt = async (
 
   doc.setFont("helvetica", "bold");
   doc.setTextColor(COLORS.lightText);
-  doc.text("Mobile No:", col2X, pY2);
+  doc.text("Department:", col2X, pY2);
   doc.setTextColor(COLORS.primary);
-  doc.text(data.patientPhone || "N/A", col2X + labelXOffset, pY2);
+  doc.text(data.departmentName, col2X + labelXOffset, pY2);
 
-  // Row 3
+  // Row 3 - Doctor & Room
   const pY3 = pY2 + 8;
   doc.setFont("helvetica", "bold");
   doc.setTextColor(COLORS.lightText);
-  doc.text("Department:", col1X, pY3);
+  doc.text("Doctor:", col1X, pY3);
   doc.setTextColor(COLORS.primary);
-  doc.text(data.departmentName, col1X + labelXOffset, pY3);
+  doc.text(data.doctorName || "N/A", col1X + labelXOffset, pY3);
 
-  doc.setFont("helvetica", "bold");
-  doc.setTextColor(COLORS.lightText);
-  doc.text("Doctor:", col2X, pY3);
-  doc.setTextColor(COLORS.primary);
-  doc.text(data.doctorName || "N/A", col2X + labelXOffset, pY3);
+  if (data.seatNumber) {
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(COLORS.lightText);
+    doc.text("Room/Seat:", col2X, pY3);
+    doc.setTextColor(COLORS.primary);
+    doc.text(data.seatNumber, col2X + labelXOffset, pY3);
+  }
 
-  // Row 4 - Hospital
+  // Row 4 - Hospital Reference
   const pY4 = pY3 + 8;
   if (data.hospitalName) {
     doc.setFont("helvetica", "bold");
@@ -203,17 +226,18 @@ export const generateAdmissionReceipt = async (
     }
   );
 
-  // --- Footer ---
-  const footerY = pageHeight - 35;
+  // --- Footer --- (positioned with enough margin from bottom)
+  const footerY = pageHeight - 38;
 
+  // Left side - Prepared By with date
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8);
   doc.setTextColor(COLORS.lightText);
-  doc.text("Prepared By", margin + 15, footerY + 5, { align: "center" });
+  doc.text("Prepared By", margin + 20, footerY + 5, { align: "center" });
 
   doc.setFont("helvetica", "bold");
   doc.setTextColor(COLORS.primary);
-  doc.text(printedBy, margin + 15, footerY + 10, { align: "center" });
+  doc.text(printedBy, margin + 20, footerY + 10, { align: "center" });
 
   const printTime = new Date().toLocaleString("en-BD", {
     hour: "numeric",
@@ -226,17 +250,21 @@ export const generateAdmissionReceipt = async (
   doc.setFont("helvetica", "normal");
   doc.setFontSize(7);
   doc.setTextColor(COLORS.lightText);
-  doc.text(printTime, margin + 15, footerY + 14, { align: "center" });
+  doc.text(printTime, margin + 20, footerY + 14, { align: "center" });
 
-  // Right Side Signature
-  doc.setDrawColor(COLORS.text);
-  doc.setLineWidth(0.5);
-  doc.line(pageWidth - margin - 55, footerY, pageWidth - margin - 5, footerY);
-
+  // Right Side - Payment Status (Subtle)
+  const isPaid = data.dueAmount <= 0;
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8);
-  doc.setTextColor(COLORS.text);
-  doc.text("Authorized Signature", pageWidth - margin - 30, footerY + 5, {
+  doc.setTextColor(COLORS.lightText);
+  doc.text("Payment Status", pageWidth - margin - 25, footerY + 5, {
+    align: "center",
+  });
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(10);
+  doc.setTextColor(isPaid ? "#16a34a" : "#dc2626");
+  doc.text(isPaid ? "PAID" : "DUE", pageWidth - margin - 25, footerY + 10, {
     align: "center",
   });
 
@@ -246,13 +274,13 @@ export const generateAdmissionReceipt = async (
   doc.text(
     "NB: This is a computer generated receipt.",
     pageWidth / 2,
-    pageHeight - 15,
+    pageHeight - 10,
     { align: "center" }
   );
   doc.text(
     "Thank you for choosing Feroza Nursing Home",
     pageWidth / 2,
-    pageHeight - 11,
+    pageHeight - 6,
     { align: "center" }
   );
 
@@ -264,7 +292,7 @@ export const generateAdmissionReceipt = async (
 };
 
 /**
- * Generate Full Invoice (all charges)
+ * Generate Full Invoice (all charges) with PAID/DUE watermark
  */
 export const generateAdmissionInvoice = async (
   data: AdmissionPatientData,
@@ -274,6 +302,9 @@ export const generateAdmissionInvoice = async (
   const pageWidth = doc.internal.pageSize.width;
   const pageHeight = doc.internal.pageSize.height;
   const margin = 15;
+
+  // Draw subtle logo watermark in center
+  await drawLogoWatermark(doc);
 
   // --- Header Section ---
   try {
@@ -355,7 +386,7 @@ export const generateAdmissionInvoice = async (
 
   doc.setFontSize(9);
 
-  // Row 1
+  // Row 1 - Patient & Department
   doc.setFont("helvetica", "bold");
   doc.setTextColor(COLORS.lightText);
   doc.text("Patient:", col1X, pY);
@@ -367,7 +398,7 @@ export const generateAdmissionInvoice = async (
   doc.setTextColor(COLORS.primary);
   doc.text(data.departmentName, col2X + labelXOffset, pY);
 
-  // Row 2
+  // Row 2 - Doctor & Room
   const pY2 = pY + 8;
   doc.setTextColor(COLORS.lightText);
   doc.text("Doctor:", col1X, pY2);
@@ -381,12 +412,17 @@ export const generateAdmissionInvoice = async (
     doc.text(data.seatNumber, col2X + labelXOffset, pY2);
   }
 
-  // Row 3
+  // Row 3 - Phone & Status
   const pY3 = pY2 + 8;
   doc.setTextColor(COLORS.lightText);
-  doc.text("Status:", col1X, pY3);
+  doc.text("Mobile:", col1X, pY3);
   doc.setTextColor(COLORS.primary);
-  doc.text(data.status, col1X + labelXOffset, pY3);
+  doc.text(data.patientPhone || "N/A", col1X + labelXOffset, pY3);
+
+  doc.setTextColor(COLORS.lightText);
+  doc.text("Status:", col2X, pY3);
+  doc.setTextColor(COLORS.primary);
+  doc.text(data.status, col2X + labelXOffset, pY3);
 
   currentY += boxHeight + 8;
 
@@ -396,6 +432,13 @@ export const generateAdmissionInvoice = async (
     { description: "Service Charge", amount: data.serviceCharge },
     { description: "Room / Seat Rent", amount: data.seatRent },
     { description: "OT Charge", amount: data.otCharge },
+    { description: "Doctor Charge", amount: data.doctorCharge || 0 },
+    { description: "Surgeon Charge", amount: data.surgeonCharge || 0 },
+    { description: "Anesthesia Fee", amount: data.anesthesiaFee || 0 },
+    {
+      description: "Assistant Doctor Fee",
+      amount: data.assistantDoctorFee || 0,
+    },
     { description: "Medicine Charge", amount: data.medicineCharge },
     { description: "Other Charges", amount: data.otherCharges },
   ].filter((c) => c.amount > 0);
@@ -494,7 +537,7 @@ export const generateAdmissionInvoice = async (
   doc.setFontSize(9);
   doc.setTextColor(COLORS.lightText);
   doc.text("Paid Amount:", tLabelX, tY, { align: "right" });
-  doc.setTextColor(COLORS.primary);
+  doc.setTextColor(22, 163, 74); // Green
   doc.text(`${data.paidAmount.toLocaleString()}`, tValX, tY, {
     align: "right",
   });
@@ -502,6 +545,7 @@ export const generateAdmissionInvoice = async (
 
   // Due Amount
   doc.setFont("helvetica", "bold");
+  doc.setTextColor(COLORS.lightText);
   doc.text("Due Amount:", tLabelX, tY, { align: "right" });
 
   if (data.dueAmount > 0) {
@@ -511,7 +555,7 @@ export const generateAdmissionInvoice = async (
     });
   } else {
     doc.setTextColor(22, 163, 74); // Green
-    doc.text("PAID", tValX, tY, { align: "right" });
+    doc.text("FULLY PAID", tValX, tY, { align: "right" });
   }
 
   // --- Remarks Section ---
@@ -529,17 +573,17 @@ export const generateAdmissionInvoice = async (
     doc.text(splitRemarks, margin, remarkY + 5);
   }
 
-  // --- Footer ---
-  const footerY = pageHeight - 35;
+  // --- Footer --- (positioned with enough margin from bottom)
+  const footerY = pageHeight - 38;
 
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8);
   doc.setTextColor(COLORS.lightText);
-  doc.text("Prepared By", margin + 15, footerY + 5, { align: "center" });
+  doc.text("Prepared By", margin + 20, footerY + 5, { align: "center" });
 
   doc.setFont("helvetica", "bold");
   doc.setTextColor(COLORS.primary);
-  doc.text(printedBy, margin + 15, footerY + 10, { align: "center" });
+  doc.text(printedBy, margin + 20, footerY + 10, { align: "center" });
 
   const printTime = new Date().toLocaleString("en-BD", {
     hour: "numeric",
@@ -552,19 +596,28 @@ export const generateAdmissionInvoice = async (
   doc.setFont("helvetica", "normal");
   doc.setFontSize(7);
   doc.setTextColor(COLORS.lightText);
-  doc.text(printTime, margin + 15, footerY + 14, { align: "center" });
+  doc.text(printTime, margin + 20, footerY + 14, { align: "center" });
 
-  // Right Side Signature
-  doc.setDrawColor(COLORS.text);
-  doc.setLineWidth(0.5);
-  doc.line(pageWidth - margin - 55, footerY, pageWidth - margin - 5, footerY);
-
+  // Right Side - Payment Status (Subtle)
+  const isInvoicePaid = data.dueAmount <= 0;
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8);
-  doc.setTextColor(COLORS.text);
-  doc.text("Authorized Signature", pageWidth - margin - 30, footerY + 5, {
+  doc.setTextColor(COLORS.lightText);
+  doc.text("Payment Status", pageWidth - margin - 25, footerY + 5, {
     align: "center",
   });
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(10);
+  doc.setTextColor(isInvoicePaid ? "#16a34a" : "#dc2626");
+  doc.text(
+    isInvoicePaid ? "PAID" : "DUE",
+    pageWidth - margin - 25,
+    footerY + 10,
+    {
+      align: "center",
+    }
+  );
 
   // Bottom branding
   doc.setTextColor(COLORS.lightText);
@@ -572,13 +625,13 @@ export const generateAdmissionInvoice = async (
   doc.text(
     "NB: This is a computer generated invoice.",
     pageWidth / 2,
-    pageHeight - 15,
+    pageHeight - 10,
     { align: "center" }
   );
   doc.text(
     "Thank you for choosing Feroza Nursing Home",
     pageWidth / 2,
-    pageHeight - 11,
+    pageHeight - 6,
     { align: "center" }
   );
 

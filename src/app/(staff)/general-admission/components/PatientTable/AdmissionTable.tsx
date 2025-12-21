@@ -1,21 +1,26 @@
-import React, { useState, useRef, useMemo } from "react";
+import React, { useState, useRef, useMemo, useCallback } from "react";
 import { usePagination } from "@/hooks/usePagination";
 import { Pagination } from "@/components/pagination/Pagination";
 import TableRow from "./components/TableRow";
 import TableRowSkeleton from "./components/TableRowSkeleton";
 import AdmissionOverview from "./components/AdmissionOverview/AdmissionOverview";
-import { AdmissionPatientData, SortConfig } from "../../types";
+import { AdmissionPatientData, SortConfig, AdmissionStatus } from "../../types";
 import { getTableHeaders, TableHeader } from "./utils";
+import { ConfirmModal } from "@/components/ui/ConfirmModal";
 
 interface AdmissionTableProps {
   tableData: AdmissionPatientData[];
   onEdit?: (patient: AdmissionPatientData) => void;
+  onStatusChange?: (patientId: number, newStatus: AdmissionStatus) => void;
+  isStatusUpdating?: boolean;
   isLoading?: boolean;
 }
 
 const AdmissionTable: React.FC<AdmissionTableProps> = ({
   tableData = [],
   onEdit,
+  onStatusChange,
+  isStatusUpdating = false,
   isLoading = false,
 }) => {
   const [sortConfig, setSortConfig] = useState<SortConfig | null>(null);
@@ -24,9 +29,61 @@ const AdmissionTable: React.FC<AdmissionTableProps> = ({
   const [isOverviewOpen, setIsOverviewOpen] = useState(false);
   const tableContainerRef = useRef<HTMLDivElement>(null);
 
+  // Status change confirmation state
+  const [confirmModalOpen, setConfirmModalOpen] = useState(false);
+  const [pendingStatusChange, setPendingStatusChange] = useState<{
+    patientId: number;
+    patientName: string;
+    currentStatus: string;
+    newStatus: AdmissionStatus;
+  } | null>(null);
+
   const handlePatientClick = (patient: AdmissionPatientData) => {
     setSelectedPatient(patient);
     setIsOverviewOpen(true);
+  };
+
+  // Handle status change request - open confirmation modal
+  const handleStatusChangeRequest = useCallback(
+    (patientId: number, newStatus: AdmissionStatus) => {
+      const patient = tableData.find((p) => p.id === patientId);
+      if (!patient) return;
+
+      setPendingStatusChange({
+        patientId,
+        patientName: patient.patientFullName,
+        currentStatus: patient.status,
+        newStatus,
+      });
+      setConfirmModalOpen(true);
+    },
+    [tableData]
+  );
+
+  // Confirm status change
+  const confirmStatusChange = useCallback(() => {
+    if (pendingStatusChange && onStatusChange) {
+      onStatusChange(
+        pendingStatusChange.patientId,
+        pendingStatusChange.newStatus
+      );
+    }
+    setConfirmModalOpen(false);
+    setPendingStatusChange(null);
+  }, [pendingStatusChange, onStatusChange]);
+
+  // Get warning message for status changes
+  const getWarningMessage = () => {
+    if (!pendingStatusChange) return "";
+    const { currentStatus, newStatus, patientName } = pendingStatusChange;
+
+    if (newStatus === "Canceled") {
+      return `Canceling admission for ${patientName} will set all charges to ৳0. You must refund any paid amount to the patient.`;
+    }
+    if (currentStatus === "Canceled") {
+      return `Restoring ${patientName}'s admission will set the admission fee to ৳300. Other charges will remain at ৳0.`;
+    }
+    return `Are you sure you want to change ${patientName}'s status from "${currentStatus}" to "${newStatus}"?`;
   };
 
   // Sorting logic
@@ -246,6 +303,8 @@ const AdmissionTable: React.FC<AdmissionTableProps> = ({
                     headers={headers}
                     onEdit={onEdit}
                     onPatientClick={handlePatientClick}
+                    onStatusChange={handleStatusChangeRequest}
+                    isStatusUpdating={isStatusUpdating}
                   />
                 ))}
               </tbody>
@@ -275,6 +334,27 @@ const AdmissionTable: React.FC<AdmissionTableProps> = ({
         patient={selectedPatient}
         onEdit={onEdit}
       />
+
+      {/* Status Change Confirmation Modal */}
+      <ConfirmModal
+        isOpen={confirmModalOpen}
+        title="Confirm Status Change"
+        confirmLabel="Confirm"
+        cancelLabel="Cancel"
+        onClose={() => {
+          setConfirmModalOpen(false);
+          setPendingStatusChange(null);
+        }}
+        onConfirm={confirmStatusChange}
+        isLoading={isStatusUpdating}
+        variant={
+          pendingStatusChange?.newStatus === "Canceled"
+            ? "destructive"
+            : "warning"
+        }
+      >
+        {getWarningMessage()}
+      </ConfirmModal>
     </>
   );
 };

@@ -29,6 +29,28 @@ const loadImage = (src: string): Promise<HTMLImageElement> => {
   });
 };
 
+/**
+ * Draw a subtle logo watermark in the center of the page
+ * Professional appearance - visible but not distracting
+ */
+const drawLogoWatermark = async (doc: jsPDF) => {
+  const pageWidth = doc.internal.pageSize.width;
+  const pageHeight = doc.internal.pageSize.height;
+
+  try {
+    const logo = await loadImage("/fnh-logo.png");
+    doc.saveGraphicsState();
+    doc.setGState(new (doc as any).GState({ opacity: 0.05 })); // Subtle but visible
+    const logoSize = 80; // Larger size for better presence
+    const logoX = pageWidth / 2 - logoSize / 2;
+    const logoY = pageHeight / 2 - logoSize / 2;
+    doc.addImage(logo, "PNG", logoX, logoY, logoSize, logoSize);
+    doc.restoreGraphicsState();
+  } catch (e) {
+    // Silently fail if logo not available
+  }
+};
+
 export const generatePathologyReceipt = async (
   data: PathologyPatientData,
   printedBy: string = "Staff"
@@ -37,6 +59,9 @@ export const generatePathologyReceipt = async (
   const pageWidth = doc.internal.pageSize.width;
   const pageHeight = doc.internal.pageSize.height;
   const margin = 15;
+
+  // Draw subtle logo watermark in center
+  await drawLogoWatermark(doc);
 
   // --- Header Section ---
   // Centered Header Design
@@ -329,18 +354,18 @@ export const generatePathologyReceipt = async (
     doc.text(splitRemarks, margin, remarkY + 5);
   }
 
-  // --- Footer ---
-  const footerY = pageHeight - 35;
+  // --- Footer --- (positioned with enough margin from bottom)
+  const footerY = pageHeight - 38;
 
   // Prepared By (No Line)
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8);
   doc.setTextColor(COLORS.lightText);
-  doc.text("Prepared By", margin + 15, footerY + 5, { align: "center" });
+  doc.text("Prepared By", margin + 20, footerY + 5, { align: "center" });
 
   doc.setFont("helvetica", "bold");
   doc.setTextColor(COLORS.primary);
-  doc.text(printedBy, margin + 15, footerY + 10, { align: "center" });
+  doc.text(printedBy, margin + 20, footerY + 10, { align: "center" });
 
   // Print Time
   const printTime = new Date().toLocaleString("en-BD", {
@@ -354,17 +379,21 @@ export const generatePathologyReceipt = async (
   doc.setFont("helvetica", "normal");
   doc.setFontSize(7);
   doc.setTextColor(COLORS.lightText);
-  doc.text(printTime, margin + 15, footerY + 14, { align: "center" });
+  doc.text(printTime, margin + 20, footerY + 14, { align: "center" });
 
-  // Right Side Signature (Authorized) WITH Line
-  doc.setDrawColor(COLORS.text);
-  doc.setLineWidth(0.5);
-  doc.line(pageWidth - margin - 55, footerY, pageWidth - margin - 5, footerY);
-
+  // Right Side - Payment Status (Subtle)
+  const isPaid = data.dueAmount <= 0;
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8);
-  doc.setTextColor(COLORS.text);
-  doc.text("Authorized Signature", pageWidth - margin - 30, footerY + 5, {
+  doc.setTextColor(COLORS.lightText);
+  doc.text("Payment Status", pageWidth - margin - 25, footerY + 5, {
+    align: "center",
+  });
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(10);
+  doc.setTextColor(isPaid ? "#16a34a" : "#dc2626");
+  doc.text(isPaid ? "PAID" : "DUE", pageWidth - margin - 25, footerY + 10, {
     align: "center",
   });
 
@@ -374,13 +403,13 @@ export const generatePathologyReceipt = async (
   doc.text(
     "NB: This is a computer generated receipt.",
     pageWidth / 2,
-    pageHeight - 15,
+    pageHeight - 10,
     { align: "center" }
   );
   doc.text(
     "Thank you for choosing Feroza Nursing Home",
     pageWidth / 2,
-    pageHeight - 11,
+    pageHeight - 6,
     { align: "center" }
   );
 

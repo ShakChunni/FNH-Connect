@@ -30,6 +30,7 @@ export interface PatientData {
   phoneNumber: string;
   email: string;
   bloodGroup: string;
+  occupation: string;
 }
 
 export interface HospitalData {
@@ -70,6 +71,7 @@ export interface SpouseInfo {
   age: number | null;
   dateOfBirth: Date | null;
   gender: string;
+  occupation: string;
 }
 
 // Complete submission data
@@ -145,6 +147,8 @@ export interface InfertilityPatient {
     guardianGender: string | null; // Stores spouse gender in infertility context
     address: string | null;
     bloodGroup: string | null;
+    occupation: string | null;
+    guardianOccupation: string | null;
   };
   hospital: {
     id: number;
@@ -265,6 +269,8 @@ export interface InfertilityPatientData {
   email: string | null;
   address: string | null;
   bloodGroup: string | null;
+  patientOccupation: string | null;
+  husbandOccupation: string | null;
   yearsMarried: number | null;
   yearsTrying: number | null;
   para: string | null;
