@@ -2,6 +2,7 @@
 import React, { useCallback, useMemo, useRef, useEffect } from "react";
 import { Save, Building2, User, Activity, Wallet } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useAuth } from "@/app/AuthContext";
 import {
   modalVariants,
   backdropVariants,
@@ -64,6 +65,7 @@ const EditDataAdmission: React.FC<EditDataProps> = ({
   onClose,
   patientData: initialPatientData,
 }) => {
+  const { user } = useAuth();
   const popupRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
@@ -101,9 +103,57 @@ const EditDataAdmission: React.FC<EditDataProps> = ({
     };
   }, [isOpen]);
 
-  // Mutation
+  // Mutation with auto-print on success
   const { editAdmission, isLoading: isSubmitting } = useEditAdmissionData({
     onSuccess: () => {
+      // Auto-print invoice after successful update
+      const invoiceData = {
+        id: initialPatientData.id,
+        admissionNumber: initialPatientData.admissionNumber,
+        patientFullName: `${patientData.firstName} ${
+          patientData.lastName || ""
+        }`.trim(),
+        patientGender: patientData.gender,
+        patientAge: patientData.age,
+        patientPhone: patientData.phoneNumber,
+        departmentName: initialPatientData.departmentName,
+        doctorName: initialPatientData.doctorName,
+        hospitalName: hospitalData.name,
+        seatNumber: admissionInfo.seatNumber,
+        status: admissionInfo.status,
+        dateAdmitted: initialPatientData.dateAdmitted,
+        admissionFee: financialData.admissionFee,
+        serviceCharge: financialData.serviceCharge,
+        seatRent: financialData.seatRent,
+        otCharge: financialData.otCharge,
+        doctorCharge: financialData.doctorCharge || 0,
+        surgeonCharge: financialData.surgeonCharge || 0,
+        anesthesiaFee: financialData.anesthesiaFee || 0,
+        assistantDoctorFee: financialData.assistantDoctorFee || 0,
+        medicineCharge: financialData.medicineCharge,
+        otherCharges: financialData.otherCharges,
+        totalAmount: financialData.totalAmount,
+        discountType: financialData.discountType,
+        discountValue: financialData.discountValue,
+        discountAmount: financialData.discountAmount,
+        grandTotal: financialData.grandTotal,
+        paidAmount: financialData.paidAmount,
+        dueAmount: financialData.dueAmount,
+        remarks: admissionInfo.remarks,
+      };
+
+      // Dynamically import and generate invoice
+      import("../../utils/generateReceipt").then(
+        ({ generateAdmissionInvoice }) => {
+          setTimeout(() => {
+            generateAdmissionInvoice(
+              invoiceData as any,
+              user?.fullName || "Staff"
+            );
+          }, 300);
+        }
+      );
+
       onClose();
     },
   });
@@ -147,6 +197,10 @@ const EditDataAdmission: React.FC<EditDataProps> = ({
       serviceCharge: financialData.serviceCharge,
       seatRent: financialData.seatRent,
       otCharge: financialData.otCharge,
+      doctorCharge: financialData.doctorCharge,
+      surgeonCharge: financialData.surgeonCharge,
+      anesthesiaFee: financialData.anesthesiaFee,
+      assistantDoctorFee: financialData.assistantDoctorFee,
       medicineCharge: financialData.medicineCharge,
       otherCharges: financialData.otherCharges,
       discountType: financialData.discountType,
@@ -212,7 +266,6 @@ const EditDataAdmission: React.FC<EditDataProps> = ({
       {isOpen && (
         <motion.div
           className="fixed inset-0 bg-slate-900/70 flex items-center justify-center z-100000"
-          onClick={handleClose}
           variants={backdropVariants}
           initial="hidden"
           animate="visible"
@@ -227,7 +280,6 @@ const EditDataAdmission: React.FC<EditDataProps> = ({
           <motion.div
             ref={popupRef}
             className="bg-white rounded-3xl shadow-lg w-full max-w-[95%] sm:max-w-[90%] md:max-w-[85%] lg:max-w-[80%] xl:max-w-[80%] h-[95%] sm:h-[90%] popup-content flex flex-col"
-            onClick={(e) => e.stopPropagation()}
             variants={modalVariants}
             initial="hidden"
             animate="visible"

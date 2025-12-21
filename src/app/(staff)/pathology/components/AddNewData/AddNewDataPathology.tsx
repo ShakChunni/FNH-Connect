@@ -72,9 +72,53 @@ const AddNewDataPathology: React.FC<AddNewDataProps> = ({
     };
   }, [isOpen]);
 
-  // Mutation Hook
+  // Mutation Hook with auto-print on success
   const { addPatient, isLoading: isSubmitting } = useAddPathologyData({
-    onSuccess: () => {
+    onSuccess: (response) => {
+      // Auto-print receipt after successful add
+      if (response.data) {
+        // Construct PathologyPatientData from local form state + API response
+        const receiptData = {
+          id: response.data.pathologyTest.id,
+          patientId: response.data.patient.id,
+          testNumber: response.data.displayId,
+          patientFullName: `${patientData.firstName} ${
+            patientData.lastName || ""
+          }`.trim(),
+          patientGender: patientData.gender,
+          patientAge: patientData.age,
+          patientDOB: patientData.dateOfBirth?.toISOString() || null,
+          mobileNumber: patientData.phoneNumber,
+          guardianName: guardianData.name,
+          hospitalName: hospitalData.name,
+          testDate: new Date().toISOString(),
+          testCategory: "Multiple Tests",
+          testResults: { tests: pathologyInfo.selectedTests },
+          remarks: pathologyInfo.remarks,
+          isCompleted: pathologyInfo.isCompleted,
+          testCharge: pathologyInfo.testCharge,
+          discountType: pathologyInfo.discountType,
+          discountValue: pathologyInfo.discountValue,
+          discountAmount: pathologyInfo.discountAmount || 0,
+          grandTotal: pathologyInfo.grandTotal,
+          paidAmount: pathologyInfo.paidAmount,
+          dueAmount: pathologyInfo.dueAmount,
+          orderedBy: null, // Will be resolved from doctors list if needed
+          orderedById: pathologyInfo.orderedById,
+        };
+
+        // Dynamically import and generate receipt
+        import("../../utils/generateReceipt").then(
+          ({ generatePathologyReceipt }) => {
+            setTimeout(() => {
+              generatePathologyReceipt(
+                receiptData as any,
+                user?.fullName || "Staff"
+              );
+            }, 300);
+          }
+        );
+      }
       onClose(); // closeAddModal now resets form internally
     },
   });
@@ -201,7 +245,6 @@ const AddNewDataPathology: React.FC<AddNewDataProps> = ({
       {isOpen && (
         <motion.div
           className="fixed inset-0 bg-slate-900/70 flex items-center justify-center z-100000"
-          onClick={onClose}
           variants={backdropVariants}
           initial="hidden"
           animate="visible"
@@ -216,7 +259,6 @@ const AddNewDataPathology: React.FC<AddNewDataProps> = ({
           <motion.div
             ref={popupRef}
             className="bg-white rounded-3xl shadow-lg w-full max-w-[95%] sm:max-w-[90%] md:max-w-[80%] lg:max-w-[75%] xl:max-w-[75%] h-[95%] sm:h-[90%] popup-content flex flex-col"
-            onClick={(e) => e.stopPropagation()}
             variants={modalVariants}
             initial="hidden"
             animate="visible"

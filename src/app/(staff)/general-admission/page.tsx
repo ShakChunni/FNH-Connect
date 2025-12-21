@@ -12,8 +12,12 @@ import AdmissionSearch from "./components/AdmissionSearch";
 import { generateAdmissionReceipt } from "./utils/generateReceipt";
 
 // Types and Hooks
-import { AdmissionPatientData, AdmissionFilters } from "./types";
-import { useFetchAdmissions } from "./hooks";
+import {
+  AdmissionPatientData,
+  AdmissionFilters,
+  AdmissionStatus,
+} from "./types";
+import { useFetchAdmissions, useEditAdmissionData } from "./hooks";
 import { useModalState, useUIActions, useAdmissionActions } from "./stores";
 
 // New Patient Button Component
@@ -71,6 +75,9 @@ const GeneralAdmissionPage = React.memo(() => {
 
   const { data: admissions = [], isLoading } = useFetchAdmissions(hookFilters);
 
+  // Hook for quick status updates from table
+  const { editAdmission, isLoading: isStatusUpdating } = useEditAdmissionData();
+
   // Handle filter changes from search component
   const handleFiltersChange = useCallback(
     (newFilters: {
@@ -120,6 +127,18 @@ const GeneralAdmissionPage = React.memo(() => {
     resetForm();
   }, [closeAddModal, resetForm]);
 
+  // Handle status change from table dropdown
+  const handleStatusChange = useCallback(
+    (patientId: number, newStatus: AdmissionStatus) => {
+      editAdmission({
+        id: patientId,
+        status: newStatus,
+        isDischarged: newStatus === "Discharged",
+      });
+    },
+    [editAdmission]
+  );
+
   return (
     <div className="min-h-screen bg-fnh-porcelain pb-2 sm:pb-3 lg:pb-4 w-full overflow-x-hidden">
       <div className="mx-auto w-full max-w-full px-3 sm:px-4 lg:px-6 pt-16 sm:pt-12 lg:pt-2">
@@ -149,6 +168,8 @@ const GeneralAdmissionPage = React.memo(() => {
               tableData={admissions}
               isLoading={isLoading}
               onEdit={handleEdit}
+              onStatusChange={handleStatusChange}
+              isStatusUpdating={isStatusUpdating}
             />
           </div>
         </div>

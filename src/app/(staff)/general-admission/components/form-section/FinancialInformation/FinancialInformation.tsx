@@ -1,17 +1,36 @@
-import React, { useMemo, useEffect } from "react";
-import { Wallet, Percent, DollarSign, AlertCircle } from "lucide-react";
+import React, { useMemo, useEffect, useState } from "react";
+import { Wallet, AlertCircle } from "lucide-react";
 import {
   useAdmissionFinancialData,
   useAdmissionInfo,
   useAdmissionActions,
 } from "../../../stores";
 import { DiscountType } from "../../../types";
+import NumberInput from "@/components/form-sections/Fields/NumberInput";
 
 const FinancialInformation: React.FC = () => {
   const financialData = useAdmissionFinancialData();
   const admissionInfo = useAdmissionInfo();
-  const { updateFinancialData, setFinancialData, calculateTotals } =
-    useAdmissionActions();
+  const { setFinancialData, calculateTotals } = useAdmissionActions();
+
+  // Check if admission is canceled
+  const isCanceled = admissionInfo.status === "Canceled";
+
+  // Local state for discount input to handle empty strings gracefully
+  const [discountInput, setDiscountInput] = useState<number | "">(
+    financialData.discountValue ?? ""
+  );
+
+  // Sync local input with store when store changes
+  useEffect(() => {
+    const storeVal = financialData.discountValue;
+    if (storeVal === null && discountInput !== "") {
+      setDiscountInput("");
+    } else if (storeVal !== null && storeVal !== discountInput) {
+      setDiscountInput(storeVal);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [financialData.discountValue]);
 
   // Recalculate totals when financial data changes
   useEffect(() => {
@@ -20,6 +39,10 @@ const FinancialInformation: React.FC = () => {
     financialData.serviceCharge,
     financialData.seatRent,
     financialData.otCharge,
+    financialData.doctorCharge,
+    financialData.surgeonCharge,
+    financialData.anesthesiaFee,
+    financialData.assistantDoctorFee,
     financialData.medicineCharge,
     financialData.otherCharges,
     financialData.discountType,
@@ -30,17 +53,17 @@ const FinancialInformation: React.FC = () => {
 
   const inputClassName = useMemo(() => {
     const baseStyle =
-      "text-gray-700 font-normal rounded-lg h-12 md:h-14 py-2 px-4 w-full focus:border-green-900 focus:ring-2 focus:ring-green-950 outline-none shadow-sm hover:shadow-md transition-all duration-300 placeholder:text-gray-400 placeholder:font-light text-xs sm:text-sm cursor-pointer";
-    return (value: number | null, disabled: boolean = false) => {
-      if (disabled) {
-        return `bg-gray-200 border-2 border-gray-300 cursor-not-allowed ${baseStyle}`;
+      "text-gray-700 font-normal rounded-lg h-12 md:h-14 py-2 px-4 w-full focus:border-green-900 focus:ring-2 focus:ring-green-950 outline-none shadow-sm hover:shadow-md transition-all duration-300 placeholder:text-gray-400 placeholder:font-light text-xs sm:text-sm";
+    return (value: number | string | null, readonly: boolean = false) => {
+      if (isCanceled || readonly) {
+        return `bg-gray-100 border-2 border-gray-200 cursor-not-allowed ${baseStyle}`;
       }
-      const hasValue = value !== null && value !== 0;
+      const hasValue = value !== null && value !== 0 && value !== "";
       return hasValue
         ? `bg-white border-2 border-green-700 ${baseStyle}`
-        : `bg-gray-50 border-2 border-gray-300 ${baseStyle}`;
+        : `bg-white border-2 border-gray-300 ${baseStyle}`;
     };
-  }, []);
+  }, [isCanceled]);
 
   const handleNumberChange = (
     field: keyof typeof financialData,
@@ -52,52 +75,121 @@ const FinancialInformation: React.FC = () => {
     }
   };
 
-  const handleDiscountTypeChange = (
-    e: React.ChangeEvent<HTMLSelectElement>
-  ) => {
-    const value = e.target.value as DiscountType;
+  const handleDiscountTypeChange = (type: "percentage" | "value") => {
     setFinancialData({
-      discountType: value || null,
-      discountValue: value ? financialData.discountValue : null,
-      discountAmount: 0,
+      discountType: type,
+      discountValue: discountInput === "" ? null : discountInput,
     });
+  };
+
+  const handleDiscountInputChange = (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const val = e.target.value;
+    if (val === "") {
+      setDiscountInput("");
+      setFinancialData({
+        discountType: financialData.discountType,
+        discountValue: null,
+      });
+    } else {
+      const numVal = Number(val);
+      setDiscountInput(numVal);
+      setFinancialData({
+        discountType: financialData.discountType || "value",
+        discountValue: numVal,
+      });
+    }
+  };
+
+  const handlePaymentChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value === "" ? 0 : Number(e.target.value);
+    setFinancialData({ paidAmount: value });
   };
 
   const showRoomWarning =
     financialData.seatRent > 0 && !admissionInfo.seatNumber;
 
+  // Numeric charge field keys only
+  type NumericChargeKey =
+    | "serviceCharge"
+    | "seatRent"
+    | "otCharge"
+    | "doctorCharge"
+    | "surgeonCharge"
+    | "anesthesiaFee"
+    | "assistantDoctorFee"
+    | "medicineCharge"
+    | "otherCharges";
+
+  // Charge field configuration for cleaner rendering
+  const chargeFields: Array<{
+    key: NumericChargeKey;
+    label: string;
+    showWarning?: boolean;
+  }> = [
+    { key: "serviceCharge", label: "Service Charge" },
+    { key: "seatRent", label: "Room / Seat Rent", showWarning: true },
+    { key: "otCharge", label: "OT Charge" },
+    { key: "doctorCharge", label: "Doctor Charge" },
+    { key: "surgeonCharge", label: "Surgeon Charge" },
+    { key: "anesthesiaFee", label: "Anesthesia Fee" },
+    { key: "assistantDoctorFee", label: "Assistant Doctor Fee" },
+    { key: "medicineCharge", label: "Medicine Charge" },
+    { key: "otherCharges", label: "Other Charges" },
+  ];
+
   return (
-    <div className="bg-linear-to-br from-green-50 to-emerald-50 rounded-2xl p-4 sm:p-6 md:p-8 border border-green-100 shadow-sm">
-      <div className="flex items-center gap-3 mb-4 sm:mb-6">
-        <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-green-100 flex items-center justify-center">
-          <Wallet className="w-5 h-5 sm:w-6 sm:h-6 text-green-600" />
-        </div>
-        <div>
-          <h2 className="text-base sm:text-lg md:text-xl font-bold text-gray-800">
-            Financial Information
-          </h2>
-          <p className="text-xs sm:text-sm text-gray-500">
-            Charges, discounts, and payment details
-          </p>
+    <div id="financial" className="mt-2 sm:mt-0 mb-6 sm:mb-8 md:mb-10">
+      {/* Header - matching pathology section style */}
+      <div className="bg-linear-to-r from-green-50 to-emerald-100 border-green-200 rounded-lg sm:rounded-xl p-4 sm:p-5 md:p-6 mb-4 sm:mb-5 md:mb-6 shadow-sm border transition-colors duration-300">
+        <div className="flex items-center gap-3 sm:gap-4">
+          <div className="p-2 sm:p-2.5 md:p-3 bg-white rounded-lg sm:rounded-xl shadow-md shrink-0">
+            <Wallet className="text-green-600" size={28} />
+          </div>
+          <div className="flex flex-col">
+            <h3 className="text-base sm:text-lg md:text-xl font-bold text-gray-800 mb-0.5 sm:mb-1 leading-tight">
+              Financial Information
+            </h3>
+            <p className="text-green-700 text-[11px] sm:text-xs font-medium leading-tight transition-colors duration-300 mt-1">
+              Charges, discounts, and payment details
+            </p>
+          </div>
         </div>
       </div>
 
-      <div className="space-y-4">
+      {/* Canceled Warning Banner */}
+      {isCanceled && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-3 sm:p-4 mb-4 sm:mb-5 flex items-start gap-2 sm:gap-3">
+          <AlertCircle className="text-red-600 w-5 h-5 shrink-0 mt-0.5" />
+          <div>
+            <h4 className="text-red-800 font-semibold text-xs sm:text-sm">
+              Admission Canceled
+            </h4>
+            <p className="text-red-700 text-[11px] sm:text-xs mt-0.5">
+              All charges have been set to ৳0. If any payment was made, please
+              process a refund manually.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Form Content */}
+      <div className="space-y-4 sm:space-y-5">
         {/* Admission Fee (Fixed) */}
         <div>
           <label className="block text-gray-700 text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2">
             Admission Fee (Fixed)
           </label>
           <div className="relative">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-medium">
+            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-semibold">
               ৳
             </span>
-            <input
-              type="number"
+            <NumberInput
               className={`${inputClassName(
                 financialData.admissionFee,
                 true
-              )} pl-8`}
+              )} pl-10`}
               value={financialData.admissionFee}
               readOnly
             />
@@ -106,223 +198,173 @@ const FinancialInformation: React.FC = () => {
 
         {/* Charges Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          <div>
-            <label className="block text-gray-700 text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2">
-              Service Charge
-            </label>
-            <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-medium">
-                ৳
-              </span>
-              <input
-                type="number"
-                className={`${inputClassName(
-                  financialData.serviceCharge
-                )} pl-8`}
-                value={financialData.serviceCharge || ""}
-                onChange={(e) =>
-                  handleNumberChange("serviceCharge", e.target.value)
-                }
-                placeholder="0"
-                min="0"
-              />
-            </div>
-          </div>
-          <div>
-            <label className="block text-gray-700 text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2">
-              Room / Seat Rent
-              {showRoomWarning && (
-                <AlertCircle className="w-4 h-4 inline ml-1 text-amber-500" />
-              )}
-            </label>
-            <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-medium">
-                ৳
-              </span>
-              <input
-                type="number"
-                className={`${inputClassName(financialData.seatRent)} pl-8`}
-                value={financialData.seatRent || ""}
-                onChange={(e) => handleNumberChange("seatRent", e.target.value)}
-                placeholder="0"
-                min="0"
-              />
-            </div>
-            {showRoomWarning && (
-              <p className="text-xs text-amber-600 mt-1">
-                Please fill room/seat number in Status section
-              </p>
-            )}
-          </div>
-          <div>
-            <label className="block text-gray-700 text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2">
-              OT Charge
-            </label>
-            <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-medium">
-                ৳
-              </span>
-              <input
-                type="number"
-                className={`${inputClassName(financialData.otCharge)} pl-8`}
-                value={financialData.otCharge || ""}
-                onChange={(e) => handleNumberChange("otCharge", e.target.value)}
-                placeholder="0"
-                min="0"
-              />
-            </div>
-          </div>
-          <div>
-            <label className="block text-gray-700 text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2">
-              Medicine Charge
-            </label>
-            <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-medium">
-                ৳
-              </span>
-              <input
-                type="number"
-                className={`${inputClassName(
-                  financialData.medicineCharge
-                )} pl-8`}
-                value={financialData.medicineCharge || ""}
-                onChange={(e) =>
-                  handleNumberChange("medicineCharge", e.target.value)
-                }
-                placeholder="0"
-                min="0"
-              />
-            </div>
-          </div>
-          <div>
-            <label className="block text-gray-700 text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2">
-              Other Charges
-            </label>
-            <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-medium">
-                ৳
-              </span>
-              <input
-                type="number"
-                className={`${inputClassName(financialData.otherCharges)} pl-8`}
-                value={financialData.otherCharges || ""}
-                onChange={(e) =>
-                  handleNumberChange("otherCharges", e.target.value)
-                }
-                placeholder="0"
-                min="0"
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Discount Section */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t border-green-200">
-          <div>
-            <label className="block text-gray-700 text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2">
-              Discount Type
-            </label>
-            <select
-              className={inputClassName(financialData.discountType ? 1 : 0)}
-              value={financialData.discountType || ""}
-              onChange={handleDiscountTypeChange}
-            >
-              <option value="">No Discount</option>
-              <option value="percentage">Percentage (%)</option>
-              <option value="value">Fixed Amount (৳)</option>
-            </select>
-          </div>
-          {financialData.discountType && (
-            <div>
+          {chargeFields.map((field) => (
+            <div key={field.key}>
               <label className="block text-gray-700 text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2">
-                Discount Value
+                {field.label}
+                {field.showWarning && showRoomWarning && (
+                  <AlertCircle className="w-4 h-4 inline ml-1 text-amber-500" />
+                )}
               </label>
               <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-medium">
-                  {financialData.discountType === "percentage" ? (
-                    <Percent className="w-4 h-4" />
-                  ) : (
-                    <DollarSign className="w-4 h-4" />
-                  )}
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-semibold">
+                  ৳
                 </span>
-                <input
-                  type="number"
+                <NumberInput
                   className={`${inputClassName(
-                    financialData.discountValue
+                    financialData[field.key]
                   )} pl-10`}
-                  value={financialData.discountValue ?? ""}
+                  value={financialData[field.key] || ""}
                   onChange={(e) =>
-                    handleNumberChange("discountValue", e.target.value)
+                    handleNumberChange(field.key, e.target.value)
                   }
                   placeholder="0"
                   min="0"
-                  max={
-                    financialData.discountType === "percentage"
-                      ? 100
-                      : undefined
-                  }
                 />
+              </div>
+              {field.showWarning && showRoomWarning && (
+                <p className="text-xs text-amber-600 mt-1">
+                  Please fill room/seat number in Status section
+                </p>
+              )}
+            </div>
+          ))}
+        </div>
+
+        {/* Discount Section - Matching Pathology Style */}
+        <div className="pt-4 border-t border-green-200">
+          <label className="block text-gray-700 text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2">
+            Discount
+          </label>
+
+          {/* Input with integrated type switcher */}
+          <div className="relative flex items-stretch rounded-lg border-2 border-gray-300 bg-white overflow-hidden focus-within:border-green-600 focus-within:ring-2 focus-within:ring-green-100 transition-all duration-300 h-12 md:h-14">
+            {/* Discount Input */}
+            <input
+              type="number"
+              className="flex-1 px-4 py-2 text-gray-700 font-normal outline-none text-xs sm:text-sm bg-transparent cursor-pointer"
+              value={discountInput}
+              onChange={handleDiscountInputChange}
+              placeholder="Enter discount amount"
+              min="0"
+              max={
+                financialData.discountType === "percentage"
+                  ? 100
+                  : financialData.totalAmount
+              }
+            />
+
+            {/* Integrated Type Switcher */}
+            <div className="flex items-center border-l border-gray-200 bg-gray-50">
+              <button
+                type="button"
+                onClick={() => handleDiscountTypeChange("percentage")}
+                className={`px-3 sm:px-4 h-full text-xs sm:text-sm font-medium transition-all cursor-pointer ${
+                  financialData.discountType === "percentage"
+                    ? "bg-green-600 text-white"
+                    : "text-gray-600 hover:bg-gray-100"
+                }`}
+              >
+                %
+              </button>
+              <button
+                type="button"
+                onClick={() => handleDiscountTypeChange("value")}
+                className={`px-3 sm:px-4 h-full text-xs sm:text-sm font-medium transition-all cursor-pointer ${
+                  financialData.discountType === "value"
+                    ? "bg-green-600 text-white"
+                    : "text-gray-600 hover:bg-gray-100"
+                }`}
+              >
+                ৳
+              </button>
+            </div>
+          </div>
+
+          {/* Discount Summary */}
+          {financialData.totalAmount > 0 && (
+            <div className="mt-2 p-2.5 bg-green-50 rounded-lg border border-green-200">
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-gray-600">Patient saves:</span>
+                <span className="font-bold text-green-600">
+                  ৳{(financialData.discountAmount || 0).toLocaleString()}
+                  {financialData.discountType === "percentage" &&
+                    discountInput !== "" &&
+                    discountInput > 0 && (
+                      <span className="text-gray-500 font-normal ml-1">
+                        ({discountInput}%)
+                      </span>
+                    )}
+                </span>
               </div>
             </div>
           )}
         </div>
 
-        {/* Totals */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-4 border-t border-green-200 bg-green-100/50 rounded-xl p-4">
-          <div>
-            <label className="block text-gray-600 text-xs font-medium mb-1">
-              Total Amount
-            </label>
-            <p className="text-lg font-bold text-gray-800">
-              ৳ {financialData.totalAmount.toLocaleString()}
-            </p>
-          </div>
-          <div>
-            <label className="block text-gray-600 text-xs font-medium mb-1">
-              Discount
-            </label>
-            <p className="text-lg font-bold text-red-600">
-              - ৳ {financialData.discountAmount.toLocaleString()}
-            </p>
-          </div>
-          <div>
-            <label className="block text-gray-600 text-xs font-medium mb-1">
-              Grand Total
-            </label>
-            <p className="text-xl font-bold text-green-700">
-              ৳ {financialData.grandTotal.toLocaleString()}
-            </p>
+        {/* Grand Total */}
+        <div>
+          <label className="block text-gray-700 text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2">
+            Grand Total (BDT){" "}
+            <span className="text-[10px] font-normal text-gray-500">
+              (After Discount)
+            </span>
+          </label>
+          <div className="relative">
+            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-semibold">
+              ৳
+            </span>
+            <input
+              type="number"
+              className={`${inputClassName(
+                financialData.grandTotal,
+                true
+              )} pl-10 font-bold text-green-600`}
+              value={financialData.grandTotal}
+              readOnly
+              placeholder="0"
+            />
           </div>
         </div>
 
-        {/* Payment */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {/* Amount Paid and Due Amount - Side by side */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Amount Paid */}
           <div>
             <label className="block text-gray-700 text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2">
-              Paid Amount
+              Amount Paid (BDT)
             </label>
             <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-medium">
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-semibold">
                 ৳
               </span>
               <input
                 type="number"
-                className={`${inputClassName(financialData.paidAmount)} pl-8`}
+                className={`${inputClassName(
+                  financialData.paidAmount,
+                  false
+                )} pl-10`}
                 value={financialData.paidAmount || ""}
-                onChange={(e) =>
-                  handleNumberChange("paidAmount", e.target.value)
-                }
-                placeholder="0"
+                onChange={handlePaymentChange}
+                placeholder="Enter payment amount"
                 min="0"
+                max={financialData.grandTotal}
               />
             </div>
+            <p className="text-xs text-gray-500 mt-1">
+              Amount collected from the patient
+            </p>
           </div>
+
+          {/* Due Amount */}
           <div>
             <label className="block text-gray-700 text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2">
-              Due Amount
+              Due Amount (BDT){" "}
+              <span className="text-[10px] font-normal text-gray-500">
+                (Auto-calculated)
+              </span>
             </label>
             <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-medium">
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-semibold">
                 ৳
               </span>
               <input
@@ -330,15 +372,21 @@ const FinancialInformation: React.FC = () => {
                 className={`${inputClassName(
                   financialData.dueAmount,
                   true
-                )} pl-8 ${
+                )} pl-10 ${
                   financialData.dueAmount > 0
-                    ? "border-red-500! bg-red-50!"
-                    : ""
+                    ? "text-orange-600 font-bold"
+                    : "text-green-600 font-bold"
                 }`}
                 value={financialData.dueAmount}
                 readOnly
+                placeholder="0"
               />
             </div>
+            <p className="text-xs text-gray-500 mt-1">
+              {financialData.dueAmount > 0
+                ? "Remaining balance to be collected"
+                : "Fully paid ✓"}
+            </p>
           </div>
         </div>
       </div>

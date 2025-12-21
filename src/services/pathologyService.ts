@@ -290,9 +290,27 @@ export async function createPathologyPatient(
       });
     }
 
-    // 3. Generate unique test number
-    const testCount = await tx.pathologyTest.count();
-    const testNumber = `PATH-${Date.now()}-${testCount + 1}`;
+    // 3. Generate unique test number with date-based format (like admissions)
+    const now = new Date();
+    const datePrefix = now.toISOString().slice(2, 10).replace(/-/g, ""); // YYMMDD
+    const startOfDay = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate()
+    );
+    const endOfDay = new Date(startOfDay.getTime() + 24 * 60 * 60 * 1000);
+    const countToday = await tx.pathologyTest.count({
+      where: {
+        testDate: {
+          gte: startOfDay,
+          lt: endOfDay,
+        },
+      },
+    });
+    const testNumber = `PATH-${datePrefix}-${String(countToday + 1).padStart(
+      4,
+      "0"
+    )}`;
 
     // 4. Validate orderedById - required field, must be provided from frontend
     if (!pathologyData.orderedById) {

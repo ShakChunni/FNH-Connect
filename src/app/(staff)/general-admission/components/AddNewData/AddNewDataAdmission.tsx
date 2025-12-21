@@ -237,7 +237,6 @@ const AddNewDataAdmission: React.FC<AddNewDataProps> = ({
       {isOpen && (
         <motion.div
           className="fixed inset-0 bg-slate-900/70 flex items-center justify-center z-100000"
-          onClick={handleClose}
           variants={backdropVariants}
           initial="hidden"
           animate="visible"
@@ -252,7 +251,6 @@ const AddNewDataAdmission: React.FC<AddNewDataProps> = ({
           <motion.div
             ref={popupRef}
             className="bg-white rounded-3xl shadow-lg w-full max-w-[95%] sm:max-w-[90%] md:max-w-[80%] lg:max-w-[75%] xl:max-w-[75%] h-[95%] sm:h-[90%] popup-content flex flex-col"
-            onClick={(e) => e.stopPropagation()}
             variants={modalVariants}
             initial="hidden"
             animate="visible"

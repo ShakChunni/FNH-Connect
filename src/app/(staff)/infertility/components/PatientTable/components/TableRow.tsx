@@ -8,9 +8,16 @@ interface TableRowProps {
   index: number;
   headers: TableHeader[];
   onEdit?: (patient: InfertilityPatientData) => void;
+  onClick?: () => void;
 }
 
-const TableRow: React.FC<TableRowProps> = ({ row, index, headers, onEdit }) => {
+const TableRow: React.FC<TableRowProps> = ({
+  row,
+  index,
+  headers,
+  onEdit,
+  onClick,
+}) => {
   const FIRST_COL_WIDTH = "w-[90px] min-w-[90px]";
   const SECOND_COL_WIDTH = "w-[180px] min-w-[180px]";
 
@@ -33,7 +40,10 @@ const TableRow: React.FC<TableRowProps> = ({ row, index, headers, onEdit }) => {
         return (
           <div className="flex items-center gap-2">
             <button
-              onClick={() => onEdit?.(row)}
+              onClick={(e) => {
+                e.stopPropagation();
+                onEdit?.(row);
+              }}
               className="inline-flex items-center gap-1 px-2 py-1 bg-fnh-navy text-white rounded-lg hover:bg-fnh-navy-dark transition-colors cursor-pointer"
               title="Edit patient"
             >
@@ -141,7 +151,10 @@ const TableRow: React.FC<TableRowProps> = ({ row, index, headers, onEdit }) => {
   };
 
   return (
-    <tr className="hover:bg-gray-50 transition-colors">
+    <tr
+      className="hover:bg-gray-50 transition-colors cursor-pointer group"
+      onClick={onClick}
+    >
       {headers.map((header, headerIndex) => (
         <td key={header.key} className={getCellClasses(headerIndex)}>
           {renderCellContent(header)}

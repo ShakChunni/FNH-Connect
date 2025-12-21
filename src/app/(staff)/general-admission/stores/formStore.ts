@@ -111,6 +111,10 @@ const initialFinancialData: FinancialData = {
   serviceCharge: 0,
   seatRent: 0,
   otCharge: 0,
+  doctorCharge: 0,
+  surgeonCharge: 0,
+  anesthesiaFee: 0,
+  assistantDoctorFee: 0,
   medicineCharge: 0,
   otherCharges: 0,
   totalAmount: 0,
@@ -197,6 +201,10 @@ export const useAdmissionFormStore = create<FormStore>((set, get) => ({
         serviceCharge,
         seatRent,
         otCharge,
+        doctorCharge,
+        surgeonCharge,
+        anesthesiaFee,
+        assistantDoctorFee,
         medicineCharge,
         otherCharges,
         discountType,
@@ -210,6 +218,10 @@ export const useAdmissionFormStore = create<FormStore>((set, get) => ({
         serviceCharge +
         seatRent +
         otCharge +
+        doctorCharge +
+        surgeonCharge +
+        anesthesiaFee +
+        assistantDoctorFee +
         medicineCharge +
         otherCharges;
 
@@ -298,6 +310,10 @@ export const useAdmissionFormStore = create<FormStore>((set, get) => ({
         serviceCharge: Number(admission.serviceCharge) || 0,
         seatRent: Number(admission.seatRent) || 0,
         otCharge: Number(admission.otCharge) || 0,
+        doctorCharge: Number(admission.doctorCharge) || 0,
+        surgeonCharge: Number(admission.surgeonCharge) || 0,
+        anesthesiaFee: Number(admission.anesthesiaFee) || 0,
+        assistantDoctorFee: Number(admission.assistantDoctorFee) || 0,
         medicineCharge: Number(admission.medicineCharge) || 0,
         otherCharges: Number(admission.otherCharges) || 0,
         totalAmount: Number(admission.totalAmount) || 0,

@@ -4,7 +4,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
+  url      = env("DATABASE_URL_NON_POOLING")
 }
 
 // Core Models
@@ -19,13 +19,15 @@ model Patient {
   email       String?
   bloodGroup  String?
   dateOfBirth DateTime?
+  occupation  String? // Patient's occupation
 
-  guardianName    String? // For infertility patients, this is spouse name
-  guardianGender  String? // For infertility patients, this is spouse gender
-  guardianPhone   String?
-  guardianAddress String?
-  guardianEmail   String?
-  guardianDOB     DateTime?
+  guardianName       String? // For infertility patients, this is spouse name
+  guardianGender     String? // For infertility patients, this is spouse gender
+  guardianPhone      String?
+  guardianAddress    String?
+  guardianEmail      String?
+  guardianDOB        DateTime?
+  guardianOccupation String? // Spouse/Guardian occupation
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -129,12 +131,16 @@ model Admission {
   status          String    @default("Admitted") // "Admitted", "Under Treatment", "Awaiting Discharge", "Discharged"
 
   // Financial
-  admissionFee   Decimal @default(0)
-  serviceCharge  Decimal @default(0)
-  seatRent       Decimal @default(0)
-  otCharge       Decimal @default(0)
-  medicineCharge Decimal @default(0)
-  otherCharges   Decimal @default(0)
+  admissionFee       Decimal @default(0)
+  serviceCharge      Decimal @default(0)
+  seatRent           Decimal @default(0)
+  otCharge           Decimal @default(0)
+  doctorCharge       Decimal @default(0)
+  surgeonCharge      Decimal @default(0)
+  anesthesiaFee      Decimal @default(0)
+  assistantDoctorFee Decimal @default(0)
+  medicineCharge     Decimal @default(0)
+  otherCharges       Decimal @default(0)
 
   totalAmount    Decimal  @default(0)
   discountType   String? // "percentage" or "value"

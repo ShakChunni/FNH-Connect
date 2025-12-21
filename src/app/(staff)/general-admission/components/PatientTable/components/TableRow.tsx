@@ -1,12 +1,17 @@
 import React from "react";
 import { Edit2, Printer, FileText } from "lucide-react";
-import { AdmissionPatientData, ADMISSION_STATUS_OPTIONS } from "../../../types";
+import {
+  AdmissionPatientData,
+  ADMISSION_STATUS_OPTIONS,
+  AdmissionStatus,
+} from "../../../types";
 import { TableHeader, formatCurrency, formatDateWithTime } from "../utils";
 import {
   generateAdmissionReceipt,
   generateAdmissionInvoice,
 } from "../../../utils/generateReceipt";
 import { useAuth } from "@/app/AuthContext";
+import StatusDropdown from "./StatusDropdown";
 
 interface TableRowProps {
   row: AdmissionPatientData;
@@ -14,6 +19,8 @@ interface TableRowProps {
   headers: TableHeader[];
   onEdit?: (patient: AdmissionPatientData) => void;
   onPatientClick?: (patient: AdmissionPatientData) => void;
+  onStatusChange?: (patientId: number, newStatus: AdmissionStatus) => void;
+  isStatusUpdating?: boolean;
 }
 
 const TableRow: React.FC<TableRowProps> = ({
@@ -22,6 +29,8 @@ const TableRow: React.FC<TableRowProps> = ({
   headers,
   onEdit,
   onPatientClick,
+  onStatusChange,
+  isStatusUpdating = false,
 }) => {
   const { user } = useAuth();
 
@@ -52,6 +61,7 @@ const TableRow: React.FC<TableRowProps> = ({
       amber: "bg-yellow-100 text-yellow-800",
       purple: "bg-purple-100 text-purple-800",
       green: "bg-green-100 text-green-800",
+      red: "bg-red-100 text-red-800",
     };
     return (
       <span
@@ -62,6 +72,10 @@ const TableRow: React.FC<TableRowProps> = ({
         {option?.label || status}
       </span>
     );
+  };
+
+  const handleStatusChange = (newStatus: AdmissionStatus) => {
+    onStatusChange?.(row.id, newStatus);
   };
 
   const renderCellContent = (header: TableHeader) => {
@@ -132,6 +146,13 @@ const TableRow: React.FC<TableRowProps> = ({
       case "actions":
         return (
           <div className="flex items-center gap-1.5">
+            {/* Status Dropdown */}
+            <StatusDropdown
+              currentStatus={row.status}
+              onStatusChange={handleStatusChange}
+              isUpdating={isStatusUpdating}
+            />
+
             {/* Edit Button */}
             <button
               onClick={() => onEdit?.(row)}

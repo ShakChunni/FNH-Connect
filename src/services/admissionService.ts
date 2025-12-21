@@ -60,6 +60,10 @@ export interface FinancialData {
   serviceCharge: number;
   seatRent: number;
   otCharge: number;
+  doctorCharge: number;
+  surgeonCharge: number;
+  anesthesiaFee: number;
+  assistantDoctorFee: number;
   medicineCharge: number;
   otherCharges: number;
   discountType: string | null;
@@ -368,6 +372,10 @@ export async function updateAdmission(
     serviceCharge?: number;
     seatRent?: number;
     otCharge?: number;
+    doctorCharge?: number;
+    surgeonCharge?: number;
+    anesthesiaFee?: number;
+    assistantDoctorFee?: number;
     medicineCharge?: number;
     otherCharges?: number;
     discountType?: string | null;
@@ -392,27 +400,89 @@ export async function updateAdmission(
       throw new Error("Admission record not found");
     }
 
-    // Calculate totals
-    const admissionFee = Number(existingAdmission.admissionFee);
-    const serviceCharge =
-      updateData.serviceCharge ?? Number(existingAdmission.serviceCharge);
-    const seatRent = updateData.seatRent ?? Number(existingAdmission.seatRent);
-    const otCharge = updateData.otCharge ?? Number(existingAdmission.otCharge);
-    const medicineCharge =
-      updateData.medicineCharge ?? Number(existingAdmission.medicineCharge);
-    const otherCharges =
-      updateData.otherCharges ?? Number(existingAdmission.otherCharges);
+    // Check if this is a cancellation or restore from canceled
+    const isCanceling = updateData.status === "Canceled";
+    const isRestoring =
+      existingAdmission.status === "Canceled" &&
+      updateData.status !== "Canceled";
+
+    // Calculate totals based on status
+    let admissionFee: number;
+    let serviceCharge: number;
+    let seatRent: number;
+    let otCharge: number;
+    let doctorCharge: number;
+    let surgeonCharge: number;
+    let anesthesiaFee: number;
+    let assistantDoctorFee: number;
+    let medicineCharge: number;
+    let otherCharges: number;
+    let paidAmountNew: number;
+
+    if (isCanceling) {
+      // Cancellation: Zero out all charges, set paid to 0 (implies refund needed)
+      admissionFee = 0;
+      serviceCharge = 0;
+      seatRent = 0;
+      otCharge = 0;
+      doctorCharge = 0;
+      surgeonCharge = 0;
+      anesthesiaFee = 0;
+      assistantDoctorFee = 0;
+      medicineCharge = 0;
+      otherCharges = 0;
+      paidAmountNew = 0; // Previous paid amount will need to be refunded manually
+    } else if (isRestoring) {
+      // Restore from canceled: Set admission fee to 300, other charges 0
+      admissionFee = 300;
+      serviceCharge = updateData.serviceCharge ?? 0;
+      seatRent = updateData.seatRent ?? 0;
+      otCharge = updateData.otCharge ?? 0;
+      doctorCharge = updateData.doctorCharge ?? 0;
+      surgeonCharge = updateData.surgeonCharge ?? 0;
+      anesthesiaFee = updateData.anesthesiaFee ?? 0;
+      assistantDoctorFee = updateData.assistantDoctorFee ?? 0;
+      medicineCharge = updateData.medicineCharge ?? 0;
+      otherCharges = updateData.otherCharges ?? 0;
+      paidAmountNew = updateData.paidAmount ?? 0;
+    } else {
+      // Normal update: Use existing values or provided updates
+      admissionFee = Number(existingAdmission.admissionFee);
+      serviceCharge =
+        updateData.serviceCharge ?? Number(existingAdmission.serviceCharge);
+      seatRent = updateData.seatRent ?? Number(existingAdmission.seatRent);
+      otCharge = updateData.otCharge ?? Number(existingAdmission.otCharge);
+      doctorCharge =
+        updateData.doctorCharge ?? Number(existingAdmission.doctorCharge);
+      surgeonCharge =
+        updateData.surgeonCharge ?? Number(existingAdmission.surgeonCharge);
+      anesthesiaFee =
+        updateData.anesthesiaFee ?? Number(existingAdmission.anesthesiaFee);
+      assistantDoctorFee =
+        updateData.assistantDoctorFee ??
+        Number(existingAdmission.assistantDoctorFee);
+      medicineCharge =
+        updateData.medicineCharge ?? Number(existingAdmission.medicineCharge);
+      otherCharges =
+        updateData.otherCharges ?? Number(existingAdmission.otherCharges);
+      paidAmountNew =
+        updateData.paidAmount ?? Number(existingAdmission.paidAmount);
+    }
 
     const totalAmount =
       admissionFee +
       serviceCharge +
       seatRent +
       otCharge +
+      doctorCharge +
+      surgeonCharge +
+      anesthesiaFee +
+      assistantDoctorFee +
       medicineCharge +
       otherCharges;
 
-    let discountAmount = updateData.discountAmount ?? 0;
-    if (updateData.discountType && updateData.discountValue) {
+    let discountAmount = isCanceling ? 0 : updateData.discountAmount ?? 0;
+    if (!isCanceling && updateData.discountType && updateData.discountValue) {
       if (updateData.discountType === "percentage") {
         discountAmount = (totalAmount * updateData.discountValue) / 100;
       } else {
@@ -422,8 +492,7 @@ export async function updateAdmission(
     discountAmount = Math.min(discountAmount, totalAmount);
 
     const grandTotal = totalAmount - discountAmount;
-    const paidAmount =
-      updateData.paidAmount ?? Number(existingAdmission.paidAmount);
+    const paidAmount = paidAmountNew;
     const dueAmount = grandTotal - paidAmount;
 
     // Calculate payment difference for tracking
@@ -440,16 +509,28 @@ export async function updateAdmission(
         diagnosis: updateData.diagnosis ?? existingAdmission.diagnosis,
         treatment: updateData.treatment ?? existingAdmission.treatment,
         otType: updateData.otType ?? existingAdmission.otType,
-        remarks: updateData.remarks ?? existingAdmission.remarks,
+        remarks: isCanceling
+          ? `[CANCELED] ${
+              existingAdmission.remarks || ""
+            } - Previous charges refunded`
+          : updateData.remarks ?? existingAdmission.remarks,
+        admissionFee, // Include admission fee for cancellation/restore
         serviceCharge,
         seatRent,
         otCharge,
+        doctorCharge,
+        surgeonCharge,
+        anesthesiaFee,
+        assistantDoctorFee,
         medicineCharge,
         otherCharges,
         totalAmount,
-        discountType: updateData.discountType ?? existingAdmission.discountType,
-        discountValue:
-          updateData.discountValue ?? existingAdmission.discountValue,
+        discountType: isCanceling
+          ? null
+          : updateData.discountType ?? existingAdmission.discountType,
+        discountValue: isCanceling
+          ? null
+          : updateData.discountValue ?? existingAdmission.discountValue,
         discountAmount,
         grandTotal,
         paidAmount,
@@ -644,6 +725,10 @@ export function transformAdmissionForResponse(admission: any) {
     serviceCharge: Number(admission.serviceCharge),
     seatRent: Number(admission.seatRent),
     otCharge: Number(admission.otCharge),
+    doctorCharge: Number(admission.doctorCharge),
+    surgeonCharge: Number(admission.surgeonCharge),
+    anesthesiaFee: Number(admission.anesthesiaFee),
+    assistantDoctorFee: Number(admission.assistantDoctorFee),
     medicineCharge: Number(admission.medicineCharge),
     otherCharges: Number(admission.otherCharges),
     totalAmount: Number(admission.totalAmount),

@@ -183,6 +183,22 @@ const PatientInformation: React.FC = () => {
           </div>
         </div>
 
+        {/* Row 4: Patient Occupation (full width) */}
+        <div className="mb-4">
+          <label className="block text-gray-700 text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2">
+            Patient Occupation
+          </label>
+          <input
+            type="text"
+            className={inputClassName(patientData.occupation)}
+            value={patientData.occupation}
+            onChange={(e) =>
+              setPatientData({ ...patientData, occupation: e.target.value })
+            }
+            placeholder="Patient's occupation"
+          />
+        </div>
+
         {/* Spouse Information Section */}
         <div className="mt-6 pt-6 border-t border-gray-200">
           <h4 className="text-md font-bold text-gray-800 mb-4 flex items-center gap-2">
@@ -217,6 +233,22 @@ const PatientInformation: React.FC = () => {
             <DateOfBirthDropdown
               value={spouseData.dateOfBirth}
               onChange={handleSpouseDOBChange}
+            />
+          </div>
+
+          {/* New Row: Spouse Occupation */}
+          <div className="mt-4">
+            <label className="block text-gray-700 text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2">
+              Spouse Occupation
+            </label>
+            <input
+              type="text"
+              className={inputClassName(spouseData.occupation)}
+              value={spouseData.occupation}
+              onChange={(e) =>
+                setSpouseData({ ...spouseData, occupation: e.target.value })
+              }
+              placeholder="Spouse's occupation"
             />
           </div>
         </div>

@@ -80,9 +80,51 @@ const EditDataPathology: React.FC<EditDataProps> = ({
     isOpen
   );
 
-  // Mutation Hook
+  // Mutation Hook with auto-print on success
   const { editPatient, isLoading: isSubmitting } = useEditPathologyData({
     onSuccess: () => {
+      // Auto-print receipt after successful update
+      const receiptData = {
+        id: initialPatientData.id,
+        patientId: patientData.id,
+        testNumber: initialPatientData.testNumber,
+        patientFullName: `${patientData.firstName} ${
+          patientData.lastName || ""
+        }`.trim(),
+        patientGender: patientData.gender,
+        patientAge: patientData.age,
+        patientDOB: patientData.dateOfBirth?.toISOString() || null,
+        mobileNumber: patientData.phoneNumber,
+        guardianName: guardianData.name,
+        hospitalName: hospitalData.name,
+        testDate: initialPatientData.testDate,
+        testCategory: "Multiple Tests",
+        testResults: { tests: pathologyInfo.selectedTests },
+        remarks: pathologyInfo.remarks,
+        isCompleted: pathologyInfo.isCompleted,
+        testCharge: pathologyInfo.testCharge,
+        discountType: pathologyInfo.discountType,
+        discountValue: pathologyInfo.discountValue,
+        discountAmount: pathologyInfo.discountAmount || 0,
+        grandTotal: pathologyInfo.grandTotal,
+        paidAmount: pathologyInfo.paidAmount,
+        dueAmount: pathologyInfo.dueAmount,
+        orderedBy: null,
+        orderedById: pathologyInfo.orderedById,
+      };
+
+      // Dynamically import and generate receipt
+      import("../../utils/generateReceipt").then(
+        ({ generatePathologyReceipt }) => {
+          setTimeout(() => {
+            generatePathologyReceipt(
+              receiptData as any,
+              user?.fullName || "Staff"
+            );
+          }, 300);
+        }
+      );
+
       onClose(); // closeEditModal now resets form internally
     },
   });
@@ -218,7 +260,6 @@ const EditDataPathology: React.FC<EditDataProps> = ({
       {isOpen && (
         <motion.div
           className="fixed inset-0 bg-slate-900/70 flex items-center justify-center z-100000"
-          onClick={onClose}
           variants={backdropVariants}
           initial="hidden"
           animate="visible"
@@ -233,7 +274,6 @@ const EditDataPathology: React.FC<EditDataProps> = ({
           <motion.div
             ref={popupRef}
             className="bg-white rounded-3xl shadow-lg w-full max-w-[95%] sm:max-w-[90%] md:max-w-[80%] lg:max-w-[75%] xl:max-w-[75%] h-[95%] sm:h-[90%] popup-content flex flex-col"
-            onClick={(e) => e.stopPropagation()}
             variants={modalVariants}
             initial="hidden"
             animate="visible"

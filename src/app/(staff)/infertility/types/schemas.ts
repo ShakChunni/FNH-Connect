@@ -47,6 +47,7 @@ export const patientDataSchema = z.object({
   phoneNumber: z.string(),
   email: z.string(),
   bloodGroup: z.string(),
+  occupation: z.string(),
 });
 
 export const hospitalDataSchema = z.object({
@@ -74,6 +75,7 @@ export const spouseInfoSchema = z.object({
       .transform((val) => (val ? new Date(val) : null))
   ),
   gender: z.string(),
+  occupation: z.string(),
 });
 
 export const medicalInfoSchema = z.object({
