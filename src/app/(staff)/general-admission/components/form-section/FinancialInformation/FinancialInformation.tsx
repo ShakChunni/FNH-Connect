@@ -317,7 +317,7 @@ const FinancialInformation: React.FC = () => {
                 value={financialData.paidAmount || ""}
                 onChange={handlePaymentChange}
                 placeholder="Enter payment amount"
-                min="0"
+                min={isCanceled ? "0" : "300"}
                 max={financialData.grandTotal}
               />
             </div>

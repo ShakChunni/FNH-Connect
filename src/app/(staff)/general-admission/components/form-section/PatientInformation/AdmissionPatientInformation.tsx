@@ -107,7 +107,7 @@ const AdmissionPatientInformation: React.FC = () => {
           <div>
             <div className="flex items-center justify-between mb-1.5 sm:mb-2">
               <label className="block text-gray-700 text-xs sm:text-sm font-semibold">
-                Date of Birth
+                Date of Birth<span className="text-red-500">*</span>
               </label>
               {isExisting && patientData.dateOfBirth && (
                 <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded-full bg-rose-100 text-rose-700 text-xs font-semibold border border-rose-200 shadow-sm">
@@ -129,7 +129,7 @@ const AdmissionPatientInformation: React.FC = () => {
           <div>
             <div className="flex items-center justify-between mb-1.5 sm:mb-2">
               <label className="block text-gray-700 text-xs sm:text-sm font-semibold">
-                Phone Number
+                Phone Number<span className="text-red-500">*</span>
               </label>
               {isExisting && patientData.phoneNumber && (
                 <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 text-xs font-semibold border border-indigo-200 shadow-sm">
@@ -168,6 +168,28 @@ const AdmissionPatientInformation: React.FC = () => {
               isAutofilled={isExisting}
             />
           </div>
+        </div>
+
+        {/* Blood Group - Full width row */}
+        <div>
+          <div className="flex items-center justify-between mb-1.5 sm:mb-2">
+            <label className="block text-gray-700 text-xs sm:text-sm font-semibold">
+              Blood Group
+            </label>
+            {isExisting && patientData.bloodGroup && (
+              <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded-full bg-red-100 text-red-700 text-xs font-semibold border border-red-200 shadow-sm">
+                <Droplets className="w-3 h-3 mr-1 text-red-500" /> Auto-filled
+              </span>
+            )}
+          </div>
+          <BloodGroupDropdown
+            value={patientData.bloodGroup || ""}
+            onSelect={(val) =>
+              setPatientData({ ...patientData, bloodGroup: val })
+            }
+            options={["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"]}
+            inputClassName={inputClassName(patientData.bloodGroup)}
+          />
         </div>
 
         {/* Guardian Information Section */}
@@ -231,51 +253,20 @@ const AdmissionPatientInformation: React.FC = () => {
           </div>
         </div>
 
-        {/* Additional Details */}
+        {/* Address - Full width */}
         <div className="mt-6 pt-6 border-t border-gray-200">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Blood Group */}
-            <div>
-              <div className="flex items-center justify-between mb-1.5 sm:mb-2">
-                <label className="block text-gray-700 text-xs sm:text-sm font-semibold">
-                  Blood Group
-                </label>
-                {isExisting && patientData.bloodGroup && (
-                  <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded-full bg-red-100 text-red-700 text-xs font-semibold border border-red-200 shadow-sm">
-                    <Droplets className="w-3 h-3 mr-1 text-red-500" />{" "}
-                    Auto-filled
-                  </span>
-                )}
-              </div>
-              <BloodGroupDropdown
-                value={patientData.bloodGroup || ""}
-                onSelect={(val) =>
-                  setPatientData({ ...patientData, bloodGroup: val })
-                }
-                options={["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"]}
-                inputClassName={inputClassName(patientData.bloodGroup)}
-              />
-            </div>
-
-            {/* Empty space for alignment if needed, or just let it occupy half */}
-            <div className="hidden md:block"></div>
-
-            {/* Address - Full width at the end like pathology */}
-            <div className="md:col-span-2">
-              <label className="block text-gray-700 text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2">
-                Address
-              </label>
-              <textarea
-                className={`${inputClassName(patientData.address)} resize-none`}
-                value={patientData.address}
-                onChange={(e) =>
-                  setPatientData({ ...patientData, address: e.target.value })
-                }
-                placeholder="Patient address"
-                rows={4}
-              />
-            </div>
-          </div>
+          <label className="block text-gray-700 text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2">
+            Address
+          </label>
+          <textarea
+            className={`${inputClassName(patientData.address)} resize-none`}
+            value={patientData.address}
+            onChange={(e) =>
+              setPatientData({ ...patientData, address: e.target.value })
+            }
+            placeholder="Patient address"
+            rows={4}
+          />
         </div>
       </div>
     </div>

@@ -128,7 +128,7 @@ const initialFinancialData: FinancialData = {
   discountValue: null,
   discountAmount: 0,
   grandTotal: 0,
-  paidAmount: 0,
+  paidAmount: 300, // Admission fee is paid upfront
   dueAmount: 0,
 };
 
@@ -177,10 +177,32 @@ export const useAdmissionFormStore = create<FormStore>((set, get) => ({
       admissionInfo: { ...state.admissionInfo, ...data },
     })),
 
-  updateAdmissionInfo: (key, value) =>
+  updateAdmissionInfo: (key, value) => {
     set((state) => ({
       admissionInfo: { ...state.admissionInfo, [key]: value },
-    })),
+    }));
+    
+    // If status is changed to Canceled, reset all financial charges to 0
+    if (key === "status" && value === "Canceled") {
+      set((state) => ({
+        financialData: {
+          ...state.financialData,
+          admissionFee: 0,
+          serviceCharge: 0,
+          seatRent: 0,
+          otCharge: 0,
+          doctorCharge: 0,
+          surgeonCharge: 0,
+          anesthesiaFee: 0,
+          assistantDoctorFee: 0,
+          medicineCharge: 0,
+          otherCharges: 0,
+          paidAmount: 0,
+        },
+      }));
+      get().calculateTotals();
+    }
+  },
 
   setFinancialData: (data) =>
     set((state) => ({
