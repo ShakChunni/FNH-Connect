@@ -156,16 +156,16 @@ const AdmissionOverview: React.FC<AdmissionOverviewProps> = ({
               onClick={handlePrintReceipt}
               className="inline-flex items-center justify-center gap-2 p-2 sm:px-3 sm:py-2 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-lg hover:bg-emerald-100 transition-colors duration-200 text-xs sm:text-sm font-medium cursor-pointer"
             >
-              <Printer className="w-4 h-4" />
-              <span className="hidden sm:inline">Receipt</span>
+              <FileText className="w-4 h-4" />
+              <span className="hidden sm:inline">Admission Form</span>
             </button>
             <button
               type="button"
               onClick={handlePrintInvoice}
               className="inline-flex items-center justify-center gap-2 p-2 sm:px-3 sm:py-2 bg-violet-50 border border-violet-200 text-violet-700 rounded-lg hover:bg-violet-100 transition-colors duration-200 text-xs sm:text-sm font-medium cursor-pointer"
             >
-              <FileText className="w-4 h-4" />
-              <span className="hidden sm:inline">Invoice</span>
+              <Printer className="w-4 h-4" />
+              <span className="hidden sm:inline">Patient Invoice</span>
             </button>
           </div>
 

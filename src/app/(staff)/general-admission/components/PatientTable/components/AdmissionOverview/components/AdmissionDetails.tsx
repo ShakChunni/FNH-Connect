@@ -69,6 +69,12 @@ export const AdmissionDetails: React.FC<AdmissionDetailsProps> = ({
   ].filter(Boolean);
 
   const medicalDetails = [
+    patient.chiefComplaint && {
+      label: "Chief Complaint",
+      value: patient.chiefComplaint,
+      icon: Stethoscope,
+      color: "bg-indigo-50 text-indigo-600 border-indigo-100",
+    },
     patient.diagnosis && {
       label: "Diagnosis",
       value: patient.diagnosis,

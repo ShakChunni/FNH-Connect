@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import jwt from "jsonwebtoken";
 import { SessionUser } from "@/types/auth";
+import { isAdminRole } from "@/lib/roles";
 
 const SECRET_KEY = process.env.SECRET_KEY as string;
 
@@ -105,13 +106,8 @@ export async function validateServerSession() {
 export async function validateAdminAccess() {
   const { user } = await validateServerSession();
 
-  // Check based on User system role
-  const isAdmin =
-    user.role === "SysAdmin" ||
-    user.role === "Admin" ||
-    user.role === "SuperAdmin"; // Match your actual role strings
-
-  if (!isAdmin) {
+  // Check based on User system role using centralized roles utility
+  if (!isAdminRole(user.role)) {
     redirect("/dashboard");
   }
 

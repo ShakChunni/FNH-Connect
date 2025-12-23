@@ -160,6 +160,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
         paidAmount: validated.paidAmount,
         isDischarged: validated.isDischarged,
         dateDischarged: validated.dateDischarged,
+        chiefComplaint: validated.chiefComplaint,
       },
       staffId,
       userId,

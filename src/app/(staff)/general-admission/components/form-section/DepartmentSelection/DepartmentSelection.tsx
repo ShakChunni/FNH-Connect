@@ -14,11 +14,13 @@ import type { Department, Doctor } from "../../../types";
 interface DepartmentSelectionProps {
   readonly?: boolean;
   allowEditComplaint?: boolean;
+  hideWardRoom?: boolean;
 }
 
 const DepartmentSelection: React.FC<DepartmentSelectionProps> = ({
   readonly = false,
   allowEditComplaint = false,
+  hideWardRoom = false,
 }) => {
   const departmentData = useAdmissionDepartmentData();
   const doctorData = useAdmissionDoctorData();
@@ -134,6 +136,49 @@ const DepartmentSelection: React.FC<DepartmentSelectionProps> = ({
             disabled={readonly && !allowEditComplaint}
           />
         </div>
+
+        {/* Ward & Room - Grid Row */}
+        {!hideWardRoom && (
+          <div className="sm:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4 mt-2">
+            {/* Ward / Cabin */}
+            <div>
+              <label className="block text-gray-700 text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2">
+                Ward / Cabin
+              </label>
+              <input
+                type="text"
+                className={inputClassName(
+                  admissionInfo.ward,
+                  readonly && !allowEditComplaint
+                )}
+                placeholder="Enter Ward/Cabin (e.g. Male Ward)"
+                value={admissionInfo.ward || ""}
+                onChange={(e) => updateAdmissionInfo("ward", e.target.value)}
+                disabled={readonly && !allowEditComplaint}
+              />
+            </div>
+
+            {/* Room / Seat Number */}
+            <div>
+              <label className="block text-gray-700 text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2">
+                Room / Seat No.
+              </label>
+              <input
+                type="text"
+                className={inputClassName(
+                  admissionInfo.seatNumber,
+                  readonly && !allowEditComplaint
+                )}
+                placeholder="Enter Room/Seat No (e.g. 102)"
+                value={admissionInfo.seatNumber || ""}
+                onChange={(e) =>
+                  updateAdmissionInfo("seatNumber", e.target.value)
+                }
+                disabled={readonly && !allowEditComplaint}
+              />
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
