@@ -25,6 +25,7 @@ import {
   usePathologyActions,
 } from "../../stores";
 import { usePathologyScrollSpy } from "../../hooks/usePathologyScrollSpy";
+import { useFetchDoctors } from "../../hooks";
 import { transformPathologyDataForEdit } from "../../utils/formTransformers";
 import { PathologyPatientData } from "../../types";
 import { useNotification } from "@/hooks/useNotification";
@@ -53,6 +54,9 @@ const EditDataPathology: React.FC<EditDataProps> = ({
   const pathologyInfo = usePathologyPathologyInfo();
   const validationStatus = usePathologyValidationStatus();
   const { initializeFormForEdit, afterEditModalClosed } = usePathologyActions();
+
+  // Fetch doctors list to get doctor names
+  const { data: doctors = [] } = useFetchDoctors();
 
   // Initialize form when modal opens
   useEffect(() => {
@@ -83,6 +87,16 @@ const EditDataPathology: React.FC<EditDataProps> = ({
   // Mutation Hook with auto-print on success
   const { editPatient, isLoading: isSubmitting } = useEditPathologyData({
     onSuccess: () => {
+      // Get doctor name from the doctors list
+      const selectedDoctor = doctors.find(
+        (d) => d.id === pathologyInfo.orderedById
+      );
+      const doctorName = selectedDoctor
+        ? selectedDoctor.role.toLowerCase() === "self"
+          ? "Self"
+          : selectedDoctor.fullName
+        : "Self";
+
       // Auto-print receipt after successful update
       const receiptData = {
         id: initialPatientData.id,
@@ -109,7 +123,7 @@ const EditDataPathology: React.FC<EditDataProps> = ({
         grandTotal: pathologyInfo.grandTotal,
         paidAmount: pathologyInfo.paidAmount,
         dueAmount: pathologyInfo.dueAmount,
-        orderedBy: null,
+        orderedBy: doctorName, // Use the resolved doctor name
         orderedById: pathologyInfo.orderedById,
       };
 
