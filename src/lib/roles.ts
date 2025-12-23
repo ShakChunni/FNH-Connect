@@ -4,6 +4,7 @@
  * System Roles (User.role) - These are stored in the database:
  * - system-admin: Full system access, can manage everything
  * - admin: Administrative access, can manage users and system settings
+ * - receptionist: Limited access - dashboard, general-admission, pathology only
  * - staff: Regular staff access, limited to their department/patient data
  *
  * Note: We also handle legacy formats like "SysAdmin", "System Admin", etc.
@@ -16,6 +17,7 @@
 export enum SystemRole {
   SYSTEM_ADMIN = "system-admin",
   ADMIN = "admin",
+  RECEPTIONIST = "receptionist",
   STAFF = "staff",
 }
 
@@ -28,6 +30,22 @@ export enum HospitalRole {
   PIC = "PIC",
   RECEPTIONIST = "Receptionist",
 }
+
+// Routes that receptionists can access
+export const RECEPTIONIST_ALLOWED_ROUTES = [
+  "/dashboard",
+  "/general-admission",
+  "/pathology",
+  "/patient-records",
+  "/api/dashboard",
+  "/api/general-admission",
+  "/api/pathology",
+  "/api/patient-records",
+  "/api/auth", // Auth routes are always allowed
+  "/api/staff", // Staff/doctors list for dropdowns
+  "/api/hospitals", // Hospitals list for dropdowns
+  "/api/patients", // Patient data
+];
 
 /**
  * Normalize role string to check against canonical values
@@ -42,6 +60,9 @@ function normalizeRole(role: string): string {
   }
   if (lower === "admin" || lower === "administrator") {
     return SystemRole.ADMIN;
+  }
+  if (lower === "receptionist") {
+    return SystemRole.RECEPTIONIST;
   }
   if (lower === "staff" || lower === "employee") {
     return SystemRole.STAFF;
@@ -68,6 +89,13 @@ export function isSystemAdminRole(role: string): boolean {
 }
 
 /**
+ * Check if user has receptionist role
+ */
+export function isReceptionistRole(role: string): boolean {
+  return normalizeRole(role) === SystemRole.RECEPTIONIST;
+}
+
+/**
  * Check if user has staff privileges
  */
 export function isStaffRole(role: string): boolean {
@@ -85,6 +113,8 @@ export function getRoleDisplayName(role: string): string {
       return "System Administrator";
     case SystemRole.ADMIN:
       return "Administrator";
+    case SystemRole.RECEPTIONIST:
+      return "Receptionist";
     case SystemRole.STAFF:
       return "Staff";
     default:
@@ -118,4 +148,13 @@ export function canAccessSystemSettings(userRole: string): boolean {
  */
 export function canViewActivityLogs(userRole: string): boolean {
   return isAdminRole(userRole);
+}
+
+/**
+ * Check if a receptionist can access a given path
+ */
+export function canReceptionistAccessPath(pathname: string): boolean {
+  return RECEPTIONIST_ALLOWED_ROUTES.some(
+    (route) => pathname === route || pathname.startsWith(route + "/")
+  );
 }

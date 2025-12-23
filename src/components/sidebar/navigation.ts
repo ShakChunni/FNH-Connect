@@ -9,7 +9,15 @@ import {
   Building2,
 } from "lucide-react";
 import { NavigationItem } from "./types";
-import { isAdminRole } from "@/lib/roles";
+import { isAdminRole, isReceptionistRole } from "@/lib/roles";
+
+// Receptionist allowed routes for sidebar filtering
+const RECEPTIONIST_SIDEBAR_ROUTES = [
+  "/dashboard",
+  "/general-admission",
+  "/pathology",
+  "/patient-records",
+];
 
 // Full navigation items - will be filtered based on user role
 export const navigationItems: NavigationItem[] = [
@@ -66,6 +74,14 @@ export function getNavigationItems(userRole?: string): NavigationItem[] {
   if (!userRole) {
     // No role means no session - only return non-admin items
     return navigationItems.filter((item) => !item.adminOnly);
+  }
+
+  // Check if user is a receptionist - limited navigation
+  if (isReceptionistRole(userRole)) {
+    return navigationItems.filter(
+      (item) =>
+        !item.adminOnly && RECEPTIONIST_SIDEBAR_ROUTES.includes(item.href)
+    );
   }
 
   // Use the existing isAdminRole function from roles.ts

@@ -77,7 +77,7 @@ const PatientOverview: React.FC<PatientOverviewProps> = ({
               Case ID
             </span>
             <span className="text-[10px] sm:text-[11px] font-bold text-indigo-700 font-mono">
-              #INF{patient.id}
+              #{patient.caseNumber || `INF-${patient.id}`}
             </span>
           </div>
           <div className="hidden sm:flex items-center gap-1.5 px-2 py-1 bg-slate-50 border border-slate-100 rounded-md">
