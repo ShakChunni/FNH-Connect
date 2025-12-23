@@ -279,7 +279,7 @@ export const useAdmissionFormStore = create<FormStore>((set, get) => ({
         fullName: admission.patientFullName || "",
         gender: admission.patientGender || "",
         age: admission.patientAge,
-        dateOfBirth: null, // Not included in list response, could add if needed
+        dateOfBirth: parseDate(admission.patientDateOfBirth || null),
         address: admission.patientAddress || "",
         phoneNumber: admission.patientPhone || "",
         email: admission.patientEmail || "",

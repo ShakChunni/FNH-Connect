@@ -158,18 +158,21 @@ export default function DesktopSidebar({
   }, [isPinned, onPinnedChange]);
 
   const handleLogoutClick = () => {
-    // Check if user has a role that typically has shifts
-    // You might want to refine this check based on actual shift data if available
+    // Check if user has a role that typically has shifts (handles cash)
     const role = user?.role?.toLowerCase();
-    const staffRole = (user as any)?.staffRole?.toLowerCase() || ""; // Assuming staffRole might be available on user or we check generic role
+    const staffRole = (user as any)?.staffRole?.toLowerCase() || "";
 
-    // Check system roles that use shifts
-    if (
+    // Roles that need to confirm shift end: system-admin, operator, receptionist, staff
+    const needsShiftConfirmation =
       role === "system-admin" ||
       role === "operator" ||
+      role === "receptionist" ||
+      role === "staff" ||
       staffRole === "system-admin" ||
-      staffRole === "operator"
-    ) {
+      staffRole === "operator" ||
+      staffRole === "receptionist";
+
+    if (needsShiftConfirmation) {
       setShowLogoutConfirm(true);
     } else {
       logout();
