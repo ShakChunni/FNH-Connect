@@ -265,8 +265,14 @@ export default function DesktopSidebar({
               )}
             </div>
 
-            {/* Navigation inside first container */}
-            <nav className="overflow-y-auto">
+            {/* Navigation inside first container - Scrollable with fixed height */}
+            <nav
+              className="overflow-y-auto sidebar-scrollbar pr-1"
+              style={{
+                maxHeight: "calc(100vh - 280px)", // Accounts for logo, user section, and padding
+                minHeight: "200px", // Ensures at least some navigation is visible
+              }}
+            >
               <ul className="space-y-3">
                 {getNavigationItems(user?.role).map((item) => {
                   const isActive = pathname === item.href;
