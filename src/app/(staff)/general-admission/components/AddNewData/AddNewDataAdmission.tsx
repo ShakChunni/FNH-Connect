@@ -315,10 +315,10 @@ const AddNewDataAdmission: React.FC<AddNewDataProps> = ({
                   <AdmissionHospitalInformation />
                 </div>
                 <div id="patient">
-                  <AdmissionPatientInformation />
+                  <AdmissionPatientInformation showAdmissionDetails={true} />
                 </div>
                 <div id="department">
-                  <DepartmentSelection />
+                  <DepartmentSelection hideWardRoom={true} />
                 </div>
               </div>
             </div>

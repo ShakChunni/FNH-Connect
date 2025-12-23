@@ -1,16 +1,37 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { User, Phone, Mail, Calendar, UserCheck, Droplets } from "lucide-react";
+import {
+  User,
+  Phone,
+  Mail,
+  Calendar,
+  UserCheck,
+  Droplets,
+  Bed,
+  MapPin,
+} from "lucide-react";
 import AdmissionPatientSearch from "./AdmissionPatientSearch";
-import { useAdmissionPatientData, useAdmissionActions } from "../../../stores";
+import {
+  useAdmissionPatientData,
+  useAdmissionActions,
+  useAdmissionInfo,
+} from "../../../stores";
 import GenderDropdown from "@/components/form-sections/Fields/GenderDropdown";
 import DateOfBirthDropdown from "@/components/form-sections/Fields/DobDropdown";
 import ContactPhoneInput from "@/components/form-sections/Fields/ContactPhoneInput";
 import ContactEmailInput from "@/components/form-sections/Fields/ContactEmailInput";
 import BloodGroupDropdown from "@/components/form-sections/Fields/BloodGroupDropdown";
 
-const AdmissionPatientInformation: React.FC = () => {
+interface AdmissionPatientInformationProps {
+  showAdmissionDetails?: boolean;
+}
+
+const AdmissionPatientInformation: React.FC<
+  AdmissionPatientInformationProps
+> = ({ showAdmissionDetails = false }) => {
   const patientData = useAdmissionPatientData();
-  const { setPatientData, setValidationStatus } = useAdmissionActions();
+  const admissionInfo = useAdmissionInfo();
+  const { setPatientData, setValidationStatus, updateAdmissionInfo } =
+    useAdmissionActions();
 
   const [isPhoneValid, setIsPhoneValid] = useState(true);
   const [isEmailValid, setIsEmailValid] = useState(true);
@@ -253,20 +274,74 @@ const AdmissionPatientInformation: React.FC = () => {
           </div>
         </div>
 
-        {/* Address - Full width */}
+        {/* Admission Details & Address - Responsive Grid */}
         <div className="mt-6 pt-6 border-t border-gray-200">
-          <label className="block text-gray-700 text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2">
-            Address
-          </label>
-          <textarea
-            className={`${inputClassName(patientData.address)} resize-none`}
-            value={patientData.address}
-            onChange={(e) =>
-              setPatientData({ ...patientData, address: e.target.value })
-            }
-            placeholder="Patient address"
-            rows={4}
-          />
+          <div
+            className={`grid grid-cols-1 ${
+              showAdmissionDetails ? "lg:grid-cols-2" : ""
+            } gap-6`}
+          >
+            {/* Ward & Room Column (Only in Admission Form) */}
+            {showAdmissionDetails && (
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  {/* Ward / Cabin */}
+                  <div>
+                    <label className="block text-gray-700 text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2">
+                      <Bed className="w-3.5 h-3.5 inline mr-1 text-indigo-500" />
+                      Ward / Cabin
+                    </label>
+                    <input
+                      type="text"
+                      className={inputClassName(patientData.address)} // Reusing logic for styling
+                      placeholder="e.g. Male Ward"
+                      value={admissionInfo.ward || ""}
+                      onChange={(e) =>
+                        updateAdmissionInfo("ward", e.target.value)
+                      }
+                      style={{ height: "48px" }}
+                    />
+                  </div>
+                  {/* Room / Seat No */}
+                  <div>
+                    <label className="block text-gray-700 text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2">
+                      Room / Seat No.
+                    </label>
+                    <input
+                      type="text"
+                      className={inputClassName(patientData.address)}
+                      placeholder="e.g. 101"
+                      value={admissionInfo.seatNumber || ""}
+                      onChange={(e) =>
+                        updateAdmissionInfo("seatNumber", e.target.value)
+                      }
+                      style={{ height: "48px" }}
+                    />
+                  </div>
+                </div>
+                <p className="text-[10px] text-gray-400 font-medium bg-gray-50/50 p-2 rounded-lg border border-gray-100 italic">
+                  Note: Specify patient location for this admission.
+                </p>
+              </div>
+            )}
+
+            {/* Address Column */}
+            <div>
+              <label className="block text-gray-700 text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2">
+                <MapPin className="w-3.5 h-3.5 inline mr-1 text-indigo-500" />
+                Patient Address
+              </label>
+              <textarea
+                className={`${inputClassName(patientData.address)} resize-none`}
+                value={patientData.address}
+                onChange={(e) =>
+                  setPatientData({ ...patientData, address: e.target.value })
+                }
+                placeholder="Patient full residential address..."
+                rows={showAdmissionDetails ? 3 : 4}
+              />
+            </div>
+          </div>
         </div>
       </div>
     </div>

@@ -154,6 +154,8 @@ export async function POST(request: NextRequest) {
         departmentId: validated.departmentId,
         doctorId: validated.doctorId,
         chiefComplaint: validated.chiefComplaint,
+        ward: validated.ward,
+        seatNumber: validated.seatNumber,
       },
       staffId,
       userId,

@@ -7,6 +7,7 @@ import {
   FileText,
   ClipboardList,
   Building2,
+  Wallet,
 } from "lucide-react";
 import { NavigationItem } from "./types";
 import { isAdminRole, isReceptionistRole } from "@/lib/roles";
@@ -45,6 +46,12 @@ export const navigationItems: NavigationItem[] = [
     label: "Pathology",
     href: "/pathology",
     icon: Microscope,
+  },
+  {
+    label: "Cash Tracking",
+    href: "/admin/cash-tracking",
+    icon: Wallet,
+    adminOnly: true,
   },
   {
     label: "Admin Dashboard",

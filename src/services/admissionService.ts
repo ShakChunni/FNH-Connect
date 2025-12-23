@@ -423,6 +423,7 @@ export async function updateAdmission(
     paidAmount?: number;
     isDischarged?: boolean;
     dateDischarged?: Date | null;
+    chiefComplaint?: string;
   },
   staffId: number,
   userId: number,
@@ -548,6 +549,8 @@ export async function updateAdmission(
         diagnosis: updateData.diagnosis ?? existingAdmission.diagnosis,
         treatment: updateData.treatment ?? existingAdmission.treatment,
         otType: updateData.otType ?? existingAdmission.otType,
+        chiefComplaint:
+          updateData.chiefComplaint ?? existingAdmission.chiefComplaint,
         remarks: isCanceling
           ? `[CANCELED] ${
               existingAdmission.remarks || ""
