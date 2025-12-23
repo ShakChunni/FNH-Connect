@@ -20,6 +20,7 @@ import {
   useAdmissionPatientData,
   useAdmissionDepartmentData,
   useAdmissionDoctorData,
+  useAdmissionInfo,
   useAdmissionValidationStatus,
   useAdmissionActions,
 } from "../../stores";
@@ -68,6 +69,7 @@ const AddNewDataAdmission: React.FC<AddNewDataProps> = ({
   const departmentData = useAdmissionDepartmentData();
   const doctorData = useAdmissionDoctorData();
   const validationStatus = useAdmissionValidationStatus();
+  const admissionInfo = useAdmissionInfo();
   const { resetForm, afterAddModalClosed } = useAdmissionActions();
 
   // Custom Hooks
@@ -191,6 +193,7 @@ const AddNewDataAdmission: React.FC<AddNewDataProps> = ({
       },
       departmentId: departmentData.id!,
       doctorId: doctorData.id!,
+      chiefComplaint: admissionInfo.chiefComplaint,
     });
   }, [
     isFormValid,
@@ -200,6 +203,7 @@ const AddNewDataAdmission: React.FC<AddNewDataProps> = ({
     departmentData,
     doctorData,
     addAdmission,
+    admissionInfo,
     validationErrors,
     showNotification,
   ]);

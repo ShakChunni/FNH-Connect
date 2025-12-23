@@ -82,6 +82,7 @@ export interface AdmissionInfo {
   treatment: string;
   otType: string;
   remarks: string;
+  chiefComplaint: string;
 }
 
 export interface FinancialData {
@@ -149,6 +150,7 @@ export interface AdmissionPatientData {
   treatment: string | null;
   otType: string | null;
   remarks: string | null;
+  chiefComplaint: string | null;
   admissionFee: number;
   serviceCharge: number;
   seatRent: number;
@@ -225,6 +227,7 @@ export interface CreateAdmissionPayload {
   };
   departmentId: number;
   doctorId: number;
+  chiefComplaint?: string;
 }
 
 export interface UpdateAdmissionPayload {
@@ -236,6 +239,7 @@ export interface UpdateAdmissionPayload {
   treatment?: string;
   otType?: string;
   remarks?: string;
+  chiefComplaint?: string;
   serviceCharge?: number;
   seatRent?: number;
   otCharge?: number;

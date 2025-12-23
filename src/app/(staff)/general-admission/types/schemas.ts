@@ -64,6 +64,7 @@ export const createAdmissionSchema = z.object({
   patient: patientSchema,
   departmentId: z.number().min(1, "Department is required"),
   doctorId: z.number().min(1, "Doctor is required"),
+  chiefComplaint: z.string().optional(),
 });
 
 export const updateAdmissionSchema = z.object({
@@ -77,6 +78,7 @@ export const updateAdmissionSchema = z.object({
   treatment: z.string().optional(),
   otType: z.string().optional(),
   remarks: z.string().optional(),
+  chiefComplaint: z.string().optional(),
   serviceCharge: z.number().optional(),
   seatRent: z.number().optional(),
   otCharge: z.number().optional(),

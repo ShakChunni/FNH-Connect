@@ -82,17 +82,17 @@ export const generatePathologyReceipt = async (
 
   // Hospital Name
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(22);
+  doc.setFontSize(24); // Increased from 22
   doc.setTextColor(COLORS.primary);
   doc.text(COMPANY_INFO.name, pageWidth / 2, currentY, { align: "center" });
-  currentY += 6;
+  currentY += 7; // Increased from 6
 
   // Address
   doc.setFont("helvetica", "normal");
-  doc.setFontSize(9);
+  doc.setFontSize(10); // Increased from 9
   doc.setTextColor(COLORS.lightText);
   doc.text(COMPANY_INFO.address, pageWidth / 2, currentY, { align: "center" });
-  currentY += 5;
+  currentY += 6; // Increased from 5
 
   // Phone (optional, if you have one)
   // doc.text(`Phone: ${COMPANY_INFO.phone}`, pageWidth / 2, currentY, { align: 'center' });
@@ -113,7 +113,7 @@ export const generatePathologyReceipt = async (
   currentY += 8;
 
   // Receipt # and Date row
-  doc.setFontSize(9);
+  doc.setFontSize(10); // Increased from 9
   doc.setFont("helvetica", "normal");
   doc.setTextColor(COLORS.text);
 
@@ -129,12 +129,11 @@ export const generatePathologyReceipt = async (
   doc.text(`Date: ${requestDate}`, pageWidth - margin, currentY, {
     align: "right",
   });
-  currentY += 10;
+  currentY += 12; // Increased from 10
 
-  // --- Patient Details Section ---
   // Background box for patient details
-  const boxHeight = 35;
-  doc.setFillColor(248, 250, 252); // Very light gray/blue
+  const boxHeight = 44; // Increased from 35
+  doc.setFillColor(248, 250, 252);
   doc.roundedRect(
     margin,
     currentY,
@@ -145,32 +144,28 @@ export const generatePathologyReceipt = async (
     "F"
   );
 
-  const pY = currentY + 6;
+  const pY = currentY + 7;
   const col1X = margin + 5;
-  const labelXOffset = 25; // width of label
+  const labelXOffset = 30; // Increased for "Referring Doctor"
   const col2X = pageWidth / 2 + 5;
 
-  doc.setFontSize(9);
+  doc.setFontSize(11); // Increased from 10
 
-  // Row 1
+  // Row 1 - Patient & Mobile
   doc.setFont("helvetica", "bold");
   doc.setTextColor(COLORS.lightText);
-  doc.text("Patient Name:", col1X, pY);
+  doc.text("Patient:", col1X, pY);
   doc.setTextColor(COLORS.primary);
   doc.text(data.patientFullName, col1X + labelXOffset, pY);
 
   doc.setFont("helvetica", "bold");
   doc.setTextColor(COLORS.lightText);
-  doc.text("Patient ID:", col2X, pY);
+  doc.text("Mobile No:", col2X, pY);
   doc.setTextColor(COLORS.primary);
-  doc.text(
-    data.patientId ? data.patientId.toString() : "N/A",
-    col2X + labelXOffset,
-    pY
-  );
+  doc.text(data.mobileNumber || "N/A", col2X + labelXOffset, pY);
 
-  // Row 2
-  const pY2 = pY + 8;
+  // Row 2 - Age/Gender & Patient ID
+  const pY2 = pY + 9;
   doc.setFont("helvetica", "bold");
   doc.setTextColor(COLORS.lightText);
   doc.text("Age / Gender:", col1X, pY2);
@@ -180,10 +175,9 @@ export const generatePathologyReceipt = async (
   let ageDisplay = "N/A";
   if (data.patientAge) {
     ageDisplay = `${data.patientAge} Y`;
-  } else if (data.patientDOB || data.patientDOB) {
-    // Try to calc from DOB
-    const dob = data.patientDOB ? new Date(data.patientDOB) : null;
-    if (dob) {
+  } else if (data.patientDOB) {
+    const dob = new Date(data.patientDOB);
+    if (!isNaN(dob.getTime())) {
       const diff = Date.now() - dob.getTime();
       const ageDate = new Date(diff);
       ageDisplay = `${Math.abs(ageDate.getUTCFullYear() - 1970)} Y`;
@@ -194,18 +188,17 @@ export const generatePathologyReceipt = async (
 
   doc.setFont("helvetica", "bold");
   doc.setTextColor(COLORS.lightText);
-  doc.text("Mobile No:", col2X, pY2);
+  doc.text("Guardian:", col2X, pY2);
   doc.setTextColor(COLORS.primary);
-  doc.text(data.mobileNumber || "N/A", col2X + labelXOffset, pY2);
+  doc.text(data.guardianName || "N/A", col2X + labelXOffset, pY2);
 
-  // Row 3
-  const pY3 = pY2 + 8;
+  // Row 3 - Referring Doctor & Address
+  const pY3 = pY2 + 9;
   doc.setFont("helvetica", "bold");
   doc.setTextColor(COLORS.lightText);
-  doc.text("Referred By:", col1X, pY3);
+  doc.text("Referring Dr:", col1X, pY3);
   doc.setTextColor(COLORS.primary);
 
-  // Show doctor name if available, otherwise 'Self'
   let refBy = "Self";
   if (
     data.orderedBy &&
@@ -214,19 +207,26 @@ export const generatePathologyReceipt = async (
   ) {
     refBy = data.orderedBy;
   }
+  doc.text(
+    refBy.length > 30 ? refBy.substring(0, 27) + "..." : refBy,
+    col1X + labelXOffset,
+    pY3
+  );
 
-  // Wrap text if needed, simplest is to truncate for receipts or let it overlap if short enough
-  if (refBy.length > 35) {
-    doc.setFontSize(8); // Shrink slightly for long names
-  }
-  doc.text(refBy, col1X + labelXOffset, pY3);
-  doc.setFontSize(9); // Reset
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(COLORS.lightText);
+  doc.text("Address:", col2X, pY3);
+  doc.setTextColor(COLORS.primary);
+  const patientAddr = data.address || "N/A";
+  doc.text(
+    patientAddr.length > 30
+      ? patientAddr.substring(0, 27) + "..."
+      : patientAddr,
+    col2X + labelXOffset,
+    pY3
+  );
 
-  // Address (Optional Row 4 or condensed)
-  // Let's add address if available below name or just skip to save vertical space
-  // User asked for "Doctors name visible fully" - we gave it full row width mostly.
-
-  currentY += boxHeight + 10;
+  currentY += boxHeight + 20; // Increased spacing after box
 
   // --- Tests Table ---
   const testCodes = data.testResults?.tests || [];
@@ -254,16 +254,16 @@ export const generatePathologyReceipt = async (
       textColor: 255,
       fontStyle: "bold",
       halign: "left",
-      cellPadding: 4, // Tighter header
+      cellPadding: 5,
     },
     bodyStyles: {
       textColor: COLORS.text,
-      cellPadding: 2, // Tighter rows
-      fontSize: 9,
-      valign: "middle", // Vertical align middle
+      cellPadding: 4,
+      fontSize: 10, // Increased
+      valign: "middle",
     },
     columnStyles: {
-      0: { cellWidth: 15, halign: "center" },
+      0: { cellWidth: 15, halign: "center", fontStyle: "bold", fontSize: 12 },
       1: { cellWidth: "auto" },
       2: { cellWidth: 40, halign: "right", fontStyle: "bold" },
     },
@@ -279,7 +279,7 @@ export const generatePathologyReceipt = async (
   const tLabelX = pageWidth - margin - 50;
   const tValX = pageWidth - margin - 5; // Right aligned margin
 
-  doc.setFontSize(9);
+  doc.setFontSize(11); // Increased from 9
 
   // Sub Total
   doc.setFont("helvetica", "bold");
@@ -310,27 +310,28 @@ export const generatePathologyReceipt = async (
 
   // Net Payable
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(11);
+  doc.setFontSize(13); // Increased from 11
   doc.setTextColor(COLORS.primary);
   doc.text("Net Payable:", tLabelX, tY, { align: "right" });
   doc.text(`${data.grandTotal.toLocaleString()}`, tValX, tY, {
     align: "right",
   });
-  tY += 6;
+  tY += 7; // Adjusted spacing
 
   // Paid
   doc.setFont("helvetica", "normal");
-  doc.setFontSize(9);
+  doc.setFontSize(11); // Increased from 9
   doc.setTextColor(COLORS.lightText);
   doc.text("Paid Amount:", tLabelX, tY, { align: "right" });
   doc.setTextColor(COLORS.primary);
   doc.text(`${data.paidAmount.toLocaleString()}`, tValX, tY, {
     align: "right",
   });
-  tY += 5;
+  tY += 6; // Adjusted spacing
 
   // Due Amount
   doc.setFont("helvetica", "bold");
+  doc.setFontSize(11); // Increased from 9
   doc.text("Due Amount:", tLabelX, tY, { align: "right" });
 
   if (data.dueAmount > 0) {

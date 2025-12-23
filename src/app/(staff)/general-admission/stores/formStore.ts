@@ -110,6 +110,7 @@ const initialAdmissionInfo: AdmissionInfo = {
   treatment: "",
   otType: "",
   remarks: "",
+  chiefComplaint: "",
 };
 
 const initialFinancialData: FinancialData = {
@@ -124,10 +125,10 @@ const initialFinancialData: FinancialData = {
   medicineCharge: 0,
   otherCharges: 0,
   totalAmount: 0,
-  discountType: null,
+  discountType: "percentage",
   discountValue: null,
   discountAmount: 0,
-  grandTotal: 0,
+  grandTotal: 300,
   paidAmount: 300, // Admission fee is paid upfront
   dueAmount: 0,
 };
@@ -181,7 +182,7 @@ export const useAdmissionFormStore = create<FormStore>((set, get) => ({
     set((state) => ({
       admissionInfo: { ...state.admissionInfo, [key]: value },
     }));
-    
+
     // If status is changed to Canceled, reset all financial charges to 0
     if (key === "status" && value === "Canceled") {
       set((state) => ({
@@ -332,6 +333,7 @@ export const useAdmissionFormStore = create<FormStore>((set, get) => ({
         treatment: admission.treatment || "",
         otType: admission.otType || "",
         remarks: admission.remarks || "",
+        chiefComplaint: admission.chiefComplaint || "",
       },
       financialData: {
         admissionFee: Number(admission.admissionFee) || 300,
@@ -346,7 +348,7 @@ export const useAdmissionFormStore = create<FormStore>((set, get) => ({
         otherCharges: Number(admission.otherCharges) || 0,
         totalAmount: Number(admission.totalAmount) || 0,
         discountType:
-          (admission.discountType as "percentage" | "value") || null,
+          (admission.discountType as "percentage" | "value") || "percentage",
         discountValue: admission.discountValue,
         discountAmount: Number(admission.discountAmount) || 0,
         grandTotal: Number(admission.grandTotal) || 0,
@@ -393,8 +395,17 @@ export const useAdmissionFormStore = create<FormStore>((set, get) => ({
   setPaidAmount: (amount) => {
     set((state) => {
       const { grandTotal } = state.financialData;
+      const { status } = state.admissionInfo;
+
+      // Ensure minimum 300 payment unless status is Canceled
+      let finalPaid = amount;
+      if (status !== "Canceled") {
+        finalPaid = Math.max(300, amount);
+      }
+
       // Cap paid amount at grand total for better UX
-      const finalPaid = Math.min(amount, grandTotal);
+      finalPaid = Math.min(finalPaid, grandTotal);
+
       return {
         financialData: { ...state.financialData, paidAmount: finalPaid },
       };
