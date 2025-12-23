@@ -127,7 +127,7 @@ const PathologyPatientInformation: React.FC = () => {
           <div>
             <div className="flex items-center justify-between mb-1.5 sm:mb-2">
               <label className="block text-gray-700 text-xs sm:text-sm font-semibold">
-                Date of Birth
+                Date of Birth<span className="text-red-500">*</span>
               </label>
               {isExisting && patientData.dateOfBirth && (
                 <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded-full bg-rose-100 text-rose-700 text-xs font-semibold border border-rose-200 shadow-sm">
@@ -149,7 +149,7 @@ const PathologyPatientInformation: React.FC = () => {
           <div>
             <div className="flex items-center justify-between mb-1.5 sm:mb-2">
               <label className="block text-gray-700 text-xs sm:text-sm font-semibold">
-                Phone Number
+                Phone Number<span className="text-red-500">*</span>
               </label>
               {isExisting && patientData.phoneNumber && (
                 <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 text-xs font-semibold border border-indigo-200 shadow-sm">

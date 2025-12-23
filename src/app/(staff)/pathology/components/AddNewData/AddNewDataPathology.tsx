@@ -150,6 +150,12 @@ const AddNewDataPathology: React.FC<AddNewDataProps> = ({
     if (!patientData.gender.trim()) {
       errors.push("Patient gender is required");
     }
+    if (!patientData.phoneNumber.trim()) {
+      errors.push("Patient phone number is required");
+    }
+    if (!patientData.dateOfBirth) {
+      errors.push("Patient date of birth is required");
+    }
     if (pathologyInfo.selectedTests.length === 0) {
       errors.push("At least one test must be selected");
     }
@@ -171,6 +177,8 @@ const AddNewDataPathology: React.FC<AddNewDataProps> = ({
     hospitalData.name,
     patientData.firstName,
     patientData.gender,
+    patientData.phoneNumber,
+    patientData.dateOfBirth,
     pathologyInfo.selectedTests,
     pathologyInfo.orderedById,
     validationStatus,
