@@ -205,9 +205,17 @@ export const generatePathologyReceipt = async (
   doc.text("Referred By:", col1X, pY3);
   doc.setTextColor(COLORS.primary);
 
-  let refBy = data.orderedBy || "Self";
+  // Show doctor name if available, otherwise 'Self'
+  let refBy = "Self";
+  if (
+    data.orderedBy &&
+    data.orderedBy.trim() !== "" &&
+    data.orderedBy.toLowerCase() !== "self"
+  ) {
+    refBy = data.orderedBy;
+  }
+
   // Wrap text if needed, simplest is to truncate for receipts or let it overlap if short enough
-  // doc.text handles simple overflow by just printing
   if (refBy.length > 35) {
     doc.setFontSize(8); // Shrink slightly for long names
   }

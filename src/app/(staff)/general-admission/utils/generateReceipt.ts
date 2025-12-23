@@ -180,11 +180,11 @@ export const generateAdmissionReceipt = async (
   doc.setTextColor(COLORS.primary);
   doc.text(data.departmentName, col2X + labelXOffset, pY2);
 
-  // Row 3 - Doctor & Room
+  // Row 3 - Consulting Doctor & Room
   const pY3 = pY2 + 8;
   doc.setFont("helvetica", "bold");
   doc.setTextColor(COLORS.lightText);
-  doc.text("Doctor:", col1X, pY3);
+  doc.text("Consulting Doctor:", col1X, pY3);
   doc.setTextColor(COLORS.primary);
   doc.text(data.doctorName || "N/A", col1X + labelXOffset, pY3);
 
@@ -398,10 +398,10 @@ export const generateAdmissionInvoice = async (
   doc.setTextColor(COLORS.primary);
   doc.text(data.departmentName, col2X + labelXOffset, pY);
 
-  // Row 2 - Doctor & Room
+  // Row 2 - Consulting Doctor & Room
   const pY2 = pY + 8;
   doc.setTextColor(COLORS.lightText);
-  doc.text("Doctor:", col1X, pY2);
+  doc.text("Consulting Doctor:", col1X, pY2);
   doc.setTextColor(COLORS.primary);
   doc.text(data.doctorName, col1X + labelXOffset, pY2);
 
