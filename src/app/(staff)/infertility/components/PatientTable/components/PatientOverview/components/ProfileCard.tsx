@@ -78,7 +78,7 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({ patient }) => {
           {/* Header: Avatar + Name + Tags */}
           <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-4 mb-4 sm:mb-5">
             {/* Avatar - centered on mobile */}
-            <div className="relative shrink-0">
+            <div className="relative shrink-0 mx-auto sm:mx-0">
               <div
                 className={cn(
                   "w-12 h-12 sm:w-16 sm:h-16 rounded-xl flex items-center justify-center",
