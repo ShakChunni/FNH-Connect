@@ -11,7 +11,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { useAuth } from "@/app/AuthContext";
-import { isAdminRole } from "@/lib/roles";
+import { isAdminRole, isReceptionistRole } from "@/lib/roles";
 
 interface QuickActionItem {
   id: string;
@@ -104,12 +104,35 @@ export const QuickActions: React.FC<QuickActionsProps> = ({
       return allQuickActions.filter((action) => !action.adminOnly);
     }
 
+    // Admin sees everything
     if (isAdminRole(user.role)) {
       return allQuickActions;
     }
 
+    // Receptionist has a specific allowed list
+    if (isReceptionistRole(user.role)) {
+      const allowedPaths = [
+        "/patient-records",
+        "/general-admission",
+        "/pathology",
+      ];
+      return allQuickActions.filter((action) =>
+        allowedPaths.includes(action.href)
+      );
+    }
+
+    // Other roles (Staff, etc.) see everything except adminOnly
     return allQuickActions.filter((action) => !action.adminOnly);
   }, [user?.role]);
+
+  const gridColsClass = useMemo(() => {
+    const count = filteredActions.length;
+    if (count === 1) return "lg:grid-cols-1";
+    if (count === 2) return "lg:grid-cols-2";
+    if (count === 3) return "lg:grid-cols-3";
+    if (count === 4) return "lg:grid-cols-4";
+    return "lg:grid-cols-5";
+  }, [filteredActions.length]);
 
   if (isLoading) {
     return (
@@ -138,8 +161,10 @@ export const QuickActions: React.FC<QuickActionsProps> = ({
         </p>
       </div>
 
-      {/* Responsive grid: 1 col mobile, 2 cols md, 5 cols lg */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3 lg:gap-4">
+      {/* Responsive grid: dynamic columns based on item count */}
+      <div
+        className={`grid grid-cols-1 md:grid-cols-2 ${gridColsClass} gap-3 lg:gap-4`}
+      >
         {filteredActions.map((action) => {
           const Icon = action.icon;
           return (

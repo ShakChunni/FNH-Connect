@@ -7,6 +7,8 @@ import {
 import PathologyTestsDropdown from "../../../../../../components/form-sections/Fields/PathologyTestsDropdown";
 import OrderingDoctorDropdown from "./OrderingDoctorDropdown";
 
+import NumberInput from "@/components/form-sections/Fields/NumberInput";
+
 const PathologyInformation: React.FC = () => {
   const pathologyInfo = usePathologyPathologyInfo();
   // Destructure smart actions
@@ -228,8 +230,7 @@ const PathologyInformation: React.FC = () => {
               <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-semibold">
                 ৳
               </span>
-              <input
-                type="number"
+              <NumberInput
                 className={`${inputClassName(
                   pathologyInfo.testCharge,
                   true
@@ -250,8 +251,7 @@ const PathologyInformation: React.FC = () => {
             {/* Input with integrated switcher */}
             <div className="relative flex items-stretch rounded-lg border-2 border-gray-300 bg-white overflow-hidden focus-within:border-green-600 focus-within:ring-2 focus-within:ring-green-100 transition-all duration-300 h-12 md:h-14">
               {/* Discount Input */}
-              <input
-                type="number"
+              <NumberInput
                 className="flex-1 px-4 py-2 text-gray-700 font-normal outline-none text-xs sm:text-sm bg-transparent cursor-pointer"
                 value={discountInput}
                 onChange={handleDiscountInputChange}
@@ -323,8 +323,7 @@ const PathologyInformation: React.FC = () => {
               <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-semibold">
                 ৳
               </span>
-              <input
-                type="number"
+              <NumberInput
                 className={`${inputClassName(
                   pathologyInfo.grandTotal,
                   true
@@ -347,8 +346,7 @@ const PathologyInformation: React.FC = () => {
                 <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-semibold">
                   ৳
                 </span>
-                <input
-                  type="number"
+                <NumberInput
                   className={`${inputClassName(
                     pathologyInfo.paidAmount,
                     false
@@ -377,8 +375,7 @@ const PathologyInformation: React.FC = () => {
                 <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-semibold">
                   ৳
                 </span>
-                <input
-                  type="number"
+                <NumberInput
                   className={`${inputClassName(
                     pathologyInfo.dueAmount,
                     true

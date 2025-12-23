@@ -11,7 +11,8 @@ import NumberInput from "@/components/form-sections/Fields/NumberInput";
 const FinancialInformation: React.FC = () => {
   const financialData = useAdmissionFinancialData();
   const admissionInfo = useAdmissionInfo();
-  const { setFinancialData, calculateTotals } = useAdmissionActions();
+  const { setFinancialData, setCharge, setDiscount, setPaidAmount } =
+    useAdmissionActions();
 
   // Check if admission is canceled
   const isCanceled = admissionInfo.status === "Canceled";
@@ -31,25 +32,6 @@ const FinancialInformation: React.FC = () => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [financialData.discountValue]);
-
-  // Recalculate totals when financial data changes
-  useEffect(() => {
-    calculateTotals();
-  }, [
-    financialData.serviceCharge,
-    financialData.seatRent,
-    financialData.otCharge,
-    financialData.doctorCharge,
-    financialData.surgeonCharge,
-    financialData.anesthesiaFee,
-    financialData.assistantDoctorFee,
-    financialData.medicineCharge,
-    financialData.otherCharges,
-    financialData.discountType,
-    financialData.discountValue,
-    financialData.paidAmount,
-    calculateTotals,
-  ]);
 
   const inputClassName = useMemo(() => {
     const baseStyle =
@@ -71,15 +53,13 @@ const FinancialInformation: React.FC = () => {
   ) => {
     const numValue = value === "" ? 0 : parseFloat(value);
     if (!isNaN(numValue)) {
-      setFinancialData({ [field]: numValue });
+      setCharge(field, numValue);
     }
   };
 
   const handleDiscountTypeChange = (type: "percentage" | "value") => {
-    setFinancialData({
-      discountType: type,
-      discountValue: discountInput === "" ? null : discountInput,
-    });
+    const currentVal = discountInput === "" ? null : discountInput;
+    setDiscount(type, currentVal);
   };
 
   const handleDiscountInputChange = (
@@ -88,23 +68,17 @@ const FinancialInformation: React.FC = () => {
     const val = e.target.value;
     if (val === "") {
       setDiscountInput("");
-      setFinancialData({
-        discountType: financialData.discountType,
-        discountValue: null,
-      });
+      setDiscount(financialData.discountType || "value", null);
     } else {
       const numVal = Number(val);
       setDiscountInput(numVal);
-      setFinancialData({
-        discountType: financialData.discountType || "value",
-        discountValue: numVal,
-      });
+      setDiscount(financialData.discountType || "value", numVal);
     }
   };
 
   const handlePaymentChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value === "" ? 0 : Number(e.target.value);
-    setFinancialData({ paidAmount: value });
+    setPaidAmount(value);
   };
 
   const showRoomWarning =
@@ -240,8 +214,7 @@ const FinancialInformation: React.FC = () => {
           {/* Input with integrated type switcher */}
           <div className="relative flex items-stretch rounded-lg border-2 border-gray-300 bg-white overflow-hidden focus-within:border-green-600 focus-within:ring-2 focus-within:ring-green-100 transition-all duration-300 h-12 md:h-14">
             {/* Discount Input */}
-            <input
-              type="number"
+            <NumberInput
               className="flex-1 px-4 py-2 text-gray-700 font-normal outline-none text-xs sm:text-sm bg-transparent cursor-pointer"
               value={discountInput}
               onChange={handleDiscountInputChange}
@@ -313,8 +286,7 @@ const FinancialInformation: React.FC = () => {
             <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-semibold">
               ৳
             </span>
-            <input
-              type="number"
+            <NumberInput
               className={`${inputClassName(
                 financialData.grandTotal,
                 true
@@ -337,8 +309,7 @@ const FinancialInformation: React.FC = () => {
               <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-semibold">
                 ৳
               </span>
-              <input
-                type="number"
+              <NumberInput
                 className={`${inputClassName(
                   financialData.paidAmount,
                   false
@@ -367,8 +338,7 @@ const FinancialInformation: React.FC = () => {
               <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-semibold">
                 ৳
               </span>
-              <input
-                type="number"
+              <NumberInput
                 className={`${inputClassName(
                   financialData.dueAmount,
                   true

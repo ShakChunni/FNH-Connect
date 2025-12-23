@@ -49,6 +49,12 @@ interface FormActions {
   initializeFormForEdit: (admission: AdmissionPatientData) => void;
   resetForm: () => void;
   calculateTotals: () => void;
+
+  // Smart actions for financial calculations
+  setCharge: (field: keyof FinancialData, amount: number) => void;
+  setDiscount: (type: "percentage" | "value", value: number | null) => void;
+  setPaidAmount: (amount: number) => void;
+
   afterAddModalClosed: () => void;
   afterEditModalClosed: () => void;
 }
@@ -343,6 +349,37 @@ export const useAdmissionFormStore = create<FormStore>((set, get) => ({
       validationStatus: { ...initialValidationStatus },
     }),
 
+  // Smart actions for financial calculations
+  setCharge: (field, amount) => {
+    set((state) => ({
+      financialData: { ...state.financialData, [field]: amount },
+    }));
+    get().calculateTotals();
+  },
+
+  setDiscount: (type, value) => {
+    set((state) => ({
+      financialData: {
+        ...state.financialData,
+        discountType: type,
+        discountValue: value,
+      },
+    }));
+    get().calculateTotals();
+  },
+
+  setPaidAmount: (amount) => {
+    set((state) => {
+      const { grandTotal } = state.financialData;
+      // Cap paid amount at grand total for better UX
+      const finalPaid = Math.min(amount, grandTotal);
+      return {
+        financialData: { ...state.financialData, paidAmount: finalPaid },
+      };
+    });
+    get().calculateTotals();
+  },
+
   // These are called after modal animation completes (onExitComplete)
   afterAddModalClosed: () => {
     set({
@@ -410,6 +447,9 @@ export const useAdmissionFormActions = () =>
       initializeFormForEdit: state.initializeFormForEdit,
       resetForm: state.resetForm,
       calculateTotals: state.calculateTotals,
+      setCharge: state.setCharge,
+      setDiscount: state.setDiscount,
+      setPaidAmount: state.setPaidAmount,
       afterAddModalClosed: state.afterAddModalClosed,
       afterEditModalClosed: state.afterEditModalClosed,
     }))
