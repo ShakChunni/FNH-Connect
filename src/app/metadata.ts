@@ -2,7 +2,7 @@ import { Metadata } from "next";
 
 const siteConfig = {
   name: "FNH Connect",
-  title: "Hospital Management System",
+  title: "FNH-Connect",
   description:
     "Comprehensive hospital management system for patient care, admissions, pathology, and financial tracking",
   url: process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
