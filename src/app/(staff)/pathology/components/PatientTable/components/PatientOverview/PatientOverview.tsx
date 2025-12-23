@@ -103,7 +103,7 @@ const PatientOverview: React.FC<PatientOverviewProps> = ({
 
       {/* Main Content Area */}
       <div className="flex-1 overflow-y-auto bg-slate-50/50 p-4 sm:p-6 lg:p-8">
-        <div className="max-w-7xl mx-auto space-y-6 lg:space-y-8 pb-8">
+        <div className="space-y-6 lg:space-y-8 pb-8">
           {/* Profile Section */}
           <ProfileCard patient={patient} />
 
