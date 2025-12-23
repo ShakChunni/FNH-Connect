@@ -26,6 +26,7 @@ import {
   usePathologyActions,
 } from "../../stores";
 import { usePathologyScrollSpy } from "../../hooks/usePathologyScrollSpy";
+import { useFetchDoctors } from "../../hooks";
 import { transformPathologyDataForApi } from "../../utils/formTransformers";
 import { useNotification } from "@/hooks/useNotification";
 
@@ -53,6 +54,9 @@ const AddNewDataPathology: React.FC<AddNewDataProps> = ({
   // Note: resetFormState is handled internally by closeAddModal
   const { afterAddModalClosed } = usePathologyActions();
 
+  // Fetch doctors list to get doctor names
+  const { data: doctors = [] } = useFetchDoctors();
+
   // Custom Hooks
   const { activeSection, scrollToSection } = usePathologyScrollSpy(
     SECTION_IDS,
@@ -77,6 +81,16 @@ const AddNewDataPathology: React.FC<AddNewDataProps> = ({
     onSuccess: (response) => {
       // Auto-print receipt after successful add
       if (response.data) {
+        // Get doctor name from the doctors list
+        const selectedDoctor = doctors.find(
+          (d) => d.id === pathologyInfo.orderedById
+        );
+        const doctorName = selectedDoctor
+          ? selectedDoctor.role.toLowerCase() === "self"
+            ? "Self"
+            : selectedDoctor.fullName
+          : "Self";
+
         // Construct PathologyPatientData from local form state + API response
         const receiptData = {
           id: response.data.pathologyTest.id,
@@ -103,7 +117,7 @@ const AddNewDataPathology: React.FC<AddNewDataProps> = ({
           grandTotal: pathologyInfo.grandTotal,
           paidAmount: pathologyInfo.paidAmount,
           dueAmount: pathologyInfo.dueAmount,
-          orderedBy: null, // Will be resolved from doctors list if needed
+          orderedBy: doctorName, // Use the resolved doctor name
           orderedById: pathologyInfo.orderedById,
         };
 
