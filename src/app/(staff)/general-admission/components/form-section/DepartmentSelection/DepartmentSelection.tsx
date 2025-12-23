@@ -4,6 +4,7 @@ import { Stethoscope } from "lucide-react";
 import {
   useAdmissionDepartmentData,
   useAdmissionDoctorData,
+  useAdmissionInfo,
   useAdmissionActions,
 } from "../../../stores";
 import DepartmentDropdown from "./DepartmentDropdown";
@@ -12,10 +13,12 @@ import type { Department, Doctor } from "../../../types";
 
 interface DepartmentSelectionProps {
   readonly?: boolean;
+  allowEditComplaint?: boolean;
 }
 
 const DepartmentSelection: React.FC<DepartmentSelectionProps> = ({
   readonly = false,
+  allowEditComplaint = false,
 }) => {
   const departmentData = useAdmissionDepartmentData();
   const doctorData = useAdmissionDoctorData();
@@ -52,6 +55,9 @@ const DepartmentSelection: React.FC<DepartmentSelectionProps> = ({
       specialization: doctor?.specialization || "",
     });
   };
+
+  const admissionInfo = useAdmissionInfo();
+  const { updateAdmissionInfo } = useAdmissionActions();
 
   const getDescription = () => {
     if (departmentData.id && doctorData.id) {
@@ -107,6 +113,25 @@ const DepartmentSelection: React.FC<DepartmentSelectionProps> = ({
             onSelect={handleDoctorChange}
             disabled={readonly}
             inputClassName={inputClassName(doctorData.id, readonly)}
+          />
+        </div>
+
+        {/* Chief Complaint - Full Width Row */}
+        <div className="sm:col-span-2 mt-2">
+          <label className="block text-gray-700 text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2">
+            Chief Complaint
+          </label>
+          <textarea
+            className={`${inputClassName(
+              admissionInfo.chiefComplaint,
+              readonly && !allowEditComplaint
+            )} min-h-[100px] resize-none py-3`}
+            placeholder="Enter patient's chief complaint / reasons for admission..."
+            value={admissionInfo.chiefComplaint}
+            onChange={(e) =>
+              updateAdmissionInfo("chiefComplaint", e.target.value)
+            }
+            disabled={readonly && !allowEditComplaint}
           />
         </div>
       </div>

@@ -140,6 +140,7 @@ const EditDataAdmission: React.FC<EditDataProps> = ({
         paidAmount: financialData.paidAmount,
         dueAmount: financialData.dueAmount,
         remarks: admissionInfo.remarks,
+        chiefComplaint: admissionInfo.chiefComplaint,
       };
 
       // Dynamically import and generate invoice
@@ -207,6 +208,7 @@ const EditDataAdmission: React.FC<EditDataProps> = ({
       discountValue: financialData.discountValue,
       discountAmount: financialData.discountAmount,
       paidAmount: financialData.paidAmount,
+      chiefComplaint: admissionInfo.chiefComplaint,
       isDischarged: admissionInfo.status === "Discharged",
     });
   }, [
@@ -335,7 +337,7 @@ const EditDataAdmission: React.FC<EditDataProps> = ({
                   <AdmissionPatientInformation />
                 </div>
                 <div id="department">
-                  <DepartmentSelection readonly />
+                  <DepartmentSelection readonly allowEditComplaint />
                 </div>
                 <div id="status">
                   <AdmissionStatusSection />

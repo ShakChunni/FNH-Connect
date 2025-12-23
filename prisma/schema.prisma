@@ -159,6 +159,7 @@ model Admission {
   otType    String?
   treatment String?
   remarks   String?
+  chiefComplaint String? // Main reason for admission
 
   // Tracking
   createdAt      DateTime @default(now())

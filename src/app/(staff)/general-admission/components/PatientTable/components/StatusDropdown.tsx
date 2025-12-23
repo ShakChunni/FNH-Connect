@@ -1,8 +1,8 @@
 "use client";
-import React, { useState, useRef, useEffect } from "react";
-import { createPortal } from "react-dom";
-import { motion, AnimatePresence } from "framer-motion";
+import React, { useState, useRef } from "react";
+import { motion } from "framer-motion";
 import { Activity, Check, ChevronDown, Loader2 } from "lucide-react";
+import { DropdownPortal } from "@/components/ui/DropdownPortal";
 import { ADMISSION_STATUS_OPTIONS, AdmissionStatus } from "../../../types";
 
 interface StatusDropdownProps {
@@ -17,48 +17,7 @@ const StatusDropdown: React.FC<StatusDropdownProps> = ({
   isUpdating = false,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [mounted, setMounted] = useState(false);
   const buttonRef = useRef<HTMLButtonElement>(null);
-  const dropdownRef = useRef<HTMLDivElement>(null);
-  const [position, setPosition] = useState({ top: 0, left: 0 });
-
-  // Track mount state for portal
-  useEffect(() => {
-    setMounted(true);
-    return () => setMounted(false);
-  }, []);
-
-  // Calculate position when opening
-  useEffect(() => {
-    if (isOpen && buttonRef.current) {
-      const rect = buttonRef.current.getBoundingClientRect();
-      setPosition({
-        top: rect.bottom + window.scrollY + 4,
-        left: rect.right + window.scrollX - 160,
-      });
-    }
-  }, [isOpen]);
-
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(event.target as Node) &&
-        buttonRef.current &&
-        !buttonRef.current.contains(event.target as Node)
-      ) {
-        setIsOpen(false);
-      }
-    };
-
-    if (isOpen) {
-      document.addEventListener("mousedown", handleClickOutside);
-    }
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [isOpen]);
 
   const currentOption = ADMISSION_STATUS_OPTIONS.find(
     (o) => o.value === currentStatus
@@ -112,60 +71,6 @@ const StatusDropdown: React.FC<StatusDropdownProps> = ({
 
   const buttonColors = getStatusColor(currentOption?.color || "blue");
 
-  const dropdownContent = (
-    <AnimatePresence>
-      {isOpen && (
-        <motion.div
-          ref={dropdownRef}
-          initial={{ opacity: 0, y: -8, scale: 0.95 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          exit={{ opacity: 0, y: -8, scale: 0.95 }}
-          transition={{ duration: 0.12, ease: "easeOut" }}
-          style={{
-            position: "fixed",
-            top: position.top,
-            left: position.left,
-            zIndex: 999999,
-          }}
-          className="bg-white rounded-lg shadow-xl border border-gray-200 py-1 min-w-36 overflow-hidden"
-        >
-          {/* Header */}
-          <div className="px-2.5 py-1.5 border-b border-gray-100">
-            <p className="text-[9px] font-semibold text-gray-400 uppercase tracking-wider">
-              Change Status
-            </p>
-          </div>
-
-          {/* Options */}
-          {ADMISSION_STATUS_OPTIONS.map((option) => {
-            const isSelected = option.value === currentStatus;
-            const colors = getStatusColor(option.color);
-            return (
-              <motion.button
-                key={option.value}
-                whileHover={{ x: 1 }}
-                onClick={() => handleSelect(option.value)}
-                className={`w-full px-2.5 py-1.5 text-left flex items-center justify-between gap-1.5 transition-colors cursor-pointer ${
-                  isSelected
-                    ? `${colors.bg} ${colors.text}`
-                    : "hover:bg-gray-50"
-                }`}
-              >
-                <div className="flex items-center gap-1.5">
-                  <span className={`w-1.5 h-1.5 rounded-full ${colors.dot}`} />
-                  <span className="text-[11px] font-medium text-gray-700">
-                    {option.label}
-                  </span>
-                </div>
-                {isSelected && <Check size={10} className={colors.text} />}
-              </motion.button>
-            );
-          })}
-        </motion.div>
-      )}
-    </AnimatePresence>
-  );
-
   return (
     <>
       {/* Trigger Button */}
@@ -197,10 +102,57 @@ const StatusDropdown: React.FC<StatusDropdownProps> = ({
         />
       </button>
 
-      {/* Portal Dropdown */}
-      {mounted &&
-        typeof window !== "undefined" &&
-        createPortal(dropdownContent, document.body)}
+      {/* Global Portal Dropdown */}
+      <DropdownPortal
+        isOpen={isOpen}
+        onClose={() => setIsOpen(false)}
+        buttonRef={buttonRef}
+        className="min-w-[180px] z-100001"
+      >
+        {/* Header */}
+        <div className="px-2.5 py-1.5 border-b border-gray-100 bg-gray-50/50">
+          <p className="text-[9px] font-bold text-gray-400 uppercase tracking-wider">
+            Change Status
+          </p>
+        </div>
+
+        {/* Options */}
+        <div className="py-1">
+          {ADMISSION_STATUS_OPTIONS.map((option) => {
+            const isSelected = option.value === currentStatus;
+            const colors = getStatusColor(option.color);
+            return (
+              <button
+                key={option.value}
+                onClick={() => handleSelect(option.value)}
+                className={`w-full px-3 py-2 text-left flex items-center justify-between gap-2.5 transition-all duration-200 cursor-pointer ${
+                  isSelected
+                    ? `${colors.bg} ${colors.text}`
+                    : "hover:bg-gray-50"
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <span
+                    className={`w-2 h-2 rounded-full shadow-sm ${colors.dot}`}
+                  />
+                  <span className="text-[11px] font-semibold text-gray-700">
+                    {option.label}
+                  </span>
+                </div>
+                {isSelected && (
+                  <motion.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                  >
+                    <Check size={12} className={colors.text} />
+                  </motion.div>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </DropdownPortal>
     </>
   );
 };

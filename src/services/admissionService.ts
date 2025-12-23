@@ -53,6 +53,7 @@ export interface AdmissionData {
   treatment?: string;
   otType?: string;
   remarks?: string;
+  chiefComplaint?: string;
 }
 
 export interface FinancialData {
@@ -267,12 +268,13 @@ export async function createAdmission(
         admissionFee,
         totalAmount: admissionFee,
         grandTotal: admissionFee,
-        dueAmount: admissionFee,
-        paidAmount: 0,
+        dueAmount: 0, // Assume paid by default as per user request
+        paidAmount: admissionFee, // Set to 300 by default
         seatNumber: admissionData.seatNumber || null,
         ward: admissionData.ward || null,
         diagnosis: admissionData.diagnosis || null,
         treatment: admissionData.treatment || null,
+        chiefComplaint: admissionData.chiefComplaint || null,
         otType: admissionData.otType || null,
         remarks: admissionData.remarks || null,
         createdBy: staffId,
@@ -299,8 +301,8 @@ export async function createAdmission(
         data: {
           patientId: patient.id,
           totalCharges: admissionFee,
-          totalPaid: 0,
-          totalDue: admissionFee,
+          totalPaid: admissionFee,
+          totalDue: 0,
         },
       });
     } else {
@@ -308,7 +310,44 @@ export async function createAdmission(
         where: { id: patientAccount.id },
         data: {
           totalCharges: { increment: admissionFee },
-          totalDue: { increment: admissionFee },
+          totalPaid: { increment: admissionFee },
+          totalDue: { increment: 0 },
+        },
+      });
+    }
+
+    // 6.5. Create Payment and Cash Movement for initial admission fee
+    if (shiftId) {
+      const paymentCount = await tx.payment.count();
+      const receiptNumber = `RCP-${Date.now()}-${paymentCount + 1}`;
+
+      const payment = await tx.payment.create({
+        data: {
+          patientAccountId: patientAccount.id,
+          amount: new Prisma.Decimal(admissionFee),
+          paymentMethod: "Cash",
+          collectedById: staffId,
+          shiftId,
+          receiptNumber,
+          notes: `Initial Admission Fee for ${admissionNumber}`,
+        },
+      });
+
+      await tx.cashMovement.create({
+        data: {
+          shiftId,
+          amount: new Prisma.Decimal(admissionFee),
+          movementType: "COLLECTION",
+          description: `Admission Fee collection for ${admissionNumber}`,
+          paymentId: payment.id,
+        },
+      });
+
+      await tx.shift.update({
+        where: { id: shiftId },
+        data: {
+          systemCash: { increment: admissionFee },
+          totalCollected: { increment: admissionFee },
         },
       });
     }
@@ -722,6 +761,7 @@ export function transformAdmissionForResponse(admission: any) {
     treatment: admission.treatment,
     otType: admission.otType,
     remarks: admission.remarks,
+    chiefComplaint: admission.chiefComplaint || "",
     admissionFee: Number(admission.admissionFee),
     serviceCharge: Number(admission.serviceCharge),
     seatRent: Number(admission.seatRent),
