@@ -548,6 +548,6 @@ export function getMiddlewareMetrics() {
 // === MATCHER CONFIGURATION ===
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.*\\.ico|REDACTED-logo-white.png|REDACTED_ASSET.png|.*\\.svg|.*\\.jpg|.*\\.jpeg|.*\\.png|.*\\.webp|.*\\.gif).*)",
+    "/((?!_next/static|_next/image|favicon.*\\.ico|REDACTED-logo-white.png|REDACTED_ASSET.png|.*\\.svg|.*\\.jpg|.*\\.jpeg|.*\\.png|.*\\.webp|.*\\.gif|.*\\.json).*)",
   ],
 };
