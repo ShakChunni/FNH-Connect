@@ -218,17 +218,14 @@ const AdmissionPatientInformation: React.FC = () => {
                   </span>
                 )}
               </div>
-              <input
-                type="tel"
-                className={inputClassName(patientData.guardianPhone || "")}
-                value={patientData.guardianPhone || ""}
-                onChange={(e) => {
-                  setPatientData({
-                    ...patientData,
-                    guardianPhone: e.target.value,
-                  });
-                }}
-                placeholder="Guardian phone number"
+              <ContactPhoneInput
+                value={patientData.guardianPhone}
+                onChange={(val) =>
+                  setPatientData({ ...patientData, guardianPhone: val })
+                }
+                onValidationChange={() => {}} // Could add separate validation if needed
+                defaultCountry="BD"
+                isAutofilled={isExisting}
               />
             </div>
           </div>
@@ -260,19 +257,22 @@ const AdmissionPatientInformation: React.FC = () => {
               />
             </div>
 
-            {/* Address */}
-            <div>
+            {/* Empty space for alignment if needed, or just let it occupy half */}
+            <div className="hidden md:block"></div>
+
+            {/* Address - Full width at the end like pathology */}
+            <div className="md:col-span-2">
               <label className="block text-gray-700 text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2">
                 Address
               </label>
-              <input
-                type="text"
-                className={inputClassName(patientData.address)}
+              <textarea
+                className={`${inputClassName(patientData.address)} resize-none`}
                 value={patientData.address}
                 onChange={(e) =>
                   setPatientData({ ...patientData, address: e.target.value })
                 }
                 placeholder="Patient address"
+                rows={4}
               />
             </div>
           </div>

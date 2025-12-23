@@ -48,6 +48,9 @@ export const useAdmissionActions = () => {
       initializeFormForEdit: state.initializeFormForEdit,
       resetForm: state.resetForm,
       calculateTotals: state.calculateTotals,
+      setCharge: state.setCharge,
+      setDiscount: state.setDiscount,
+      setPaidAmount: state.setPaidAmount,
     }))
   );
 

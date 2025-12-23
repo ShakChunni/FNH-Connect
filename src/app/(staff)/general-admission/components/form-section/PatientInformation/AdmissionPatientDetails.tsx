@@ -1,6 +1,7 @@
 import React, { useMemo } from "react";
 import { User } from "lucide-react";
 import { useAdmissionPatientData, useAdmissionActions } from "../../../stores";
+import NumberInput from "@/components/form-sections/Fields/NumberInput";
 
 const GENDER_OPTIONS = ["Male", "Female", "Other"];
 const BLOOD_GROUP_OPTIONS = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
@@ -164,8 +165,7 @@ const AdmissionPatientDetails: React.FC = () => {
             <label className="block text-gray-700 text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2">
               Age
             </label>
-            <input
-              type="number"
+            <NumberInput
               className={`${inputClassName(
                 patientData.age
               )} bg-gray-100 cursor-not-allowed`}
