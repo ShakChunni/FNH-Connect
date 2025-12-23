@@ -131,45 +131,34 @@ export const generatePathologyReceipt = async (
   });
   currentY += 12; // Increased from 10
 
-  // Background box for patient details
-  const boxHeight = 44; // Increased from 35
-  doc.setFillColor(248, 250, 252);
-  doc.roundedRect(
-    margin,
-    currentY,
-    pageWidth - margin * 2,
-    boxHeight,
-    2,
-    2,
-    "F"
-  );
+  // --- Patient Details Section (Professional Table Layout) ---
+  const contentWidth = pageWidth - margin * 2;
+  const boxPadding = 6;
+  const rowHeight = 7;
+  const labelWidth = 28; // Fixed label column width
+  const col1Width = contentWidth * 0.5; // Left column takes 50%
+  const col2Width = contentWidth * 0.5; // Right column takes 50%
+  const col1LabelX = margin + boxPadding;
+  const col1ValueX = col1LabelX + labelWidth;
+  const col2LabelX = margin + col1Width + boxPadding;
+  const col2ValueX = col2LabelX + labelWidth;
+  const valueMaxWidth1 = col1Width - labelWidth - boxPadding * 2;
+  const valueMaxWidth2 = col2Width - labelWidth - boxPadding * 2;
 
-  const pY = currentY + 7;
-  const col1X = margin + 5;
-  const labelXOffset = 30; // Increased for "Referring Doctor"
-  const col2X = pageWidth / 2 + 5;
+  // Prepare content
+  const patientAddr = data.address || "N/A";
+  let refBy = "Self";
+  if (
+    data.orderedBy &&
+    data.orderedBy.trim() !== "" &&
+    data.orderedBy.toLowerCase() !== "self"
+  ) {
+    refBy = data.orderedBy;
+  }
 
-  doc.setFontSize(11); // Increased from 10
-
-  // Row 1 - Patient & Mobile
-  doc.setFont("helvetica", "bold");
-  doc.setTextColor(COLORS.lightText);
-  doc.text("Patient:", col1X, pY);
-  doc.setTextColor(COLORS.primary);
-  doc.text(data.patientFullName, col1X + labelXOffset, pY);
-
-  doc.setFont("helvetica", "bold");
-  doc.setTextColor(COLORS.lightText);
-  doc.text("Mobile No:", col2X, pY);
-  doc.setTextColor(COLORS.primary);
-  doc.text(data.mobileNumber || "N/A", col2X + labelXOffset, pY);
-
-  // Row 2 - Age/Gender & Patient ID
-  const pY2 = pY + 9;
-  doc.setFont("helvetica", "bold");
-  doc.setTextColor(COLORS.lightText);
-  doc.text("Age / Gender:", col1X, pY2);
-  doc.setTextColor(COLORS.primary);
+  doc.setFontSize(10);
+  const splitAddr = doc.splitTextToSize(patientAddr, valueMaxWidth2);
+  const splitRefBy = doc.splitTextToSize(refBy, valueMaxWidth1);
 
   // Calculate Age if missing
   let ageDisplay = "N/A";
@@ -184,49 +173,107 @@ export const generatePathologyReceipt = async (
     }
   }
 
-  doc.text(`${ageDisplay} / ${data.patientGender}`, col1X + labelXOffset, pY2);
+  // Calculate dynamic box height (3 paired rows + potential wrapping)
+  const numPairedRows = 3;
+  const addressLines = splitAddr.length;
+  const refByLines = splitRefBy.length;
+  const extraLines =
+    Math.max(0, addressLines - 1) + Math.max(0, refByLines - 1);
+  const dynamicBoxHeight =
+    boxPadding * 2 + numPairedRows * rowHeight + extraLines * 4 + 4;
+
+  doc.setFillColor(248, 250, 252);
+  doc.roundedRect(margin, currentY, contentWidth, dynamicBoxHeight, 2, 2, "F");
+
+  // Add subtle border for professional look
+  doc.setDrawColor(COLORS.border);
+  doc.setLineWidth(0.3);
+  doc.roundedRect(margin, currentY, contentWidth, dynamicBoxHeight, 2, 2, "S");
+
+  let pY = currentY + boxPadding + 4;
+  doc.setFontSize(10);
+
+  // Row 1 - Patient Name & Mobile Number
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(COLORS.lightText);
+  doc.text("Patient:", col1LabelX, pY);
+  doc.setTextColor(COLORS.primary);
+  doc.setFont("helvetica", "bold");
+  const patientName = data.patientFullName || "N/A";
+  doc.text(
+    patientName.length > 28
+      ? patientName.substring(0, 26) + "..."
+      : patientName,
+    col1ValueX,
+    pY
+  );
 
   doc.setFont("helvetica", "bold");
   doc.setTextColor(COLORS.lightText);
-  doc.text("Guardian:", col2X, pY2);
+  doc.text("Mobile:", col2LabelX, pY);
   doc.setTextColor(COLORS.primary);
-  doc.text(data.guardianName || "N/A", col2X + labelXOffset, pY2);
+  doc.setFont("helvetica", "normal");
+  doc.text(data.mobileNumber || "N/A", col2ValueX, pY);
+
+  // Row 2 - Age/Gender & Guardian
+  pY += rowHeight;
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(COLORS.lightText);
+  doc.text("Age/Gender:", col1LabelX, pY);
+  doc.setTextColor(COLORS.primary);
+  doc.setFont("helvetica", "normal");
+  doc.text(`${ageDisplay} / ${data.patientGender}`, col1ValueX, pY);
+
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(COLORS.lightText);
+  doc.text("Guardian:", col2LabelX, pY);
+  doc.setTextColor(COLORS.primary);
+  doc.setFont("helvetica", "normal");
+  const guardianName = data.guardianName || "N/A";
+  doc.text(
+    guardianName.length > 25
+      ? guardianName.substring(0, 23) + "..."
+      : guardianName,
+    col2ValueX,
+    pY
+  );
 
   // Row 3 - Referring Doctor & Address
-  const pY3 = pY2 + 9;
+  pY += rowHeight;
   doc.setFont("helvetica", "bold");
   doc.setTextColor(COLORS.lightText);
-  doc.text("Referring Dr:", col1X, pY3);
+  doc.text("Referring Dr:", col1LabelX, pY);
   doc.setTextColor(COLORS.primary);
-
-  let refBy = "Self";
-  if (
-    data.orderedBy &&
-    data.orderedBy.trim() !== "" &&
-    data.orderedBy.toLowerCase() !== "self"
-  ) {
-    refBy = data.orderedBy;
+  doc.setFont("helvetica", "normal");
+  // Allow referring doctor to wrap if needed
+  if (splitRefBy.length === 1) {
+    doc.text(refBy, col1ValueX, pY);
+  } else {
+    doc.text(splitRefBy[0], col1ValueX, pY);
+    if (splitRefBy.length > 1) {
+      pY += 4;
+      doc.text(splitRefBy.slice(1).join(" "), col1ValueX, pY);
+    }
   }
-  doc.text(
-    refBy.length > 30 ? refBy.substring(0, 27) + "..." : refBy,
-    col1X + labelXOffset,
-    pY3
-  );
 
+  // Reset pY for address on the right side (same row start as Referring Dr)
+  const addressStartY = currentY + boxPadding + 4 + rowHeight * 2;
   doc.setFont("helvetica", "bold");
   doc.setTextColor(COLORS.lightText);
-  doc.text("Address:", col2X, pY3);
+  doc.text("Address:", col2LabelX, addressStartY);
   doc.setTextColor(COLORS.primary);
-  const patientAddr = data.address || "N/A";
-  doc.text(
-    patientAddr.length > 30
-      ? patientAddr.substring(0, 27) + "..."
-      : patientAddr,
-    col2X + labelXOffset,
-    pY3
-  );
+  doc.setFont("helvetica", "normal");
+  // Allow address to wrap if needed
+  if (splitAddr.length === 1) {
+    doc.text(patientAddr, col2ValueX, addressStartY);
+  } else {
+    doc.text(splitAddr[0], col2ValueX, addressStartY);
+    for (let i = 1; i < splitAddr.length; i++) {
+      doc.text(splitAddr[i], col2ValueX, addressStartY + i * 4);
+    }
+  }
 
-  currentY += boxHeight + 20; // Increased spacing after box
+  currentY += dynamicBoxHeight + 12;
 
   // --- Tests Table ---
   const testCodes = data.testResults?.tests || [];
