@@ -9,166 +9,194 @@ import {
   Maximize2 as Height,
   Activity,
   Scale,
+  Clock,
 } from "lucide-react";
 import { InfertilityPatientData } from "../../../../../types";
+import { cn } from "@/lib/utils";
 
 interface MedicalDetailsProps {
   patient: InfertilityPatientData;
 }
 
-interface MetricItem {
-  label: string;
-  value: string | React.ReactNode;
-  icon: React.ElementType;
-  color: string;
-  capitalize?: boolean;
-  highlight?: boolean;
-}
-
-interface MetricGroup {
-  label: string;
-  bg: string;
-  border: string;
-  items: MetricItem[];
-}
-
 export const MedicalDetails: React.FC<MedicalDetailsProps> = ({ patient }) => {
   const getBmiCategory = (bmi: number | null) => {
-    if (!bmi) return { label: "N/A", color: "text-gray-400" };
-    if (bmi < 18.5) return { label: "Underweight", color: "text-amber-500" };
-    if (bmi < 25) return { label: "Normal", color: "text-green-500" };
-    if (bmi < 30) return { label: "Overweight", color: "text-amber-500" };
-    return { label: "Obese", color: "text-red-500" };
+    if (!bmi)
+      return {
+        label: "N/A",
+        color: "text-gray-400",
+        bg: "bg-gray-50",
+        border: "border-gray-100",
+      };
+    if (bmi < 18.5)
+      return {
+        label: "Underweight",
+        color: "text-amber-600",
+        bg: "bg-amber-50",
+        border: "border-amber-100",
+      };
+    if (bmi < 25)
+      return {
+        label: "Normal",
+        color: "text-emerald-600",
+        bg: "bg-emerald-50",
+        border: "border-emerald-100",
+      };
+    if (bmi < 30)
+      return {
+        label: "Overweight",
+        color: "text-orange-600",
+        bg: "bg-orange-50",
+        border: "border-orange-100",
+      };
+    return {
+      label: "Obese",
+      color: "text-rose-600",
+      bg: "bg-rose-50",
+      border: "border-rose-100",
+    };
   };
 
   const bmiInfo = getBmiCategory(patient.bmi);
 
-  const metrics: MetricGroup[] = [
+  const stats = [
     {
-      label: "Fertility Info",
-      bg: "bg-indigo-50",
-      border: "border-indigo-100",
+      label: "Fertility Status",
+      bg: "bg-indigo-50/50",
+      border: "border-indigo-100/50",
+      icon: Dna,
+      color: "text-indigo-600",
       items: [
         {
-          label: "Married Since",
-          value: patient.yearsMarried ? `${patient.yearsMarried} Years` : "N/A",
-          icon: Calendar,
-          color: "text-indigo-600",
-        },
-        {
-          label: "Attempting Since",
-          value: patient.yearsTrying ? `${patient.yearsTrying} Years` : "N/A",
+          label: "Type",
+          value: patient.infertilityType || "Primary",
           icon: History,
-          color: "text-indigo-600",
         },
         {
-          label: "Infertility Type",
-          value: patient.infertilityType || "Not Specified",
-          icon: Dna,
-          color: "text-indigo-600",
-          capitalize: true,
+          label: "Married",
+          value: patient.yearsMarried ? `${patient.yearsMarried} Yrs` : "N/A",
+          icon: Calendar,
         },
         {
-          label: "Status",
-          value: patient.status || "Active",
-          icon: Activity,
-          color: "text-indigo-600",
-          highlight: true,
+          label: "Attempting",
+          value: patient.yearsTrying ? `${patient.yearsTrying} Yrs` : "N/A",
+          icon: Clock,
         },
-      ],
-    },
-    {
-      label: "Obstetric History",
-      bg: "bg-rose-50",
-      border: "border-rose-100",
-      items: [
         {
-          label: "Gravida",
-          value: patient.gravida || "0",
+          label: "Gravida/Para",
+          value: `${patient.gravida || "0"} / ${patient.para || "0"}`,
           icon: Baby,
-          color: "text-rose-600",
-        },
-        {
-          label: "Para",
-          value: patient.para || "0",
-          icon: Scale,
-          color: "text-rose-600",
         },
       ],
     },
     {
-      label: "Vitals & Appearance",
-      bg: "bg-emerald-50",
-      border: "border-emerald-100",
+      label: "Body Composition",
+      bg: "bg-emerald-50/50",
+      border: "border-emerald-100/50",
+      icon: Scale,
+      color: "text-emerald-600",
       items: [
         {
           label: "Weight",
           value: patient.weight ? `${patient.weight} kg` : "N/A",
           icon: Weight,
-          color: "text-emerald-600",
         },
         {
           label: "Height",
           value: patient.height ? `${patient.height} cm` : "N/A",
           icon: Height,
-          color: "text-emerald-600",
         },
-        {
-          label: "Blood Pressure",
-          value: patient.bloodPressure || "N/A",
-          icon: Activity,
-          color: "text-emerald-600",
-        },
-        {
-          label: "BMI",
-          value: patient.bmi ? (
-            <div className="flex items-center gap-1.5">
-              <span>{patient.bmi.toFixed(1)}</span>
-              <span className={`text-[10px] font-bold ${bmiInfo.color}`}>
-                ({bmiInfo.label})
-              </span>
-            </div>
-          ) : (
-            "N/A"
-          ),
-          icon: Activity,
-          color: "text-emerald-600",
-        },
+        { label: "BP", value: patient.bloodPressure || "N/A", icon: Activity },
       ],
     },
   ];
 
   return (
-    <div className="space-y-6">
-      {metrics.map((group, idx) => (
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+      {/* BMI Card - Prominent */}
+      <div
+        className={cn(
+          "md:col-span-2 rounded-2xl sm:rounded-3xl p-4 sm:p-6 border-2 flex flex-col sm:flex-row items-center justify-between gap-4 sm:gap-6 transition-all hover:shadow-md",
+          bmiInfo.bg,
+          bmiInfo.border
+        )}
+      >
+        <div className="flex items-center gap-3 sm:gap-5">
+          <div
+            className={cn(
+              "p-2.5 sm:p-4 rounded-xl sm:rounded-2xl bg-white shadow-sm",
+              bmiInfo.color
+            )}
+          >
+            <Activity className="w-6 h-6 sm:w-8 sm:h-8" />
+          </div>
+          <div>
+            <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-wider text-gray-500 block mb-0.5 sm:mb-1">
+              Body Mass Index
+            </span>
+            <div className="flex items-baseline gap-1.5 sm:gap-2">
+              <h4 className="text-2xl sm:text-4xl font-black tracking-tight text-gray-900">
+                {patient.bmi ? Number(patient.bmi).toFixed(1) : "N/A"}
+              </h4>
+              <span
+                className={cn("text-sm sm:text-lg font-black", bmiInfo.color)}
+              >
+                {bmiInfo.label}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div className="hidden md:flex gap-1">
+          {[1, 2, 3, 4, 5].map((i) => (
+            <div
+              key={i}
+              className={cn(
+                "w-2 h-8 rounded-full",
+                i <=
+                  (patient.bmi ? Math.min(Math.floor(patient.bmi / 7), 5) : 0)
+                  ? bmiInfo.bg.replace("50", "200")
+                  : "bg-white"
+              )}
+            />
+          ))}
+        </div>
+      </div>
+
+      {stats.map((group, idx) => (
         <div
           key={idx}
-          className={`${group.bg} border ${group.border} rounded-2xl p-5`}
+          className={cn(
+            "bg-white rounded-2xl sm:rounded-3xl border border-gray-100 p-4 sm:p-6 space-y-4 sm:space-y-6 shadow-sm",
+            "hover:border-indigo-100 transition-colors"
+          )}
         >
-          <h4 className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
-            <span className="w-1.5 h-1.5 rounded-full bg-current opacity-50" />
-            {group.label}
-          </h4>
-          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-6">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div
+              className={cn(
+                "p-1.5 sm:p-2 rounded-lg sm:rounded-xl",
+                group.bg,
+                group.color
+              )}
+            >
+              <group.icon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            </div>
+            <h5 className="text-[10px] sm:text-xs font-black uppercase tracking-wide text-gray-400">
+              {group.label}
+            </h5>
+          </div>
+
+          <div className="grid grid-cols-2 gap-y-4 sm:gap-y-6 gap-x-3 sm:gap-x-4">
             {group.items.map((item, i) => (
-              <div key={i} className="space-y-1.5">
-                <div className="flex items-center gap-1.5 text-gray-500">
-                  <item.icon
-                    size={13}
-                    strokeWidth={2.5}
-                    className={item.color}
-                  />
-                  <span className="text-[10px] font-bold uppercase tracking-tight">
+              <div key={i} className="space-y-0.5 sm:space-y-1">
+                <div className="flex items-center gap-1 text-gray-400">
+                  <item.icon size={10} strokeWidth={2.5} />
+                  <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-tight">
                     {item.label}
                   </span>
                 </div>
-                <div
-                  className={`text-sm font-bold text-gray-900 ${
-                    item.capitalize ? "capitalize" : ""
-                  } ${item.highlight ? "text-indigo-700" : ""}`}
-                >
+                <p className="text-xs sm:text-sm font-black text-gray-800 tracking-tight">
                   {item.value}
-                </div>
+                </p>
               </div>
             ))}
           </div>

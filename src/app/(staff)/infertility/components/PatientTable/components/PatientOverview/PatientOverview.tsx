@@ -1,13 +1,16 @@
 "use client";
 import React from "react";
-import { Edit, Stethoscope, Clock, Receipt, FileText } from "lucide-react";
+import { Edit, Stethoscope, Clock, FileText, Printer, X } from "lucide-react";
 import { InfertilityPatientData } from "../../../../types";
+import { ModalHeader } from "@/components/ui/ModalHeader";
 import { ModalShell } from "@/components/ui/ModalShell";
 import { ProfileCard } from "./components/ProfileCard";
 import { MedicalDetails } from "./components/MedicalDetails";
 import { HistorySection } from "./components/HistorySection";
 import { HospitalDetails } from "./components/HospitalDetails";
 import { useInfertilityActions } from "../../../../stores";
+import { generateInfertilityReport } from "../../../../utils/generateReport";
+import { useAuth } from "@/app/AuthContext";
 
 interface PatientOverviewProps {
   isOpen: boolean;
@@ -21,18 +24,16 @@ const PatientOverview: React.FC<PatientOverviewProps> = ({
   patient,
 }) => {
   const { openEditModal } = useInfertilityActions();
+  const { user } = useAuth();
 
   if (!patient && !isOpen) return null;
   if (!patient) return null;
 
-  const formatDateWithTime = (dateStr: string) => {
+  const formatDateShort = (dateStr: string) => {
     return new Date(dateStr).toLocaleDateString("en-GB", {
       day: "numeric",
-      month: "long",
+      month: "short",
       year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: true,
     });
   };
 
@@ -43,85 +44,68 @@ const PatientOverview: React.FC<PatientOverviewProps> = ({
     }, 100);
   };
 
+  const handlePrint = () => {
+    generateInfertilityReport(patient, user?.fullName || "Staff");
+  };
+
   return (
     <ModalShell
       isOpen={isOpen}
       onClose={onClose}
       className="w-full max-w-[90%] md:max-w-[85%] lg:max-w-[80%] h-[95vh] sm:h-[90vh] rounded-3xl overflow-hidden flex flex-col"
     >
-      {/* Header with Case Info */}
-      <div className="bg-white border-b px-6 py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shrink-0 shadow-sm relative z-10">
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-indigo-50 rounded-xl">
-            <Stethoscope className="text-indigo-600 w-6 h-6" />
+      <ModalHeader
+        icon={Stethoscope}
+        iconColor="indigo"
+        title="Case Overview"
+        subtitle="Comprehensive breakdown of infertility management details."
+        onClose={onClose}
+        extra={
+          <div className="flex flex-col items-end gap-0.5 px-3 py-1.5 bg-white/50 border border-slate-200/50 rounded-xl shadow-xs">
+            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+              Last Updated
+            </span>
+            <span className="text-xs font-black text-slate-700">
+              {formatDateShort(patient.updatedAt)}
+            </span>
           </div>
-          <div>
-            <h2 className="text-xl font-bold text-gray-800 tracking-tight">
-              Infertility Management Case Overview
-            </h2>
-            <div className="flex flex-wrap items-center gap-3 text-xs text-gray-500 mt-0.5 font-medium">
-              <span className="font-mono bg-indigo-100/50 text-indigo-700 px-2 py-0.5 rounded border border-indigo-200">
-                CASE-INF-{patient.id}
-              </span>
-              <span className="hidden sm:inline text-gray-300">|</span>
-              <span className="flex items-center gap-1.5 text-gray-600">
-                <Clock className="w-3.5 h-3.5 text-gray-400" />
-                Registered: {formatDateWithTime(patient.createdAt)}
-              </span>
-            </div>
+        }
+      >
+        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+          <div className="flex items-center gap-1.5 px-1.5 py-0.5 sm:px-2 sm:py-1 bg-indigo-50 border border-indigo-100 rounded-md">
+            <span className="text-[8px] sm:text-[9px] font-bold text-indigo-400 uppercase">
+              Case ID
+            </span>
+            <span className="text-[10px] sm:text-[11px] font-bold text-indigo-700 font-mono">
+              INF-{patient.id}
+            </span>
+          </div>
+          <div className="hidden sm:flex items-center gap-1.5 px-2 py-1 bg-slate-50 border border-slate-100 rounded-md">
+            <Clock className="w-2.5 h-2.5 text-gray-400" />
+            <span className="text-[9px] font-bold text-gray-400 uppercase">
+              Created
+            </span>
+            <span className="text-[10px] font-bold text-gray-600">
+              {formatDateShort(patient.createdAt)}
+            </span>
           </div>
         </div>
-
-        <button
-          onClick={onClose}
-          className="absolute top-4 right-4 sm:static p-2 hover:bg-gray-100 rounded-full transition-colors cursor-pointer text-gray-400 hover:text-gray-600"
-        >
-          <span className="sr-only">Close</span>
-          <svg
-            className="w-8 h-8"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M6 18L18 6M6 6l12 12"
-            />
-          </svg>
-        </button>
-      </div>
+      </ModalHeader>
 
       {/* Main Content Area */}
       <div className="flex-1 overflow-y-auto bg-slate-50/50 p-4 sm:p-6 lg:p-8">
-        <div className="max-w-7xl mx-auto space-y-6">
+        <div className="max-w-7xl mx-auto space-y-6 lg:space-y-8 pb-8">
+          {/* Top Section: Profile & Dashboard Overview */}
           <ProfileCard patient={patient} />
 
-          {/* Layout: Medical Info & History (Left) and Hospital (Right) */}
-          <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 lg:gap-8">
-            <div className="xl:col-span-2 space-y-6 lg:space-y-8">
+          {/* Grid Layout: Organized for Doctors */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
+            {/* Left/Main Column: Medical Stats & Qualitative History */}
+            <div className="lg:col-span-8 space-y-6 lg:space-y-8">
+              {/* Vitals & Metrics Section */}
               <MedicalDetails patient={patient} />
 
-              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-                <h4 className="text-sm font-bold text-gray-800 uppercase tracking-wider mb-6 flex items-center gap-2">
-                  <FileText className="text-indigo-600 w-4 h-4" />
-                  Prescribed Medications
-                </h4>
-                <div className="bg-slate-50 rounded-xl p-5 border border-slate-100">
-                  <p
-                    className={`text-sm leading-relaxed ${
-                      patient.medications
-                        ? "text-gray-700 font-medium whitespace-pre-wrap"
-                        : "text-gray-400 italic"
-                    }`}
-                  >
-                    {patient.medications ||
-                      "No active medications recorded for this patient case."}
-                  </p>
-                </div>
-              </div>
-
+              {/* Patient History - Now more integrated */}
               <HistorySection
                 medicalHistory={patient.medicalHistory}
                 surgicalHistory={patient.surgicalHistory}
@@ -129,39 +113,99 @@ const PatientOverview: React.FC<PatientOverviewProps> = ({
                 contraceptiveHistory={patient.contraceptiveHistory}
                 chiefComplaint={patient.chiefComplaint}
                 notes={patient.notes}
+                lastUpdated={patient.updatedAt}
               />
             </div>
 
-            <div className="xl:col-span-1">
-              <div className="sticky top-0">
-                <HospitalDetails patient={patient} />
+            {/* Right Column: Case Context & Referrals */}
+            <div className="lg:col-span-4 space-y-6 lg:space-y-8 h-full">
+              {/* Treatment & Medications Card */}
+              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                <div className="bg-indigo-600 px-6 py-4 flex items-center justify-between">
+                  <h4 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                    <FileText className="w-4 h-4" />
+                    Medication & Plan
+                  </h4>
+                </div>
+                <div className="p-6 space-y-6">
+                  <div className="space-y-3">
+                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block">
+                      Prescribed Medications
+                    </span>
+                    <div className="bg-amber-50/50 rounded-xl p-4 border border-amber-100/50 min-h-[100px]">
+                      <p
+                        className={`text-sm leading-relaxed ${
+                          patient.medications
+                            ? "text-amber-900 font-medium whitespace-pre-wrap"
+                            : "text-amber-600/60 italic"
+                        }`}
+                      >
+                        {patient.medications ||
+                          "No active medications recorded."}
+                      </p>
+                    </div>
+                  </div>
 
-                {/* Print Receipt Quick Action (Visual placeholder for future enhancement) */}
-                {/* <button className="mt-6 w-full flex items-center justify-center gap-3 px-6 py-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl shadow-lg transition-all active:scale-[0.98] font-bold tracking-tight">
-                  <Receipt className="w-5 h-5" />
-                  Generate Case Receipt
-                </button> */}
+                  <div className="space-y-3">
+                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block">
+                      Active Treatment Plan
+                    </span>
+                    <div className="bg-emerald-50/50 rounded-xl p-4 border border-emerald-100/50 min-h-[100px]">
+                      <p
+                        className={`text-sm leading-relaxed ${
+                          patient.treatmentPlan
+                            ? "text-emerald-900 font-medium whitespace-pre-wrap"
+                            : "text-emerald-600/60 italic"
+                        }`}
+                      >
+                        {patient.treatmentPlan ||
+                          "Initial diagnostic phase in progress."}
+                      </p>
+                    </div>
+                  </div>
+                </div>
               </div>
+
+              {/* Hospital Context Context */}
+              <HospitalDetails patient={patient} />
             </div>
           </div>
         </div>
       </div>
 
-      {/* Footer Actions */}
-      <div className="bg-white border-t p-5 flex flex-col-reverse sm:flex-row justify-end gap-3 shrink-0 shadow-sm">
-        <button
-          onClick={handleEdit}
-          className="flex items-center justify-center gap-2 px-6 py-2.5 bg-white border border-gray-200 hover:border-indigo-600 hover:text-indigo-600 text-gray-700 font-bold text-sm rounded-xl transition-all active:scale-95 shadow-sm hover:shadow-md cursor-pointer w-full sm:w-auto"
-        >
-          <Edit className="w-4 h-4" />
-          Edit Case Details
-        </button>
-        <button
-          onClick={onClose}
-          className="px-8 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm rounded-xl shadow-lg shadow-indigo-200 hover:shadow-xl hover:-translate-y-0.5 transition-all active:scale-95 active:translate-y-0 cursor-pointer w-full sm:w-auto"
-        >
-          Done
-        </button>
+      {/* Custom Footer with Print Button */}
+      <div className="border-t border-gray-200 bg-gray-50 px-3 sm:px-4 md:px-6 py-2 sm:py-3 rounded-b-3xl">
+        <div className="flex items-center justify-between gap-2">
+          {/* Left Side - Print Button */}
+          <button
+            type="button"
+            onClick={handlePrint}
+            className="inline-flex items-center justify-center gap-2 p-2 sm:px-4 sm:py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors duration-200 text-xs sm:text-sm font-medium cursor-pointer shadow-sm"
+          >
+            <Printer className="w-4 h-4" />
+            <span className="hidden sm:inline">Print Report</span>
+          </button>
+
+          {/* Right Side - Close & Edit */}
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="inline-flex items-center justify-center gap-1.5 p-2 sm:px-4 sm:py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors duration-200 text-xs sm:text-sm font-medium cursor-pointer"
+            >
+              <X className="w-4 h-4 sm:hidden" />
+              <span className="hidden sm:inline">Close</span>
+            </button>
+            <button
+              type="button"
+              onClick={handleEdit}
+              className="inline-flex items-center justify-center gap-1.5 p-2 sm:px-4 sm:py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors duration-200 text-xs sm:text-sm font-medium cursor-pointer"
+            >
+              <Edit className="w-4 h-4" />
+              <span className="hidden sm:inline">Edit</span>
+            </button>
+          </div>
+        </div>
       </div>
     </ModalShell>
   );
