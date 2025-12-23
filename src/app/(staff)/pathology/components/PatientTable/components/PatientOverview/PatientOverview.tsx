@@ -108,16 +108,17 @@ const PatientOverview: React.FC<PatientOverviewProps> = ({
           <ProfileCard patient={patient} />
 
           {/* Grid Layout */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
-            {/* Left Column: Financial & Remarks */}
-            <div className="lg:col-span-8 space-y-6 lg:space-y-8">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-stretch">
+            {/* Left Column: Financial & Investigations */}
+            <div className="lg:col-span-8 flex flex-col gap-6 lg:gap-8">
               <FinancialOverview patient={patient} />
-              <ClinicalRemarks remarks={patient.remarks} />
+              <TestDetails variant="investigations" patient={patient} />
             </div>
 
-            {/* Right Column: Test Details */}
-            <div className="lg:col-span-4 space-y-6 lg:space-y-8">
-              <TestDetails patient={patient} />
+            {/* Right Column: Metadata & Remarks */}
+            <div className="lg:col-span-4 flex flex-col gap-6 lg:gap-8">
+              <TestDetails variant="info" patient={patient} />
+              <ClinicalRemarks remarks={patient.remarks} />
             </div>
           </div>
         </div>

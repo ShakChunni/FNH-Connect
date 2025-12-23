@@ -474,7 +474,8 @@ model Hospital {
 }
 
 model InfertilityPatient {
-  id Int @id @default(autoincrement())
+  id         Int    @id @default(autoincrement())
+  caseNumber String @unique // Format: INF-YYMMDD-XXXX
 
   // References to central tables
   patientId  Int // Links to main Patient table

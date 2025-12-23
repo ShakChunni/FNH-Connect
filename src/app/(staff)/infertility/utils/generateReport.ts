@@ -172,7 +172,7 @@ export const generateInfertilityReport = async (
   doc.setFontSize(8);
   doc.setFont("helvetica", "normal");
   doc.setTextColor(COLORS.text);
-  doc.text(`Case ID: INF-${data.id}`, margin, currentY);
+  doc.text(`#${data.caseNumber || `INF-${data.id}`}`, margin, currentY);
   doc.text(
     `Report Date: ${formatDate(new Date().toISOString())}`,
     pageWidth - margin,
@@ -183,8 +183,23 @@ export const generateInfertilityReport = async (
   );
   currentY += 8;
 
+  /**
+   * Proactive page break check
+   */
+  const ensureSpace = (neededHeight: number) => {
+    const footerBuffer = 45; // Space for the footer and margins
+    if (currentY + neededHeight > pageHeight - footerBuffer) {
+      doc.addPage();
+      drawLogoWatermark(doc);
+      currentY = 20;
+      return true;
+    }
+    return false;
+  };
+
   // === 1. PATIENT INFORMATION BOX ===
   const patientBoxHeight = 32;
+  ensureSpace(patientBoxHeight);
   const patientContentY = drawSectionBox(
     doc,
     "PATIENT INFORMATION",
@@ -259,6 +274,7 @@ export const generateInfertilityReport = async (
 
   // === 2. SPOUSE/PARTNER INFORMATION BOX ===
   const spouseBoxHeight = 22;
+  ensureSpace(spouseBoxHeight);
   const spouseContentY = drawSectionBox(
     doc,
     "SPOUSE / PARTNER INFORMATION",
@@ -307,6 +323,7 @@ export const generateInfertilityReport = async (
 
   // === 3. FERTILITY ASSESSMENT BOX ===
   const fertilityBoxHeight = 28;
+  ensureSpace(fertilityBoxHeight);
   const fertilityContentY = drawSectionBox(
     doc,
     "FERTILITY ASSESSMENT",
@@ -372,6 +389,7 @@ export const generateInfertilityReport = async (
 
   // === 4. PHYSICAL ASSESSMENT BOX ===
   const physicalBoxHeight = 18;
+  ensureSpace(physicalBoxHeight);
   const physicalContentY = drawSectionBox(
     doc,
     "PHYSICAL ASSESSMENT",
@@ -413,6 +431,7 @@ export const generateInfertilityReport = async (
   // === 5. CHIEF COMPLAINT BOX ===
   if (data.chiefComplaint) {
     const complaintBoxHeight = 16;
+    ensureSpace(complaintBoxHeight);
     const complaintContentY = drawSectionBox(
       doc,
       "CHIEF COMPLAINT",
@@ -450,6 +469,7 @@ export const generateInfertilityReport = async (
   if (historyItems.length > 0) {
     // Calculate dynamic height based on content
     const historyBoxHeight = 12 + historyItems.length * 10;
+    ensureSpace(historyBoxHeight);
 
     // Draw background box
     doc.setFillColor(241, 245, 249); // slate-100
@@ -496,15 +516,9 @@ export const generateInfertilityReport = async (
     currentY += historyBoxHeight + 6;
   }
 
-  // Check for page break
-  if (currentY > pageHeight - 70) {
-    doc.addPage();
-    await drawLogoWatermark(doc);
-    currentY = 15;
-  }
-
   // === 7. TREATMENT PLAN BOX ===
   const treatmentBoxHeight = 26;
+  ensureSpace(treatmentBoxHeight);
   const treatmentContentY = drawSectionBox(
     doc,
     "TREATMENT PLAN & MEDICATIONS",
@@ -563,6 +577,7 @@ export const generateInfertilityReport = async (
   // === 8. CLINICAL NOTES BOX (if exists) ===
   if (data.notes) {
     const notesBoxHeight = 22;
+    ensureSpace(notesBoxHeight);
     const notesContentY = drawSectionBox(
       doc,
       "CLINICAL NOTES",
@@ -589,6 +604,7 @@ export const generateInfertilityReport = async (
   // === 9. REFERRING HOSPITAL BOX (if exists) ===
   if (data.hospitalName) {
     const hospitalBoxHeight = 24;
+    ensureSpace(hospitalBoxHeight);
     const hospitalContentY = drawSectionBox(
       doc,
       "REFERRING HOSPITAL",
@@ -630,7 +646,7 @@ export const generateInfertilityReport = async (
   }
 
   // === FOOTER ===
-  const footerY = pageHeight - 28;
+  const footerY = pageHeight - 35; // Increased bottom margin
 
   // Left side - Prepared By
   doc.setFont("helvetica", "normal");
@@ -685,13 +701,13 @@ export const generateInfertilityReport = async (
   doc.text(
     "This is a computer-generated medical report from the Woman's Own Medicine (WOM) System",
     pageWidth / 2,
-    pageHeight - 8,
+    pageHeight - 12, // Increased safety margin
     { align: "center" }
   );
   doc.text(
     "Feroza Nursing Home · Infertility Management Unit",
     pageWidth / 2,
-    pageHeight - 4,
+    pageHeight - 8, // Increased safety margin
     { align: "center" }
   );
 

@@ -72,6 +72,8 @@ export interface SpouseInfo {
   dateOfBirth: Date | null;
   gender: string;
   occupation: string;
+  phoneNumber?: string;
+  email?: string;
 }
 
 // Complete submission data
@@ -98,6 +100,7 @@ export interface AddInfertilityPatientResponse {
     };
     infertilityRecord: {
       id: number;
+      caseNumber: string;
     };
     displayId: string;
   };
@@ -132,6 +135,7 @@ export interface EditInfertilityPatientResponse {
 // Response type for infertility patient list
 export interface InfertilityPatient {
   id: number;
+  caseNumber: string; // Format: INF-YYMMDD-XXXX
   patientId: number;
   hospitalId: number;
   patient: {
@@ -215,6 +219,11 @@ export interface InfertilityPatientBasic {
   gender: string | null;
   address: string | null;
   guardianName: string | null;
+  guardianDOB: Date | string | null;
+  guardianGender: string | null;
+  guardianPhone: string | null;
+  guardianEmail: string | null;
+  guardianAddress: string | null;
   bloodGroup: string | null;
   occupation: string | null;
   guardianOccupation: string | null;
@@ -256,6 +265,7 @@ export interface SearchParams {
 // Patient Table Types
 export interface InfertilityPatientData {
   id: number;
+  caseNumber: string; // Format: INF-YYMMDD-XXXX
   patientId: number;
   hospitalId: number;
   hospitalName: string | null;

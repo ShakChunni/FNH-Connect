@@ -76,6 +76,8 @@ export const spouseInfoSchema = z.object({
   ),
   gender: z.string(),
   occupation: z.string(),
+  phoneNumber: z.string().optional(),
+  email: z.string().optional(),
 });
 
 export const medicalInfoSchema = z.object({

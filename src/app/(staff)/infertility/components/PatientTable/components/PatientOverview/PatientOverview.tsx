@@ -77,7 +77,7 @@ const PatientOverview: React.FC<PatientOverviewProps> = ({
               Case ID
             </span>
             <span className="text-[10px] sm:text-[11px] font-bold text-indigo-700 font-mono">
-              INF-{patient.id}
+              #INF{patient.id}
             </span>
           </div>
           <div className="hidden sm:flex items-center gap-1.5 px-2 py-1 bg-slate-50 border border-slate-100 rounded-md">
@@ -99,9 +99,9 @@ const PatientOverview: React.FC<PatientOverviewProps> = ({
           <ProfileCard patient={patient} />
 
           {/* Grid Layout: Organized for Doctors */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-stretch">
             {/* Left/Main Column: Medical Stats & Qualitative History */}
-            <div className="lg:col-span-8 space-y-6 lg:space-y-8">
+            <div className="lg:col-span-8 flex flex-col gap-6 lg:gap-8">
               {/* Vitals & Metrics Section */}
               <MedicalDetails patient={patient} />
 
@@ -118,21 +118,21 @@ const PatientOverview: React.FC<PatientOverviewProps> = ({
             </div>
 
             {/* Right Column: Case Context & Referrals */}
-            <div className="lg:col-span-4 space-y-6 lg:space-y-8 h-full">
+            <div className="lg:col-span-4 flex flex-col gap-6 lg:gap-8">
               {/* Treatment & Medications Card */}
-              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-                <div className="bg-indigo-600 px-6 py-4 flex items-center justify-between">
+              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex-1 flex flex-col">
+                <div className="bg-indigo-600 px-6 py-4 flex items-center justify-between shrink-0">
                   <h4 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
                     <FileText className="w-4 h-4" />
                     Medication & Plan
                   </h4>
                 </div>
-                <div className="p-6 space-y-6">
-                  <div className="space-y-3">
+                <div className="p-6 space-y-6 flex-1 flex flex-col">
+                  <div className="space-y-3 flex-1 flex flex-col">
                     <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block">
                       Prescribed Medications
                     </span>
-                    <div className="bg-amber-50/50 rounded-xl p-4 border border-amber-100/50 min-h-[100px]">
+                    <div className="bg-amber-50/50 rounded-xl p-4 border border-amber-100/50 flex-1">
                       <p
                         className={`text-sm leading-relaxed ${
                           patient.medications
@@ -146,11 +146,11 @@ const PatientOverview: React.FC<PatientOverviewProps> = ({
                     </div>
                   </div>
 
-                  <div className="space-y-3">
+                  <div className="space-y-3 flex-1 flex flex-col">
                     <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block">
                       Active Treatment Plan
                     </span>
-                    <div className="bg-emerald-50/50 rounded-xl p-4 border border-emerald-100/50 min-h-[100px]">
+                    <div className="bg-emerald-50/50 rounded-xl p-4 border border-emerald-100/50 flex-1">
                       <p
                         className={`text-sm leading-relaxed ${
                           patient.treatmentPlan

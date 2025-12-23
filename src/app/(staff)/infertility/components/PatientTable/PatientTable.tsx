@@ -99,7 +99,7 @@ const PatientTable: React.FC<PatientTableProps> = ({
 
   // Sorting
   const requestSort = (key: string) => {
-    if (key === "id") return; // Don't sort by row number
+    if (key === "id" || key === "actions") return; // Don't sort by row number or actions
     let direction = "ascending";
     if (
       sortConfig &&
@@ -119,8 +119,9 @@ const PatientTable: React.FC<PatientTableProps> = ({
   };
 
   // Fixed widths for pinned columns - must match TableRow widths
-  const FIRST_COL_WIDTH = "w-[90px] min-w-[90px]";
-  const SECOND_COL_WIDTH = "w-[180px] min-w-[180px]";
+  const FIRST_COL_WIDTH = "w-[60px] min-w-[60px]";
+  const SECOND_COL_WIDTH = "w-[120px] min-w-[120px]";
+  const THIRD_COL_WIDTH = "w-[200px] min-w-[200px]";
 
   // Get header classes based on pinning and position - FNH Navy styling
   const getHeaderClasses = (header: TableHeader, index: number) => {
@@ -130,15 +131,22 @@ const PatientTable: React.FC<PatientTableProps> = ({
       font-semibold text-white uppercase tracking-wider
       bg-fnh-navy
       transition-colors
-      ${header.key !== "id" ? "cursor-pointer hover:bg-fnh-navy-dark" : ""}
+      ${
+        header.key !== "id" && header.key !== "actions"
+          ? "cursor-pointer hover:bg-fnh-navy-dark"
+          : ""
+      }
     `;
 
     // Pinned columns only on lg+ screens with fixed widths
     if (index === 0) {
-      return `${baseClasses} ${FIRST_COL_WIDTH} lg:sticky lg:z-30 lg:left-0 lg:bg-fnh-navy`;
+      return `${baseClasses} ${FIRST_COL_WIDTH} lg:sticky lg:z-30 lg:left-0 lg:bg-[#111827]`;
     }
     if (index === 1) {
-      return `${baseClasses} ${SECOND_COL_WIDTH} lg:sticky lg:z-30 lg:left-[90px] lg:bg-fnh-navy`;
+      return `${baseClasses} ${SECOND_COL_WIDTH} lg:sticky lg:z-30 lg:left-[60px] lg:bg-[#111827]`;
+    }
+    if (index === 2) {
+      return `${baseClasses} ${THIRD_COL_WIDTH} lg:sticky lg:z-30 lg:left-[180px] lg:bg-[#111827]`;
     }
     return baseClasses;
   };
