@@ -45,7 +45,7 @@ export const LOGIN_VALIDATION = {
     required: "Username is required",
     minLength: "Username must be at least 3 characters",
     pattern:
-      "Username can only contain alphanumeric characters and underscores",
+      "Username can only contain letters, numbers, hyphens, and underscores",
   },
   password: {
     required: "Password is required",

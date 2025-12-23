@@ -399,6 +399,64 @@ export async function middleware(request: NextRequest) {
     }
   }
 
+  // REDIRECT 5.5: Receptionist role restrictions
+  // Receptionists can only access: dashboard, general-admission, pathology
+  if (hasValidSession && userRole) {
+    const normalizedRole = userRole.toLowerCase().replace(/[\s_-]/g, "");
+    const isReceptionist = normalizedRole === "receptionist";
+
+    if (isReceptionist) {
+      // Define allowed routes for receptionists
+      // They can access: dashboard, general-admission, pathology, patient-records
+      // And all supporting API routes needed to view/edit patients
+      const receptionistAllowedPaths = [
+        // Page routes
+        "/dashboard",
+        "/general-admission",
+        "/pathology",
+        "/patient-records",
+        "/login",
+        // API routes for pages
+        "/api/dashboard",
+        "/api/general-admission",
+        "/api/pathology",
+        "/api/patient-records",
+        // Supporting API routes
+        "/api/auth",
+        "/api/staff",
+        "/api/hospitals",
+        "/api/patients",
+        "/api/admissions",
+        "/api/pathology-patients",
+        "/api/departments",
+        "/api/shifts",
+      ];
+
+      // Check if current path is allowed
+      const isAllowed = receptionistAllowedPaths.some(
+        (allowedPath) =>
+          normalizedPath === allowedPath ||
+          normalizedPath.startsWith(allowedPath + "/")
+      );
+
+      if (!isAllowed && !isAdminRoute) {
+        // Not allowed and not an admin route (admin routes already handled above)
+        if (isAPIRoute) {
+          return new NextResponse(
+            JSON.stringify({
+              message: "Forbidden - Access not allowed for your role",
+            }),
+            {
+              status: 403,
+              headers: { "Content-Type": "application/json" },
+            }
+          );
+        }
+        return NextResponse.redirect(new URL("/dashboard", request.url));
+      }
+    }
+  }
+
   // REDIRECT 6: Protected routes without session → /login
   const isPublicRoute = isLoginPage || isRootPath;
   const isProtectedRoute = !isAuthRoute && !isPublicRoute;
