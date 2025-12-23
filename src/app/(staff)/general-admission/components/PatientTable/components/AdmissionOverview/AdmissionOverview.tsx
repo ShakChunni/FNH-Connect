@@ -1,7 +1,11 @@
 "use client";
 import React from "react";
-import { Edit, Activity, Clock, Printer, FileText } from "lucide-react";
-import { AdmissionPatientData } from "../../../../types";
+import { Edit, Activity, Clock, Printer, FileText, X } from "lucide-react";
+import {
+  AdmissionPatientData,
+  ADMISSION_STATUS_OPTIONS,
+} from "../../../../types";
+import { ModalHeader } from "@/components/ui/ModalHeader";
 import { ModalShell } from "@/components/ui/ModalShell";
 import { ProfileCard } from "./components/ProfileCard";
 import { FinancialOverview } from "./components/FinancialOverview";
@@ -31,20 +35,16 @@ const AdmissionOverview: React.FC<AdmissionOverviewProps> = ({
   if (!patient && !isOpen) return null;
   if (!patient) return null;
 
-  const formatDateWithTime = (dateStr: string) => {
+  const formatDateShort = (dateStr: string) => {
     return new Date(dateStr).toLocaleDateString("en-GB", {
       day: "numeric",
-      month: "long",
+      month: "short",
       year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: true,
     });
   };
 
   const handleEdit = () => {
     onClose();
-    // Small timeout to allow overview close animation to start/finish smoothly
     setTimeout(() => {
       onEdit?.(patient);
     }, 100);
@@ -58,97 +58,137 @@ const AdmissionOverview: React.FC<AdmissionOverviewProps> = ({
     generateAdmissionInvoice(patient, user?.fullName || "Staff");
   };
 
+  const statusOption = ADMISSION_STATUS_OPTIONS.find(
+    (o) => o.value === patient.status
+  );
+
+  const getStatusBgColor = (color: string) => {
+    const colors: Record<string, string> = {
+      blue: "bg-blue-50 text-blue-600 border-blue-100",
+      amber: "bg-amber-50 text-amber-600 border-amber-100",
+      purple: "bg-purple-50 text-purple-600 border-purple-100",
+      green: "bg-emerald-50 text-emerald-600 border-emerald-100",
+      red: "bg-red-50 text-red-600 border-red-100",
+    };
+    return colors[color] || colors.blue;
+  };
+
   return (
     <ModalShell
       isOpen={isOpen}
       onClose={onClose}
-      className="w-full max-w-[85%] md:max-w-[80%] h-[95vh] sm:h-[90vh] rounded-3xl overflow-hidden flex flex-col"
+      className="w-full max-w-[90%] md:max-w-[85%] lg:max-w-[80%] h-[95vh] sm:h-[90vh] rounded-3xl overflow-hidden flex flex-col"
     >
-      {/* Header with Admission Info */}
-      <div className="bg-white border-b px-6 py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shrink-0 shadow-sm relative z-10">
-        <div>
-          <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2.5 tracking-tight">
-            <Activity className="text-fnh-teal w-5 h-5" />
-            Admission Overview
-          </h2>
-          <div className="flex flex-wrap items-center gap-3 text-xs text-gray-500 mt-1.5">
-            <span className="font-mono bg-fnh-navy/5 text-fnh-navy px-2.5 py-1 rounded-md font-semibold border border-fnh-navy/10 whitespace-nowrap">
+      <ModalHeader
+        icon={Activity}
+        iconColor="purple"
+        title="Admission Overview"
+        subtitle="Complete admission details and billing information."
+        onClose={onClose}
+        extra={
+          <div className="flex flex-col items-end gap-0.5 px-3 py-1.5 bg-white/50 border border-slate-200/50 rounded-xl shadow-xs">
+            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+              Last Updated
+            </span>
+            <span className="text-xs font-black text-slate-700">
+              {formatDateShort(patient.updatedAt)}
+            </span>
+          </div>
+        }
+      >
+        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+          <div className="flex items-center gap-1.5 px-1.5 py-0.5 sm:px-2 sm:py-1 bg-purple-50 border border-purple-100 rounded-md">
+            <span className="text-[8px] sm:text-[9px] font-bold text-purple-400 uppercase">
+              Adm No
+            </span>
+            <span className="text-[10px] sm:text-[11px] font-bold text-purple-700 font-mono">
               {patient.admissionNumber}
             </span>
-            <span className="hidden sm:inline text-gray-300">|</span>
-            <span className="flex items-center gap-1.5 whitespace-nowrap bg-gray-50 px-2 py-1 rounded-md border border-gray-100 font-medium text-gray-600">
-              <Clock className="w-3 h-3 text-gray-400" />
-              {formatDateWithTime(patient.dateAdmitted)}
+          </div>
+          <div className="hidden sm:flex items-center gap-1.5 px-2 py-1 bg-slate-50 border border-slate-100 rounded-md">
+            <Clock className="w-2.5 h-2.5 text-gray-400" />
+            <span className="text-[9px] font-bold text-gray-400 uppercase">
+              Admitted
+            </span>
+            <span className="text-[10px] font-bold text-gray-600">
+              {formatDateShort(patient.dateAdmitted)}
             </span>
           </div>
-        </div>
-
-        <button
-          onClick={onClose}
-          className="absolute top-4 right-4 sm:static p-2 hover:bg-gray-100 rounded-full transition-colors cursor-pointer text-gray-400 hover:text-gray-600"
-        >
-          <span className="sr-only">Close</span>
-          <svg
-            className="w-8 h-8 sm:w-8 sm:h-8"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
+          <div
+            className={`flex items-center gap-1 px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-md text-[9px] sm:text-[10px] font-bold uppercase border ${getStatusBgColor(
+              statusOption?.color || "blue"
+            )}`}
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M6 18L18 6M6 6l12 12"
-            />
-          </svg>
-        </button>
-      </div>
-
-      <div className="flex-1 overflow-y-auto bg-gray-50/50 p-4 sm:p-6 lg:p-8">
-        <ProfileCard patient={patient} />
-
-        {/* Layout: Financial/Remarks (Left) and Details (Right) */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2 space-y-6">
-            <FinancialOverview patient={patient} />
-            <Remarks remarks={patient.remarks} />
+            {statusOption?.label || patient.status}
           </div>
+        </div>
+      </ModalHeader>
 
-          <div className="lg:col-span-1 space-y-6">
-            <AdmissionDetails patient={patient} />
+      {/* Main Content Area */}
+      <div className="flex-1 overflow-y-auto bg-slate-50/50 p-4 sm:p-6 lg:p-8">
+        <div className="max-w-7xl mx-auto space-y-6 lg:space-y-8 pb-8">
+          {/* Profile Section */}
+          <ProfileCard patient={patient} />
+
+          {/* Grid Layout */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
+            {/* Left Column: Financial & Remarks */}
+            <div className="lg:col-span-8 space-y-6 lg:space-y-8">
+              <FinancialOverview patient={patient} />
+              <Remarks remarks={patient.remarks} />
+            </div>
+
+            {/* Right Column: Admission Details */}
+            <div className="lg:col-span-4 space-y-6 lg:space-y-8">
+              <AdmissionDetails patient={patient} />
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Footer Actions */}
-      <div className="bg-white border-t p-5 flex flex-col-reverse sm:flex-row justify-end gap-4 shrink-0 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.02)]">
-        <button
-          onClick={handlePrintReceipt}
-          className="flex items-center justify-center gap-2 px-5 py-2.5 bg-green-100 hover:bg-green-200 text-green-700 font-bold text-sm rounded-xl transition-all active:scale-95 shadow-sm hover:shadow-md cursor-pointer w-full sm:w-auto"
-        >
-          <Printer className="w-3.5 h-3.5" />
-          Receipt
-        </button>
-        <button
-          onClick={handlePrintInvoice}
-          className="flex items-center justify-center gap-2 px-5 py-2.5 bg-purple-100 hover:bg-purple-200 text-purple-700 font-bold text-sm rounded-xl transition-all active:scale-95 shadow-sm hover:shadow-md cursor-pointer w-full sm:w-auto"
-        >
-          <FileText className="w-3.5 h-3.5" />
-          Invoice
-        </button>
-        <button
-          onClick={handleEdit}
-          className="flex items-center justify-center gap-2 px-5 py-2.5 bg-white border border-gray-200 hover:border-fnh-navy hover:text-fnh-navy text-gray-700 font-bold text-sm rounded-xl transition-all active:scale-95 shadow-sm hover:shadow-md cursor-pointer w-full sm:w-auto"
-        >
-          <Edit className="w-3.5 h-3.5" />
-          Edit Details
-        </button>
-        <button
-          onClick={onClose}
-          className="px-6 py-2.5 bg-fnh-navy hover:bg-fnh-navy-dark text-white font-bold text-sm rounded-xl shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all active:scale-95 active:translate-y-0 cursor-pointer w-full sm:w-auto"
-        >
-          Close Overview
-        </button>
+      {/* Custom Footer with Print Buttons */}
+      <div className="border-t border-gray-200 bg-gray-50 px-3 sm:px-4 md:px-6 py-2 sm:py-3 rounded-b-3xl">
+        <div className="flex items-center justify-between gap-2">
+          {/* Left Side - Print Buttons */}
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            <button
+              type="button"
+              onClick={handlePrintReceipt}
+              className="inline-flex items-center justify-center gap-2 p-2 sm:px-3 sm:py-2 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-lg hover:bg-emerald-100 transition-colors duration-200 text-xs sm:text-sm font-medium cursor-pointer"
+            >
+              <Printer className="w-4 h-4" />
+              <span className="hidden sm:inline">Receipt</span>
+            </button>
+            <button
+              type="button"
+              onClick={handlePrintInvoice}
+              className="inline-flex items-center justify-center gap-2 p-2 sm:px-3 sm:py-2 bg-violet-50 border border-violet-200 text-violet-700 rounded-lg hover:bg-violet-100 transition-colors duration-200 text-xs sm:text-sm font-medium cursor-pointer"
+            >
+              <FileText className="w-4 h-4" />
+              <span className="hidden sm:inline">Invoice</span>
+            </button>
+          </div>
+
+          {/* Right Side - Close & Edit */}
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="inline-flex items-center justify-center gap-1.5 p-2 sm:px-4 sm:py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors duration-200 text-xs sm:text-sm font-medium cursor-pointer"
+            >
+              <X className="w-4 h-4 sm:hidden" />
+              <span className="hidden sm:inline">Close</span>
+            </button>
+            <button
+              type="button"
+              onClick={handleEdit}
+              className="inline-flex items-center justify-center gap-1.5 p-2 sm:px-4 sm:py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors duration-200 text-xs sm:text-sm font-medium cursor-pointer"
+            >
+              <Edit className="w-4 h-4" />
+              <span className="hidden sm:inline">Edit</span>
+            </button>
+          </div>
+        </div>
       </div>
     </ModalShell>
   );

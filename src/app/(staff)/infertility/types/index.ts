@@ -149,6 +149,9 @@ export interface InfertilityPatient {
     bloodGroup: string | null;
     occupation: string | null;
     guardianOccupation: string | null;
+    guardianPhone: string | null;
+    guardianEmail: string | null;
+    guardianAddress: string | null;
   };
   hospital: {
     id: number;
@@ -270,6 +273,9 @@ export interface InfertilityPatientData {
   husbandName: string | null;
   husbandAge: number | null;
   husbandDOB: string | null;
+  husbandPhone: string | null;
+  husbandEmail: string | null;
+  husbandAddress: string | null;
   spouseGender: string;
   mobileNumber: string | null;
   email: string | null;

@@ -1,7 +1,9 @@
 import React from "react";
-import { Edit2 } from "lucide-react";
+import { Edit2, Printer } from "lucide-react";
 import { InfertilityPatientData } from "../../../types";
 import { TableHeader, formatDate } from "../utils";
+import { generateInfertilityReport } from "../../../utils/generateReport";
+import { useAuth } from "@/app/AuthContext";
 
 interface TableRowProps {
   row: InfertilityPatientData;
@@ -18,7 +20,8 @@ const TableRow: React.FC<TableRowProps> = ({
   onEdit,
   onClick,
 }) => {
-  const FIRST_COL_WIDTH = "w-[90px] min-w-[90px]";
+  const { user } = useAuth();
+  const FIRST_COL_WIDTH = "w-[120px] min-w-[120px]";
   const SECOND_COL_WIDTH = "w-[180px] min-w-[180px]";
 
   const getCellClasses = (headerIndex: number) => {
@@ -26,30 +29,42 @@ const TableRow: React.FC<TableRowProps> = ({
       "px-2 py-2 sm:px-3 sm:py-3 md:px-4 md:py-4 text-xs sm:text-sm text-gray-900 whitespace-nowrap";
 
     if (headerIndex === 0) {
-      return `${baseClasses} ${FIRST_COL_WIDTH} lg:sticky lg:z-10 lg:left-0 lg:bg-white`;
+      return `${baseClasses} ${FIRST_COL_WIDTH} lg:sticky lg:z-10 lg:left-0 lg:bg-white group-hover:lg:bg-gray-50`;
     }
     if (headerIndex === 1) {
-      return `${baseClasses} ${SECOND_COL_WIDTH} lg:sticky lg:z-10 lg:left-[90px] lg:bg-white`;
+      return `${baseClasses} ${SECOND_COL_WIDTH} lg:sticky lg:z-10 lg:left-[120px] lg:bg-white group-hover:lg:bg-gray-50`;
     }
     return baseClasses;
+  };
+
+  const handlePrint = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    generateInfertilityReport(row, user?.fullName || "Staff");
   };
 
   const renderCellContent = (header: TableHeader) => {
     switch (header.key) {
       case "id":
         return (
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
             <button
               onClick={(e) => {
                 e.stopPropagation();
                 onEdit?.(row);
               }}
-              className="inline-flex items-center gap-1 px-2 py-1 bg-fnh-navy text-white rounded-lg hover:bg-fnh-navy-dark transition-colors cursor-pointer"
+              className="p-1.5 bg-fnh-navy text-white rounded-lg hover:bg-fnh-navy-dark transition-all cursor-pointer shadow-sm hover:shadow-md active:scale-95"
               title="Edit patient"
             >
-              <Edit2 size={12} />
+              <Edit2 size={14} />
             </button>
-            <span className="font-semibold text-fnh-navy">{index}</span>
+            <button
+              onClick={handlePrint}
+              className="p-1.5 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition-all cursor-pointer shadow-sm hover:shadow-md active:scale-95"
+              title="Print Report"
+            >
+              <Printer size={14} />
+            </button>
+            <span className="font-semibold text-fnh-navy ml-1">{index}</span>
           </div>
         );
 

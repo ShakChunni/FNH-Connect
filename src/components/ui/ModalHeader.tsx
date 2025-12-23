@@ -8,7 +8,7 @@ interface ModalHeaderProps {
   /** Icon component to display */
   icon: React.ElementType;
   /** Gradient color theme: 'blue' | 'indigo' | 'purple' | 'green' | 'red' */
-  iconColor?: "blue" | "indigo" | "purple" | "green" | "red";
+  iconColor?: "blue" | "indigo" | "purple" | "green" | "red" | "teal";
   /** Main title text */
   title: string;
   /** Optional subtitle/description */
@@ -19,6 +19,8 @@ interface ModalHeaderProps {
   isDisabled?: boolean;
   /** Optional navigation tabs */
   children?: React.ReactNode;
+  /** Optional extra content next to close button */
+  extra?: React.ReactNode;
 }
 
 const iconGradients = {
@@ -27,6 +29,7 @@ const iconGradients = {
   purple: "from-purple-500 to-purple-600",
   green: "from-green-500 to-green-600",
   red: "from-red-500 to-red-600",
+  teal: "from-teal-500 to-teal-600",
 };
 
 const titleColors = {
@@ -35,6 +38,7 @@ const titleColors = {
   purple: "text-purple-900",
   green: "text-green-900",
   red: "text-red-900",
+  teal: "text-teal-900",
 };
 
 const subtitleColors = {
@@ -43,6 +47,7 @@ const subtitleColors = {
   purple: "text-purple-700/80",
   green: "text-green-700/80",
   red: "text-red-700/80",
+  teal: "text-teal-700/80",
 };
 
 export function ModalHeader({
@@ -53,24 +58,25 @@ export function ModalHeader({
   onClose,
   isDisabled = false,
   children,
+  extra,
 }: ModalHeaderProps) {
   return (
     <div className="sticky top-0 bg-linear-to-br from-slate-50/90 via-white/85 to-slate-100/90 border-b border-gray-100 rounded-t-3xl z-10 overflow-hidden">
       {/* Main header content */}
       <div className="flex justify-between items-center p-3 sm:p-4 md:p-6 pb-2 sm:pb-3 md:pb-4 relative z-10">
         {/* Icon and title section */}
-        <div className="flex items-center gap-3 sm:gap-4">
-          {/* Icon container with gradient background */}
+        <div className="flex items-center gap-2 sm:gap-3 md:gap-4">
+          {/* Icon container - hidden on mobile */}
           <div
-            className={`p-2 sm:p-2.5 md:p-3 bg-linear-to-br ${iconGradients[iconColor]} rounded-xl shadow-lg shrink-0`}
+            className={`hidden sm:flex p-2 sm:p-2.5 md:p-3 bg-linear-to-br ${iconGradients[iconColor]} rounded-xl shadow-lg shrink-0`}
           >
-            <Icon className="text-white w-[18px] h-[18px] sm:w-6 sm:h-6 md:w-8 md:h-8" />
+            <Icon className="text-white w-5 h-5 md:w-6 md:h-6" />
           </div>
 
           {/* Title and subtitle */}
           <div className="min-w-0 flex-1">
             <h2
-              className={`text-base sm:text-xl md:text-2xl lg:text-3xl font-bold ${titleColors[iconColor]} leading-tight mb-0.5 sm:mb-1`}
+              className={`text-sm sm:text-lg md:text-xl lg:text-2xl font-bold ${titleColors[iconColor]} leading-tight`}
             >
               {title}
             </h2>
@@ -84,8 +90,9 @@ export function ModalHeader({
           </div>
         </div>
 
-        {/* Close button */}
-        <div className="flex items-center gap-2 sm:gap-3">
+        {/* Close button and Extra content */}
+        <div className="flex items-center gap-2 sm:gap-4">
+          {extra && <div className="hidden sm:block">{extra}</div>}
           <button
             onClick={onClose}
             disabled={isDisabled}

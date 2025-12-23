@@ -1,4 +1,7 @@
-import { InfertilityPatient } from "../../../app/(staff)/infertility/types";
+import {
+  InfertilityPatient,
+  InfertilityPatientData,
+} from "../../../app/(staff)/infertility/types";
 
 const calculateAge = (dateOfBirth: Date | string | null): number | null => {
   if (!dateOfBirth) return null;
@@ -15,7 +18,7 @@ const calculateAge = (dateOfBirth: Date | string | null): number | null => {
 
 export const normalizePatientData = (
   patientData: InfertilityPatient[] | undefined
-) =>
+): InfertilityPatientData[] =>
   (patientData || []).map((row) => ({
     id: row.id,
     patientId: row.patient.id,
@@ -45,6 +48,9 @@ export const normalizePatientData = (
         ? row.patient.guardianDOB.toISOString()
         : row.patient.guardianDOB
       : null,
+    husbandPhone: row.patient.guardianPhone,
+    husbandEmail: row.patient.guardianEmail,
+    husbandAddress: row.patient.guardianAddress,
     spouseGender: row.patient.guardianGender || "Male",
     mobileNumber: row.patient.phoneNumber,
     email: row.patient.email,
@@ -56,9 +62,9 @@ export const normalizePatientData = (
     yearsTrying: row.yearsTrying,
     para: row.para,
     gravida: row.gravida,
-    weight: row.weight,
-    height: row.height,
-    bmi: row.bmi,
+    weight: row.weight ? Number(row.weight) : null,
+    height: row.height ? Number(row.height) : null,
+    bmi: row.bmi ? Number(row.bmi) : null,
     bloodPressure: row.bloodPressure,
     infertilityType: row.infertilityType,
     // Medical history fields
