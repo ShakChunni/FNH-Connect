@@ -26,6 +26,11 @@ export function useFetchPatientInformation(searchQuery: string) {
           gender: string | null;
           address: string | null;
           guardianName: string | null;
+          guardianDOB: string | null;
+          guardianGender: string | null;
+          guardianPhone: string | null;
+          guardianEmail: string | null;
+          guardianAddress: string | null;
           bloodGroup: string | null;
           occupation: string | null;
           guardianOccupation: string | null;
@@ -54,6 +59,11 @@ export function useFetchPatientInformation(searchQuery: string) {
         gender: record.gender,
         address: record.address,
         guardianName: record.guardianName,
+        guardianDOB: record.guardianDOB,
+        guardianGender: record.guardianGender,
+        guardianPhone: record.guardianPhone,
+        guardianEmail: record.guardianEmail,
+        guardianAddress: record.guardianAddress,
         bloodGroup: record.bloodGroup,
         occupation: record.occupation,
         guardianOccupation: record.guardianOccupation,

@@ -9,6 +9,10 @@ import { motion, AnimatePresence } from "framer-motion";
 import { createPortal } from "react-dom";
 import { User, Building2, Loader2, Info, PlusCircle, X } from "lucide-react";
 import { useFetchPatientInformation } from "../../../hooks";
+import {
+  calculateAgeInfo,
+  getAgeInYears,
+} from "@/components/form-sections/utils/dateUtils";
 import { InfertilityPatientBasic } from "../../../types";
 import {
   useInfertilityPatientData,
@@ -19,7 +23,7 @@ import {
 const PatientSearch: React.FC = () => {
   const patientData = useInfertilityPatientData();
   const hospitalData = useInfertilityHospitalData(); // Need hospital name for "Patients from {hospitalName}"
-  const { setPatientData } = useInfertilityActions();
+  const { setPatientData, setSpouseData } = useInfertilityActions();
 
   const [searchQuery, setSearchQueryState] = useState(
     patientData.fullName || ""
@@ -134,7 +138,17 @@ const PatientSearch: React.FC = () => {
   };
 
   const handleSelectPatient = (patient: InfertilityPatientBasic) => {
-    const dob = patient.dateOfBirth ? new Date(patient.dateOfBirth) : null;
+    // Standardized date parsing
+    const parseDate = (d: any) => {
+      if (!d) return null;
+      const parsed = new Date(d);
+      return isNaN(parsed.getTime()) ? null : parsed;
+    };
+
+    const dob = parseDate(patient.dateOfBirth);
+    const spouseDob = parseDate(patient.guardianDOB);
+    const spouseAge = getAgeInYears(spouseDob);
+
     setPatientData({
       id: patient.id,
       firstName: patient.patientFullName.split(" ")[0] || "",
@@ -150,6 +164,17 @@ const PatientSearch: React.FC = () => {
       bloodGroup: patient.bloodGroup || "",
       occupation: patient.occupation || "",
     });
+
+    setSpouseData({
+      name: patient.guardianName || "",
+      age: spouseAge,
+      dateOfBirth: spouseDob,
+      gender: patient.guardianGender || "Male",
+      occupation: patient.guardianOccupation || "",
+      phoneNumber: patient.guardianPhone || "",
+      email: patient.guardianEmail || "",
+    });
+
     setSearchQuery(patient.patientFullName);
     setIsDropdownOpen(false);
   };
@@ -175,7 +200,25 @@ const PatientSearch: React.FC = () => {
       bloodGroup: "",
       occupation: "",
     });
+    setSpouseData({
+      name: "",
+      age: null,
+      dateOfBirth: null,
+      gender: "Male",
+      occupation: "",
+      phoneNumber: "",
+      email: "",
+    });
     setSearchQuery("");
+    setSpouseData({
+      name: "",
+      age: null,
+      dateOfBirth: null,
+      gender: "Male",
+      occupation: "",
+      phoneNumber: "",
+      email: "",
+    });
   };
 
   // Close logic

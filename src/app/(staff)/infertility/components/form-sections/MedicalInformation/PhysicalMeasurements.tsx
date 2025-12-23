@@ -7,6 +7,8 @@ import {
 } from "../../../stores";
 import BloodGroupDropdown from "../../../../../../components/form-sections/Fields/BloodGroupDropdown";
 
+import NumberInput from "@/components/form-sections/Fields/NumberInput";
+
 const BLOOD_GROUPS = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
 
 const PhysicalMeasurements: React.FC = () => {
@@ -54,8 +56,7 @@ const PhysicalMeasurements: React.FC = () => {
           <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1.5 sm:mb-2">
             Weight (kg)
           </label>
-          <input
-            type="number"
+          <NumberInput
             value={medicalInfo.weight ?? ""}
             onChange={(e) =>
               updateMedicalInfo(
@@ -74,8 +75,7 @@ const PhysicalMeasurements: React.FC = () => {
           <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1.5 sm:mb-2">
             Height (cm)
           </label>
-          <input
-            type="number"
+          <NumberInput
             value={medicalInfo.height ?? ""}
             onChange={(e) =>
               updateMedicalInfo(
@@ -94,8 +94,7 @@ const PhysicalMeasurements: React.FC = () => {
           <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1.5 sm:mb-2">
             BMI
           </label>
-          <input
-            type="number"
+          <NumberInput
             value={medicalInfo.bmi ?? ""}
             readOnly
             className={inputClassName(medicalInfo.bmi, true, true)}

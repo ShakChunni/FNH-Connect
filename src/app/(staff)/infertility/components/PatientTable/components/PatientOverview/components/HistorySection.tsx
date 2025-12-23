@@ -124,7 +124,7 @@ export const HistorySection: React.FC<HistorySectionProps> = ({
               </h5>
             </div>
 
-            <div className="flex-1 min-h-[40px] sm:min-h-[60px]">
+            <div className="flex-1 min-h-10 sm:min-h-[60px]">
               <p
                 className={cn(
                   "text-xs sm:text-sm leading-relaxed whitespace-pre-wrap wrap-break-word",

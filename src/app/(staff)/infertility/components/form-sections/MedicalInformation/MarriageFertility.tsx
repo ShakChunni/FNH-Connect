@@ -6,6 +6,8 @@ import {
 } from "../../../stores";
 import InfertilityTypeDropdown from "../../../../../../components/form-sections/Fields/InfertilityTypeDropdown";
 
+import NumberInput from "@/components/form-sections/Fields/NumberInput";
+
 const INFERTILITY_TYPES = ["Primary", "Secondary"];
 
 const MarriageFertility: React.FC = () => {
@@ -53,8 +55,7 @@ const MarriageFertility: React.FC = () => {
           <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1.5 sm:mb-2">
             Years Married
           </label>
-          <input
-            type="number"
+          <NumberInput
             value={medicalInfo.yearsMarried ?? ""}
             onChange={(e) =>
               updateMedicalInfo(
@@ -73,8 +74,7 @@ const MarriageFertility: React.FC = () => {
           <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1.5 sm:mb-2">
             Years Trying to Conceive
           </label>
-          <input
-            type="number"
+          <NumberInput
             value={medicalInfo.yearsTrying ?? ""}
             onChange={(e) =>
               updateMedicalInfo(

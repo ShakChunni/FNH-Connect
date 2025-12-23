@@ -1,5 +1,5 @@
 import React from "react";
-import { User, Heart, Phone, Mail, Calendar } from "lucide-react";
+import { User, Heart, Phone, Mail, Calendar, Briefcase } from "lucide-react";
 import PatientSearch from "./PatientSearch";
 import {
   useInfertilityPatientData,
@@ -208,9 +208,16 @@ const PatientInformation: React.FC = () => {
 
           {/* Row 4: Spouse Name (full width) */}
           <div className="mb-4">
-            <label className="block text-gray-700 text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2">
-              Spouse Name
-            </label>
+            <div className="flex items-center justify-between mb-1.5 sm:mb-2">
+              <label className="block text-gray-700 text-xs sm:text-sm font-semibold">
+                Spouse Name
+              </label>
+              {isExisting && spouseData.name && (
+                <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded-full bg-rose-100 text-rose-700 text-xs font-semibold border border-rose-200 shadow-sm">
+                  <Heart className="w-3 h-3 mr-1 text-rose-500" /> Auto-filled
+                </span>
+              )}
+            </div>
             <input
               type="text"
               className={inputClassName(spouseData.name)}
@@ -227,20 +234,83 @@ const PatientInformation: React.FC = () => {
 
           {/* Row 5: Spouse Date of Birth + Age Boxes (full width, calendar half + age boxes half) */}
           <div>
-            <label className="block text-gray-700 text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2">
-              Spouse Date of Birth
-            </label>
+            <div className="flex items-center justify-between mb-1.5 sm:mb-2">
+              <label className="block text-gray-700 text-xs sm:text-sm font-semibold">
+                Spouse Date of Birth
+              </label>
+              {isExisting && spouseData.dateOfBirth && (
+                <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded-full bg-rose-100 text-rose-700 text-xs font-semibold border border-rose-200 shadow-sm">
+                  <Calendar className="w-3 h-3 mr-1 text-rose-500" />{" "}
+                  Auto-filled
+                </span>
+              )}
+            </div>
             <DateOfBirthDropdown
               value={spouseData.dateOfBirth}
               onChange={handleSpouseDOBChange}
             />
           </div>
 
+          {/* New Rows: Spouse Phone + Email */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+            {/* Spouse Phone */}
+            <div>
+              <div className="flex items-center justify-between mb-1.5 sm:mb-2">
+                <label className="block text-gray-700 text-xs sm:text-sm font-semibold">
+                  Spouse Phone
+                </label>
+                {isExisting && spouseData.phoneNumber && (
+                  <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded-full bg-rose-100 text-rose-700 text-xs font-semibold border border-rose-200 shadow-sm">
+                    <Phone className="w-3 h-3 mr-1 text-rose-500" /> Auto-filled
+                  </span>
+                )}
+              </div>
+              <ContactPhoneInput
+                value={spouseData.phoneNumber || ""}
+                onChange={(val) =>
+                  setSpouseData({ ...spouseData, phoneNumber: val })
+                }
+                onValidationChange={() => {}} // Simple validation for now
+                defaultCountry="BD"
+                isAutofilled={isExisting}
+              />
+            </div>
+
+            {/* Spouse Email */}
+            <div>
+              <div className="flex items-center justify-between mb-1.5 sm:mb-2">
+                <label className="block text-gray-700 text-xs sm:text-sm font-semibold">
+                  Spouse Email
+                </label>
+                {isExisting && spouseData.email && (
+                  <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded-full bg-rose-100 text-rose-700 text-xs font-semibold border border-rose-200 shadow-sm">
+                    <Mail className="w-3 h-3 mr-1 text-rose-500" /> Auto-filled
+                  </span>
+                )}
+              </div>
+              <ContactEmailInput
+                value={spouseData.email || ""}
+                onChange={(val) => setSpouseData({ ...spouseData, email: val })}
+                onValidationChange={() => {}} // Simple validation for now
+                placeholder="Spouse email"
+                isAutofilled={isExisting}
+              />
+            </div>
+          </div>
+
           {/* New Row: Spouse Occupation */}
           <div className="mt-4">
-            <label className="block text-gray-700 text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2">
-              Spouse Occupation
-            </label>
+            <div className="flex items-center justify-between mb-1.5 sm:mb-2">
+              <label className="block text-gray-700 text-xs sm:text-sm font-semibold">
+                Spouse Occupation
+              </label>
+              {isExisting && spouseData.occupation && (
+                <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded-full bg-rose-100 text-rose-700 text-xs font-semibold border border-rose-200 shadow-sm">
+                  <Briefcase className="w-3 h-3 mr-1 text-rose-500" />{" "}
+                  Auto-filled
+                </span>
+              )}
+            </div>
             <input
               type="text"
               className={inputClassName(spouseData.occupation)}
@@ -262,7 +332,10 @@ const PatientInformation: React.FC = () => {
                 Address
               </label>
               <textarea
-                className={`${inputClassName(patientData.address)} resize-none`}
+                className={`${inputClassName(patientData.address).replace(
+                  /h-\d+|md:h-\d+/g,
+                  ""
+                )} resize-none min-h-24`}
                 value={patientData.address}
                 onChange={(e) =>
                   setPatientData({ ...patientData, address: e.target.value })

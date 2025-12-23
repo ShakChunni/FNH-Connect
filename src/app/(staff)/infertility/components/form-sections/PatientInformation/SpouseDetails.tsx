@@ -6,6 +6,8 @@ import {
 } from "../../../stores";
 import DateOfBirthDropdown from "../../../../../../components/form-sections/Fields/DobDropdown";
 
+import NumberInput from "@/components/form-sections/Fields/NumberInput";
+
 const SpouseDetails: React.FC = () => {
   const spouseData = useInfertilitySpouseData();
   const { setSpouseData } = useInfertilityActions();
@@ -66,8 +68,7 @@ const SpouseDetails: React.FC = () => {
           <label className="block text-gray-700 text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2">
             Spouse Age
           </label>
-          <input
-            type="number"
+          <NumberInput
             className="bg-gray-100 border-2 border-gray-300 text-gray-700 font-normal rounded-lg h-12 md:h-14 py-2 px-4 w-full cursor-not-allowed"
             value={spouseData.age ?? ""}
             readOnly

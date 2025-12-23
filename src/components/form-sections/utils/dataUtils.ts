@@ -21,6 +21,7 @@ export const normalizePatientData = (
 ): InfertilityPatientData[] =>
   (patientData || []).map((row) => ({
     id: row.id,
+    caseNumber: row.caseNumber, // Format: INF-YYMMDD-XXXX
     patientId: row.patient.id,
     hospitalId: row.hospital.id,
     hospitalName: row.hospital.name,

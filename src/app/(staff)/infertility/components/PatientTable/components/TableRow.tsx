@@ -21,18 +21,22 @@ const TableRow: React.FC<TableRowProps> = ({
   onClick,
 }) => {
   const { user } = useAuth();
-  const FIRST_COL_WIDTH = "w-[120px] min-w-[120px]";
-  const SECOND_COL_WIDTH = "w-[180px] min-w-[180px]";
+  const FIRST_COL_WIDTH = "w-[60px] min-w-[60px]";
+  const SECOND_COL_WIDTH = "w-[120px] min-w-[120px]";
+  const THIRD_COL_WIDTH = "w-[200px] min-w-[200px]";
 
   const getCellClasses = (headerIndex: number) => {
     const baseClasses =
-      "px-2 py-2 sm:px-3 sm:py-3 md:px-4 md:py-4 text-xs sm:text-sm text-gray-900 whitespace-nowrap";
+      "px-2 py-2 sm:px-3 sm:py-3 md:px-4 md:py-4 text-[11px] sm:text-xs text-gray-900 whitespace-nowrap transition-colors";
 
     if (headerIndex === 0) {
-      return `${baseClasses} ${FIRST_COL_WIDTH} lg:sticky lg:z-10 lg:left-0 lg:bg-white group-hover:lg:bg-gray-50`;
+      return `${baseClasses} ${FIRST_COL_WIDTH} lg:sticky lg:z-10 lg:left-0 lg:bg-gray-50/95 group-hover:lg:bg-gray-100`;
     }
     if (headerIndex === 1) {
-      return `${baseClasses} ${SECOND_COL_WIDTH} lg:sticky lg:z-10 lg:left-[120px] lg:bg-white group-hover:lg:bg-gray-50`;
+      return `${baseClasses} ${SECOND_COL_WIDTH} lg:sticky lg:z-10 lg:left-[60px] lg:bg-gray-50/95 group-hover:lg:bg-gray-100`;
+    }
+    if (headerIndex === 2) {
+      return `${baseClasses} ${THIRD_COL_WIDTH} lg:sticky lg:z-10 lg:left-[180px] lg:bg-gray-50/95 group-hover:lg:bg-gray-100`;
     }
     return baseClasses;
   };
@@ -45,6 +49,9 @@ const TableRow: React.FC<TableRowProps> = ({
   const renderCellContent = (header: TableHeader) => {
     switch (header.key) {
       case "id":
+        return <span className="font-semibold text-fnh-navy">{index}</span>;
+
+      case "actions":
         return (
           <div className="flex items-center gap-1.5">
             <button
@@ -55,32 +62,39 @@ const TableRow: React.FC<TableRowProps> = ({
               className="p-1.5 bg-fnh-navy text-white rounded-lg hover:bg-fnh-navy-dark transition-all cursor-pointer shadow-sm hover:shadow-md active:scale-95"
               title="Edit patient"
             >
-              <Edit2 size={14} />
+              <Edit2 size={16} />
             </button>
             <button
               onClick={handlePrint}
-              className="p-1.5 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition-all cursor-pointer shadow-sm hover:shadow-md active:scale-95"
+              className="p-1.5 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-all cursor-pointer shadow-sm hover:shadow-md active:scale-95"
               title="Print Report"
             >
-              <Printer size={14} />
+              <Printer size={16} />
             </button>
-            <span className="font-semibold text-fnh-navy ml-1">{index}</span>
           </div>
         );
 
       case "patientFullName":
         return (
-          <div className="font-medium">
-            <div className="text-gray-900">{row.patientFullName}</div>
-            {row.mobileNumber && (
-              <div className="text-xs text-gray-500">{row.mobileNumber}</div>
-            )}
+          <div
+            className="font-medium cursor-pointer group/name"
+            onClick={onClick}
+          >
+            <div className="text-gray-900 group-hover/name:text-fnh-blue transition-colors flex items-center gap-2">
+              {row.patientFullName}
+            </div>
+            <div className="text-[10px] text-gray-500 leading-none mt-0.5">
+              {row.patientGender || "Female"}{" "}
+              {row.patientAge ? `, ${row.patientAge}y` : ""}
+            </div>
           </div>
         );
 
       case "hospitalName":
         return (
-          <span className="text-gray-700">{row.hospitalName || "N/A"}</span>
+          <span className="text-gray-700">
+            {row.hospitalName || "Self / Direct"}
+          </span>
         );
 
       case "patientAge":
@@ -90,13 +104,14 @@ const TableRow: React.FC<TableRowProps> = ({
         return formatDate(row.patientDOB);
 
       case "husbandName":
-        return row.husbandName || "N/A";
-
-      case "husbandAge":
-        return row.husbandAge ?? "N/A";
-
-      case "husbandDOB":
-        return formatDate(row.husbandDOB);
+        return (
+          <div>
+            <div className="text-gray-700">{row.husbandName || "N/A"}</div>
+            {row.husbandAge && (
+              <div className="text-[10px] text-gray-500">{row.husbandAge}y</div>
+            )}
+          </div>
+        );
 
       case "mobileNumber":
         return row.mobileNumber || "N/A";
@@ -104,35 +119,17 @@ const TableRow: React.FC<TableRowProps> = ({
       case "address":
         return (
           <span
-            className="max-w-[150px] truncate block"
+            className="max-w-[150px] truncate block text-[11px]"
             title={row.address || undefined}
           >
             {row.address || "N/A"}
           </span>
         );
 
-      case "yearsMarried":
-        return row.yearsMarried ?? "N/A";
-
-      case "yearsTrying":
-        return row.yearsTrying ?? "N/A";
-
-      case "para":
-        return row.para || "N/A";
-
-      case "gravida":
-        return row.gravida || "N/A";
-
-      case "weight":
-        return row.weight ? `${row.weight} kg` : "N/A";
-
-      case "bloodPressure":
-        return row.bloodPressure || "N/A";
-
       case "infertilityType":
         return row.infertilityType ? (
           <span
-            className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+            className={`inline-flex px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded-md ${
               row.infertilityType.toLowerCase() === "primary"
                 ? "bg-purple-100 text-purple-800"
                 : "bg-indigo-100 text-indigo-800"
@@ -142,16 +139,6 @@ const TableRow: React.FC<TableRowProps> = ({
           </span>
         ) : (
           "N/A"
-        );
-
-      case "notes":
-        return (
-          <span
-            className="max-w-[150px] truncate block"
-            title={row.notes || undefined}
-          >
-            {row.notes || "N/A"}
-          </span>
         );
 
       case "createdAt":

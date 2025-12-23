@@ -51,6 +51,8 @@ export interface SpouseData {
   dateOfBirth: Date | null;
   gender: string;
   occupation: string; // Spouse occupation
+  phoneNumber?: string;
+  email?: string;
 }
 
 export interface MedicalData {
@@ -132,6 +134,8 @@ export async function getInfertilityPatients(filters: InfertilityFilters) {
           guardianDOB: true,
           guardianGender: true,
           guardianOccupation: true,
+          guardianPhone: true,
+          guardianEmail: true,
           address: true,
           bloodGroup: true,
           occupation: true,
@@ -235,6 +239,9 @@ export async function createInfertilityPatient(
           guardianDOB: spouseData.dateOfBirth, // For infertility, guardian = spouse
           guardianGender: spouseData.gender,
           guardianOccupation: spouseData.occupation,
+          guardianPhone: spouseData.phoneNumber,
+          guardianEmail: spouseData.email,
+          guardianAddress: patientData.address,
           hospitalId: hospital.id, // Update hospital link
         },
       });
@@ -255,15 +262,57 @@ export async function createInfertilityPatient(
           guardianDOB: spouseData.dateOfBirth, // For infertility, guardian = spouse
           guardianGender: spouseData.gender,
           guardianOccupation: spouseData.occupation,
+          guardianPhone: spouseData.phoneNumber,
+          guardianEmail: spouseData.email,
+          guardianAddress: patientData.address,
           hospitalId: hospital.id, // Link hospital
           createdBy: staffId,
         },
       });
     }
 
-    // 3. Create infertility record
+    // 3. Generate unique case number with date-based format (like pathology)
+    const now = new Date();
+    const datePrefix = now.toISOString().slice(2, 10).replace(/-/g, ""); // YYMMDD
+    const startOfDay = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate()
+    );
+    const endOfDay = new Date(startOfDay.getTime() + 24 * 60 * 60 * 1000);
+    const countToday = await tx.infertilityPatient.count({
+      where: {
+        createdAt: {
+          gte: startOfDay,
+          lt: endOfDay,
+        },
+      },
+    });
+    const caseNumber = `INF-${datePrefix}-${String(countToday + 1).padStart(
+      4,
+      "0"
+    )}`;
+
+    // 4. Create infertility record
+    // First, check if a record already exists for this patient at this hospital
+    const existingInfertilityRecord = await tx.infertilityPatient.findUnique({
+      where: {
+        patientId_hospitalId: {
+          patientId: patient.id,
+          hospitalId: hospital.id,
+        },
+      },
+    });
+
+    if (existingInfertilityRecord) {
+      throw new Error(
+        `This patient already has an active infertility record at ${hospital.name}. Please edit the existing record instead of creating a new one.`
+      );
+    }
+
     const infertilityRecord = await tx.infertilityPatient.create({
       data: {
+        caseNumber, // Generated case number: INF-YYMMDD-XXXX
         patientId: patient.id,
         hospitalId: hospital.id,
         yearsMarried: medicalData.yearsMarried,
@@ -291,12 +340,12 @@ export async function createInfertilityPatient(
       },
     });
 
-    // 4. Log activity
+    // 5. Log activity
     await tx.activityLog.create({
       data: {
         userId,
         action: "CREATE",
-        description: `Created infertility patient record for ${patient.fullName} at ${hospital.name}`,
+        description: `Created infertility patient record ${caseNumber} for ${patient.fullName} at ${hospital.name}`,
         entityType: "InfertilityPatient",
         entityId: infertilityRecord.id,
         timestamp: new Date(),
@@ -316,8 +365,9 @@ export async function createInfertilityPatient(
       },
       infertilityRecord: {
         id: infertilityRecord.id,
+        caseNumber: infertilityRecord.caseNumber,
       },
-      displayId: `INF-${infertilityRecord.id}`,
+      displayId: caseNumber,
     };
   });
 }
@@ -376,6 +426,24 @@ export async function updateInfertilityPatient(
       }
     }
 
+    // 1.5. If hospital changed, check for record collision at the new hospital
+    if (hospital.id !== existingRecord.hospitalId) {
+      const collisionRecord = await tx.infertilityPatient.findUnique({
+        where: {
+          patientId_hospitalId: {
+            patientId: existingRecord.patientId,
+            hospitalId: hospital.id,
+          },
+        },
+      });
+
+      if (collisionRecord) {
+        throw new Error(
+          `This patient already has an infertility record at ${hospital.name}. You cannot move this record to that hospital.`
+        );
+      }
+    }
+
     // 2. Update patient
     const updatedPatient = await tx.patient.update({
       where: { id: existingRecord.patientId },
@@ -394,6 +462,9 @@ export async function updateInfertilityPatient(
         guardianDOB: spouseData.dateOfBirth,
         guardianGender: spouseData.gender,
         guardianOccupation: spouseData.occupation,
+        guardianPhone: spouseData.phoneNumber,
+        guardianEmail: spouseData.email,
+        guardianAddress: patientData.address,
         hospitalId: hospital.id, // Update hospital link
       },
     });
@@ -446,7 +517,7 @@ export async function updateInfertilityPatient(
         id: updatedPatient.id,
         fullName: updatedPatient.fullName,
       },
-      displayId: `INF-${updatedRecord.id}`,
+      displayId: updatedRecord.caseNumber,
     };
   });
 }

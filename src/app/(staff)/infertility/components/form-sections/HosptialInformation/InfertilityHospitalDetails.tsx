@@ -123,7 +123,7 @@ const InfertilityHospitalDetails: React.FC = () => {
             hospitalData.address,
             true,
             isExisting
-          )} resize-none`}
+          ).replace(/h-\d+|md:h-\d+/g, "")} resize-none min-h-20`}
           value={hospitalData.address}
           onChange={(e) => handleHospitalDataChange("address", e.target.value)}
           placeholder="Hospital address"

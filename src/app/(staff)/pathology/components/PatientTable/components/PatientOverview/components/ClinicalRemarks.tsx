@@ -11,7 +11,7 @@ export const ClinicalRemarks: React.FC<ClinicalRemarksProps> = ({
   remarks,
 }) => {
   return (
-    <div className="bg-white rounded-xl sm:rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+    <div className="bg-white rounded-xl sm:rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex-1 flex flex-col">
       {/* Header */}
       <div className="bg-amber-500 px-3 py-2.5 sm:px-5 sm:py-4 flex items-center gap-2">
         <MessageSquare size={14} className="text-white sm:w-4 sm:h-4" />
@@ -21,10 +21,10 @@ export const ClinicalRemarks: React.FC<ClinicalRemarksProps> = ({
       </div>
 
       {/* Content */}
-      <div className="p-3 sm:p-5">
+      <div className="p-3 sm:p-5 flex-1 flex flex-col">
         <div
           className={cn(
-            "rounded-lg sm:rounded-xl p-3 sm:p-4 min-h-[60px] sm:min-h-[100px]",
+            "rounded-lg sm:rounded-xl p-3 sm:p-4 min-h-[60px] sm:min-h-[100px] flex-1",
             remarks
               ? "bg-amber-50/50 border border-amber-100/50"
               : "bg-slate-50 border border-slate-100"

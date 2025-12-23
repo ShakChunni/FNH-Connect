@@ -39,6 +39,8 @@ export interface InfertilityApiPayload {
     dateOfBirth: Date | null;
     gender: string;
     occupation: string;
+    phoneNumber?: string;
+    email?: string;
   };
   medicalInfo: {
     yearsMarried: number | null;
@@ -111,6 +113,8 @@ export const transformInfertilityDataForApi = (
       dateOfBirth: spouseData.dateOfBirth,
       gender: spouseData.gender || "Male",
       occupation: spouseData.occupation || "",
+      phoneNumber: spouseData.phoneNumber || "",
+      email: spouseData.email || "",
     },
     medicalInfo: {
       yearsMarried: medicalInfo.yearsMarried,

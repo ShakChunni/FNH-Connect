@@ -7,6 +7,8 @@ import {
 import GenderDropdown from "../../../../../../components/form-sections/Fields/GenderDropdown";
 import DateOfBirthDropdown from "../../../../../../components/form-sections/Fields/DobDropdown";
 
+import NumberInput from "@/components/form-sections/Fields/NumberInput";
+
 const PatientPersonalDetails: React.FC = () => {
   const patientData = useInfertilityPatientData();
   const { setPatientData } = useInfertilityActions();
@@ -78,8 +80,7 @@ const PatientPersonalDetails: React.FC = () => {
         <label className="block text-gray-700 text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2">
           Patient Age (Years)
         </label>
-        <input
-          type="number"
+        <NumberInput
           value={patientData.age ?? ""}
           readOnly
           className={inputClassName(patientData.age, true, true)} // Read-only derived
