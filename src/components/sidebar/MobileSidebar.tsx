@@ -182,38 +182,46 @@ export default function MobileSidebar() {
                 <Menu className="h-4 w-4" />
               </button>
             </div>
-            {/* Navigation inside first container */}
-            <ul className="space-y-2">
-              {getNavigationItems(user?.role).map((item) => {
-                const isActive = pathname === item.href;
-                const Icon = item.icon;
+            {/* Navigation inside first container - Scrollable */}
+            <div
+              className="overflow-y-auto sidebar-scrollbar pr-1"
+              style={{
+                maxHeight: "calc(100vh - 260px)", // Accounts for logo, user section, and padding on mobile
+                minHeight: "200px",
+              }}
+            >
+              <ul className="space-y-2">
+                {getNavigationItems(user?.role).map((item) => {
+                  const isActive = pathname === item.href;
+                  const Icon = item.icon;
 
-                return (
-                  <li key={item.href}>
-                    <Link
-                      href={item.href}
-                      onClick={handleClose}
-                      className={`group flex items-center rounded-xl px-2 py-2 text-xs font-medium transition-all duration-200 ease-[cubic-bezier(0.25,0.1,0.25,1)] ${
-                        isActive
-                          ? "bg-white/15 text-white border-r-4 border-yellow-400"
-                          : "text-white/85 hover:bg-white/10 hover:text-white"
-                      } gap-2`}
-                    >
-                      <span
-                        className={`flex h-7 w-7 min-w-7 shrink-0 items-center justify-center rounded-lg transition-all duration-200 ${
+                  return (
+                    <li key={item.href}>
+                      <Link
+                        href={item.href}
+                        onClick={handleClose}
+                        className={`group flex items-center rounded-xl px-2 py-2 text-xs font-medium transition-all duration-200 ease-[cubic-bezier(0.25,0.1,0.25,1)] ${
                           isActive
-                            ? "bg-white/15 text-white"
-                            : "text-white/70 group-hover:text-white"
-                        }`}
+                            ? "bg-white/15 text-white border-r-4 border-yellow-400"
+                            : "text-white/85 hover:bg-white/10 hover:text-white"
+                        } gap-2`}
                       >
-                        <Icon className="h-4 w-4" />
-                      </span>
-                      <span className="whitespace-nowrap">{item.label}</span>
-                    </Link>
-                  </li>
-                );
-              })}
-            </ul>
+                        <span
+                          className={`flex h-7 w-7 min-w-7 shrink-0 items-center justify-center rounded-lg transition-all duration-200 ${
+                            isActive
+                              ? "bg-white/15 text-white"
+                              : "text-white/70 group-hover:text-white"
+                          }`}
+                        >
+                          <Icon className="h-4 w-4" />
+                        </span>
+                        <span className="whitespace-nowrap">{item.label}</span>
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
           </div>
 
           {/* Third Container: User Info - separate at bottom */}
