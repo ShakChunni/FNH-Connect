@@ -686,6 +686,7 @@ export function transformAdmissionForResponse(admission: any) {
     admissionNumber: admission.admissionNumber,
     patientId: admission.patientId,
     patientFullName: admission.patient.fullName,
+    patientDateOfBirth: admission.patient.dateOfBirth?.toISOString() || null,
     patientAge: admission.patient.dateOfBirth
       ? Math.floor(
           (Date.now() - new Date(admission.patient.dateOfBirth).getTime()) /

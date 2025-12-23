@@ -442,16 +442,21 @@ export async function POST(request: NextRequest) {
         },
       });
 
-      // ✅ Auto-create/Ensure active shift for specific roles
+      // ✅ Auto-create/Ensure active shift for roles that handle cash
       const userRole = user.role.toLowerCase();
       const staffRole = user.staff.role.toLowerCase();
 
-      if (
+      // Roles that need cash tracking: system-admin, operator, receptionist, staff
+      const needsShift =
         userRole === "system-admin" ||
         userRole === "operator" ||
+        userRole === "receptionist" ||
+        userRole === "staff" ||
         staffRole === "system-admin" ||
-        staffRole === "operator"
-      ) {
+        staffRole === "operator" ||
+        staffRole === "receptionist";
+
+      if (needsShift) {
         await shiftService.ensureActiveShift(user.staff.id, tx);
       }
 
