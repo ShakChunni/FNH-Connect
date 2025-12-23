@@ -52,7 +52,7 @@ const PatientOverview: React.FC<PatientOverviewProps> = ({
     <ModalShell
       isOpen={isOpen}
       onClose={onClose}
-      className="w-full max-w-[90%] md:max-w-[85%] lg:max-w-[80%] h-[95vh] sm:h-[90vh] rounded-3xl overflow-hidden flex flex-col"
+      className="w-full max-w-[90%] md:max-w-[85%] lg:max-w-[80%] h-[80vh] sm:h-[90vh] rounded-3xl overflow-hidden flex flex-col"
     >
       <ModalHeader
         icon={Activity}
