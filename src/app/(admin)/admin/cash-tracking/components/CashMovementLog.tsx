@@ -28,17 +28,20 @@ const CashMovementLog: React.FC<CashMovementLogProps> = ({ movements }) => {
 
   if (movements.length === 0) {
     return (
-      <div className="py-20 flex flex-col items-center justify-center text-gray-400">
-        <Receipt size={40} className="mb-2 opacity-10" />
-        <p className="text-sm font-medium">
-          No cash movements recorded in this shift.
+      <div className="h-full min-h-[350px] flex flex-col items-center justify-center text-gray-400">
+        <Receipt size={48} className="mb-4 opacity-10" />
+        <p className="text-sm font-bold uppercase tracking-widest opacity-40">
+          No cash movements recorded
+        </p>
+        <p className="text-[10px] font-medium text-gray-400 mt-1">
+          Everything looks quiet for this shift.
         </p>
       </div>
     );
   }
 
   return (
-    <div className="divide-y divide-gray-50">
+    <div className="divide-y divide-gray-100/50">
       {movements.map((movement) => {
         const isCollection =
           movement.movementType === "COLLECTION" ||
@@ -49,14 +52,14 @@ const CashMovementLog: React.FC<CashMovementLogProps> = ({ movements }) => {
         return (
           <div
             key={movement.id}
-            className="p-5 hover:bg-slate-50 transition-colors"
+            className="p-4 sm:p-5 hover:bg-slate-50/80 transition-colors"
           >
-            <div className="flex items-start justify-between gap-4">
-              <div className="flex items-start gap-4 flex-1">
+            <div className="flex items-start justify-between gap-3 sm:gap-4">
+              <div className="flex items-start gap-3 sm:gap-4 flex-1 min-w-0">
                 {/* Icon */}
                 <div
                   className={cn(
-                    "mt-1 w-10 h-10 rounded-full flex items-center justify-center shrink-0 border",
+                    "mt-0.5 w-8 h-8 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center shrink-0 border transition-transform",
                     isCollection
                       ? "bg-emerald-50 text-emerald-600 border-emerald-100"
                       : isRefund
@@ -65,24 +68,24 @@ const CashMovementLog: React.FC<CashMovementLogProps> = ({ movements }) => {
                   )}
                 >
                   {isCollection ? (
-                    <TrendingUp size={18} />
+                    <TrendingUp size={16} className="sm:w-[18px]" />
                   ) : isRefund ? (
-                    <TrendingDown size={18} />
+                    <TrendingDown size={16} className="sm:w-[18px]" />
                   ) : (
-                    <Receipt size={18} />
+                    <Receipt size={16} className="sm:w-[18px]" />
                   )}
                 </div>
 
                 {/* Info */}
-                <div className="space-y-1.5 flex-1">
-                  <div className="flex items-center gap-2">
-                    <p className="text-sm font-black text-gray-900 uppercase tracking-tight">
+                <div className="space-y-1 sm:space-y-1.5 flex-1 min-w-0">
+                  <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                    <p className="text-[11px] sm:text-xs font-black text-gray-900 uppercase tracking-tight truncate max-w-[150px] sm:max-w-none">
                       {movement.description ||
                         movement.movementType.replace("_", " ")}
                     </p>
                     <span
                       className={cn(
-                        "text-[9px] font-black px-1.5 py-0.5 rounded-md uppercase tracking-widest border",
+                        "text-[8px] sm:text-[9px] font-black px-1.5 py-0.5 rounded-md uppercase tracking-widest border shrink-0",
                         isCollection
                           ? "bg-emerald-100 text-emerald-800 border-emerald-200"
                           : isRefund
@@ -95,25 +98,25 @@ const CashMovementLog: React.FC<CashMovementLogProps> = ({ movements }) => {
                   </div>
 
                   {patient && (
-                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
-                      <div className="flex items-center gap-1.5 grayscale opacity-70 group-hover:grayscale-0 group-hover:opacity-100 transition-all">
-                        <User size={12} className="text-fnh-blue" />
-                        <p className="text-xs font-bold text-gray-700">
-                          Patient: {patient.fullName}
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-x-4 gap-y-1">
+                      <div className="flex items-center gap-1.5 opacity-80 shrink-0">
+                        <User size={10} className="text-fnh-blue sm:w-3" />
+                        <p className="text-[10px] sm:text-[11px] font-bold text-gray-700 truncate max-w-[120px] sm:max-w-[200px]">
+                          {patient.fullName}
                         </p>
                       </div>
                       {movement.payment?.receiptNumber && (
-                        <div className="flex items-center gap-1.5 grayscale opacity-70">
-                          <Receipt size={12} className="text-fnh-navy" />
-                          <p className="text-[10px] font-bold text-gray-500">
-                            Recpt: {movement.payment.receiptNumber}
+                        <div className="flex items-center gap-1.5 opacity-60 shrink-0">
+                          <Receipt size={10} className="text-fnh-navy sm:w-3" />
+                          <p className="text-[9px] sm:text-[10px] font-bold text-gray-500">
+                            #{movement.payment.receiptNumber}
                           </p>
                         </div>
                       )}
                     </div>
                   )}
 
-                  <div className="flex items-center gap-1.5 text-[10px] text-gray-400 font-medium italic">
+                  <div className="flex items-center gap-1 text-[9px] sm:text-[10px] text-gray-400 font-medium italic">
                     <Clock size={10} />
                     {formatTime(movement.timestamp)}
                   </div>
@@ -121,10 +124,10 @@ const CashMovementLog: React.FC<CashMovementLogProps> = ({ movements }) => {
               </div>
 
               {/* Amount */}
-              <div className="text-right">
+              <div className="text-right shrink-0">
                 <p
                   className={cn(
-                    "text-base font-black font-mono",
+                    "text-sm sm:text-base font-black font-mono leading-none",
                     isCollection
                       ? "text-emerald-600"
                       : isRefund
@@ -135,7 +138,7 @@ const CashMovementLog: React.FC<CashMovementLogProps> = ({ movements }) => {
                   {isCollection ? "+" : isRefund ? "-" : ""}
                   {formatCurrency(movement.amount)}
                 </p>
-                <p className="text-[9px] font-black text-gray-400 tracking-wider">
+                <p className="text-[8px] sm:text-[9px] font-black text-gray-400 tracking-wider mt-1 uppercase">
                   BDT
                 </p>
               </div>
