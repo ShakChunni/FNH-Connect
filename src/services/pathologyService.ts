@@ -540,6 +540,11 @@ export async function updatePathologyPatient(
 
     // 4.5 Handle financial updates (Payments & Refunds)
     if (paidAmountDiff !== 0 && shiftId) {
+      // Find the existing service charge for this pathology test
+      const existingServiceCharge = await tx.serviceCharge.findFirst({
+        where: { pathologyTestId: id },
+      });
+
       if (paidAmountDiff > 0) {
         // ADDITIONAL COLLECTION
         // Generate receipt number
@@ -557,6 +562,17 @@ export async function updatePathologyPatient(
             notes: `Additional payment for pathology test ${existingRecord.testNumber}`,
           },
         });
+
+        // Create PaymentAllocation to link payment to service charge for department tracking
+        if (existingServiceCharge) {
+          await tx.paymentAllocation.create({
+            data: {
+              paymentId: payment.id,
+              serviceChargeId: existingServiceCharge.id,
+              allocatedAmount: new Prisma.Decimal(paidAmountDiff),
+            },
+          });
+        }
 
         // Track cash movement
         await tx.cashMovement.create({

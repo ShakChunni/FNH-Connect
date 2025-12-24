@@ -316,7 +316,22 @@ export async function createAdmission(
       });
     }
 
-    // 6.5. Create Payment and Cash Movement for initial admission fee
+    // 6.5. Create service charge record FIRST (so we can link payment to it)
+    const serviceCharge = await tx.serviceCharge.create({
+      data: {
+        patientAccountId: patientAccount.id,
+        serviceType: "ADMISSION",
+        serviceName: `Admission - ${admissionNumber}`,
+        departmentId: admissionData.departmentId,
+        originalAmount: admissionFee,
+        discountAmount: 0,
+        finalAmount: admissionFee,
+        admissionId: admission.id,
+        createdBy: staffId,
+      },
+    });
+
+    // 7. Create Payment and Cash Movement for initial admission fee
     if (shiftId) {
       const paymentCount = await tx.payment.count();
       const receiptNumber = `RCP-${Date.now()}-${paymentCount + 1}`;
@@ -330,6 +345,13 @@ export async function createAdmission(
           shiftId,
           receiptNumber,
           notes: `Initial Admission Fee for ${admissionNumber}`,
+          // Create PaymentAllocation to link payment to service charge for department tracking
+          paymentAllocations: {
+            create: {
+              serviceChargeId: serviceCharge.id,
+              allocatedAmount: new Prisma.Decimal(admissionFee),
+            },
+          },
         },
       });
 
@@ -351,21 +373,6 @@ export async function createAdmission(
         },
       });
     }
-
-    // 7. Create service charge record
-    await tx.serviceCharge.create({
-      data: {
-        patientAccountId: patientAccount.id,
-        serviceType: "ADMISSION",
-        serviceName: `Admission - ${admissionNumber}`,
-        departmentId: admissionData.departmentId,
-        originalAmount: admissionFee,
-        discountAmount: 0,
-        finalAmount: admissionFee,
-        admissionId: admission.id,
-        createdBy: staffId,
-      },
-    });
 
     // 8. Log activity
     await tx.activityLog.create({
@@ -596,6 +603,11 @@ export async function updateAdmission(
 
     // Handle payment tracking if there's a payment difference
     if (paidAmountDiff !== 0 && shiftId) {
+      // Find the existing service charge for this admission to link payments
+      const existingServiceCharge = await tx.serviceCharge.findFirst({
+        where: { admissionId: id },
+      });
+
       if (paidAmountDiff > 0) {
         // Additional collection
         const paymentCount = await tx.payment.count();
@@ -610,6 +622,15 @@ export async function updateAdmission(
             shiftId,
             receiptNumber,
             notes: `Payment for admission ${existingAdmission.admissionNumber}`,
+            // Link payment to service charge for department tracking
+            ...(existingServiceCharge && {
+              paymentAllocations: {
+                create: {
+                  serviceChargeId: existingServiceCharge.id,
+                  allocatedAmount: new Prisma.Decimal(paidAmountDiff),
+                },
+              },
+            }),
           },
         });
 
