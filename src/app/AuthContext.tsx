@@ -152,22 +152,26 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Only run on mount
 
-  // Periodic session validation (every 5 minutes) - only if user exists
+  // Periodic session validation (every 5 minutes) - only if user exists and not logging out
   useEffect(() => {
-    if (user) {
+    // Don't start interval if logging out or no user
+    if (user && !loggingOut) {
       const interval = setInterval(() => {
-        checkSession(false);
+        // Double-check we're not logging out before checking session
+        if (!loggingOut) {
+          checkSession(false);
+        }
       }, 5 * 60 * 1000); // 5 minutes
 
-      // FIXED: Ensure cleanup happens properly
+      // Ensure cleanup happens properly
       return () => {
         clearInterval(interval);
       };
     }
-    // FIXED: No need for cleanup if user is null
+    // No cleanup needed if user is null or logging out
     return undefined;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user]); // Only depend on user existence
+  }, [user, loggingOut]); // Depend on user existence and logout state
 
   const login = useCallback(
     async (userData: SessionUser) => {
@@ -193,14 +197,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setUser(null);
       Cookies.remove("session");
       sessionManager.current.reset();
-      router.push("/login");
+      router.replace("/login");
     } catch (error) {
       console.error("Logout error:", error);
       // Force logout even if API call fails
       setUser(null);
       Cookies.remove("session");
       sessionManager.current.reset();
-      router.push("/login");
+      router.replace("/login");
     } finally {
       setLoggingOut(false);
     }

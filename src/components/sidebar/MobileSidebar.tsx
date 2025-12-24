@@ -282,17 +282,26 @@ export default function MobileSidebar() {
         isLoading={isEndingShift}
         title="End Shift & Logout"
         variant="warning"
-        confirmLabel="Yes, I have"
-        cancelLabel="No, return"
+        confirmLabel="Yes, End Shift & Logout"
+        cancelLabel="Cancel"
       >
-        <div className="space-y-2">
+        <div className="space-y-3">
           <p className="font-semibold text-fnh-navy-dark">
             Have you handed over all collected cash to the manager?
           </p>
-          <p>
+          <p className="text-sm text-gray-600">
             You cannot logout until the cash handover is complete. Please ensure
             all finances are settled before leaving.
           </p>
+          <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+            <p className="text-sm text-amber-800 font-medium">
+              ⚠️ This will log you out from ALL devices
+            </p>
+            <p className="text-xs text-amber-700 mt-1">
+              Ending your shift will invalidate all your active sessions across
+              phones, tablets, and other computers.
+            </p>
+          </div>
         </div>
       </ConfirmModal>
     </>

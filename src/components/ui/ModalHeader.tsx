@@ -8,7 +8,7 @@ interface ModalHeaderProps {
   /** Icon component to display */
   icon: React.ElementType;
   /** Gradient color theme: 'blue' | 'indigo' | 'purple' | 'green' | 'red' */
-  iconColor?: "blue" | "indigo" | "purple" | "green" | "red" | "teal";
+  iconColor?: "blue" | "indigo" | "purple" | "green" | "red" |   "teal";
   /** Main title text */
   title: string;
   /** Optional subtitle/description */
