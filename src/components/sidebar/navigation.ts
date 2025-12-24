@@ -28,11 +28,6 @@ export const navigationItems: NavigationItem[] = [
     icon: Home,
   },
   {
-    label: "Patient Records",
-    href: "/patient-records",
-    icon: ClipboardList,
-  },
-  {
     label: "General Admission",
     href: "/general-admission",
     icon: Building2,
@@ -46,6 +41,11 @@ export const navigationItems: NavigationItem[] = [
     label: "Pathology",
     href: "/pathology",
     icon: Microscope,
+  },
+  {
+    label: "Patient Records",
+    href: "/patient-records",
+    icon: ClipboardList,
   },
   {
     label: "Cash Tracking",

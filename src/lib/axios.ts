@@ -58,13 +58,16 @@ api.interceptors.response.use(
     return response;
   },
   (error) => {
-    // Handle common errors
+    // Handle 401 Unauthorized
+    // IMPORTANT: Do NOT redirect here! The AuthContext handles session verification
+    // and redirects via Next.js router. Using window.location.href here causes a
+    // race condition with AuthContext's router.push/replace, leading to loading loops.
+    // Just reject the promise and let the calling code handle it.
     if (error.response?.status === 401) {
-      // Redirect to login or clear auth state
-      if (typeof window !== "undefined") {
-        localStorage.removeItem("auth-token");
-        window.location.href = "/login";
-      }
+      // Log for debugging but don't redirect
+      console.warn(
+        "[Axios] 401 Unauthorized - AuthContext will handle redirect"
+      );
     }
 
     if (error.response?.status === 429) {
