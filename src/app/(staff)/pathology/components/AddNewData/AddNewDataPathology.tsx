@@ -102,6 +102,7 @@ const AddNewDataPathology: React.FC<AddNewDataProps> = ({
           patientGender: patientData.gender,
           patientAge: patientData.age,
           patientDOB: patientData.dateOfBirth?.toISOString() || null,
+          address: patientData.address,
           mobileNumber: patientData.phoneNumber,
           guardianName: guardianData.name,
           hospitalName: hospitalData.name,
@@ -156,6 +157,9 @@ const AddNewDataPathology: React.FC<AddNewDataProps> = ({
     if (!patientData.dateOfBirth) {
       errors.push("Patient date of birth is required");
     }
+    if (!patientData.address?.trim()) {
+      errors.push("Patient address is required");
+    }
     if (pathologyInfo.selectedTests.length === 0) {
       errors.push("At least one test must be selected");
     }
@@ -179,6 +183,7 @@ const AddNewDataPathology: React.FC<AddNewDataProps> = ({
     patientData.gender,
     patientData.phoneNumber,
     patientData.dateOfBirth,
+    patientData.address,
     pathologyInfo.selectedTests,
     pathologyInfo.orderedById,
     validationStatus,

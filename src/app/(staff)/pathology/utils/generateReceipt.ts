@@ -5,10 +5,10 @@ import { PATHOLOGY_TESTS } from "../constants/pathologyTests";
 
 // FNH Brand Colors
 const COLORS = {
-  primary: "#1e293b", // fnh-navy (header)
-  accent: "#3b82f6", // fnh-blue
-  text: "#334155", // slate-700
-  lightText: "#64748b",
+  primary: "#020617", // darker navy
+  accent: "#1d4ed8", // darker blue
+  text: "#000000", // pure black
+  lightText: "#1a202c", // darker gray for "washed out" text correction
   border: "#cbd5e1",
   faint: "#f1f5f9",
 };
@@ -17,7 +17,8 @@ const COMPANY_INFO = {
   name: "Feroza Nursing Home",
   address:
     "1257, Sholakia, Khorompatti Kishoreganj Sadar, Kishoreganj Dhaka, Bangladesh",
-  phone: "01712-345678",
+  email: "Email: firozanursinghome@gmail.com",
+  phone: "Mobile: 01712-345678",
 };
 
 const loadImage = (src: string): Promise<HTMLImageElement> => {
@@ -94,9 +95,10 @@ export const generatePathologyReceipt = async (
     ];
   });
 
-  // Chunk rows: first page max 8, continuation pages max 12
-  const firstPageMax = 8;
-  const continuationMax = 12;
+  // Chunk rows: first page max 12, continuation pages max 16
+  // Chunk rows: extended page length for efficiency
+  const firstPageMax = 13;
+  const continuationMax = 16;
   const chunks: (string | number)[][][] = [];
 
   if (allTableRows.length <= firstPageMax) {
@@ -141,28 +143,44 @@ export const generatePathologyReceipt = async (
       currentY += 7;
 
       doc.setFont("helvetica", "normal");
-      doc.setFontSize(10);
+      doc.setFontSize(9);
       doc.setTextColor(COLORS.lightText);
       doc.text(COMPANY_INFO.address, pageWidth / 2, currentY, {
         align: "center",
       });
-      currentY += 8;
+      currentY += 5;
+      doc.text(
+        `${COMPANY_INFO.phone}  |  ${COMPANY_INFO.email}`,
+        pageWidth / 2,
+        currentY,
+        {
+          align: "center",
+        }
+      );
+      currentY += 6;
 
       doc.setDrawColor(COLORS.border);
       doc.setLineWidth(0.5);
       doc.line(margin, currentY, pageWidth - margin, currentY);
-      currentY += 8;
+      currentY += 6;
 
       doc.setFont("helvetica", "bold");
       doc.setFontSize(14);
       doc.setTextColor(COLORS.primary);
-      doc.text("OFFICIAL RECEIPT", pageWidth / 2, currentY, {
+      doc.text("INVOICE", pageWidth / 2, currentY, {
         align: "center",
       });
-      currentY += 8;
+      currentY += 6;
 
       // Receipt # and Date
       doc.setFontSize(10);
+
+      // Receipt # (Bold & Primary)
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(COLORS.primary);
+      doc.text(`#${data.testNumber}`, margin, currentY);
+
+      // Date (Normal & Text Color)
       doc.setFont("helvetica", "normal");
       doc.setTextColor(COLORS.text);
       const requestDate = new Date(data.testDate).toLocaleDateString("en-BD", {
@@ -172,17 +190,16 @@ export const generatePathologyReceipt = async (
         hour: "2-digit",
         minute: "2-digit",
       });
-      doc.text(`Receipt #: ${data.testNumber}`, margin, currentY);
       doc.text(`Date: ${requestDate}`, pageWidth - margin, currentY, {
         align: "right",
       });
-      currentY += 12;
+      currentY += 7;
 
       // Patient Details Box
       const contentWidth = pageWidth - margin * 2;
-      const boxPadding = 6;
-      const rowHeight = 7;
-      const labelWidth = 28;
+      const boxPadding = 4;
+      const rowHeight = 5.5;
+      const labelWidth = 26;
       const col1Width = contentWidth * 0.5;
       const col1LabelX = margin + boxPadding;
       const col1ValueX = col1LabelX + labelWidth;
@@ -190,6 +207,8 @@ export const generatePathologyReceipt = async (
       const col2ValueX = col2LabelX + labelWidth;
       const valueMaxWidth1 = col1Width - labelWidth - boxPadding * 2;
       const valueMaxWidth2 = contentWidth * 0.5 - labelWidth - boxPadding * 2;
+      // For address full width
+      const valueMaxWidthFull = contentWidth - labelWidth - boxPadding * 2;
 
       const patientAddr = data.address || "N/A";
       let refBy = "Self";
@@ -202,8 +221,8 @@ export const generatePathologyReceipt = async (
       }
 
       doc.setFontSize(10);
-      const splitAddr = doc.splitTextToSize(patientAddr, valueMaxWidth2);
-      const splitRefBy = doc.splitTextToSize(refBy, valueMaxWidth1);
+      const splitAddr = doc.splitTextToSize(patientAddr, valueMaxWidthFull);
+      const splitRefBy = doc.splitTextToSize(refBy, valueMaxWidth2);
 
       let ageDisplay = "N/A";
       if (data.patientAge) {
@@ -217,11 +236,20 @@ export const generatePathologyReceipt = async (
         }
       }
 
-      const numPairedRows = 3;
-      const extraLines =
-        Math.max(0, splitAddr.length - 1) + Math.max(0, splitRefBy.length - 1);
+      // 1. Patient | Mobile
+      // 2. Age/Gender | Consultation which was refBy
+      // 3. Address (Single Row at bottom)
+
+      const numFixedRows = 2; // Rows 1 & 2
+      const addressLines = splitAddr.length;
+
+      // Calculate height
+      // padding + fixed rows + address lines + padding
       const dynamicBoxHeight =
-        boxPadding * 2 + numPairedRows * rowHeight + extraLines * 4 + 4;
+        boxPadding * 2 +
+        numFixedRows * rowHeight +
+        addressLines * 5 + // Give address lines slightly less height
+        2;
 
       doc.setFillColor(248, 250, 252);
       doc.roundedRect(
@@ -245,9 +273,9 @@ export const generatePathologyReceipt = async (
         "S"
       );
 
-      let pY = currentY + boxPadding + 4;
+      let pY = currentY + boxPadding + 3;
 
-      // Row 1
+      // Row 1: Patient Name | Mobile
       doc.setFont("helvetica", "bold");
       doc.setTextColor(COLORS.lightText);
       doc.text("Patient:", col1LabelX, pY);
@@ -260,13 +288,15 @@ export const generatePathologyReceipt = async (
         col1ValueX,
         pY
       );
+
+      doc.setFont("helvetica", "bold");
       doc.setTextColor(COLORS.lightText);
       doc.text("Mobile:", col2LabelX, pY);
       doc.setTextColor(COLORS.primary);
       doc.setFont("helvetica", "normal");
       doc.text(data.mobileNumber || "N/A", col2ValueX, pY);
 
-      // Row 2
+      // Row 2: Age/Gender | Consultation (Ref Dr)
       pY += rowHeight;
       doc.setFont("helvetica", "bold");
       doc.setTextColor(COLORS.lightText);
@@ -274,53 +304,39 @@ export const generatePathologyReceipt = async (
       doc.setTextColor(COLORS.primary);
       doc.setFont("helvetica", "normal");
       doc.text(`${ageDisplay} / ${data.patientGender}`, col1ValueX, pY);
+
       doc.setFont("helvetica", "bold");
       doc.setTextColor(COLORS.lightText);
-      doc.text("Guardian:", col2LabelX, pY);
+      doc.text("Consultation:", col2LabelX, pY);
       doc.setTextColor(COLORS.primary);
       doc.setFont("helvetica", "normal");
-      const guardianName = data.guardianName || "N/A";
-      doc.text(
-        guardianName.length > 25
-          ? guardianName.substring(0, 23) + "..."
-          : guardianName,
-        col2ValueX,
-        pY
-      );
 
-      // Row 3
+      if (splitRefBy.length === 1) {
+        doc.text(refBy, col2ValueX, pY);
+      } else {
+        doc.text(splitRefBy[0], col2ValueX, pY);
+        // If ref by is longer, we rarely see multi-line here but if do, we might clip or need more logic.
+        // Given "tight spacing" requirement, clipping or single line is better.
+      }
+
+      // Row 3: Address (Full Width at end)
       pY += rowHeight;
       doc.setFont("helvetica", "bold");
       doc.setTextColor(COLORS.lightText);
-      doc.text("Referring Dr:", col1LabelX, pY);
+      doc.text("Address:", col1LabelX, pY);
       doc.setTextColor(COLORS.primary);
       doc.setFont("helvetica", "normal");
-      if (splitRefBy.length === 1) {
-        doc.text(refBy, col1ValueX, pY);
-      } else {
-        doc.text(splitRefBy[0], col1ValueX, pY);
-        if (splitRefBy.length > 1) {
-          pY += 4;
-          doc.text(splitRefBy.slice(1).join(" "), col1ValueX, pY);
-        }
-      }
 
-      const addressStartY = currentY + boxPadding + 4 + rowHeight * 2;
-      doc.setFont("helvetica", "bold");
-      doc.setTextColor(COLORS.lightText);
-      doc.text("Address:", col2LabelX, addressStartY);
-      doc.setTextColor(COLORS.primary);
-      doc.setFont("helvetica", "normal");
       if (splitAddr.length === 1) {
-        doc.text(patientAddr, col2ValueX, addressStartY);
+        doc.text(patientAddr, col1ValueX, pY);
       } else {
-        doc.text(splitAddr[0], col2ValueX, addressStartY);
+        doc.text(splitAddr[0], col1ValueX, pY);
         for (let j = 1; j < splitAddr.length; j++) {
-          doc.text(splitAddr[j], col2ValueX, addressStartY + j * 4);
+          doc.text(splitAddr[j], col1ValueX, pY + j * 5);
         }
       }
 
-      currentY += dynamicBoxHeight + 8;
+      currentY += dynamicBoxHeight + 6;
     } else {
       // === CONTINUATION PAGE: Simple header ===
       doc.setFont("helvetica", "bold");
@@ -358,7 +374,7 @@ export const generatePathologyReceipt = async (
       },
       bodyStyles: {
         textColor: COLORS.text,
-        cellPadding: 4,
+        cellPadding: 3, // Thinner padding
         fontSize: 10,
         valign: "middle",
       },
