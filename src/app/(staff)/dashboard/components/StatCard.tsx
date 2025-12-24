@@ -82,10 +82,6 @@ export const StatCard: React.FC<StatCardProps> = ({
   color,
   isLoading = false,
 }) => {
-  if (isLoading) {
-    return <StatCardSkeleton color={color} />;
-  }
-
   const colors = colorClasses[color];
 
   return (
@@ -102,18 +98,25 @@ export const StatCard: React.FC<StatCardProps> = ({
           >
             {title}
           </p>
-          <p
-            className={`text-2xl sm:text-3xl font-bold ${colors.text} tracking-tight`}
-          >
-            {typeof value === "number" ? value.toLocaleString() : value}
-          </p>
-          {subtitle && (
+          {isLoading ? (
+            <div className="h-8 sm:h-9 w-24 sm:w-32 bg-white/20 rounded-lg animate-pulse mt-1" />
+          ) : (
             <p
-              className={`text-[10px] sm:text-xs ${colors.subtitleText} font-medium truncate`}
+              className={`text-2xl sm:text-3xl font-bold ${colors.text} tracking-tight`}
             >
-              {subtitle}
+              {typeof value === "number" ? value.toLocaleString() : value}
             </p>
           )}
+          {subtitle &&
+            (isLoading ? (
+              <div className="h-3 w-20 bg-white/10 rounded animate-pulse mt-1" />
+            ) : (
+              <p
+                className={`text-[10px] sm:text-xs ${colors.subtitleText} font-medium truncate`}
+              >
+                {subtitle}
+              </p>
+            ))}
         </div>
         <div
           className={`p-2 sm:p-3 rounded-xl ${colors.iconBg} backdrop-blur-sm shrink-0`}

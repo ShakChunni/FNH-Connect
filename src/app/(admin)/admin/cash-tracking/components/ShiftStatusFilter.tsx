@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from "framer-motion";
 interface ShiftStatusFilterProps {
   currentStatus: string;
   onStatusChange: (status: string) => void;
+  disabled?: boolean;
 }
 
 const STATUS_OPTIONS = [
@@ -18,6 +19,7 @@ const STATUS_OPTIONS = [
 export const ShiftStatusFilter: React.FC<ShiftStatusFilterProps> = ({
   currentStatus,
   onStatusChange,
+  disabled = false,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -38,10 +40,13 @@ export const ShiftStatusFilter: React.FC<ShiftStatusFilterProps> = ({
     <div className="relative">
       <button
         ref={buttonRef}
-        onClick={() => setIsOpen(!isOpen)}
-        className={`flex items-center gap-2 px-4 py-2 border rounded-xl text-sm font-semibold transition-all shadow-xs active:scale-95 ${getStatusColor(
-          selectedOption.color
-        )}`}
+        onClick={() => !disabled && setIsOpen(!isOpen)}
+        disabled={disabled}
+        className={`flex items-center gap-2 px-4 py-2 border rounded-xl text-sm font-semibold transition-all shadow-xs ${
+          disabled
+            ? "opacity-30 cursor-not-allowed"
+            : "active:scale-95 cursor-pointer"
+        } ${getStatusColor(selectedOption.color)}`}
       >
         <Filter className="w-4 h-4" />
         {selectedOption.label}
