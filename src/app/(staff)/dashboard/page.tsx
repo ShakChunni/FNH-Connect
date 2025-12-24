@@ -6,12 +6,14 @@ import {
   StatsGrid,
   QuickActions,
   RecentPatients,
-  CashFlowTracker,
+  SessionCashTracker,
 } from "./components";
 import { useDashboardData } from "./hooks";
+import { useAuth } from "@/app/AuthContext";
 
 const Dashboard = React.memo(() => {
   const { stats, recentPatients, cashSession, isLoading } = useDashboardData();
+  const { user } = useAuth();
 
   return (
     <div className="min-h-screen bg-fnh-porcelain pb-4 sm:pb-6 lg:pb-8 w-full overflow-x-hidden">
@@ -39,9 +41,12 @@ const Dashboard = React.memo(() => {
               <RecentPatients patients={recentPatients} isLoading={isLoading} />
             </div>
 
-            {/* Cash Flow Tracker - Takes 2 columns on large screens */}
+            {/* Session Cash Tracker - Takes 2 columns on large screens */}
             <div className="lg:col-span-2">
-              <CashFlowTracker session={cashSession} isLoading={isLoading} />
+              <SessionCashTracker
+                staffName={user?.fullName || "Staff"}
+                isLoading={isLoading}
+              />
             </div>
           </section>
         </div>
