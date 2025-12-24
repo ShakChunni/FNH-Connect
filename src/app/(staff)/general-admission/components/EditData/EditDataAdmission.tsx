@@ -163,11 +163,24 @@ const EditDataAdmission: React.FC<EditDataProps> = ({
   });
 
   // Validation
-  const isFormValid = useMemo(() => {
-    return (
-      hospitalData.name.trim() !== "" && patientData.firstName.trim() !== ""
-    );
-  }, [hospitalData.name, patientData.firstName]);
+  const { isFormValid, validationErrors } = useMemo(() => {
+    const errors: string[] = [];
+
+    if (!hospitalData.name.trim()) {
+      errors.push("Hospital name is required");
+    }
+    if (!patientData.firstName.trim()) {
+      errors.push("Patient name is required");
+    }
+    if (!patientData.address?.trim()) {
+      errors.push("Patient address is required");
+    }
+
+    return {
+      isFormValid: errors.length === 0,
+      validationErrors: errors,
+    };
+  }, [hospitalData.name, patientData.firstName, patientData.address]);
 
   const { showNotification } = useNotification();
 
@@ -178,7 +191,16 @@ const EditDataAdmission: React.FC<EditDataProps> = ({
   }, [isSubmitting, onClose]);
 
   const handleSubmit = useCallback(() => {
-    if (!isFormValid || isSubmitting) return;
+    if (isSubmitting) return;
+
+    if (!isFormValid) {
+      const errorMessage =
+        validationErrors.length === 1
+          ? validationErrors[0]
+          : `Please fix the following: ${validationErrors.join(", ")}`;
+      showNotification(errorMessage, "error");
+      return;
+    }
 
     // Check if room is required
     if (financialData.seatRent > 0 && !admissionInfo.seatNumber) {
@@ -222,6 +244,7 @@ const EditDataAdmission: React.FC<EditDataProps> = ({
     editAdmission,
     initialPatientData.id,
     showNotification,
+    validationErrors,
   ]);
 
   // Keyboard handling
@@ -355,7 +378,7 @@ const EditDataAdmission: React.FC<EditDataProps> = ({
               onCancel={handleClose}
               onSubmit={handleSubmit}
               isSubmitting={isSubmitting}
-              isDisabled={!isFormValid}
+              isDisabled={false}
               cancelText="Cancel"
               submitText="Update Admission"
               loadingText="Updating..."

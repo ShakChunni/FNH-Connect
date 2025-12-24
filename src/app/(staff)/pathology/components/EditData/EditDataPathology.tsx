@@ -161,6 +161,9 @@ const EditDataPathology: React.FC<EditDataProps> = ({
     if (!patientData.gender.trim()) {
       errors.push("Patient gender is required");
     }
+    if (!patientData.address?.trim()) {
+      errors.push("Patient address is required");
+    }
     if (pathologyInfo.selectedTests.length === 0) {
       errors.push("At least one test must be selected");
     }
@@ -182,6 +185,7 @@ const EditDataPathology: React.FC<EditDataProps> = ({
     hospitalData.name,
     patientData.firstName,
     patientData.gender,
+    patientData.address,
     pathologyInfo.selectedTests,
     pathologyInfo.orderedById,
     validationStatus,

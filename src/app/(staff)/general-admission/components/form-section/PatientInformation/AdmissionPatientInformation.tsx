@@ -329,7 +329,7 @@ const AdmissionPatientInformation: React.FC<
             <div>
               <label className="block text-gray-700 text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2">
                 <MapPin className="w-3.5 h-3.5 inline mr-1 text-indigo-500" />
-                Patient Address
+                Patient Address<span className="text-red-500">*</span>
               </label>
               <textarea
                 className={`${inputClassName(patientData.address)} resize-none`}

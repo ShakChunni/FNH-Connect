@@ -9,10 +9,10 @@ import { AdmissionPatientData } from "../types";
 
 // FNH Brand Colors
 const COLORS = {
-  primary: "#1e293b", // fnh-navy (header)
-  accent: "#3b82f6", // fnh-blue
-  text: "#334155", // slate-700
-  lightText: "#64748b",
+  primary: "#020617", // darker navy
+  accent: "#1d4ed8",
+  text: "#000000", // pure black for contrast
+  lightText: "#1a202c", // much darker gray
   border: "#cbd5e1",
   faint: "#f1f5f9",
 };
@@ -21,7 +21,8 @@ const COMPANY_INFO = {
   name: "Feroza Nursing Home",
   address:
     "1257, Sholakia, Khorompatti Kishoreganj Sadar, Kishoreganj Dhaka, Bangladesh",
-  phone: "01712-345678",
+  email: "Email: firozanursinghome@gmail.com",
+  phone: "Mobile: 01712-345678",
 };
 
 const loadImage = (src: string): Promise<HTMLImageElement> => {
@@ -112,31 +113,42 @@ export const generateAdmissionReceipt = async (
   doc.text(COMPANY_INFO.name, pageWidth / 2, currentY, { align: "center" });
   currentY += 7;
 
-  // Address
+  // Address & Contact
   doc.setFont("helvetica", "normal");
-  doc.setFontSize(10);
+  doc.setFontSize(9);
   doc.setTextColor(COLORS.lightText);
   doc.text(COMPANY_INFO.address, pageWidth / 2, currentY, { align: "center" });
-  currentY += 8;
+  currentY += 5;
+  doc.text(
+    `${COMPANY_INFO.phone}  |  ${COMPANY_INFO.email}`,
+    pageWidth / 2,
+    currentY,
+    { align: "center" }
+  );
+  currentY += 6;
 
   // Divider Line
   doc.setDrawColor(COLORS.border);
   doc.setLineWidth(0.5);
   doc.line(margin, currentY, pageWidth - margin, currentY);
-  currentY += 8;
+  currentY += 6;
 
   // Receipt Title
   doc.setFont("helvetica", "bold");
   doc.setFontSize(14);
   doc.setTextColor(COLORS.primary);
   doc.text("ADMISSION FORM", pageWidth / 2, currentY, { align: "center" });
-  currentY += 8;
+  currentY += 6;
 
   // Receipt # and Date row
   doc.setFontSize(10);
-  doc.setFont("helvetica", "normal");
-  doc.setTextColor(COLORS.text);
 
+  // Admission # (Bold & Primary)
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(COLORS.primary);
+  doc.text(`#${data.admissionNumber}`, margin, currentY);
+
+  // Date (Normal & Text Color)
   const admissionDate = new Date(data.dateAdmitted).toLocaleDateString(
     "en-BD",
     {
@@ -148,23 +160,26 @@ export const generateAdmissionReceipt = async (
     }
   );
 
-  doc.text(`Admission #: ${data.admissionNumber}`, margin, currentY);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(COLORS.text);
   doc.text(`Date: ${admissionDate}`, pageWidth - margin, currentY, {
     align: "right",
   });
-  currentY += 12;
+  currentY += 8;
 
   // --- Patient Details Section ---
   const contentWidth = pageWidth - margin * 2;
-  const boxPadding = 6;
-  const rowHeight = 6;
-  const labelWidth = 28;
+  const boxPadding = 4;
+  const rowHeight = 5.5;
+  const labelWidth = 26;
   const col1Width = contentWidth * 0.5;
   const col1LabelX = margin + boxPadding;
   const col1ValueX = col1LabelX + labelWidth;
   const col2LabelX = margin + col1Width + boxPadding;
   const col2ValueX = col2LabelX + labelWidth;
+
   const valueMaxWidth1 = col1Width - labelWidth - boxPadding * 2;
+  const valueMaxWidth2 = contentWidth * 0.5 - labelWidth - boxPadding * 2;
 
   // Calculate dynamic box height based on content
   const patientAddr = data.patientAddress || "N/A";
@@ -172,25 +187,31 @@ export const generateAdmissionReceipt = async (
   const docName = data.doctorName || "N/A";
 
   doc.setFontSize(10);
-  const splitAddr = doc.splitTextToSize(
-    patientAddr,
-    contentWidth - labelWidth - boxPadding * 2
-  );
+  // Split Doctor Name
+  const splitDocName = doc.splitTextToSize(docName, valueMaxWidth1);
+  // Split Address (now in col2)
+  const splitAddr = doc.splitTextToSize(patientAddr, valueMaxWidth2);
+  // Split Complaint
   const splitComplaint = doc.splitTextToSize(
     complaint,
     contentWidth - 38 - boxPadding * 2
   );
-  const splitDocName = doc.splitTextToSize(docName, valueMaxWidth1);
 
-  const numPairedRows = 4;
-  const addressLines = splitAddr.length;
-  const complaintLines = splitComplaint.length;
+  // Rows:
+  // 1. Patient | Mobile
+  // 2. Age/Gender | Dept
+  // 3. Status | Ward
+  // 4. Consultant | Address (Merged)
+  // 5. Chief Complaint
+
+  const numFixedRows = 4; // Patient, Age/Gender, Status, Consultant/Address
   const dynamicBoxHeight =
     boxPadding * 2 +
-    numPairedRows * rowHeight +
-    addressLines * 4 +
-    complaintLines * 4 +
-    4;
+    numFixedRows * rowHeight +
+    Math.max(0, splitAddr.length - 1) * (rowHeight - 1.5) + // extra height for address
+    Math.max(0, splitDocName.length - 1) * (rowHeight - 1.5) + // extra height for doc
+    splitComplaint.length * (rowHeight - 1.5) + // for chief complaint
+    (rowHeight - 1.5); // for the chief complaint row itself
 
   doc.setFillColor(248, 250, 252);
   doc.roundedRect(margin, currentY, contentWidth, dynamicBoxHeight, 2, 2, "F");
@@ -261,34 +282,48 @@ export const generateAdmissionReceipt = async (
   }
   doc.text(wardDisplay, col2ValueX, pY);
 
-  // Row 4 - Consultant Doctor
+  // Row 4 - Consultant (Left) | Address (Right)
   pY += rowHeight;
+
+  // Consultant
   doc.setFont("helvetica", "bold");
   doc.setTextColor(COLORS.lightText);
   doc.text("Consultant:", col1LabelX, pY);
   doc.setTextColor(COLORS.primary);
   doc.setFont("helvetica", "normal");
+
+  let docY = pY;
   if (splitDocName.length === 1) {
     doc.text(docName, col1ValueX, pY);
   } else {
     doc.text(splitDocName[0], col1ValueX, pY);
     if (splitDocName.length > 1) {
-      pY += 4;
-      doc.text(splitDocName.slice(1).join(" "), col1ValueX, pY);
+      docY += rowHeight - 1.5;
+      doc.text(splitDocName.slice(1).join(" "), col1ValueX, docY);
     }
   }
 
-  // Row 5 - Address
-  pY += rowHeight;
+  // Address
   doc.setFont("helvetica", "bold");
   doc.setTextColor(COLORS.lightText);
-  doc.text("Address:", col1LabelX, pY);
+  doc.text("Address:", col2LabelX, pY);
   doc.setTextColor(COLORS.primary);
   doc.setFont("helvetica", "normal");
-  doc.text(splitAddr, col1ValueX, pY);
-  pY += (addressLines - 1) * 4;
 
-  // Row 6 - Chief Complaint
+  let addrY = pY;
+  if (splitAddr.length === 1) {
+    doc.text(patientAddr, col2ValueX, pY);
+  } else {
+    doc.text(splitAddr[0], col2ValueX, pY);
+    for (let j = 1; j < splitAddr.length; j++) {
+      addrY += rowHeight - 1.5;
+      doc.text(splitAddr[j], col2ValueX, addrY);
+    }
+  }
+
+  pY = Math.max(docY, addrY);
+
+  // Row 5 - Chief Complaint
   pY += rowHeight;
   doc.setFont("helvetica", "bold");
   doc.setTextColor(COLORS.lightText);
@@ -297,7 +332,7 @@ export const generateAdmissionReceipt = async (
   doc.setFont("helvetica", "normal");
   doc.text(splitComplaint, col1LabelX + 38, pY);
 
-  currentY += dynamicBoxHeight + 8;
+  currentY += dynamicBoxHeight + 6;
 
   // --- Prescription Area ---
   const leftColWidth = (pageWidth - margin * 2) * 0.35;
@@ -400,8 +435,10 @@ export const generateAdmissionInvoice = async (
   ]);
 
   // Chunk rows: first page max 8, continuation pages max 12
-  const firstPageMax = 8;
-  const continuationMax = 12;
+  // Chunk rows: increased per page
+  // Chunk rows: increased per page
+  const firstPageMax = 13;
+  const continuationMax = 20;
   const chunks: (string | number)[][][] = [];
 
   if (allTableRows.length <= firstPageMax) {
@@ -443,75 +480,100 @@ export const generateAdmissionInvoice = async (
       doc.setFontSize(24);
       doc.setTextColor(COLORS.primary);
       doc.text(COMPANY_INFO.name, pageWidth / 2, currentY, { align: "center" });
-      currentY += 7;
+      currentY += 6;
 
       doc.setFont("helvetica", "normal");
-      doc.setFontSize(10);
+      doc.setFontSize(9);
       doc.setTextColor(COLORS.lightText);
       doc.text(COMPANY_INFO.address, pageWidth / 2, currentY, {
         align: "center",
       });
-      currentY += 9;
+      currentY += 4;
+      doc.text(
+        `${COMPANY_INFO.phone}  |  ${COMPANY_INFO.email}`,
+        pageWidth / 2,
+        currentY,
+        {
+          align: "center",
+        }
+      );
+      currentY += 5;
 
       doc.setDrawColor(COLORS.border);
       doc.setLineWidth(0.5);
       doc.line(margin, currentY, pageWidth - margin, currentY);
-      currentY += 10;
+      currentY += 6;
 
       doc.setFont("helvetica", "bold");
       doc.setFontSize(16);
       doc.setTextColor(COLORS.primary);
-      doc.text("PATIENT INVOICE", pageWidth / 2, currentY, { align: "center" });
-      currentY += 10;
+      doc.text("INVOICE", pageWidth / 2, currentY, { align: "center" });
+      currentY += 6;
 
       // Invoice # and Date
       doc.setFontSize(9);
+
+      // Admission # (Bold & Primary)
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(COLORS.primary);
+      doc.text(`#${data.admissionNumber}`, margin, currentY);
+
+      // Date (Normal & Text Color)
       doc.setFont("helvetica", "normal");
       doc.setTextColor(COLORS.text);
       const admissionDate = new Date(data.dateAdmitted).toLocaleDateString(
         "en-BD",
         { day: "numeric", month: "short", year: "numeric" }
       );
-      doc.text(`Admission #: ${data.admissionNumber}`, margin, currentY);
       doc.text(`Date: ${admissionDate}`, pageWidth - margin, currentY, {
         align: "right",
       });
-      currentY += 10;
+      currentY += 7;
 
       // Patient Details Box
       const contentWidth = pageWidth - margin * 2;
-      const boxPadding = 6;
-      const rowHeight = 6;
-      const labelWidth = 28;
+      const boxPadding = 4;
+      const rowHeight = 5.5;
+      const labelWidth = 26;
       const col1Width = contentWidth * 0.5;
       const col1LabelX = margin + boxPadding;
       const col1ValueX = col1LabelX + labelWidth;
       const col2LabelX = margin + col1Width + boxPadding;
       const col2ValueX = col2LabelX + labelWidth;
+
       const valueMaxWidth1 = col1Width - labelWidth - boxPadding * 2;
+      const valueMaxWidth2 = contentWidth * 0.5 - labelWidth - boxPadding * 2;
 
       const patientAddrInv = data.patientAddress || "N/A";
       const complaintInv = data.chiefComplaint || "N/A";
       const docNameInv = data.doctorName || "N/A";
 
       doc.setFontSize(10);
-      const splitAddrInv = doc.splitTextToSize(
-        patientAddrInv,
-        contentWidth - labelWidth - boxPadding * 2
-      );
+      // For Consultant (split if needed)
+      const splitDocNameInv = doc.splitTextToSize(docNameInv, valueMaxWidth1);
+      // For Address (in col2 now)
+      const splitAddrInv = doc.splitTextToSize(patientAddrInv, valueMaxWidth2);
+      // For Complaint
       const splitComplaintInv = doc.splitTextToSize(
         complaintInv,
         contentWidth - 38 - boxPadding * 2
       );
-      const splitDocNameInv = doc.splitTextToSize(docNameInv, valueMaxWidth1);
 
-      const numPairedRowsInv = 4;
+      // Rows:
+      // 1. Patient | Mobile
+      // 2. Age/Gender | Dept
+      // 3. Status | Ward
+      // 4. Consultant | Address (Merged row)
+      // 5. Chief Complaint
+
+      const numFixedRowsInv = 4;
       const dynamicBoxHeightInv =
         boxPadding * 2 +
-        numPairedRowsInv * rowHeight +
-        splitAddrInv.length * 4 +
-        splitComplaintInv.length * 4 +
-        4;
+        numFixedRowsInv * rowHeight +
+        Math.max(0, splitAddrInv.length - 1) * (rowHeight - 1.5) + // extra height for address
+        Math.max(0, splitDocNameInv.length - 1) * (rowHeight - 1.5) + // extra height for doc
+        splitComplaintInv.length * (rowHeight - 1.5) +
+        (rowHeight - 1.5);
 
       doc.setFillColor(248, 250, 252);
       doc.roundedRect(
@@ -594,34 +656,52 @@ export const generateAdmissionInvoice = async (
       if (data.seatNumber) wardDisplayInv += ` (Seat: ${data.seatNumber})`;
       doc.text(wardDisplayInv, col2ValueX, pY);
 
-      // Row 4
+      // Row 4: Consultant (Left) | Address (Right)
       pY += rowHeight;
+      const rowStartY = pY;
+
+      // Consultant
       doc.setFont("helvetica", "bold");
       doc.setTextColor(COLORS.lightText);
       doc.text("Consultant:", col1LabelX, pY);
       doc.setTextColor(COLORS.primary);
       doc.setFont("helvetica", "normal");
+
+      let docY = pY;
       if (splitDocNameInv.length === 1) {
         doc.text(docNameInv, col1ValueX, pY);
       } else {
         doc.text(splitDocNameInv[0], col1ValueX, pY);
+        // Multiline support for doctor name
         if (splitDocNameInv.length > 1) {
-          pY += 4;
-          doc.text(splitDocNameInv.slice(1).join(" "), col1ValueX, pY);
+          docY += rowHeight - 1.5;
+          doc.text(splitDocNameInv.slice(1).join(" "), col1ValueX, docY);
         }
       }
 
-      // Row 5
-      pY += rowHeight;
+      // Address
       doc.setFont("helvetica", "bold");
       doc.setTextColor(COLORS.lightText);
-      doc.text("Address:", col1LabelX, pY);
+      doc.text("Address:", col2LabelX, pY);
       doc.setTextColor(COLORS.primary);
       doc.setFont("helvetica", "normal");
-      doc.text(splitAddrInv, col1ValueX, pY);
-      pY += (splitAddrInv.length - 1) * 4;
 
-      // Row 6
+      let addrY = pY;
+      if (splitAddrInv.length === 1) {
+        doc.text(patientAddrInv, col2ValueX, pY);
+      } else {
+        doc.text(splitAddrInv[0], col2ValueX, pY);
+        // Multiline address
+        for (let j = 1; j < splitAddrInv.length; j++) {
+          addrY += rowHeight - 1.5;
+          doc.text(splitAddrInv[j], col2ValueX, addrY);
+        }
+      }
+
+      // Adjust pY to the greater of the two heights for next row
+      pY = Math.max(docY, addrY);
+
+      // Row 5: Reference / Chief Complaint
       pY += rowHeight;
       doc.setFont("helvetica", "bold");
       doc.setTextColor(COLORS.lightText);
@@ -630,7 +710,7 @@ export const generateAdmissionInvoice = async (
       doc.setFont("helvetica", "normal");
       doc.text(splitComplaintInv, col1LabelX + 38, pY);
 
-      currentY += dynamicBoxHeightInv + 8;
+      currentY += dynamicBoxHeightInv + 6;
     } else {
       // === CONTINUATION PAGE: Simple header ===
       doc.setFont("helvetica", "bold");
@@ -668,7 +748,7 @@ export const generateAdmissionInvoice = async (
       },
       bodyStyles: {
         textColor: COLORS.text,
-        cellPadding: 4,
+        cellPadding: 3, // tighter
         fontSize: 10,
         valign: "middle",
       },
