@@ -86,32 +86,33 @@ export const Filters: React.FC = () => {
             animate={{ x: 0 }}
             exit={{ x: "100%" }}
             transition={{
-              type: "spring",
-              damping: 30,
-              stiffness: 300,
+              type: "tween",
+              duration: 0.4,
+              ease: [0.25, 0.1, 0.25, 1],
             }}
             className="fixed top-0 right-0 h-full w-full sm:w-[400px] max-w-full
-              bg-white shadow-2xl z-[100001]
-              flex flex-col"
+              bg-white
+              shadow-none sm:shadow-[-8px_0_30px_rgba(0,0,0,0.15)] z-[100001]
+              flex flex-col sm:rounded-l-[2rem] overflow-hidden"
             role="dialog"
             aria-modal="true"
             aria-labelledby="filter-panel-title"
           >
             {/* Header */}
-            <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100 bg-gradient-to-r from-fnh-navy-dark to-fnh-navy">
+            <div className="flex items-center justify-between px-6 py-5 bg-gradient-to-r from-fnh-navy-dark to-fnh-navy">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-white/10 rounded-lg">
+                <div className="p-2.5 bg-white/15 rounded-xl backdrop-blur-sm">
                   <SlidersHorizontal className="w-5 h-5 text-white" />
                 </div>
                 <div>
                   <h2
                     id="filter-panel-title"
-                    className="text-lg font-semibold text-white"
+                    className="text-lg font-bold text-white tracking-tight"
                   >
                     Filters
                   </h2>
                   {activeCount > 0 && (
-                    <p className="text-xs text-white/70">
+                    <p className="text-xs text-fnh-yellow font-medium">
                       {activeCount} filter{activeCount > 1 ? "s" : ""} active
                     </p>
                   )}
@@ -120,8 +121,8 @@ export const Filters: React.FC = () => {
 
               <button
                 onClick={closeFilterPanel}
-                className="p-2 rounded-lg text-white/70 hover:text-white hover:bg-white/10
-                  transition-colors duration-200 cursor-pointer"
+                className="p-2.5 rounded-xl text-white/70 hover:text-white hover:bg-white/15
+                  transition-all duration-200 cursor-pointer backdrop-blur-sm"
                 aria-label="Close filters"
               >
                 <X className="w-5 h-5" />
@@ -129,7 +130,7 @@ export const Filters: React.FC = () => {
             </div>
 
             {/* Filter Content */}
-            <div className="flex-1 overflow-y-auto p-6 space-y-6">
+            <div className="flex-1 overflow-y-auto p-6 space-y-5">
               {/* Department Filter */}
               <DepartmentFilter />
 

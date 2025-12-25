@@ -16,11 +16,20 @@ export const FilterTriggerButton: React.FC<FilterTriggerButtonProps> = ({
   disabled = false,
 }) => {
   const openFilterPanel = useFilterStore((state) => state.openFilterPanel);
-  const getActiveFilterCount = useFilterStore(
-    (state) => state.getActiveFilterCount
-  );
 
-  const activeCount = getActiveFilterCount();
+  // Subscribe to actual filter values to ensure reactivity
+  const filters = useFilterStore((state) => state.filters);
+
+  // Calculate active count from filters
+  const activeCount = React.useMemo(() => {
+    let count = 0;
+    if (filters.departmentId !== null) count++;
+    if (filters.doctorId !== null) count++;
+    if (filters.status !== "All") count++;
+    if (filters.dateRange !== "all") count++;
+    if (filters.search !== "") count++;
+    return count;
+  }, [filters]);
 
   return (
     <button
@@ -44,7 +53,7 @@ export const FilterTriggerButton: React.FC<FilterTriggerButtonProps> = ({
           className="absolute -top-1.5 -right-1.5 flex items-center justify-center
             min-w-[20px] h-5 px-1.5
             bg-fnh-blue text-white text-xs font-bold
-            rounded-full shadow-md"
+            rounded-full shadow-md animate-in zoom-in-50 duration-200"
         >
           {activeCount}
         </span>

@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, CheckCheck, ChevronDown, XCircle } from "lucide-react";
+import { CheckCheck, ChevronDown, XCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export interface FloatingAction {
@@ -128,10 +128,10 @@ export function FloatingActionBar({
               </div>
               <button
                 onClick={onClearSelection}
-                className="p-2 rounded-full text-fnh-grey hover:text-white hover:bg-white/10 transition-colors duration-200 cursor-pointer"
-                title="Clear selection"
+                className="px-3 py-1.5 rounded-full text-fnh-grey hover:text-white hover:bg-white/10 transition-colors duration-200 cursor-pointer text-xs font-medium"
+                title="Clear all filters"
               >
-                <X className="h-4 w-4" />
+                Clear
               </button>
             </div>
 
