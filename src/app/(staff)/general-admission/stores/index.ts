@@ -1,6 +1,5 @@
 /**
- * General Admission Stores Index
- * Central export point for all admission-related stores
+ * General Admission Stores - Barrel Export
  */
 
 // Form Store
@@ -24,6 +23,15 @@ export {
   useUIState,
   useUIActions,
 } from "./uiStore";
+
+// Filter Store
+export {
+  useFilterStore,
+  useFilterPanelState,
+  useFilterValues,
+  useFilterActions,
+  getDateRangeFromOption,
+} from "./filterStore";
 
 // Combined actions hook for convenience
 import { useShallow } from "zustand/react/shallow";

@@ -177,9 +177,12 @@ export interface AdmissionPatientData {
 export interface AdmissionFilters {
   status?: AdmissionStatus | "All";
   departmentId?: number;
+  doctorId?: number;
   search?: string;
   startDate?: string;
   endDate?: string;
+  page?: number;
+  limit?: number;
 }
 
 // ═══════════════════════════════════════════════════════════════

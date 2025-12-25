@@ -1,14 +1,16 @@
 "use client";
 
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useMemo } from "react";
 import { createPortal } from "react-dom";
 
 // Modular Components
 import { PageHeader } from "@/components/ui/PageHeader";
+import { Pagination } from "@/components/pagination/Pagination";
 import AddNewDataAdmission from "./components/AddNewData/AddNewDataAdmission";
 import EditDataAdmission from "./components/EditData/EditDataAdmission";
 import { AdmissionTable } from "./components/PatientTable";
 import AdmissionSearch from "./components/AdmissionSearch";
+import { Filters, ExportActionBar } from "./components/filter";
 import { generateAdmissionReceipt } from "./utils/generateReceipt";
 
 // Types and Hooks
@@ -18,7 +20,13 @@ import {
   AdmissionStatus,
 } from "./types";
 import { useFetchAdmissions, useEditAdmissionData } from "./hooks";
-import { useModalState, useUIActions, useAdmissionActions } from "./stores";
+import {
+  useModalState,
+  useUIActions,
+  useAdmissionActions,
+  useFilterValues,
+  useFilterStore,
+} from "./stores";
 
 // New Patient Button Component
 const NewPatientButton: React.FC<{
@@ -54,48 +62,42 @@ const GeneralAdmissionPage = React.memo(() => {
     useUIActions();
   const { initializeFormForEdit, resetForm } = useAdmissionActions();
 
-  // Local state for filters
-  const [filters, setFilters] = useState<{
-    search?: string;
-    departmentId?: number;
-    startDate?: Date;
-    endDate?: Date;
-  }>({});
+  // Get filter values from filter store
+  const filterValues = useFilterValues();
 
-  // Map filters to hook format
+  // Map filter store values to hook format
   const hookFilters: AdmissionFilters = useMemo(
     () => ({
-      search: filters.search,
-      departmentId: filters.departmentId,
-      startDate: filters.startDate?.toISOString(),
-      endDate: filters.endDate?.toISOString(),
+      search: filterValues.search.length >= 2 ? filterValues.search : undefined,
+      departmentId: filterValues.departmentId ?? undefined,
+      doctorId: filterValues.doctorId ?? undefined,
+      status: filterValues.status !== "All" ? filterValues.status : undefined,
+      startDate: filterValues.startDate?.toISOString(),
+      endDate: filterValues.endDate?.toISOString(),
     }),
-    [filters]
+    [filterValues]
   );
 
-  const { data: admissions = [], isLoading } = useFetchAdmissions(hookFilters);
+  // Fetch Admissions Data with Filters
+  const {
+    data: admissionsData,
+    isLoading,
+    error,
+  } = useFetchAdmissions({
+    ...hookFilters,
+    page: filterValues.page,
+    limit: filterValues.limit,
+  });
+
+  const admissions = admissionsData?.data || [];
+  const totalRecords = admissionsData?.total || 0;
+  const totalPages = admissionsData?.totalPages || 0;
+
+  // Actions - using useShallow to prevent infinite re-renders
+  const setPage = useFilterStore((state) => state.setPage);
 
   // Hook for quick status updates from table
   const { editAdmission, isLoading: isStatusUpdating } = useEditAdmissionData();
-
-  // Handle filter changes from search component
-  const handleFiltersChange = useCallback(
-    (newFilters: {
-      search?: string;
-      departmentId?: number;
-      dateRange?: string;
-      startDate?: Date;
-      endDate?: Date;
-    }) => {
-      setFilters({
-        search: newFilters.search,
-        departmentId: newFilters.departmentId,
-        startDate: newFilters.startDate,
-        endDate: newFilters.endDate,
-      });
-    },
-    []
-  );
 
   // Handle edit patient
   const handleEdit = useCallback(
@@ -154,28 +156,52 @@ const GeneralAdmissionPage = React.memo(() => {
             />
           </div>
 
-          {/* Search Bar */}
+          {/* Search Bar with Filter Button */}
           <div className="px-1 sm:px-2 lg:px-4 pb-4 lg:pb-6">
-            <AdmissionSearch
-              onFiltersChange={handleFiltersChange}
-              disabled={isLoading}
-            />
+            <AdmissionSearch disabled={isLoading} />
           </div>
 
           {/* Table Container */}
           <div className="px-1 sm:px-2 lg:px-4">
-            <AdmissionTable
-              tableData={admissions}
-              isLoading={isLoading}
-              onEdit={handleEdit}
-              onStatusChange={handleStatusChange}
-              isStatusUpdating={isStatusUpdating}
-            />
+            <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden mb-8">
+              <AdmissionTable
+                tableData={admissions}
+                isLoading={isLoading}
+                onEdit={handleEdit}
+                onStatusChange={handleStatusChange}
+                isStatusUpdating={isStatusUpdating}
+                startIndex={(filterValues.page - 1) * filterValues.limit}
+              />
+
+              {/* Pagination UI - Using Global Component */}
+              <Pagination
+                currentPage={filterValues.page}
+                totalPages={totalPages}
+                totalResults={totalRecords}
+                startIndex={
+                  totalRecords > 0
+                    ? (filterValues.page - 1) * filterValues.limit + 1
+                    : 0
+                }
+                endIndex={Math.min(
+                  filterValues.page * filterValues.limit,
+                  totalRecords
+                )}
+                onPageChange={setPage}
+              />
+            </div>
           </div>
         </div>
       </div>
 
+      {/* Filter Panel (Slide-out) */}
+      <Filters />
+
+      {/* Export Action Bar (Floating) */}
+      <ExportActionBar data={admissions} />
+
       {/* Add New Data Portal */}
+
       {typeof window !== "undefined" &&
         createPortal(
           <AddNewDataAdmission

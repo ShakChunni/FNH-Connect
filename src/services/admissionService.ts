@@ -16,6 +16,9 @@ export interface AdmissionFilters {
   endDate?: string;
   status?: string;
   departmentId?: number;
+  doctorId?: number;
+  page?: number;
+  limit?: number;
 }
 
 export interface PatientData {
@@ -79,6 +82,9 @@ export interface FinancialData {
 
 export async function getAdmissions(filters: AdmissionFilters) {
   const where: Prisma.AdmissionWhereInput = {};
+  const page = filters.page || 1;
+  const limit = filters.limit || 10;
+  const skip = (page - 1) * limit;
 
   // Search filter
   if (filters.search) {
@@ -115,22 +121,32 @@ export async function getAdmissions(filters: AdmissionFilters) {
   if (filters.departmentId) {
     where.departmentId = filters.departmentId;
   }
+  if (filters.doctorId) {
+    where.doctorId = filters.doctorId;
+  }
 
-  return await prisma.admission.findMany({
-    where,
-    include: {
-      patient: {
-        include: {
-          hospital: true,
+  const [admissions, total] = await Promise.all([
+    prisma.admission.findMany({
+      where,
+      include: {
+        patient: {
+          include: {
+            hospital: true,
+          },
         },
+        department: true,
+        doctor: true,
       },
-      department: true,
-      doctor: true,
-    },
-    orderBy: {
-      dateAdmitted: "desc",
-    },
-  });
+      orderBy: {
+        dateAdmitted: "desc",
+      },
+      skip,
+      take: limit,
+    }),
+    prisma.admission.count({ where }),
+  ]);
+
+  return { admissions, total };
 }
 
 export async function getAdmissionById(id: number) {

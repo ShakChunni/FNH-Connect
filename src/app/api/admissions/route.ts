@@ -50,13 +50,18 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    // Extract validated filters
     const filters = validation.data;
-    const admissions = await getAdmissions({
+
+    const { admissions, total } = await getAdmissions({
       search: filters.search,
       startDate: filters.startDate,
       endDate: filters.endDate,
       status: filters.status,
       departmentId: filters.departmentId,
+      doctorId: filters.doctorId,
+      page: filters.page,
+      limit: filters.limit,
     });
 
     // Transform to flat structure for frontend
@@ -65,6 +70,12 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       success: true,
       data: transformedData,
+      pagination: {
+        total,
+        page: filters.page,
+        limit: filters.limit,
+        totalPages: Math.ceil(total / filters.limit),
+      },
     });
   } catch (error) {
     console.error("GET /api/admissions error:", error);

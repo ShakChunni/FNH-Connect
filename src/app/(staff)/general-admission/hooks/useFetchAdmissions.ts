@@ -10,13 +10,26 @@ import { AdmissionFilters, AdmissionPatientData } from "../types";
 interface FetchAdmissionsResponse {
   success: boolean;
   data: AdmissionPatientData[];
+  pagination: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
   error?: string;
+}
+
+export interface PaginatedAdmissions {
+  data: AdmissionPatientData[];
+  total: number;
+  totalPages: number;
+  currentPage: number;
 }
 
 export function useFetchAdmissions(filters: AdmissionFilters = {}) {
   return useQuery({
     queryKey: ["admissions", filters],
-    queryFn: async (): Promise<AdmissionPatientData[]> => {
+    queryFn: async (): Promise<PaginatedAdmissions> => {
       const params = new URLSearchParams();
 
       if (filters.status && filters.status !== "All") {
@@ -25,6 +38,10 @@ export function useFetchAdmissions(filters: AdmissionFilters = {}) {
 
       if (filters.departmentId) {
         params.append("departmentId", filters.departmentId.toString());
+      }
+
+      if (filters.doctorId) {
+        params.append("doctorId", filters.doctorId.toString());
       }
 
       if (filters.search) {
@@ -39,6 +56,14 @@ export function useFetchAdmissions(filters: AdmissionFilters = {}) {
         params.append("endDate", filters.endDate);
       }
 
+      if (filters.page) {
+        params.append("page", filters.page.toString());
+      }
+
+      if (filters.limit) {
+        params.append("limit", filters.limit.toString());
+      }
+
       const response = await api.get<FetchAdmissionsResponse>(
         `/admissions?${params.toString()}`
       );
@@ -47,8 +72,14 @@ export function useFetchAdmissions(filters: AdmissionFilters = {}) {
         throw new Error(response.data.error || "Failed to fetch admissions");
       }
 
-      return response.data.data;
+      return {
+        data: response.data.data,
+        total: response.data.pagination.total,
+        totalPages: response.data.pagination.totalPages,
+        currentPage: response.data.pagination.page,
+      };
     },
+
     staleTime: 2 * 60 * 1000, // 2 minutes
     gcTime: 5 * 60 * 1000, // 5 minutes
     retry: (failureCount, error) => {

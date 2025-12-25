@@ -26,6 +26,7 @@ interface DateRangePickerProps {
   maxDate?: Date;
   className?: string;
   disableFutureDates?: boolean;
+  autoOpen?: boolean;
 }
 
 const parseDateString = (
@@ -57,8 +58,10 @@ export function DateRangePicker({
   maxDate,
   className,
   disableFutureDates = false,
+  autoOpen = false,
 }: DateRangePickerProps) {
-  const [isOpen, setIsOpen] = React.useState(false);
+  const [isOpen, setIsOpen] = React.useState(autoOpen);
+
   const [range, setRange] = React.useState<DateRange>({
     from: value?.from ? parseDateString(value.from) : undefined,
     to: value?.to ? parseDateString(value.to) : undefined,

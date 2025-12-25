@@ -12,9 +12,12 @@ import { z } from "zod";
 export const admissionFiltersSchema = z.object({
   status: z.string().optional(),
   departmentId: z.string().transform(Number).optional(),
+  doctorId: z.string().transform(Number).optional(),
   search: z.string().optional(),
   startDate: z.string().optional(),
   endDate: z.string().optional(),
+  page: z.string().default("1").transform(Number),
+  limit: z.string().default("10").transform(Number),
 });
 
 export type AdmissionFiltersInput = z.infer<typeof admissionFiltersSchema>;
