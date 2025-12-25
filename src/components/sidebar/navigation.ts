@@ -10,7 +10,11 @@ import {
   Wallet,
 } from "lucide-react";
 import { NavigationItem } from "./types";
-import { isAdminRole, isReceptionistRole } from "@/lib/roles";
+import {
+  isAdminRole,
+  isReceptionistRole,
+  isReceptionistInfertilityRole,
+} from "@/lib/roles";
 
 // Receptionist allowed routes for sidebar filtering
 const RECEPTIONIST_SIDEBAR_ROUTES = [
@@ -18,6 +22,12 @@ const RECEPTIONIST_SIDEBAR_ROUTES = [
   "/general-admission",
   "/pathology",
   "/patient-records",
+];
+
+// Receptionist-infertility allowed routes (includes infertility)
+const RECEPTIONIST_INFERTILITY_SIDEBAR_ROUTES = [
+  ...RECEPTIONIST_SIDEBAR_ROUTES,
+  "/infertility",
 ];
 
 // Full navigation items - will be filtered based on user role
@@ -83,7 +93,16 @@ export function getNavigationItems(userRole?: string): NavigationItem[] {
     return navigationItems.filter((item) => !item.adminOnly);
   }
 
-  // Check if user is a receptionist - limited navigation
+  // Check if user is a receptionist-infertility - limited navigation + infertility
+  if (isReceptionistInfertilityRole(userRole)) {
+    return navigationItems.filter(
+      (item) =>
+        !item.adminOnly &&
+        RECEPTIONIST_INFERTILITY_SIDEBAR_ROUTES.includes(item.href)
+    );
+  }
+
+  // Check if user is a regular receptionist - limited navigation
   if (isReceptionistRole(userRole)) {
     return navigationItems.filter(
       (item) =>

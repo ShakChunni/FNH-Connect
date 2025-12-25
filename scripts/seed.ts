@@ -315,13 +315,14 @@ const STAFF_LIST: StaffData[] = [
 ];
 
 // ═══════════════════════════════════════════════════════════════
-// ADMIN USERS - Doctors with system access
+// ADDITIONAL USERS - Doctors and Staff with system access
 // ═══════════════════════════════════════════════════════════════
 
 interface AdminUser {
   username: string;
   password: string;
   doctorFullName: string;
+  role?: string; // defaults to "admin"
 }
 
 const ADMIN_USERS: AdminUser[] = [
@@ -329,16 +330,27 @@ const ADMIN_USERS: AdminUser[] = [
     username: "sufia-fnh",
     password: "748G}C?z^]u]",
     doctorFullName: "Prof. Dr. Sufia Khatun",
+    role: "admin",
   },
+];
+
+// ═══════════════════════════════════════════════════════════════
+// RECEPTIONIST USERS - Staff with receptionist access
+// ═══════════════════════════════════════════════════════════════
+
+interface ReceptionistUser {
+  username: string;
+  password: string;
+  fullName: string;
+  role: string;
+}
+
+const RECEPTIONIST_USERS: ReceptionistUser[] = [
   {
-    username: "amina-fnh",
-    password: "SJp+316hDi$3",
-    doctorFullName: "Dr. Tahsin Firoza Khan (Amina)",
-  },
-  {
-    username: "zayed-fnh",
-    password: "i84[1Dz/?oI9",
-    doctorFullName: "Dr. Zayed Zubayer Khan",
+    username: "fnh-popi",
+    password: "z{|_5*_L1Cd2",
+    fullName: "Suraiya Jahan Popi",
+    role: "receptionist-infertility",
   },
 ];
 
@@ -581,7 +593,7 @@ async function main() {
         username: adminUser.username,
         password: hashedPassword,
         staffId,
-        role: "admin",
+        role: adminUser.role || "admin",
         isActive: true,
       },
     });
@@ -592,6 +604,51 @@ async function main() {
   }
 
   console.log("\n✨ Admin users created successfully!\n");
+
+  // ════════════════════════════════════════════════════════════════
+  // 6. Create Receptionist Users (Staff with receptionist access)
+  // ════════════════════════════════════════════════════════════════
+  console.log("👤 Creating receptionist users...");
+
+  for (const recepUser of RECEPTIONIST_USERS) {
+    // Create staff entry for receptionist
+    const nameParts = recepUser.fullName.split(" ");
+    const firstName = nameParts.slice(0, -1).join(" ");
+    const lastName = nameParts[nameParts.length - 1];
+
+    const receptionistStaff = await prisma.staff.create({
+      data: {
+        firstName,
+        lastName,
+        fullName: recepUser.fullName,
+        role: "Receptionist",
+        specialization: null,
+        isActive: true,
+      },
+    });
+    staffMap.set(recepUser.fullName, receptionistStaff.id);
+    console.log(
+      `  ✅ Created Staff: ${recepUser.fullName} (ID: ${receptionistStaff.id})`
+    );
+
+    const hashedPassword = await bcrypt.hash(recepUser.password, 12);
+
+    const created = await prisma.user.create({
+      data: {
+        username: recepUser.username,
+        password: hashedPassword,
+        staffId: receptionistStaff.id,
+        role: recepUser.role,
+        isActive: true,
+      },
+    });
+
+    console.log(
+      `  ✅ Created User: ${recepUser.username} (${recepUser.role}) (ID: ${created.id})`
+    );
+  }
+
+  console.log("\n✨ Receptionist users created successfully!\n");
 
   // ════════════════════════════════════════════════════════════════
   // SUMMARY
