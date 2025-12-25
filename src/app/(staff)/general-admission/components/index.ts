@@ -1,5 +1,5 @@
 /**
- * General Admission Components Index
+ * General Admission Components - Barrel Export
  */
 
 // Add/Edit modals
@@ -11,6 +11,9 @@ export { AdmissionTable, AdmissionOverview } from "./PatientTable";
 
 // Search
 export { default as AdmissionSearch } from "./AdmissionSearch";
+
+// Filter module
+export { Filters, FilterTriggerButton } from "./filter";
 
 // Form sections
 export * from "./form-section";

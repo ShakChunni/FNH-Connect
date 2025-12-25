@@ -14,6 +14,7 @@ interface AdmissionTableProps {
   onStatusChange?: (patientId: number, newStatus: AdmissionStatus) => void;
   isStatusUpdating?: boolean;
   isLoading?: boolean;
+  startIndex?: number;
 }
 
 const AdmissionTable: React.FC<AdmissionTableProps> = ({
@@ -22,7 +23,8 @@ const AdmissionTable: React.FC<AdmissionTableProps> = ({
   onStatusChange,
   isStatusUpdating = false,
   isLoading = false,
-}) => {
+  startIndex,
+}: AdmissionTableProps) => {
   const [sortConfig, setSortConfig] = useState<SortConfig | null>(null);
   const [selectedPatient, setSelectedPatient] =
     useState<AdmissionPatientData | null>(null);
@@ -299,7 +301,7 @@ const AdmissionTable: React.FC<AdmissionTableProps> = ({
                   <TableRow
                     key={row.id}
                     row={row}
-                    index={(currentPage - 1) * 15 + index + 1}
+                    index={(startIndex ?? (currentPage - 1) * 15) + index + 1}
                     headers={headers}
                     onEdit={onEdit}
                     onPatientClick={handlePatientClick}
