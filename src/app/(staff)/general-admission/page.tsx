@@ -28,7 +28,7 @@ import {
   useFilterStore,
 } from "./stores";
 
-// New Patient Button Component
+// New Patient Button Component - Full width centered on mobile
 const NewPatientButton: React.FC<{
   onClick: () => void;
   disabled?: boolean;
@@ -36,7 +36,7 @@ const NewPatientButton: React.FC<{
   <button
     onClick={onClick}
     disabled={disabled}
-    className="flex items-center justify-center gap-2 px-4 sm:px-6 py-3 bg-linear-to-r from-emerald-600 to-green-600 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl hover:from-emerald-700 hover:to-green-700 transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+    className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 sm:px-6 py-3 bg-linear-to-r from-emerald-600 to-green-600 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl hover:from-emerald-700 hover:to-green-700 transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
   >
     <svg
       className="w-5 h-5"
@@ -157,13 +157,13 @@ const GeneralAdmissionPage = React.memo(() => {
           </div>
 
           {/* Search Bar with Filter Button */}
-          <div className="px-1 sm:px-2 lg:px-4 pb-4 lg:pb-6">
+          <div className="px-0 sm:px-2 lg:px-4 pb-2 sm:pb-4 lg:pb-6">
             <AdmissionSearch disabled={isLoading} />
           </div>
 
           {/* Table Container */}
-          <div className="px-1 sm:px-2 lg:px-4">
-            <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden mb-8">
+          <div className="px-0 sm:px-2 lg:px-4">
+            <div className="bg-white rounded-xl sm:rounded-3xl shadow-sm border border-slate-100 overflow-hidden mb-4 sm:mb-8">
               <AdmissionTable
                 tableData={admissions}
                 isLoading={isLoading}

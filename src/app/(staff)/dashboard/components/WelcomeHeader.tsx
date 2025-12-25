@@ -93,17 +93,19 @@ export const WelcomeHeader: React.FC<WelcomeHeaderProps> = ({
 
           {/* Right: Toggle + Role/Status */}
           <div className="order-2 flex flex-col sm:flex-row items-stretch gap-2 sm:gap-3 w-full sm:w-auto">
-            {/* End Shift Button */}
-            <button
-              onClick={() => setShowEndShiftConfirm(true)}
-              disabled={isEnding}
-              className="flex hover:cursor-pointer items-center justify-center gap-2 px-4 rounded-xl bg-red-50 border border-red-100 hover:bg-red-100 hover:border-red-200 transition-all duration-300 shadow-sm group h-[52px] sm:h-auto"
-            >
-              <PowerOff className="w-4 h-4 text-red-600" />
-              <span className="text-sm font-medium text-red-700">
-                End Shift
-              </span>
-            </button>
+            {/* End Shift Button - Hidden for admin role */}
+            {user?.role !== "admin" && (
+              <button
+                onClick={() => setShowEndShiftConfirm(true)}
+                disabled={isEnding}
+                className="flex hover:cursor-pointer items-center justify-center gap-2 px-4 rounded-xl bg-red-50 border border-red-100 hover:bg-red-100 hover:border-red-200 transition-all duration-300 shadow-sm group h-[52px] sm:h-auto"
+              >
+                <PowerOff className="w-4 h-4 text-red-600" />
+                <span className="text-sm font-medium text-red-700">
+                  End Shift
+                </span>
+              </button>
+            )}
 
             {/* Stats Toggle Button - matches role box height */}
             <button
