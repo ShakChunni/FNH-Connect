@@ -400,16 +400,17 @@ export async function middleware(request: NextRequest) {
   }
 
   // REDIRECT 5.5: Receptionist role restrictions
-  // Receptionists can only access: dashboard, general-admission, pathology
+  // Receptionists can only access specific pages based on their role type
   if (hasValidSession && userRole) {
     const normalizedRole = userRole.toLowerCase().replace(/[\s_-]/g, "");
     const isReceptionist = normalizedRole === "receptionist";
+    const isReceptionistInfertility =
+      normalizedRole === "receptionistinfertility";
 
-    if (isReceptionist) {
-      // Define allowed routes for receptionists
+    if (isReceptionist || isReceptionistInfertility) {
+      // Define allowed routes for base receptionists
       // They can access: dashboard, general-admission, pathology, patient-records
-      // And all supporting API routes needed to view/edit patients
-      const receptionistAllowedPaths = [
+      const baseReceptionistPaths = [
         // Page routes
         "/dashboard",
         "/general-admission",
@@ -431,6 +432,18 @@ export async function middleware(request: NextRequest) {
         "/api/departments",
         "/api/shifts",
       ];
+
+      // Additional routes for receptionist-infertility
+      const infertilityPaths = [
+        "/infertility",
+        "/api/infertility",
+        "/api/infertility-patients",
+      ];
+
+      // Combine paths based on role
+      const receptionistAllowedPaths = isReceptionistInfertility
+        ? [...baseReceptionistPaths, ...infertilityPaths]
+        : baseReceptionistPaths;
 
       // Check if current path is allowed
       const isAllowed = receptionistAllowedPaths.some(

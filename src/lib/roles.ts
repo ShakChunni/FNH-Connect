@@ -18,6 +18,7 @@ export enum SystemRole {
   SYSTEM_ADMIN = "system-admin",
   ADMIN = "admin",
   RECEPTIONIST = "receptionist",
+  RECEPTIONIST_INFERTILITY = "receptionist-infertility",
   STAFF = "staff",
 }
 
@@ -47,6 +48,13 @@ export const RECEPTIONIST_ALLOWED_ROUTES = [
   "/api/patients", // Patient data
 ];
 
+// Routes that receptionist-infertility can access (receptionist + infertility)
+export const RECEPTIONIST_INFERTILITY_ALLOWED_ROUTES = [
+  ...RECEPTIONIST_ALLOWED_ROUTES,
+  "/infertility",
+  "/api/infertility",
+];
+
 /**
  * Normalize role string to check against canonical values
  * Handles various formats: "system-admin", "SysAdmin", "System Admin", "systemadmin", etc.
@@ -60,6 +68,9 @@ function normalizeRole(role: string): string {
   }
   if (lower === "admin" || lower === "administrator") {
     return SystemRole.ADMIN;
+  }
+  if (lower === "receptionistinfertility") {
+    return SystemRole.RECEPTIONIST_INFERTILITY;
   }
   if (lower === "receptionist") {
     return SystemRole.RECEPTIONIST;
@@ -89,10 +100,21 @@ export function isSystemAdminRole(role: string): boolean {
 }
 
 /**
- * Check if user has receptionist role
+ * Check if user has receptionist role (any receptionist type)
  */
 export function isReceptionistRole(role: string): boolean {
-  return normalizeRole(role) === SystemRole.RECEPTIONIST;
+  const normalized = normalizeRole(role);
+  return (
+    normalized === SystemRole.RECEPTIONIST ||
+    normalized === SystemRole.RECEPTIONIST_INFERTILITY
+  );
+}
+
+/**
+ * Check if user has receptionist-infertility role
+ */
+export function isReceptionistInfertilityRole(role: string): boolean {
+  return normalizeRole(role) === SystemRole.RECEPTIONIST_INFERTILITY;
 }
 
 /**
@@ -115,6 +137,8 @@ export function getRoleDisplayName(role: string): string {
       return "Administrator";
     case SystemRole.RECEPTIONIST:
       return "Receptionist";
+    case SystemRole.RECEPTIONIST_INFERTILITY:
+      return "Receptionist (Infertility)";
     case SystemRole.STAFF:
       return "Staff";
     default:
@@ -153,8 +177,15 @@ export function canViewActivityLogs(userRole: string): boolean {
 /**
  * Check if a receptionist can access a given path
  */
-export function canReceptionistAccessPath(pathname: string): boolean {
-  return RECEPTIONIST_ALLOWED_ROUTES.some(
+export function canReceptionistAccessPath(
+  pathname: string,
+  role: string
+): boolean {
+  const allowedRoutes = isReceptionistInfertilityRole(role)
+    ? RECEPTIONIST_INFERTILITY_ALLOWED_ROUTES
+    : RECEPTIONIST_ALLOWED_ROUTES;
+
+  return allowedRoutes.some(
     (route) => pathname === route || pathname.startsWith(route + "/")
   );
 }
