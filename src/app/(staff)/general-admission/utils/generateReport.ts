@@ -491,9 +491,9 @@ export const generateAdmissionsReport = async (
       head: [
         [
           "#",
-          "Admission No.",
+          "Adm. No.",
           "Date",
-          "Patient Name",
+          "Patient",
           "Doctor",
           "Department",
           "Status",
@@ -504,37 +504,40 @@ export const generateAdmissionsReport = async (
       ],
       body: data.map((item, index) => [
         (index + 1).toString(),
-        item.admissionNumber,
+        item.admissionNumber || "",
         format(new Date(item.dateAdmitted), "dd/MM/yy"),
-        item.patientFullName,
-        item.doctorName || "N/A",
-        item.departmentName || "N/A",
-        item.status,
-        `BDT ${(item.grandTotal || 0).toLocaleString()}`,
-        `BDT ${(item.paidAmount || 0).toLocaleString()}`,
-        `BDT ${(item.dueAmount || 0).toLocaleString()}`,
+        item.patientFullName || "",
+        item.doctorName || "Self",
+        item.departmentName || "",
+        item.status || "",
+        (item.grandTotal || 0).toLocaleString(),
+        (item.paidAmount || 0).toLocaleString(),
+        (item.dueAmount || 0).toLocaleString(),
       ]),
       theme: "striped",
       headStyles: {
         fillColor: COLORS.primary,
-        fontSize: 8,
+        fontSize: 7,
         cellPadding: 2,
+        fontStyle: "bold",
       },
       styles: {
-        fontSize: 8,
+        fontSize: 7,
         cellPadding: 2,
+        overflow: "linebreak",
+        cellWidth: "wrap",
       },
       columnStyles: {
         0: { cellWidth: 8 }, // #
-        1: { cellWidth: 24 }, // Admission No
-        2: { cellWidth: 18 }, // Date
-        3: { cellWidth: 32 }, // Patient Name
-        4: { cellWidth: 30 }, // Doctor (full name)
-        5: { cellWidth: 24 }, // Department
-        6: { cellWidth: 18 }, // Status
-        7: { cellWidth: 18 }, // Total
-        8: { cellWidth: 16 }, // Paid
-        9: { cellWidth: 16 }, // Due
+        1: { cellWidth: 20 }, // Adm No
+        2: { cellWidth: 14 }, // Date
+        3: { cellWidth: 25 }, // Patient
+        4: { cellWidth: 30 }, // Doctor (wraps)
+        5: { cellWidth: 22 }, // Department
+        6: { cellWidth: 14 }, // Status
+        7: { cellWidth: 16, halign: "right" }, // Total
+        8: { cellWidth: 14, halign: "right" }, // Paid
+        9: { cellWidth: 14, halign: "right" }, // Due
       },
       margin: { left: margin, right: margin },
       didDrawPage: () => {
@@ -555,7 +558,7 @@ export const generateAdmissionsReport = async (
     doc.setFontSize(9);
     doc.setTextColor(COLORS.primary);
     doc.text(
-      `Grand Total: BDT ${totalRevenue.toLocaleString()}  |  Collected: BDT ${totalCollected.toLocaleString()}  |  Due: BDT ${totalDue.toLocaleString()}`,
+      `Total: ${totalRevenue.toLocaleString()}  |  Collected: ${totalCollected.toLocaleString()}  |  Due: ${totalDue.toLocaleString()}`,
       pageWidth - margin,
       finalY,
       { align: "right" }

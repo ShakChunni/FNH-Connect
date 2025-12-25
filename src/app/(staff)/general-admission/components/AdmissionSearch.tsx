@@ -50,6 +50,13 @@ export const AdmissionSearch: React.FC<AdmissionSearchProps> = ({
     setSearch(debouncedSearch);
   }, [debouncedSearch, setSearch]);
 
+  // Sync local state when store's search is cleared externally
+  React.useEffect(() => {
+    if (filters.search === "" && searchValue !== "") {
+      setSearchValue("");
+    }
+  }, [filters.search]);
+
   const handleSearchChange = useCallback((value: string) => {
     setSearchValue(value);
   }, []);

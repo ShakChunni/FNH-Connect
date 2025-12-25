@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useRef, useState, useEffect } from "react";
-import { Calendar, ChevronDown, Check } from "lucide-react";
+import { Calendar, ChevronDown, Check, ChevronLeft } from "lucide-react";
 import { format } from "date-fns";
 import { useFilterStore } from "../../../stores/filterStore";
 import { DropdownPortal } from "@/components/ui/DropdownPortal";
@@ -45,9 +45,10 @@ export const DateRangeFilter: React.FC = () => {
 
   const handleSelect = (option: string) => {
     if (option === "custom") {
-      // Show calendar picker
+      // Show calendar picker inline
       setShowCalendar(true);
       setTempRange({ from: undefined, to: undefined });
+      setIsOpen(false);
     } else {
       setDateRange(option as any);
       setShowCalendar(false);
@@ -65,22 +66,27 @@ export const DateRangeFilter: React.FC = () => {
       return;
     }
 
-    // If start date exists but no end date, set end date
+    // If start date exists but no end date
     if (!tempRange.to) {
+      let startDate = tempRange.from;
+      let endDate = normalizedDate;
+
+      // Swap if clicked date is before start
       if (normalizedDate < tempRange.from) {
-        // If clicked date is before start, swap them
-        setTempRange({ from: normalizedDate, to: tempRange.from });
-      } else if (normalizedDate > tempRange.from) {
-        // Set end date and apply filter
-        const newRange = { from: tempRange.from, to: normalizedDate };
-        setTempRange(newRange);
-        setCustomDateRange(newRange.from, newRange.to);
-        // Close after selection
-        setTimeout(() => {
-          setShowCalendar(false);
-          setIsOpen(false);
-        }, 300);
+        startDate = normalizedDate;
+        endDate = tempRange.from;
       }
+
+      // Set end date to end of day
+      const endOfDay = new Date(endDate);
+      endOfDay.setHours(23, 59, 59, 999);
+
+      // Update temp range and apply filter
+      setTempRange({ from: startDate, to: endDate });
+      setCustomDateRange(startDate, endOfDay);
+
+      // Close calendar after selection
+      setTimeout(() => setShowCalendar(false), 300);
       return;
     }
 
@@ -120,8 +126,11 @@ export const DateRangeFilter: React.FC = () => {
       <button
         ref={buttonRef}
         onClick={() => {
-          setIsOpen(!isOpen);
-          if (!isOpen) setShowCalendar(false);
+          if (showCalendar) {
+            setShowCalendar(false);
+          } else {
+            setIsOpen(!isOpen);
+          }
         }}
         className="w-full flex items-center justify-between gap-2 px-4 py-3
           bg-white border border-gray-200 rounded-xl
@@ -141,102 +150,99 @@ export const DateRangeFilter: React.FC = () => {
         </span>
         <ChevronDown
           className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${
-            isOpen ? "rotate-180" : ""
+            isOpen || showCalendar ? "rotate-180" : ""
           }`}
         />
       </button>
 
+      {/* Preset Options Dropdown */}
       <DropdownPortal
         isOpen={isOpen}
-        onClose={() => {
-          setIsOpen(false);
-          setShowCalendar(false);
-        }}
+        onClose={() => setIsOpen(false)}
         buttonRef={buttonRef}
-        className={showCalendar ? "w-[320px]" : "min-w-[220px]"}
+        className="min-w-[220px]"
       >
-        {!showCalendar ? (
-          // Preset Options
-          <div className="py-1 max-h-[280px] overflow-y-auto">
-            {DATE_OPTIONS.map((option) => (
-              <button
-                key={option.value}
-                onClick={() => handleSelect(option.value)}
-                className={`w-full text-left px-4 py-2.5 text-sm transition-colors duration-150 cursor-pointer ${
-                  filters.dateRange === option.value
-                    ? "bg-fnh-navy text-white font-medium"
-                    : "text-gray-700 hover:bg-slate-100"
-                }`}
-              >
-                <div className="flex items-center justify-between">
-                  <span>{option.label}</span>
-                  {filters.dateRange === option.value && (
-                    <Check className="w-4 h-4" />
-                  )}
-                </div>
-              </button>
-            ))}
-          </div>
-        ) : (
-          // Calendar Picker
-          <div className="p-4 space-y-4">
-            {/* Back button */}
+        <div className="py-1 max-h-[280px] overflow-y-auto">
+          {DATE_OPTIONS.map((option) => (
             <button
-              onClick={handleBackToPresets}
-              className="flex items-center gap-2 text-xs font-medium text-gray-500 hover:text-fnh-navy transition-colors cursor-pointer"
+              key={option.value}
+              onClick={() => handleSelect(option.value)}
+              className={`w-full text-left px-4 py-2.5 text-sm transition-colors duration-150 cursor-pointer ${
+                filters.dateRange === option.value
+                  ? "bg-fnh-navy text-white font-medium"
+                  : "text-gray-700 hover:bg-slate-100"
+              }`}
             >
-              <ChevronDown className="w-3 h-3 rotate-90" />
-              Back to presets
+              <div className="flex items-center justify-between">
+                <span>{option.label}</span>
+                {filters.dateRange === option.value && (
+                  <Check className="w-4 h-4" />
+                )}
+              </div>
             </button>
-
-            {/* Selected Range Display */}
-            <div className="bg-fnh-porcelain/50 rounded-xl p-3 space-y-2">
-              <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
-                {tempRange.from && tempRange.to
-                  ? "Selected Range"
-                  : "Select Start & End Date"}
-              </div>
-              <div className="grid grid-cols-2 gap-2 text-xs">
-                <div className="flex flex-col gap-1">
-                  <span className="text-gray-400 font-bold text-[9px] uppercase tracking-wider">
-                    From
-                  </span>
-                  <span className="font-bold text-fnh-navy">
-                    {tempRange.from
-                      ? format(tempRange.from, "MMM dd, yyyy")
-                      : "—"}
-                  </span>
-                </div>
-                <div className="flex flex-col gap-1">
-                  <span className="text-gray-400 font-bold text-[9px] uppercase tracking-wider">
-                    To
-                  </span>
-                  <span className="font-bold text-fnh-navy">
-                    {tempRange.to ? format(tempRange.to, "MMM dd, yyyy") : "—"}
-                  </span>
-                </div>
-              </div>
-              {(tempRange.from || tempRange.to) && (
-                <button
-                  type="button"
-                  onClick={handleClear}
-                  className="w-full mt-2 px-3 py-2 text-xs font-bold text-gray-600 bg-white hover:bg-gray-100 rounded-lg transition-colors cursor-pointer border border-gray-200"
-                >
-                  Clear Selection
-                </button>
-              )}
-            </div>
-
-            {/* Calendar */}
-            <CalendarWithMonthYearPicker
-              value={tempRange.from}
-              onSelect={handleDateClick}
-              selectedRange={tempRange}
-              disableFutureDates={false}
-            />
-          </div>
-        )}
+          ))}
+        </div>
       </DropdownPortal>
+
+      {/* Inline Calendar - Shows when custom range is selected */}
+      {showCalendar && (
+        <div className="mt-3 space-y-3 animate-in fade-in slide-in-from-top-2 duration-200">
+          {/* Back button */}
+          <button
+            onClick={handleBackToPresets}
+            className="flex items-center gap-1.5 text-xs font-medium text-gray-500 hover:text-fnh-navy transition-colors cursor-pointer"
+          >
+            <ChevronLeft className="w-3 h-3" />
+            Back to presets
+          </button>
+
+          {/* Selected Range Display */}
+          <div className="bg-gray-50 rounded-xl p-3 space-y-2 border border-gray-100">
+            <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
+              {tempRange.from && tempRange.to
+                ? "Selected Range"
+                : "Select Start & End Date"}
+            </div>
+            <div className="grid grid-cols-2 gap-2 text-xs">
+              <div className="flex flex-col gap-1">
+                <span className="text-gray-400 font-bold text-[9px] uppercase tracking-wider">
+                  From
+                </span>
+                <span className="font-bold text-fnh-navy">
+                  {tempRange.from
+                    ? format(tempRange.from, "MMM dd, yyyy")
+                    : "—"}
+                </span>
+              </div>
+              <div className="flex flex-col gap-1">
+                <span className="text-gray-400 font-bold text-[9px] uppercase tracking-wider">
+                  To
+                </span>
+                <span className="font-bold text-fnh-navy">
+                  {tempRange.to ? format(tempRange.to, "MMM dd, yyyy") : "—"}
+                </span>
+              </div>
+            </div>
+            {(tempRange.from || tempRange.to) && (
+              <button
+                type="button"
+                onClick={handleClear}
+                className="w-full mt-2 px-3 py-2 text-xs font-bold text-gray-600 bg-white hover:bg-gray-100 rounded-lg transition-colors cursor-pointer border border-gray-200"
+              >
+                Clear Selection
+              </button>
+            )}
+          </div>
+
+          {/* Calendar - Inline, not in portal */}
+          <CalendarWithMonthYearPicker
+            value={tempRange.from}
+            onSelect={handleDateClick}
+            selectedRange={tempRange}
+            disableFutureDates={false}
+          />
+        </div>
+      )}
     </div>
   );
 };
