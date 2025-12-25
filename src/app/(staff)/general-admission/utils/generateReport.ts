@@ -148,36 +148,63 @@ export const generateAdmissionsReport = async (
       ? "Admissions Summary Report"
       : "Detailed Admissions Report";
 
-  // Format actual date range
+  // Format actual date range - always use startDate/endDate if available
   let dateStr = "All Time";
   if (filters?.startDate && filters?.endDate) {
-    dateStr = `${format(filters.startDate, "MMMM dd, yyyy")} - ${format(
-      filters.endDate,
-      "MMMM dd, yyyy"
-    )}`;
+    // Same day check
+    const startDateStr = format(filters.startDate, "MMMM dd, yyyy");
+    const endDateStr = format(filters.endDate, "MMMM dd, yyyy");
+    if (startDateStr === endDateStr) {
+      dateStr = startDateStr; // Single day
+    } else {
+      dateStr = `${format(filters.startDate, "MMM dd, yyyy")} - ${format(
+        filters.endDate,
+        "MMM dd, yyyy"
+      )}`;
+    }
   } else if (filters?.dateRange && filters.dateRange !== "all") {
-    // Map preset to readable label with actual dates
-    const today = new Date();
-    const presetMap: Record<string, string> = {
-      today: format(today, "MMMM dd, yyyy"),
-      yesterday: format(
-        new Date(today.setDate(today.getDate() - 1)),
-        "MMMM dd, yyyy"
-      ),
-      last7days: `${format(
-        new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
-        "MMM dd"
-      )} - ${format(new Date(), "MMM dd, yyyy")}`,
-      last30days: `${format(
-        new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
-        "MMM dd"
-      )} - ${format(new Date(), "MMM dd, yyyy")}`,
-      thisMonth: `${format(
-        new Date(new Date().getFullYear(), new Date().getMonth(), 1),
-        "MMMM dd"
-      )} - ${format(new Date(), "MMM dd, yyyy")}`,
-    };
-    dateStr = presetMap[filters.dateRange] || filters.dateRange;
+    // Fallback to calculating dates from preset if startDate/endDate not passed
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+    switch (filters.dateRange) {
+      case "today":
+        dateStr = format(today, "MMMM dd, yyyy");
+        break;
+      case "yesterday":
+        const yesterday = new Date(today);
+        yesterday.setDate(yesterday.getDate() - 1);
+        dateStr = format(yesterday, "MMMM dd, yyyy");
+        break;
+      case "last7days":
+        const last7Days = new Date(today);
+        last7Days.setDate(last7Days.getDate() - 7);
+        dateStr = `${format(last7Days, "MMM dd")} - ${format(
+          today,
+          "MMM dd, yyyy"
+        )}`;
+        break;
+      case "last30days":
+        const last30Days = new Date(today);
+        last30Days.setDate(last30Days.getDate() - 30);
+        dateStr = `${format(last30Days, "MMM dd")} - ${format(
+          today,
+          "MMM dd, yyyy"
+        )}`;
+        break;
+      case "thisMonth":
+        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+        dateStr = `${format(startOfMonth, "MMM dd")} - ${format(
+          today,
+          "MMM dd, yyyy"
+        )}`;
+        break;
+      case "custom":
+        dateStr = "Custom Range";
+        break;
+      default:
+        dateStr = filters.dateRange;
+    }
   }
 
   let currentY = await drawHeader(doc, title, dateStr);
@@ -243,7 +270,7 @@ export const generateAdmissionsReport = async (
     boxWidth,
     boxHeight,
     "Total Revenue",
-    `৳${totalRevenue.toLocaleString()}`,
+    `BDT ${totalRevenue.toLocaleString()}`,
     COLORS.primary
   );
   drawMetricBox(
@@ -253,7 +280,7 @@ export const generateAdmissionsReport = async (
     boxWidth,
     boxHeight,
     "Collected",
-    `৳${totalCollected.toLocaleString()}`,
+    `BDT ${totalCollected.toLocaleString()}`,
     COLORS.success
   );
   drawMetricBox(
@@ -263,7 +290,7 @@ export const generateAdmissionsReport = async (
     boxWidth,
     boxHeight,
     "Outstanding Due",
-    `৳${totalDue.toLocaleString()}`,
+    `BDT ${totalDue.toLocaleString()}`,
     COLORS.warning
   );
 
@@ -287,7 +314,7 @@ export const generateAdmissionsReport = async (
     boxWidth,
     boxHeight,
     "Avg. Per Patient",
-    `৳${avgPerPatient.toLocaleString()}`,
+    `BDT ${avgPerPatient.toLocaleString()}`,
     COLORS.primary
   );
   drawMetricBox(
@@ -375,7 +402,13 @@ export const generateAdmissionsReport = async (
   autoTable(doc, {
     startY: currentY,
     head: [
-      ["Department", "Patients", "Revenue (৳)", "Collected (৳)", "Due (৳)"],
+      [
+        "Department",
+        "Patients",
+        "Revenue (BDT )",
+        "Collected (BDT )",
+        "Due (BDT )",
+      ],
     ],
     body: Array.from(deptMap.entries()).map(([name, stats]) => [
       name,
@@ -414,7 +447,7 @@ export const generateAdmissionsReport = async (
 
   autoTable(doc, {
     startY: currentY,
-    head: [["Doctor", "Patients", "Revenue (৳)"]],
+    head: [["Doctor", "Patients", "Revenue (BDT )"]],
     body: Array.from(doctorMap.entries())
       .sort((a, b) => b[1].count - a[1].count)
       .map(([name, stats]) => [
@@ -461,9 +494,8 @@ export const generateAdmissionsReport = async (
           "Admission No.",
           "Date",
           "Patient Name",
-          "Phone",
           "Doctor",
-          "Dept",
+          "Department",
           "Status",
           "Total",
           "Paid",
@@ -475,36 +507,34 @@ export const generateAdmissionsReport = async (
         item.admissionNumber,
         format(new Date(item.dateAdmitted), "dd/MM/yy"),
         item.patientFullName,
-        item.patientPhone || "N/A",
-        item.doctorName?.split(" ").slice(0, 2).join(" ") || "N/A",
-        item.departmentName?.substring(0, 10) || "N/A",
+        item.doctorName || "N/A",
+        item.departmentName || "N/A",
         item.status,
-        `৳${(item.grandTotal || 0).toLocaleString()}`,
-        `৳${(item.paidAmount || 0).toLocaleString()}`,
-        `৳${(item.dueAmount || 0).toLocaleString()}`,
+        `BDT ${(item.grandTotal || 0).toLocaleString()}`,
+        `BDT ${(item.paidAmount || 0).toLocaleString()}`,
+        `BDT ${(item.dueAmount || 0).toLocaleString()}`,
       ]),
       theme: "striped",
       headStyles: {
         fillColor: COLORS.primary,
-        fontSize: 7,
+        fontSize: 8,
         cellPadding: 2,
       },
       styles: {
-        fontSize: 7,
-        cellPadding: 1.5,
+        fontSize: 8,
+        cellPadding: 2,
       },
       columnStyles: {
         0: { cellWidth: 8 }, // #
-        1: { cellWidth: 22 }, // Admission No
-        2: { cellWidth: 16 }, // Date
-        3: { cellWidth: 28 }, // Patient Name
-        4: { cellWidth: 22 }, // Phone
-        5: { cellWidth: 20 }, // Doctor
-        6: { cellWidth: 18 }, // Dept
-        7: { cellWidth: 16 }, // Status
-        8: { cellWidth: 16 }, // Total
-        9: { cellWidth: 14 }, // Paid
-        10: { cellWidth: 14 }, // Due
+        1: { cellWidth: 24 }, // Admission No
+        2: { cellWidth: 18 }, // Date
+        3: { cellWidth: 32 }, // Patient Name
+        4: { cellWidth: 30 }, // Doctor (full name)
+        5: { cellWidth: 24 }, // Department
+        6: { cellWidth: 18 }, // Status
+        7: { cellWidth: 18 }, // Total
+        8: { cellWidth: 16 }, // Paid
+        9: { cellWidth: 16 }, // Due
       },
       margin: { left: margin, right: margin },
       didDrawPage: () => {
@@ -525,7 +555,7 @@ export const generateAdmissionsReport = async (
     doc.setFontSize(9);
     doc.setTextColor(COLORS.primary);
     doc.text(
-      `Grand Total: ৳${totalRevenue.toLocaleString()}  |  Collected: ৳${totalCollected.toLocaleString()}  |  Due: ৳${totalDue.toLocaleString()}`,
+      `Grand Total: BDT ${totalRevenue.toLocaleString()}  |  Collected: BDT ${totalCollected.toLocaleString()}  |  Due: BDT ${totalDue.toLocaleString()}`,
       pageWidth - margin,
       finalY,
       { align: "right" }
