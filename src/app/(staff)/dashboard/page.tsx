@@ -7,13 +7,20 @@ import {
   QuickActions,
   RecentPatients,
   SessionCashTracker,
+  RecentShifts,
 } from "./components";
 import { useDashboardData } from "./hooks";
 import { useAuth } from "@/app/AuthContext";
+import { isAdminRole, isSystemAdminRole } from "@/lib/roles";
 
 const Dashboard = React.memo(() => {
   const { stats, recentPatients, cashSession, isLoading } = useDashboardData();
   const { user } = useAuth();
+
+  // Check if user is a normal admin (not system-admin)
+  // Normal admin: role is 'admin' but NOT 'system-admin'
+  const isNormalAdmin =
+    user?.role && isAdminRole(user.role) && !isSystemAdminRole(user.role);
 
   return (
     <div className="min-h-screen bg-fnh-porcelain pb-4 sm:pb-6 lg:pb-8 w-full overflow-x-hidden">
@@ -34,19 +41,26 @@ const Dashboard = React.memo(() => {
             <QuickActions isLoading={isLoading} />
           </section>
 
-          {/* Bottom Section: Recent Patients & Cash Flow */}
+          {/* Bottom Section: Recent Patients & Cash Flow / Recent Shifts */}
           <section className="grid grid-cols-1 lg:grid-cols-5 gap-4 lg:gap-6">
             {/* Recent Patients - Takes 3 columns on large screens */}
             <div className="lg:col-span-3">
               <RecentPatients patients={recentPatients} isLoading={isLoading} />
             </div>
 
-            {/* Session Cash Tracker - Takes 2 columns on large screens */}
+            {/* 
+              For Normal Admin: Show Recent Shifts from other users with link to cash-tracking
+              For Staff/System-Admin: Show Session Cash Tracker (their own cash session)
+            */}
             <div className="lg:col-span-2">
-              <SessionCashTracker
-                staffName={user?.fullName || "Staff"}
-                isLoading={isLoading}
-              />
+              {isNormalAdmin ? (
+                <RecentShifts isLoading={isLoading} />
+              ) : (
+                <SessionCashTracker
+                  staffName={user?.fullName || "Staff"}
+                  isLoading={isLoading}
+                />
+              )}
             </div>
           </section>
         </div>

@@ -9,6 +9,7 @@ import { isAdminRole } from "@/lib/roles";
 export async function GET(request: NextRequest) {
   try {
     const user = await getAuthenticatedUserForAPI();
+
     if (!user || !isAdminRole(user.role)) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -25,9 +26,22 @@ export async function GET(request: NextRequest) {
       | "Closed"
       | undefined;
 
+    // Default to excluding system-admin shifts (pass includeSystemAdmin=true to include)
+    const excludeSystemAdmin =
+      searchParams.get("includeSystemAdmin") !== "true";
+
+    const filters = {
+      staffId,
+      startDate,
+      endDate,
+      status,
+      search,
+      excludeSystemAdmin,
+    };
+
     const [shifts, summary] = await Promise.all([
-      getAdminShifts({ staffId, startDate, endDate, status, search }),
-      getCashTrackingSummary(),
+      getAdminShifts(filters),
+      getCashTrackingSummary(filters),
     ]);
 
     return NextResponse.json({

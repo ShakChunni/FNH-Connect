@@ -377,7 +377,7 @@ export async function POST(request: NextRequest) {
           username: user.username,
           staffId: user.staff.id,
           fullName: user.staff.fullName,
-          role: user.staff.role,
+          role: user.role, // Use User.role (system role: admin, system-admin, staff) NOT staff.role (hospital role: Doctor, Nurse)
         },
         SECRET_KEY,
         { expiresIn: EXPIRATION_TIME }
