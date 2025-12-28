@@ -1,6 +1,6 @@
 "use client";
 import React, { useCallback, useMemo, useRef, useEffect } from "react";
-import { Save, Building2, User, Activity, Wallet } from "lucide-react";
+import { Save, User, Activity, Wallet } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/app/AuthContext";
 import {
@@ -12,14 +12,12 @@ import {
 import { ModalHeader } from "@/components/ui/ModalHeader";
 import { ModalFooter } from "@/components/ui/ModalFooter";
 import {
-  AdmissionHospitalInformation,
   AdmissionPatientInformation,
   DepartmentSelection,
   AdmissionStatusSection,
   FinancialInformation,
 } from "../form-section";
 import {
-  useAdmissionHospitalData,
   useAdmissionPatientData,
   useAdmissionInfo,
   useAdmissionFinancialData,
@@ -36,14 +34,10 @@ interface EditDataProps {
   patientData: AdmissionPatientData;
 }
 
-const SECTION_IDS = ["hospital", "patient", "status", "financial"];
+const SECTION_IDS = ["patient", "status", "financial"];
 
 const getTabColors = (color: string, isActive: boolean) => {
   const colors: Record<string, { active: string; inactive: string }> = {
-    blue: {
-      active: "bg-blue-600 text-white shadow-lg",
-      inactive: "bg-blue-100 text-blue-700 hover:bg-blue-200",
-    },
     indigo: {
       active: "bg-indigo-600 text-white shadow-lg",
       inactive: "bg-indigo-100 text-indigo-700 hover:bg-indigo-200",
@@ -69,8 +63,7 @@ const EditDataAdmission: React.FC<EditDataProps> = ({
   const popupRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-  // Store access
-  const hospitalData = useAdmissionHospitalData();
+  // Store access (removed hospital)
   const patientData = useAdmissionPatientData();
   const admissionInfo = useAdmissionInfo();
   const financialData = useAdmissionFinancialData();
@@ -119,7 +112,7 @@ const EditDataAdmission: React.FC<EditDataProps> = ({
         patientAddress: patientData.address,
         departmentName: initialPatientData.departmentName,
         doctorName: initialPatientData.doctorName,
-        hospitalName: hospitalData.name,
+        hospitalName: "FNH Hospital", // Hardcoded - only one hospital
         seatNumber: admissionInfo.seatNumber,
         ward: admissionInfo.ward,
         status: admissionInfo.status,
@@ -162,13 +155,10 @@ const EditDataAdmission: React.FC<EditDataProps> = ({
     },
   });
 
-  // Validation
+  // Validation (removed hospital)
   const { isFormValid, validationErrors } = useMemo(() => {
     const errors: string[] = [];
 
-    if (!hospitalData.name.trim()) {
-      errors.push("Hospital name is required");
-    }
     if (!patientData.firstName.trim()) {
       errors.push("Patient name is required");
     }
@@ -180,7 +170,7 @@ const EditDataAdmission: React.FC<EditDataProps> = ({
       isFormValid: errors.length === 0,
       validationErrors: errors,
     };
-  }, [hospitalData.name, patientData.firstName, patientData.address]);
+  }, [patientData.firstName, patientData.address]);
 
   const { showNotification } = useNotification();
 
@@ -263,12 +253,6 @@ const EditDataAdmission: React.FC<EditDataProps> = ({
   }, [isOpen, handleClose]);
 
   const sections = [
-    {
-      id: "hospital",
-      label: "Hospital",
-      icon: Building2,
-      color: "blue",
-    },
     {
       id: "patient",
       label: "Patient",
@@ -356,9 +340,6 @@ const EditDataAdmission: React.FC<EditDataProps> = ({
               className="flex-1 overflow-y-auto p-3 sm:p-4 md:p-6"
             >
               <div className="space-y-6 sm:space-y-8 md:space-y-10">
-                <div id="hospital">
-                  <AdmissionHospitalInformation readonly />
-                </div>
                 <div id="patient">
                   <AdmissionPatientInformation />
                 </div>

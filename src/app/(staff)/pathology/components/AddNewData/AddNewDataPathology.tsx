@@ -1,6 +1,6 @@
 "use client";
 import React, { useCallback, useMemo, useRef, useEffect } from "react";
-import { Save, Building2, User, Beaker } from "lucide-react";
+import { Save, User, Beaker } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/app/AuthContext";
 import { useAddPathologyData } from "../../hooks/useAddPathologyData";
@@ -14,11 +14,9 @@ import {
 import { ModalHeader } from "@/components/ui/ModalHeader";
 import { ModalFooter } from "@/components/ui/ModalFooter";
 import { getTabColors } from "./utils/modalUtils";
-import { PathologyHospitalInformation } from "../form-section/HospitalInformation";
 import PathologyPatientInformation from "../form-section/PatientInformation/PathologyPatientInformation";
 import PathologyInformation from "../form-section/PathologyInformation/PathologyInformation";
 import {
-  usePathologyHospitalData,
   usePathologyPatientData,
   usePathologyGuardianData,
   usePathologyPathologyInfo,
@@ -35,7 +33,7 @@ interface AddNewDataProps {
   onClose: () => void;
 }
 
-const SECTION_IDS = ["hospital", "patient", "pathology"];
+const SECTION_IDS = ["patient", "pathology"];
 
 const AddNewDataPathology: React.FC<AddNewDataProps> = ({
   isOpen,
@@ -45,13 +43,11 @@ const AddNewDataPathology: React.FC<AddNewDataProps> = ({
   const popupRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-  // Store access
-  const hospitalData = usePathologyHospitalData();
+  // Store access (removed hospital)
   const patientData = usePathologyPatientData();
   const guardianData = usePathologyGuardianData();
   const pathologyInfo = usePathologyPathologyInfo();
   const validationStatus = usePathologyValidationStatus();
-  // Note: resetFormState is handled internally by closeAddModal
   const { afterAddModalClosed } = usePathologyActions();
 
   // Fetch doctors list to get doctor names
@@ -105,7 +101,7 @@ const AddNewDataPathology: React.FC<AddNewDataProps> = ({
           address: patientData.address,
           mobileNumber: patientData.phoneNumber,
           guardianName: guardianData.name,
-          hospitalName: hospitalData.name,
+          hospitalName: "FNH Hospital", // Hardcoded - only one hospital
           testDate: new Date().toISOString(),
           testCategory: "Multiple Tests",
           testResults: { tests: pathologyInfo.selectedTests },
@@ -118,7 +114,7 @@ const AddNewDataPathology: React.FC<AddNewDataProps> = ({
           grandTotal: pathologyInfo.grandTotal,
           paidAmount: pathologyInfo.paidAmount,
           dueAmount: pathologyInfo.dueAmount,
-          orderedBy: doctorName, // Use the resolved doctor name
+          orderedBy: doctorName,
           orderedById: pathologyInfo.orderedById,
         };
 
@@ -134,17 +130,14 @@ const AddNewDataPathology: React.FC<AddNewDataProps> = ({
           }
         );
       }
-      onClose(); // closeAddModal now resets form internally
+      onClose();
     },
   });
 
-  // Validation
+  // Validation (removed hospital)
   const { isFormValid, validationErrors } = useMemo(() => {
     const errors: string[] = [];
 
-    if (!hospitalData.name.trim()) {
-      errors.push("Hospital name is required");
-    }
     if (!patientData.firstName.trim()) {
       errors.push("Patient name is required");
     }
@@ -178,7 +171,6 @@ const AddNewDataPathology: React.FC<AddNewDataProps> = ({
       validationErrors: errors,
     };
   }, [
-    hospitalData.name,
     patientData.firstName,
     patientData.gender,
     patientData.phoneNumber,
@@ -189,19 +181,17 @@ const AddNewDataPathology: React.FC<AddNewDataProps> = ({
     validationStatus,
   ]);
 
-  // Notification hook for showing validation errors
   const { showNotification } = useNotification();
 
   // Handlers
   const handleClose = useCallback(() => {
     if (isSubmitting) return;
-    onClose(); // closeAddModal now resets form internally
+    onClose();
   }, [isSubmitting, onClose]);
 
   const handleSubmit = useCallback(() => {
     if (isSubmitting) return;
 
-    // Show validation errors if form is invalid
     if (!isFormValid) {
       const errorMessage =
         validationErrors.length === 1
@@ -212,7 +202,6 @@ const AddNewDataPathology: React.FC<AddNewDataProps> = ({
     }
 
     const payload = transformPathologyDataForApi(
-      hospitalData,
       patientData,
       guardianData,
       pathologyInfo
@@ -222,7 +211,6 @@ const AddNewDataPathology: React.FC<AddNewDataProps> = ({
   }, [
     isFormValid,
     isSubmitting,
-    hospitalData,
     patientData,
     guardianData,
     pathologyInfo,
@@ -247,12 +235,6 @@ const AddNewDataPathology: React.FC<AddNewDataProps> = ({
   }, [isOpen, handleClose]);
 
   const sections = [
-    {
-      id: "hospital",
-      label: "Hospital Information",
-      icon: Building2,
-      color: "blue",
-    },
     {
       id: "patient",
       label: "Patient Information",
@@ -334,9 +316,6 @@ const AddNewDataPathology: React.FC<AddNewDataProps> = ({
               className="flex-1 overflow-y-auto p-3 sm:p-4 md:p-6"
             >
               <div className="space-y-6 sm:space-y-8 md:space-y-10">
-                <div id="hospital">
-                  <PathologyHospitalInformation />
-                </div>
                 <div id="patient">
                   <PathologyPatientInformation />
                 </div>

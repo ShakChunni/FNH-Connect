@@ -27,9 +27,9 @@ function serializeDate(date: Date | null): string | null {
 
 /**
  * Transform form data to API request format for creating new patient
+ * Hospital is always ID 1 (FNH Hospital) - handled server-side
  */
 export function transformPathologyDataForApi(
-  hospitalData: HospitalData,
   patientData: PatientData,
   guardianData: GuardianInfo,
   pathologyInfo: PathologyInfo
@@ -42,7 +42,16 @@ export function transformPathologyDataForApi(
       // Map guardian name to patient guardianName field
       guardianName: guardianData.name,
     },
-    hospital: hospitalData,
+    // Hospital is always ID 1 - server-side handles this
+    hospital: {
+      id: 1,
+      name: "FNH Hospital",
+      address: "",
+      phoneNumber: "",
+      email: "",
+      website: "",
+      type: "",
+    },
     guardianInfo: {
       ...guardianData,
       dateOfBirth: serializeDate(guardianData.dateOfBirth) as any,
@@ -57,10 +66,10 @@ export function transformPathologyDataForApi(
 
 /**
  * Transform form data to API request format for editing existing patient
+ * Hospital is always ID 1 (FNH Hospital) - handled server-side
  */
 export function transformPathologyDataForEdit(
   id: number,
-  hospitalData: HospitalData,
   patientData: PatientData,
   guardianData: GuardianInfo,
   pathologyInfo: PathologyInfo
@@ -73,7 +82,16 @@ export function transformPathologyDataForEdit(
       dateOfBirth: serializeDate(patientData.dateOfBirth) as any,
       guardianName: guardianData.name,
     },
-    hospital: hospitalData,
+    // Hospital is always ID 1 - server-side handles this
+    hospital: {
+      id: 1,
+      name: "FNH Hospital",
+      address: "",
+      phoneNumber: "",
+      email: "",
+      website: "",
+      type: "",
+    },
     guardianInfo: {
       ...guardianData,
       dateOfBirth: serializeDate(guardianData.dateOfBirth) as any,

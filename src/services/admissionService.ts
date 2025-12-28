@@ -190,35 +190,8 @@ export async function createAdmission(
       ? parseFloat(admissionFeeConfig.value)
       : 300;
 
-    // 2. Handle Hospital
-    let hospitalId: number | null = hospitalData.id || null;
-    const cleanHospitalName = hospitalData.name?.trim();
-
-    if (!hospitalId && cleanHospitalName) {
-      // Try to find by name first
-      const existingHospital = await tx.hospital.findFirst({
-        where: { name: { equals: cleanHospitalName, mode: "insensitive" } },
-      });
-
-      if (existingHospital) {
-        hospitalId = existingHospital.id;
-      } else {
-        // Create new hospital
-        const newHospital = await tx.hospital.create({
-          data: {
-            name: cleanHospitalName,
-            address: hospitalData.address || null,
-            phoneNumber: hospitalData.phoneNumber || null,
-            email: hospitalData.email || null,
-            website: hospitalData.website || null,
-            type: hospitalData.type || null,
-            isActive: true,
-            createdBy: staffId,
-          },
-        });
-        hospitalId = newHospital.id;
-      }
-    }
+    // 2. Use default hospital ID 1 (FNH Hospital)
+    const hospitalId = 1;
 
     // 3. Handle Patient
     let patient;

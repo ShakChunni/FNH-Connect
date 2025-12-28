@@ -243,36 +243,8 @@ export async function createPathologyPatient(
       });
     }
 
-    // 2.5 Handle Hospital - Find existing, create new, or use provided ID
-    let hospitalId: number | null = hospitalData.id || null;
-
-    const cleanHospitalName = hospitalData.name?.trim();
-
-    if (!hospitalId && cleanHospitalName) {
-      // Try to find by name first to avoid duplicates
-      const existingHospital = await tx.hospital.findFirst({
-        where: { name: { equals: cleanHospitalName, mode: "insensitive" } },
-      });
-
-      if (existingHospital) {
-        hospitalId = existingHospital.id;
-      } else {
-        // Create new hospital
-        const newHospital = await tx.hospital.create({
-          data: {
-            name: cleanHospitalName,
-            address: hospitalData.address,
-            phoneNumber: hospitalData.phoneNumber,
-            email: hospitalData.email,
-            website: hospitalData.website,
-            type: hospitalData.type,
-            isActive: true,
-            createdBy: staffId,
-          },
-        });
-        hospitalId = newHospital.id;
-      }
-    }
+    // 2.5 Use default hospital ID 1 (FNH Hospital)
+    const hospitalId = 1;
 
     // 1. Create or update patient
     let patient;
