@@ -430,11 +430,11 @@ export const generatePathologyReceipt = async (
       });
       tY += 7;
 
-      doc.setFont("helvetica", "normal");
+      doc.setFont("helvetica", "bold");
       doc.setFontSize(11);
       doc.setTextColor(COLORS.lightText);
       doc.text("Paid Amount:", tLabelX, tY, { align: "right" });
-      doc.setTextColor(COLORS.primary);
+      doc.setTextColor(22, 128, 61); // Darker green for better visibility
       doc.text(`${data.paidAmount.toLocaleString()}`, tValX, tY, {
         align: "right",
       });

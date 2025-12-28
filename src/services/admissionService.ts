@@ -5,6 +5,11 @@
 
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
+import {
+  getDepartmentCode,
+  formatRegistrationNumber,
+  getTwoDigitYear,
+} from "@/lib/registrationNumber";
 
 // ═══════════════════════════════════════════════════════════════
 // TYPES
@@ -255,23 +260,36 @@ export async function createAdmission(
       });
     }
 
-    // 4. Generate admission number (format: ADM-YYYYMMDD-XXXX)
-    const today = new Date();
-    const datePrefix = today.toISOString().slice(0, 10).replace(/-/g, "");
-    const startOfDay = new Date(today.setHours(0, 0, 0, 0));
-    const endOfDay = new Date(today.setHours(23, 59, 59, 999));
+    // 4. Generate admission number (format: DEPT-YY-XXXXX, e.g., GYNE-25-00001)
+    // Get department to determine the code
+    const department = await tx.department.findUnique({
+      where: { id: admissionData.departmentId },
+    });
+    if (!department) {
+      throw new Error("Department not found");
+    }
 
-    const countToday = await tx.admission.count({
+    const departmentCode = getDepartmentCode(department.name);
+    const currentYear = getTwoDigitYear();
+    const yearStart = new Date(new Date().getFullYear(), 0, 1); // Jan 1 of current year
+    const yearEnd = new Date(new Date().getFullYear() + 1, 0, 1); // Jan 1 of next year
+
+    // Count admissions for this department in the current year
+    const countThisYear = await tx.admission.count({
       where: {
+        departmentId: admissionData.departmentId,
         dateAdmitted: {
-          gte: startOfDay,
-          lt: endOfDay,
+          gte: yearStart,
+          lt: yearEnd,
         },
       },
     });
-    const admissionNumber = `ADM-${datePrefix}-${String(
-      countToday + 1
-    ).padStart(4, "0")}`;
+
+    const admissionNumber = formatRegistrationNumber(
+      departmentCode,
+      currentYear,
+      countThisYear + 1
+    );
 
     // 5. Create admission record
     const admission = await tx.admission.create({

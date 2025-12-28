@@ -5,6 +5,10 @@
 
 import { prisma } from "@/lib/prisma";
 import type { Prisma } from "@prisma/client";
+import {
+  formatRegistrationNumber,
+  getTwoDigitYear,
+} from "@/lib/registrationNumber";
 
 // ═══════════════════════════════════════════════════════════════
 // TYPES
@@ -271,27 +275,26 @@ export async function createInfertilityPatient(
       });
     }
 
-    // 3. Generate unique case number with date-based format (like pathology)
-    const now = new Date();
-    const datePrefix = now.toISOString().slice(2, 10).replace(/-/g, ""); // YYMMDD
-    const startOfDay = new Date(
-      now.getFullYear(),
-      now.getMonth(),
-      now.getDate()
-    );
-    const endOfDay = new Date(startOfDay.getTime() + 24 * 60 * 60 * 1000);
-    const countToday = await tx.infertilityPatient.count({
+    // 3. Generate unique case number (format: INF-YY-XXXXX, e.g., INF-25-00001)
+    const currentYear = getTwoDigitYear();
+    const yearStart = new Date(new Date().getFullYear(), 0, 1); // Jan 1 of current year
+    const yearEnd = new Date(new Date().getFullYear() + 1, 0, 1); // Jan 1 of next year
+
+    // Count infertility cases in the current year
+    const countThisYear = await tx.infertilityPatient.count({
       where: {
         createdAt: {
-          gte: startOfDay,
-          lt: endOfDay,
+          gte: yearStart,
+          lt: yearEnd,
         },
       },
     });
-    const caseNumber = `INF-${datePrefix}-${String(countToday + 1).padStart(
-      4,
-      "0"
-    )}`;
+
+    const caseNumber = formatRegistrationNumber(
+      "INF",
+      currentYear,
+      countThisYear + 1
+    );
 
     // 4. Create infertility record
     // First, check if a record already exists for this patient at this hospital
