@@ -71,6 +71,17 @@ interface UseAdminShiftsOptions {
 }
 
 /**
+ * Format date to YYYY-MM-DD using local time (not UTC)
+ * This prevents timezone conversion issues with BDT (+6)
+ */
+function formatLocalDate(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+/**
  * Calculate date range from preset
  */
 function getDateRangeFromPreset(preset: DatePreset): {
@@ -82,33 +93,33 @@ function getDateRangeFromPreset(preset: DatePreset): {
   switch (preset) {
     case "today":
       return {
-        startDate: startOfDay(now).toISOString().split("T")[0],
-        endDate: endOfDay(now).toISOString().split("T")[0],
+        startDate: formatLocalDate(startOfDay(now)),
+        endDate: formatLocalDate(endOfDay(now)),
       };
     case "yesterday":
       const yesterday = subDays(now, 1);
       return {
-        startDate: startOfDay(yesterday).toISOString().split("T")[0],
-        endDate: endOfDay(yesterday).toISOString().split("T")[0],
+        startDate: formatLocalDate(startOfDay(yesterday)),
+        endDate: formatLocalDate(endOfDay(yesterday)),
       };
     case "lastWeek":
       const lastWeekStart = startOfWeek(subWeeks(now, 1), { weekStartsOn: 0 });
       const lastWeekEnd = endOfWeek(subWeeks(now, 1), { weekStartsOn: 0 });
       return {
-        startDate: lastWeekStart.toISOString().split("T")[0],
-        endDate: lastWeekEnd.toISOString().split("T")[0],
+        startDate: formatLocalDate(lastWeekStart),
+        endDate: formatLocalDate(lastWeekEnd),
       };
     case "lastMonth":
       const lastMonthStart = startOfMonth(subMonths(now, 1));
       const lastMonthEnd = endOfMonth(subMonths(now, 1));
       return {
-        startDate: lastMonthStart.toISOString().split("T")[0],
-        endDate: lastMonthEnd.toISOString().split("T")[0],
+        startDate: formatLocalDate(lastMonthStart),
+        endDate: formatLocalDate(lastMonthEnd),
       };
     default:
       return {
-        startDate: startOfDay(now).toISOString().split("T")[0],
-        endDate: endOfDay(now).toISOString().split("T")[0],
+        startDate: formatLocalDate(startOfDay(now)),
+        endDate: formatLocalDate(endOfDay(now)),
       };
   }
 }

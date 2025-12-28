@@ -133,14 +133,19 @@ const CashTrackingPage = () => {
                         : undefined,
                     }}
                     onChange={(range) => {
-                      setFilter(
-                        "startDate",
-                        range?.from?.toISOString().split("T")[0] || ""
-                      );
-                      setFilter(
-                        "endDate",
-                        range?.to?.toISOString().split("T")[0] || ""
-                      );
+                      // Use local date format to prevent UTC timezone conversion
+                      const formatLocalDate = (date: Date | undefined) => {
+                        if (!date) return "";
+                        const year = date.getFullYear();
+                        const month = String(date.getMonth() + 1).padStart(
+                          2,
+                          "0"
+                        );
+                        const day = String(date.getDate()).padStart(2, "0");
+                        return `${year}-${month}-${day}`;
+                      };
+                      setFilter("startDate", formatLocalDate(range?.from));
+                      setFilter("endDate", formatLocalDate(range?.to));
                     }}
                     placeholder="Filter by date range"
                     disabled={isLoading && !data}
