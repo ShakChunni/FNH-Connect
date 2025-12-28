@@ -19,7 +19,7 @@ const COMPANY_INFO = {
   name: "Feroza Nursing Home",
   address:
     "1257, Sholakia, Khorompatti Kishoreganj Sadar, Kishoreganj Dhaka, Bangladesh",
-  phone: "+8801712-345678",
+  phone: "+8801726219350, +8801701295016, +8801787993086",
   department: "Infertility Management Unit",
 };
 
@@ -54,7 +54,7 @@ const drawLogoWatermark = async (doc: jsPDF) => {
 };
 
 /**
- * Format date in a clean readable format
+ * Format date in a clean readable format with time
  */
 const formatDate = (dateStr: string | null | undefined): string => {
   if (!dateStr) return "N/A";
@@ -62,6 +62,8 @@ const formatDate = (dateStr: string | null | undefined): string => {
     day: "numeric",
     month: "short",
     year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
   });
 };
 

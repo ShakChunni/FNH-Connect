@@ -18,7 +18,7 @@ const COMPANY_INFO = {
   address:
     "1257, Sholakia, Khorompatti Kishoreganj Sadar, Kishoreganj Dhaka, Bangladesh",
   email: "Email: firozanursinghome@gmail.com",
-  phone: "Mobile: 01712-345678",
+  phone: "Mobile: +8801726219350, +8801701295016, +8801787993086",
 };
 
 const loadImage = (src: string): Promise<HTMLImageElement> => {
@@ -442,15 +442,18 @@ export const generatePathologyReceipt = async (
 
       doc.setFont("helvetica", "bold");
       doc.setFontSize(11);
-      doc.text("Due Amount:", tLabelX, tY, { align: "right" });
 
       if (data.dueAmount > 0) {
+        // Show Due Amount only when there is actual due
+        doc.setTextColor(COLORS.lightText);
+        doc.text("Due Amount:", tLabelX, tY, { align: "right" });
         doc.setTextColor(220, 38, 38);
         doc.text(`${data.dueAmount.toLocaleString()}`, tValX, tY, {
           align: "right",
         });
       } else {
-        doc.setTextColor(22, 163, 74);
+        // Just show PAID when fully paid (no label)
+        doc.setTextColor(22, 128, 61);
         doc.text("PAID", tValX, tY, { align: "right" });
       }
 

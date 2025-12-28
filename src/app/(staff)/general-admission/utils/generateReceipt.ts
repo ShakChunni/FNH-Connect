@@ -22,7 +22,7 @@ const COMPANY_INFO = {
   address:
     "1257, Sholakia, Khorompatti Kishoreganj Sadar, Kishoreganj Dhaka, Bangladesh",
   email: "Email: firozanursinghome@gmail.com",
-  phone: "Mobile: 01712-345678",
+  phone: "Mobile: +8801726219350, +8801701295016, +8801787993086",
 };
 
 const loadImage = (src: string): Promise<HTMLImageElement> => {
@@ -525,12 +525,18 @@ export const generateAdmissionInvoice = async (
       doc.setTextColor(COLORS.primary);
       doc.text(`#${data.admissionNumber}`, margin, currentY);
 
-      // Date (Normal & Text Color)
+      // Date (Normal & Text Color) - with time
       doc.setFont("helvetica", "normal");
       doc.setTextColor(COLORS.text);
       const admissionDate = new Date(data.dateAdmitted).toLocaleDateString(
         "en-BD",
-        { day: "numeric", month: "short", year: "numeric" }
+        {
+          day: "numeric",
+          month: "short",
+          year: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+        }
       );
       doc.text(`Date: ${admissionDate}`, pageWidth - margin, currentY, {
         align: "right",
@@ -832,17 +838,19 @@ export const generateAdmissionInvoice = async (
 
       doc.setFont("helvetica", "bold");
       doc.setFontSize(11);
-      doc.setTextColor(COLORS.lightText);
-      doc.text("Due Amount:", tLabelX, tY, { align: "right" });
 
       if (data.dueAmount > 0) {
+        // Show Due Amount only when there is actual due
+        doc.setTextColor(COLORS.lightText);
+        doc.text("Due Amount:", tLabelX, tY, { align: "right" });
         doc.setTextColor(220, 38, 38);
         doc.text(`${data.dueAmount.toLocaleString()}`, tValX, tY, {
           align: "right",
         });
       } else {
-        doc.setTextColor(22, 163, 74);
-        doc.text("FULLY PAID", tValX, tY, { align: "right" });
+        // Just show PAID when fully paid (no label)
+        doc.setTextColor(22, 128, 61);
+        doc.text("PAID", tValX, tY, { align: "right" });
       }
 
       // Remarks
