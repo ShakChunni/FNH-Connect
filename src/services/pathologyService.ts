@@ -20,6 +20,8 @@ export interface PathologyFilters {
   endDate?: string;
   isCompleted?: boolean;
   testCategory?: string;
+  page?: number;
+  limit?: number;
 }
 
 export interface PatientData {
@@ -113,7 +115,15 @@ export async function getPathologyPatients(filters: PathologyFilters) {
     where.testCategory = filters.testCategory;
   }
 
-  return await prisma.pathologyTest.findMany({
+  // Pagination defaults
+  const page = filters.page || 1;
+  const limit = filters.limit || 15;
+  const skip = (page - 1) * limit;
+
+  // Get total count for pagination
+  const total = await prisma.pathologyTest.count({ where });
+
+  const data = await prisma.pathologyTest.findMany({
     where,
     include: {
       patient: {
@@ -165,7 +175,19 @@ export async function getPathologyPatients(filters: PathologyFilters) {
     orderBy: {
       testDate: "desc",
     },
+    skip,
+    take: limit,
   });
+
+  return {
+    data,
+    pagination: {
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    },
+  };
 }
 
 export async function getPathologyPatientById(id: number) {

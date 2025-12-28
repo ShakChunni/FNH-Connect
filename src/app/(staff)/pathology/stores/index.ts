@@ -27,6 +27,19 @@ export {
   useUIActions,
 } from "./uiStore";
 
+// Export filter store hooks
+export {
+  usePathologyFilterStore,
+  usePathologyFilterPanelState,
+  usePathologyFilterValues,
+  usePathologyFilterActions,
+  getDateRangeFromOption,
+} from "./filterStore";
+export type {
+  PathologyStatus,
+  FilterValues as PathologyFilterValues,
+} from "./filterStore";
+
 // ═══════════════════════════════════════════════════════════════
 // BACKWARD COMPATIBILITY EXPORTS
 // These maintain the old API while using the new refactored stores

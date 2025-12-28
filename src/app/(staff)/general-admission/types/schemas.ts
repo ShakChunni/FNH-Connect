@@ -75,7 +75,13 @@ export const createAdmissionSchema = z.object({
 export const updateAdmissionSchema = z.object({
   id: z.number(),
   status: z
-    .enum(["Admitted", "Under Treatment", "Awaiting Discharge", "Discharged"])
+    .enum([
+      "Admitted",
+      "Under Treatment",
+      "Awaiting Discharge",
+      "Discharged",
+      "Canceled",
+    ])
     .optional(),
   seatNumber: z.string().optional(),
   ward: z.string().optional(),

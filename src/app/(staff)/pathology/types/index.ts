@@ -197,6 +197,8 @@ export interface PathologyFilters {
   endDate?: string; // ISO date string
   isCompleted?: boolean;
   testCategory?: string;
+  page?: number;
+  limit?: number;
 }
 
 // Fetch response type

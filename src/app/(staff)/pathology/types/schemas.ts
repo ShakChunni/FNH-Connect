@@ -133,6 +133,8 @@ export const pathologyFiltersSchema = z.object({
       return undefined;
     }),
   testCategory: z.string().optional(),
+  page: z.string().default("1").transform(Number),
+  limit: z.string().default("15").transform(Number),
 });
 
 // ═══════════════════════════════════════════════════════════════
