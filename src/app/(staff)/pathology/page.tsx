@@ -1,64 +1,60 @@
 "use client";
 
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useMemo } from "react";
 import { createPortal } from "react-dom";
 
 // Modular Components
 import { PageHeader } from "@/components/ui/PageHeader";
+import { Pagination } from "@/components/pagination/Pagination";
 import AddNewDataPathology from "./components/AddNewData/AddNewDataPathology";
 import EditDataPathology from "./components/EditData/EditDataPathology";
 import PatientTable from "./components/PatientTable/PatientTable";
 import { NewPatientButton } from "./components/NewPatientButton";
 import { PathologySearch } from "./components/PathologySearch";
+import { Filters, ExportActionBar } from "./components/filter";
 
 // Types and Hooks
 import { PathologyPatientData } from "./types";
 import { useFetchPathologyData } from "./hooks";
 import type { PathologyFilters } from "./types";
-import { useModals, usePathologyActions } from "./stores";
+import {
+  useModals,
+  usePathologyActions,
+  usePathologyFilterValues,
+  usePathologyFilterStore,
+} from "./stores";
 
 const PathologyManagement = React.memo(() => {
   // Zustand store selectors
   const modals = useModals();
   const actions = usePathologyActions();
 
-  // Local state for filters
-  const [filters, setFilters] = useState<{
-    search?: string;
-    startDate?: Date;
-    endDate?: Date;
-  }>({});
+  // Get filter values from filter store
+  const filterValues = usePathologyFilterValues();
+  const setPage = usePathologyFilterStore((state) => state.setPage);
 
-  // Map filters to hook format
+  // Map filter store values to hook format
   const hookFilters: PathologyFilters = useMemo(
     () => ({
-      search: filters.search,
-      startDate: filters.startDate?.toISOString(),
-      endDate: filters.endDate?.toISOString(),
+      search: filterValues.search.length >= 2 ? filterValues.search : undefined,
+      startDate: filterValues.startDate?.toISOString(),
+      endDate: filterValues.endDate?.toISOString(),
+      page: filterValues.page,
+      limit: filterValues.limit,
     }),
-    [filters]
+    [filterValues]
   );
 
-  const { data: pathologyPatients = [], isLoading } =
+  const { data: pathologyResult, isLoading } =
     useFetchPathologyData(hookFilters);
 
-  // Handle filter changes from search component
-  const handleFiltersChange = useCallback(
-    (newFilters: {
-      search?: string;
-      department?: string;
-      dateRange?: string;
-      startDate?: Date;
-      endDate?: Date;
-    }) => {
-      setFilters({
-        search: newFilters.search,
-        startDate: newFilters.startDate,
-        endDate: newFilters.endDate,
-      });
-    },
-    []
-  );
+  // Extract data and pagination from result
+  const pathologyPatients = pathologyResult?.data || [];
+  const pagination = pathologyResult || {
+    total: 0,
+    totalPages: 1,
+    currentPage: 1,
+  };
 
   // Handle edit patient
   const handleOpenEditPopup = useCallback(
@@ -66,6 +62,14 @@ const PathologyManagement = React.memo(() => {
       actions.openEditModal(patient);
     },
     [actions]
+  );
+
+  // Handle page change
+  const handlePageChange = useCallback(
+    (page: number) => {
+      setPage(page);
+    },
+    [setPage]
   );
 
   // Transform response data to match table format
@@ -125,6 +129,13 @@ const PathologyManagement = React.memo(() => {
     }));
   }, [pathologyPatients]);
 
+  // Calculate pagination display values
+  const startIndex = (pagination.currentPage - 1) * filterValues.limit + 1;
+  const endIndex = Math.min(
+    pagination.currentPage * filterValues.limit,
+    pagination.total
+  );
+
   return (
     <div className="min-h-screen bg-fnh-porcelain pb-2 sm:pb-3 lg:pb-4 w-full overflow-x-hidden">
       <div className="mx-auto w-full max-w-full px-3 sm:px-4 lg:px-6 pt-16 sm:pt-12 lg:pt-2">
@@ -143,24 +154,43 @@ const PathologyManagement = React.memo(() => {
             />
           </div>
 
-          {/* Search Bar */}
-          <div className="px-1 sm:px-2 lg:px-4 pb-4 lg:pb-6">
-            <PathologySearch
-              onFiltersChange={handleFiltersChange}
-              disabled={isLoading}
-            />
+          {/* Search Bar with Filter Button */}
+          <div className="px-0 sm:px-2 lg:px-4 pb-2 sm:pb-4 lg:pb-6">
+            <PathologySearch disabled={isLoading} />
           </div>
 
           {/* Table Container */}
-          <div className="px-1 sm:px-2 lg:px-4">
+          <div className="px-0 sm:px-2 lg:px-4">
             <PatientTable
               tableData={tableData}
               isLoading={isLoading}
               onEdit={handleOpenEditPopup}
             />
           </div>
+
+          {/* Server-side Pagination */}
+          {!isLoading && pagination.totalPages > 1 && (
+            <div className="px-0 sm:px-2 lg:px-4 mt-4">
+              <Pagination
+                currentPage={pagination.currentPage}
+                totalPages={pagination.totalPages}
+                totalResults={pagination.total}
+                startIndex={startIndex}
+                endIndex={endIndex}
+                onPageChange={handlePageChange}
+                onPrev={() => handlePageChange(pagination.currentPage - 1)}
+                onNext={() => handlePageChange(pagination.currentPage + 1)}
+              />
+            </div>
+          )}
         </div>
       </div>
+
+      {/* Filter Panel (Slide-out) */}
+      <Filters />
+
+      {/* Export Action Bar (Floating) */}
+      <ExportActionBar data={tableData} />
 
       {/* Add New Data Portal */}
       {(modals.isAddOpen || modals.isAddClosing) &&

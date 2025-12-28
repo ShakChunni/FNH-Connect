@@ -1,5 +1,6 @@
-import React, { useState, useRef, useMemo } from "react";
+import React, { useState, useMemo } from "react";
 import { usePagination } from "@/hooks/usePagination";
+import { useHorizontalDragScroll } from "@/hooks/useHorizontalDragScroll";
 import { Pagination } from "@/components/pagination/Pagination";
 import TableRow from "./components/TableRow";
 import TableRowSkeleton from "./components/TableRowSkeleton";
@@ -24,7 +25,9 @@ const PatientTable: React.FC<PatientTableProps> = ({
   const [selectedPatient, setSelectedPatient] =
     useState<PathologyPatientData | null>(null);
   const [isOverviewOpen, setIsOverviewOpen] = useState(false);
-  const tableContainerRef = useRef<HTMLDivElement>(null);
+
+  // Horizontal drag-to-scroll for better UX
+  const dragScroll = useHorizontalDragScroll<HTMLDivElement>();
 
   const handlePatientClick = (patient: PathologyPatientData) => {
     setSelectedPatient(patient);
@@ -159,7 +162,11 @@ const PatientTable: React.FC<PatientTableProps> = ({
           <div
             className="overflow-x-auto overflow-y-auto w-full"
             style={{ maxHeight: "600px" }}
-            ref={tableContainerRef}
+            ref={dragScroll.ref}
+            onMouseDown={dragScroll.onMouseDown}
+            onMouseUp={dragScroll.onMouseUp}
+            onMouseMove={dragScroll.onMouseMove}
+            onMouseLeave={dragScroll.onMouseLeave}
           >
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-fnh-navy sticky top-0 z-20">
@@ -213,7 +220,11 @@ const PatientTable: React.FC<PatientTableProps> = ({
           <div
             className="overflow-x-auto overflow-y-auto w-full"
             style={{ maxHeight: "600px" }}
-            ref={tableContainerRef}
+            ref={dragScroll.ref}
+            onMouseDown={dragScroll.onMouseDown}
+            onMouseUp={dragScroll.onMouseUp}
+            onMouseMove={dragScroll.onMouseMove}
+            onMouseLeave={dragScroll.onMouseLeave}
           >
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-fnh-navy sticky top-0 z-20">

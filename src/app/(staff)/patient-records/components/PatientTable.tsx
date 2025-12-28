@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useState, useMemo, useRef } from "react";
+import React, { useState, useMemo } from "react";
 import { Phone, MapPin, Calendar, Edit3, Users, Search } from "lucide-react";
 import { usePagination } from "@/hooks/usePagination";
+import { useHorizontalDragScroll } from "@/hooks/useHorizontalDragScroll";
 import { Pagination } from "@/components/pagination/Pagination";
 import type { PatientData } from "../types";
 import PatientOverview from "./PatientOverview/PatientOverview";
@@ -118,7 +119,9 @@ export const PatientTable: React.FC<PatientTableProps> = ({
     null
   );
   const [isOverviewOpen, setIsOverviewOpen] = useState(false);
-  const tableContainerRef = useRef<HTMLDivElement>(null);
+
+  // Horizontal drag-to-scroll for better UX
+  const dragScroll = useHorizontalDragScroll<HTMLDivElement>();
 
   const handleSort = (key: SortKey) => {
     if (sortKey === key) {
@@ -240,7 +243,11 @@ export const PatientTable: React.FC<PatientTableProps> = ({
         <div
           className="overflow-x-auto overflow-y-auto w-full"
           style={{ maxHeight: "600px" }}
-          ref={tableContainerRef}
+          ref={dragScroll.ref}
+          onMouseDown={dragScroll.onMouseDown}
+          onMouseUp={dragScroll.onMouseUp}
+          onMouseMove={dragScroll.onMouseMove}
+          onMouseLeave={dragScroll.onMouseLeave}
         >
           <table className="min-w-full divide-y divide-gray-200 border-separate border-spacing-0">
             <thead className="sticky top-0 z-40">

@@ -32,6 +32,8 @@ export async function GET(request: NextRequest) {
       endDate: searchParams.get("endDate") || undefined,
       isCompleted: searchParams.get("isCompleted") || undefined,
       testCategory: searchParams.get("testCategory") || undefined,
+      page: searchParams.get("page") || "1",
+      limit: searchParams.get("limit") || "15",
     });
 
     if (!validation.success) {
@@ -45,13 +47,12 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const patients = await pathologyService.getPathologyPatients(
-      validation.data
-    );
+    const result = await pathologyService.getPathologyPatients(validation.data);
 
     return NextResponse.json({
       success: true,
-      data: patients,
+      data: result.data,
+      pagination: result.pagination,
     });
   } catch (error) {
     console.error("GET /api/pathology-patients error:", error);

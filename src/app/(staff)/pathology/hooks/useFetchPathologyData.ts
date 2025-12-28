@@ -1,15 +1,30 @@
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/axios";
-import type {
-  PathologyPatient,
-  PathologyFilters,
-  FetchPathologyPatientsResponse,
-} from "../types";
+import type { PathologyPatient, PathologyFilters } from "../types";
+
+interface FetchPathologyResponse {
+  success: boolean;
+  data: PathologyPatient[];
+  pagination: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
+  error?: string;
+}
+
+export interface PaginatedPathology {
+  data: PathologyPatient[];
+  total: number;
+  totalPages: number;
+  currentPage: number;
+}
 
 export function useFetchPathologyData(filters: PathologyFilters = {}) {
   return useQuery({
     queryKey: ["pathologyPatients", filters],
-    queryFn: async (): Promise<PathologyPatient[]> => {
+    queryFn: async (): Promise<PaginatedPathology> => {
       const params = new URLSearchParams();
 
       // Add filters
@@ -33,7 +48,16 @@ export function useFetchPathologyData(filters: PathologyFilters = {}) {
         params.append("testCategory", filters.testCategory);
       }
 
-      const response = await api.get<FetchPathologyPatientsResponse>(
+      // Add pagination
+      if (filters.page) {
+        params.append("page", filters.page.toString());
+      }
+
+      if (filters.limit) {
+        params.append("limit", filters.limit.toString());
+      }
+
+      const response = await api.get<FetchPathologyResponse>(
         `/pathology-patients?${params.toString()}`
       );
 
@@ -43,7 +67,12 @@ export function useFetchPathologyData(filters: PathologyFilters = {}) {
         );
       }
 
-      return response.data.data;
+      return {
+        data: response.data.data,
+        total: response.data.pagination.total,
+        totalPages: response.data.pagination.totalPages,
+        currentPage: response.data.pagination.page,
+      };
     },
     staleTime: 2 * 60 * 1000, // 2 minutes
     gcTime: 5 * 60 * 1000, // 5 minutes

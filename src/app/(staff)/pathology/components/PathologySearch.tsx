@@ -1,124 +1,99 @@
 "use client";
 
 import React, { useState, useCallback } from "react";
-import { SearchBar } from "@/components/ui/SearchBar";
+import { Search } from "lucide-react";
 import { useDebounce } from "@/hooks/useDebounce";
-
-// Department options for pathology page
-const DEPARTMENT_OPTIONS = [
-  { value: "all", label: "All" },
-  { value: "pathology", label: "Pathology" },
-];
+import { usePathologyFilterStore } from "../stores/filterStore";
+import { FilterTriggerButton } from "./filter";
 
 interface PathologySearchProps {
-  onFiltersChange: (filters: {
-    search?: string;
-    department?: string;
-    dateRange?: string;
-    startDate?: Date;
-    endDate?: Date;
-  }) => void;
   disabled?: boolean;
 }
 
-// Helper to calculate date range from option
-const getDateRangeFromOption = (
-  option: string
-): { start?: Date; end?: Date } => {
-  const now = new Date();
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-
-  switch (option) {
-    case "yesterday": {
-      const yesterday = new Date(today);
-      yesterday.setDate(yesterday.getDate() - 1);
-      return { start: yesterday, end: today };
-    }
-    case "last_week": {
-      const lastWeek = new Date(today);
-      lastWeek.setDate(lastWeek.getDate() - 7);
-      return { start: lastWeek, end: now };
-    }
-    case "last_month": {
-      const lastMonth = new Date(today);
-      lastMonth.setMonth(lastMonth.getMonth() - 1);
-      return { start: lastMonth, end: now };
-    }
-    case "last_3_months": {
-      const last3Months = new Date(today);
-      last3Months.setMonth(last3Months.getMonth() - 3);
-      return { start: last3Months, end: now };
-    }
-    case "last_6_months": {
-      const last6Months = new Date(today);
-      last6Months.setMonth(last6Months.getMonth() - 6);
-      return { start: last6Months, end: now };
-    }
-    case "this_year": {
-      const startOfYear = new Date(now.getFullYear(), 0, 1);
-      return { start: startOfYear, end: now };
-    }
-    default:
-      return {};
-  }
-};
-
 /**
  * Pathology Search Component
- * Wraps the global SearchBar with pathology-specific logic
- * Can be disabled during page loading
+ * Clean search bar with filter trigger button
+ * Connects to Zustand filter store
  */
 export const PathologySearch: React.FC<PathologySearchProps> = ({
-  onFiltersChange,
   disabled = false,
 }) => {
   const [searchValue, setSearchValue] = useState("");
-  const [selectedDepartment, setSelectedDepartment] = useState("all");
-  const [selectedDateRange, setSelectedDateRange] = useState("all");
+  const [isFocused, setIsFocused] = useState(false);
+
+  // Get filter state from store
+  const filters = usePathologyFilterStore((state) => state.filters);
+  const setSearch = usePathologyFilterStore((state) => state.setSearch);
 
   // Debounce search value
   const debouncedSearch = useDebounce(searchValue, 300);
 
-  // Effect to notify parent of filter changes
+  // Effect to sync debounced search with store
   React.useEffect(() => {
-    const dateRange = getDateRangeFromOption(selectedDateRange);
-    onFiltersChange({
-      search: debouncedSearch.length >= 2 ? debouncedSearch : undefined,
-      department: selectedDepartment !== "all" ? selectedDepartment : undefined,
-      dateRange: selectedDateRange !== "all" ? selectedDateRange : undefined,
-      startDate: dateRange.start,
-      endDate: dateRange.end,
-    });
-  }, [debouncedSearch, selectedDepartment, selectedDateRange, onFiltersChange]);
+    setSearch(debouncedSearch);
+  }, [debouncedSearch, setSearch]);
+
+  // Sync local state when store's search is cleared externally
+  React.useEffect(() => {
+    if (filters.search === "" && searchValue !== "") {
+      setSearchValue("");
+    }
+  }, [filters.search]);
 
   const handleSearchChange = useCallback((value: string) => {
     setSearchValue(value);
   }, []);
 
-  const handleDepartmentChange = useCallback((value: string) => {
-    setSelectedDepartment(value);
-  }, []);
-
-  const handleDateRangeChange = useCallback((value: string) => {
-    setSelectedDateRange(value);
-  }, []);
-
   return (
     <div
-      className="max-w-4xl mx-auto"
+      className="w-full max-w-4xl mx-auto"
       style={{ pointerEvents: disabled ? "none" : "auto" }}
     >
-      <SearchBar
-        departments={DEPARTMENT_OPTIONS}
-        selectedDepartment={selectedDepartment}
-        onDepartmentChange={handleDepartmentChange}
-        searchValue={searchValue}
-        onSearchChange={handleSearchChange}
-        placeholder="Search by patient name, test number, or mobile number..."
-        showDateFilter={true}
-        selectedDateRange={selectedDateRange}
-        onDateRangeChange={handleDateRangeChange}
-      />
+      <div className="flex items-center gap-2 sm:gap-3">
+        {/* Main Search Bar Container */}
+        <div
+          className={`
+            flex items-center flex-1 min-w-0
+            bg-white border rounded-full 
+            h-11 sm:h-14
+            transition-all duration-300 ease-out
+            ${
+              isFocused
+                ? "border-fnh-blue shadow-[0_0_0_3px_rgba(59,130,246,0.12),0_0_16px_rgba(59,130,246,0.08)] ring-1 ring-fnh-blue/20"
+                : "border-gray-200 shadow-sm hover:shadow-md hover:border-gray-300"
+            }
+          `}
+        >
+          {/* Search Input */}
+          <div className="flex-1 min-w-0 h-full">
+            <div className="relative flex items-center h-full">
+              <Search
+                className={`absolute left-3 sm:left-4 w-4 h-4 sm:w-5 sm:h-5 pointer-events-none transition-colors duration-200 ${
+                  isFocused ? "text-fnh-blue" : "text-gray-400"
+                }`}
+              />
+              <input
+                type="text"
+                value={searchValue}
+                onChange={(e) => handleSearchChange(e.target.value)}
+                onFocus={() => setIsFocused(true)}
+                onBlur={() => setIsFocused(false)}
+                placeholder="Search patient, test number, phone..."
+                className="w-full h-full pl-10 sm:pl-12 pr-4 bg-transparent border-0 
+                  focus:ring-0 focus:outline-none 
+                  text-gray-700 text-xs sm:text-base 
+                  placeholder:text-gray-400 placeholder:text-xs sm:placeholder:text-sm
+                  rounded-full"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Filter Trigger Button */}
+        <div className="shrink-0 h-11 sm:h-14 flex items-center">
+          <FilterTriggerButton disabled={disabled} />
+        </div>
+      </div>
     </div>
   );
 };
