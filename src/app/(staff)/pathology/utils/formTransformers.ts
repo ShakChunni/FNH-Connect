@@ -13,6 +13,19 @@ import type {
 } from "../types";
 
 /**
+ * Serialize date to YYYY-MM-DD format (local date without timezone conversion)
+ * This prevents the UTC conversion issue where dates shift back a day/year
+ */
+function serializeDate(date: Date | null): string | null {
+  if (!date) return null;
+  // Use local date components to avoid timezone conversion
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+/**
  * Transform form data to API request format for creating new patient
  */
 export function transformPathologyDataForApi(
@@ -24,11 +37,16 @@ export function transformPathologyDataForApi(
   return {
     patient: {
       ...patientData,
+      // Serialize date properly to avoid timezone issues
+      dateOfBirth: serializeDate(patientData.dateOfBirth) as any,
       // Map guardian name to patient guardianName field
       guardianName: guardianData.name,
     },
     hospital: hospitalData,
-    guardianInfo: guardianData,
+    guardianInfo: {
+      ...guardianData,
+      dateOfBirth: serializeDate(guardianData.dateOfBirth) as any,
+    },
     pathologyInfo: {
       ...pathologyInfo,
       discountType: pathologyInfo.discountType,
@@ -51,10 +69,15 @@ export function transformPathologyDataForEdit(
     id,
     patient: {
       ...patientData,
+      // Serialize date properly to avoid timezone issues
+      dateOfBirth: serializeDate(patientData.dateOfBirth) as any,
       guardianName: guardianData.name,
     },
     hospital: hospitalData,
-    guardianInfo: guardianData,
+    guardianInfo: {
+      ...guardianData,
+      dateOfBirth: serializeDate(guardianData.dateOfBirth) as any,
+    },
     pathologyInfo: {
       ...pathologyInfo,
       discountType: pathologyInfo.discountType,

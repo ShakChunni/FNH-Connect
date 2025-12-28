@@ -262,14 +262,21 @@ export const generateAdmissionReceipt = async (
   doc.setFont("helvetica", "normal");
   doc.text(data.departmentName || "N/A", col2ValueX, pY);
 
-  // Row 3 - Status & Ward
+  // Row 3 - Guardian & Ward
   pY += rowHeight;
   doc.setFont("helvetica", "bold");
   doc.setTextColor(COLORS.lightText);
-  doc.text("Status:", col1LabelX, pY);
+  doc.text("Guardian:", col1LabelX, pY);
   doc.setTextColor(COLORS.primary);
   doc.setFont("helvetica", "normal");
-  doc.text(data.status || "Admitted", col1ValueX, pY);
+  const guardianDisplay = data.guardianName || "N/A";
+  doc.text(
+    guardianDisplay.length > 24
+      ? guardianDisplay.substring(0, 22) + "..."
+      : guardianDisplay,
+    col1ValueX,
+    pY
+  );
 
   doc.setFont("helvetica", "bold");
   doc.setTextColor(COLORS.lightText);
@@ -632,21 +639,21 @@ export const generateAdmissionInvoice = async (
       doc.setTextColor(COLORS.primary);
       doc.text(data.departmentName || "N/A", col2ValueX, pY);
 
-      // Row 3
+      // Row 3 - Guardian & Ward
       pY += rowHeight;
       doc.setFont("helvetica", "bold");
       doc.setTextColor(COLORS.lightText);
-      doc.text("Status:", col1LabelX, pY);
+      doc.text("Guardian:", col1LabelX, pY);
       doc.setTextColor(COLORS.primary);
       doc.setFont("helvetica", "normal");
-      let statusDisplay = data.status || "Admitted";
-      if (data.status === "Discharged" && data.dateDischarged) {
-        statusDisplay += ` (${new Date(data.dateDischarged).toLocaleDateString(
-          "en-BD",
-          { day: "numeric", month: "short", year: "numeric" }
-        )})`;
-      }
-      doc.text(statusDisplay, col1ValueX, pY);
+      const guardianDisplayInv = data.guardianName || "N/A";
+      doc.text(
+        guardianDisplayInv.length > 24
+          ? guardianDisplayInv.substring(0, 22) + "..."
+          : guardianDisplayInv,
+        col1ValueX,
+        pY
+      );
       doc.setFont("helvetica", "bold");
       doc.setTextColor(COLORS.lightText);
       doc.text("Ward:", col2LabelX, pY);
@@ -813,11 +820,11 @@ export const generateAdmissionInvoice = async (
       });
       tY += 7;
 
-      doc.setFont("helvetica", "normal");
+      doc.setFont("helvetica", "bold");
       doc.setFontSize(11);
       doc.setTextColor(COLORS.lightText);
       doc.text("Paid Amount:", tLabelX, tY, { align: "right" });
-      doc.setTextColor(22, 163, 74);
+      doc.setTextColor(22, 128, 61); // Darker green for better visibility
       doc.text(`${data.paidAmount.toLocaleString()}`, tValX, tY, {
         align: "right",
       });

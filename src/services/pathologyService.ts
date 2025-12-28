@@ -5,6 +5,10 @@
 
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
+import {
+  formatRegistrationNumber,
+  getTwoDigitYear,
+} from "@/lib/registrationNumber";
 
 // ═══════════════════════════════════════════════════════════════
 // TYPES
@@ -290,27 +294,26 @@ export async function createPathologyPatient(
       });
     }
 
-    // 3. Generate unique test number with date-based format (like admissions)
-    const now = new Date();
-    const datePrefix = now.toISOString().slice(2, 10).replace(/-/g, ""); // YYMMDD
-    const startOfDay = new Date(
-      now.getFullYear(),
-      now.getMonth(),
-      now.getDate()
-    );
-    const endOfDay = new Date(startOfDay.getTime() + 24 * 60 * 60 * 1000);
-    const countToday = await tx.pathologyTest.count({
+    // 3. Generate unique test number (format: PATH-YY-XXXXX, e.g., PATH-25-00001)
+    const currentYear = getTwoDigitYear();
+    const yearStart = new Date(new Date().getFullYear(), 0, 1); // Jan 1 of current year
+    const yearEnd = new Date(new Date().getFullYear() + 1, 0, 1); // Jan 1 of next year
+
+    // Count pathology tests in the current year
+    const countThisYear = await tx.pathologyTest.count({
       where: {
         testDate: {
-          gte: startOfDay,
-          lt: endOfDay,
+          gte: yearStart,
+          lt: yearEnd,
         },
       },
     });
-    const testNumber = `PATH-${datePrefix}-${String(countToday + 1).padStart(
-      4,
-      "0"
-    )}`;
+
+    const testNumber = formatRegistrationNumber(
+      "PATH",
+      currentYear,
+      countThisYear + 1
+    );
 
     // 4. Validate orderedById - required field, must be provided from frontend
     if (!pathologyData.orderedById) {
