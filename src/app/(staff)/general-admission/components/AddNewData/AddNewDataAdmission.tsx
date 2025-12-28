@@ -1,6 +1,6 @@
 "use client";
 import React, { useCallback, useMemo, useRef, useEffect } from "react";
-import { Save, Building2, User, Stethoscope } from "lucide-react";
+import { Save, User, Stethoscope } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   modalVariants,
@@ -11,12 +11,10 @@ import {
 import { ModalHeader } from "@/components/ui/ModalHeader";
 import { ModalFooter } from "@/components/ui/ModalFooter";
 import {
-  AdmissionHospitalInformation,
   AdmissionPatientInformation,
   DepartmentSelection,
 } from "../form-section";
 import {
-  useAdmissionHospitalData,
   useAdmissionPatientData,
   useAdmissionDepartmentData,
   useAdmissionDoctorData,
@@ -35,14 +33,10 @@ interface AddNewDataProps {
   onSuccess?: (data: AdmissionPatientData) => void;
 }
 
-const SECTION_IDS = ["hospital", "patient", "department"];
+const SECTION_IDS = ["patient", "department"];
 
 const getTabColors = (color: string, isActive: boolean) => {
   const colors: Record<string, { active: string; inactive: string }> = {
-    blue: {
-      active: "bg-blue-600 text-white shadow-lg",
-      inactive: "bg-blue-100 text-blue-700 hover:bg-blue-200",
-    },
     indigo: {
       active: "bg-indigo-600 text-white shadow-lg",
       inactive: "bg-indigo-100 text-indigo-700 hover:bg-indigo-200",
@@ -63,8 +57,7 @@ const AddNewDataAdmission: React.FC<AddNewDataProps> = ({
   const popupRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-  // Store access
-  const hospitalData = useAdmissionHospitalData();
+  // Store access (removed hospital)
   const patientData = useAdmissionPatientData();
   const departmentData = useAdmissionDepartmentData();
   const doctorData = useAdmissionDoctorData();
@@ -99,13 +92,10 @@ const AddNewDataAdmission: React.FC<AddNewDataProps> = ({
     },
   });
 
-  // Validation
+  // Validation (removed hospital)
   const { isFormValid, validationErrors } = useMemo(() => {
     const errors: string[] = [];
 
-    if (!hospitalData.name.trim()) {
-      errors.push("Hospital name is required");
-    }
     if (!patientData.firstName.trim()) {
       errors.push("Patient first name is required");
     }
@@ -139,7 +129,6 @@ const AddNewDataAdmission: React.FC<AddNewDataProps> = ({
       validationErrors: errors,
     };
   }, [
-    hospitalData.name,
     patientData.firstName,
     patientData.gender,
     patientData.phoneNumber,
@@ -171,14 +160,15 @@ const AddNewDataAdmission: React.FC<AddNewDataProps> = ({
     }
 
     addAdmission({
+      // Hospital is handled server-side (always ID 1)
       hospital: {
-        id: hospitalData.id,
-        name: hospitalData.name,
-        address: hospitalData.address,
-        phoneNumber: hospitalData.phoneNumber,
-        email: hospitalData.email,
-        website: hospitalData.website,
-        type: hospitalData.type,
+        id: 1,
+        name: "FNH Hospital",
+        address: "",
+        phoneNumber: "",
+        email: "",
+        website: "",
+        type: "",
       },
       patient: {
         id: patientData.id,
@@ -202,7 +192,6 @@ const AddNewDataAdmission: React.FC<AddNewDataProps> = ({
   }, [
     isFormValid,
     isSubmitting,
-    hospitalData,
     patientData,
     departmentData,
     doctorData,
@@ -228,12 +217,6 @@ const AddNewDataAdmission: React.FC<AddNewDataProps> = ({
   }, [isOpen, handleClose]);
 
   const sections = [
-    {
-      id: "hospital",
-      label: "Hospital Information",
-      icon: Building2,
-      color: "blue",
-    },
     {
       id: "patient",
       label: "Patient Information",
@@ -315,9 +298,6 @@ const AddNewDataAdmission: React.FC<AddNewDataProps> = ({
               className="flex-1 overflow-y-auto p-3 sm:p-4 md:p-6"
             >
               <div className="space-y-6 sm:space-y-8 md:space-y-10">
-                <div id="hospital">
-                  <AdmissionHospitalInformation />
-                </div>
                 <div id="patient">
                   <AdmissionPatientInformation showAdmissionDetails={true} />
                 </div>

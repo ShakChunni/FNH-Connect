@@ -1,6 +1,6 @@
 "use client";
 import React, { useCallback, useMemo, useRef, useEffect } from "react";
-import { Save, Building2, User, Beaker } from "lucide-react";
+import { Save, User, Beaker } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/app/AuthContext";
 import { useEditPathologyData } from "../../hooks/useEditPathologyData";
@@ -13,11 +13,9 @@ import {
 import { ModalHeader } from "@/components/ui/ModalHeader";
 import { ModalFooter } from "@/components/ui/ModalFooter";
 import { getTabColors } from "../AddNewData/utils/modalUtils";
-import { PathologyHospitalInformation } from "../form-section/HospitalInformation";
 import PathologyPatientInformation from "../form-section/PatientInformation/PathologyPatientInformation";
 import PathologyInformation from "../form-section/PathologyInformation/PathologyInformation";
 import {
-  usePathologyHospitalData,
   usePathologyPatientData,
   usePathologyGuardianData,
   usePathologyPathologyInfo,
@@ -36,7 +34,7 @@ interface EditDataProps {
   patientData: PathologyPatientData;
 }
 
-const SECTION_IDS = ["hospital", "patient", "pathology"];
+const SECTION_IDS = ["patient", "pathology"];
 
 const EditDataPathology: React.FC<EditDataProps> = ({
   isOpen,
@@ -47,8 +45,7 @@ const EditDataPathology: React.FC<EditDataProps> = ({
   const popupRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-  // Store access
-  const hospitalData = usePathologyHospitalData();
+  // Store access (removed hospital)
   const patientData = usePathologyPatientData();
   const guardianData = usePathologyGuardianData();
   const pathologyInfo = usePathologyPathologyInfo();
@@ -110,7 +107,7 @@ const EditDataPathology: React.FC<EditDataProps> = ({
         patientDOB: patientData.dateOfBirth?.toISOString() || null,
         mobileNumber: patientData.phoneNumber,
         guardianName: guardianData.name,
-        hospitalName: hospitalData.name,
+        hospitalName: "FNH Hospital", // Hardcoded - only one hospital
         testDate: initialPatientData.testDate,
         testCategory: "Multiple Tests",
         testResults: { tests: pathologyInfo.selectedTests },
@@ -123,7 +120,7 @@ const EditDataPathology: React.FC<EditDataProps> = ({
         grandTotal: pathologyInfo.grandTotal,
         paidAmount: pathologyInfo.paidAmount,
         dueAmount: pathologyInfo.dueAmount,
-        orderedBy: doctorName, // Use the resolved doctor name
+        orderedBy: doctorName,
         orderedById: pathologyInfo.orderedById,
       };
 
@@ -139,21 +136,13 @@ const EditDataPathology: React.FC<EditDataProps> = ({
         }
       );
 
-      onClose(); // closeEditModal now resets form internally
+      onClose();
     },
   });
 
-  // Validation
+  // Validation (removed hospital)
   const { isFormValid, validationErrors } = useMemo(() => {
     const errors: string[] = [];
-
-    if (!hospitalData.name.trim()) {
-      errors.push("Hospital name is required");
-    }
-    // ... [Validation logic remains same, skipping for brevity in replacement]
-    // I should include validation logic or use replacement chunks to avoid overwriting huge blocks if not needed.
-    // But I need to replace from imports to useEffect...
-    // Let's use ReplacementChunks to update imports and useEffect separately.
 
     if (!patientData.firstName.trim()) {
       errors.push("Patient name is required");
@@ -182,7 +171,6 @@ const EditDataPathology: React.FC<EditDataProps> = ({
       validationErrors: errors,
     };
   }, [
-    hospitalData.name,
     patientData.firstName,
     patientData.gender,
     patientData.address,
@@ -191,19 +179,17 @@ const EditDataPathology: React.FC<EditDataProps> = ({
     validationStatus,
   ]);
 
-  // Notification hook for showing validation errors
   const { showNotification } = useNotification();
 
   // Handlers
   const handleClose = useCallback(() => {
     if (isSubmitting) return;
-    onClose(); // closeEditModal now resets form internally
+    onClose();
   }, [isSubmitting, onClose]);
 
   const handleSubmit = useCallback(() => {
     if (isSubmitting) return;
 
-    // Show validation errors if form is invalid
     if (!isFormValid) {
       const errorMessage =
         validationErrors.length === 1
@@ -215,7 +201,6 @@ const EditDataPathology: React.FC<EditDataProps> = ({
 
     const payload = transformPathologyDataForEdit(
       initialPatientData.id,
-      hospitalData,
       patientData,
       guardianData,
       pathologyInfo
@@ -226,7 +211,6 @@ const EditDataPathology: React.FC<EditDataProps> = ({
     isFormValid,
     isSubmitting,
     initialPatientData.id,
-    hospitalData,
     patientData,
     guardianData,
     pathologyInfo,
@@ -253,12 +237,6 @@ const EditDataPathology: React.FC<EditDataProps> = ({
   }, [isOpen, handleClose]);
 
   const sections = [
-    {
-      id: "hospital",
-      label: "Hospital Information",
-      icon: Building2,
-      color: "blue",
-    },
     {
       id: "patient",
       label: "Patient Information",
@@ -340,9 +318,6 @@ const EditDataPathology: React.FC<EditDataProps> = ({
               className="flex-1 overflow-y-auto p-3 sm:p-4 md:p-6"
             >
               <div className="space-y-6 sm:space-y-8 md:space-y-10">
-                <div id="hospital">
-                  <PathologyHospitalInformation />
-                </div>
                 <div id="patient">
                   <PathologyPatientInformation />
                 </div>
