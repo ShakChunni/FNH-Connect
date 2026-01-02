@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useMemo } from "react";
+import React, { useCallback, useMemo, useRef } from "react";
 import { createPortal } from "react-dom";
 
 // Modular Components
@@ -56,6 +56,9 @@ const NewPatientButton: React.FC<{
 );
 
 const GeneralAdmissionPage = React.memo(() => {
+  // Ref for scrolling table container on pagination
+  const tableContainerRef = useRef<HTMLDivElement>(null);
+
   // Zustand store selectors
   const modals = useModalState();
   const { openAddModal, closeAddModal, openEditModal, closeEditModal } =
@@ -163,7 +166,10 @@ const GeneralAdmissionPage = React.memo(() => {
 
           {/* Table Container */}
           <div className="px-0 sm:px-2 lg:px-4">
-            <div className="bg-white rounded-xl sm:rounded-3xl shadow-sm border border-slate-100 overflow-hidden mb-4 sm:mb-8">
+            <div
+              ref={tableContainerRef}
+              className="bg-white rounded-xl sm:rounded-3xl shadow-sm border border-slate-100 overflow-hidden mb-4 sm:mb-8"
+            >
               <AdmissionTable
                 tableData={admissions}
                 isLoading={isLoading}
@@ -188,6 +194,7 @@ const GeneralAdmissionPage = React.memo(() => {
                   totalRecords
                 )}
                 onPageChange={setPage}
+                scrollContainerRef={tableContainerRef}
               />
             </div>
           </div>

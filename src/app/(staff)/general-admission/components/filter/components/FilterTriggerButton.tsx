@@ -35,7 +35,7 @@ export const FilterTriggerButton: React.FC<FilterTriggerButtonProps> = ({
     <button
       onClick={openFilterPanel}
       disabled={disabled}
-      className="relative flex items-center justify-center gap-2 h-full px-4 sm:px-5 
+      className="relative flex items-center justify-center gap-2 h-full w-full sm:w-auto px-4 sm:px-5 
         bg-white border border-gray-200 rounded-full
         text-gray-600 text-sm font-medium
         hover:bg-gray-50 hover:border-fnh-blue hover:text-fnh-blue
@@ -45,7 +45,7 @@ export const FilterTriggerButton: React.FC<FilterTriggerButtonProps> = ({
       aria-label="Open filters"
     >
       <SlidersHorizontal className="w-4 h-4 sm:w-5 sm:h-5" />
-      <span className="hidden sm:inline">Filters</span>
+      <span>Filters</span>
 
       {/* Active filter count badge */}
       {activeCount > 0 && (

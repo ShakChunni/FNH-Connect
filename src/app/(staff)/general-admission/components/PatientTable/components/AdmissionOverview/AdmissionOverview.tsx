@@ -43,6 +43,22 @@ const AdmissionOverview: React.FC<AdmissionOverviewProps> = ({
     });
   };
 
+  const formatDateWithTime = (dateStr: string) => {
+    const date = new Date(dateStr);
+    const dateFormatted = date.toLocaleDateString("en-GB", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    });
+    const timeFormatted = date.toLocaleTimeString("en-BD", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+      timeZone: "Asia/Dhaka",
+    });
+    return { date: dateFormatted, time: timeFormatted };
+  };
+
   const handleEdit = () => {
     onClose();
     setTimeout(() => {
@@ -111,7 +127,10 @@ const AdmissionOverview: React.FC<AdmissionOverviewProps> = ({
               Admitted
             </span>
             <span className="text-[10px] font-bold text-gray-600">
-              {formatDateShort(patient.dateAdmitted)}
+              {formatDateWithTime(patient.dateAdmitted).date}
+            </span>
+            <span className="text-[9px] font-medium text-gray-400">
+              {formatDateWithTime(patient.dateAdmitted).time}
             </span>
           </div>
           <div

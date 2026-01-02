@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useMemo } from "react";
+import React, { useCallback, useMemo, useRef } from "react";
 import { createPortal } from "react-dom";
 
 // Modular Components
@@ -25,6 +25,9 @@ import {
 } from "./stores";
 
 const PathologyManagement = React.memo(() => {
+  // Ref for scrolling table container on pagination
+  const tableContainerRef = useRef<HTMLDivElement>(null);
+
   // Zustand store selectors
   const modals = useModals();
   const actions = usePathologyActions();
@@ -172,28 +175,32 @@ const PathologyManagement = React.memo(() => {
 
           {/* Table Container */}
           <div className="px-0 sm:px-2 lg:px-4">
-            <PatientTable
-              tableData={tableData}
-              isLoading={isLoading}
-              onEdit={handleOpenEditPopup}
-            />
-          </div>
-
-          {/* Server-side Pagination */}
-          {!isLoading && pagination.totalPages > 1 && (
-            <div className="px-0 sm:px-2 lg:px-4 mt-4">
-              <Pagination
-                currentPage={pagination.currentPage}
-                totalPages={pagination.totalPages}
-                totalResults={pagination.total}
-                startIndex={startIndex}
-                endIndex={endIndex}
-                onPageChange={handlePageChange}
-                onPrev={() => handlePageChange(pagination.currentPage - 1)}
-                onNext={() => handlePageChange(pagination.currentPage + 1)}
+            <div
+              ref={tableContainerRef}
+              className="bg-white rounded-xl sm:rounded-3xl shadow-sm border border-slate-100 overflow-hidden"
+            >
+              <PatientTable
+                tableData={tableData}
+                isLoading={isLoading}
+                onEdit={handleOpenEditPopup}
               />
+
+              {/* Server-side Pagination */}
+              {!isLoading && pagination.totalPages > 1 && (
+                <Pagination
+                  currentPage={pagination.currentPage}
+                  totalPages={pagination.totalPages}
+                  totalResults={pagination.total}
+                  startIndex={startIndex}
+                  endIndex={endIndex}
+                  onPageChange={handlePageChange}
+                  onPrev={() => handlePageChange(pagination.currentPage - 1)}
+                  onNext={() => handlePageChange(pagination.currentPage + 1)}
+                  scrollContainerRef={tableContainerRef}
+                />
+              )}
             </div>
-          )}
+          </div>
 
           {/* Bottom spacing for floating bar */}
           <div className="h-20" />

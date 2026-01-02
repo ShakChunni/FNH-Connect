@@ -27,7 +27,7 @@ export const NewPatientButton: React.FC<NewPatientButtonProps> = ({
     <button
       onClick={handleClick}
       className={`
-        flex items-center gap-2 px-4 sm:px-5 py-2.5 sm:py-3 
+        w-full sm:w-auto flex items-center justify-center gap-2 px-4 sm:px-5 py-2.5 sm:py-3 
         bg-fnh-navy-dark hover:bg-fnh-navy text-white 
         rounded-xl shadow-lg hover:shadow-xl 
         transition-all duration-300 font-semibold text-sm sm:text-base 

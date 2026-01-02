@@ -50,6 +50,29 @@ export interface CashMovementDetail {
         phoneNumber: string;
       };
     };
+    paymentAllocations?: Array<{
+      allocatedAmount: number;
+      serviceCharge: {
+        serviceName: string;
+        serviceType: string;
+        department: {
+          id: number;
+          name: string;
+        };
+        admission?: {
+          doctor?: {
+            id: number;
+            fullName: string;
+          };
+        } | null;
+        pathologyTest?: {
+          doctor?: {
+            id: number;
+            fullName: string;
+          };
+        } | null;
+      };
+    }>;
   };
 }
 

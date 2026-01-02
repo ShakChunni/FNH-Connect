@@ -218,6 +218,16 @@ export const generatePathologyReport = async (
   const completionRate =
     totalTests > 0 ? ((completedTests / totalTests) * 100).toFixed(1) : "0";
 
+  // Calculate test charges (before discount)
+  const totalTestCharges = data.reduce(
+    (sum, item) => sum + (item.testCharge || 0),
+    0
+  );
+  // Calculate total discount given
+  const totalDiscount = data.reduce(
+    (sum, item) => sum + (item.discountAmount || 0),
+    0
+  );
   const totalRevenue = data.reduce(
     (sum, item) => sum + (item.grandTotal || 0),
     0
@@ -237,7 +247,7 @@ export const generatePathologyReport = async (
   doc.text("Key Performance Metrics", margin, currentY);
   currentY += 6;
 
-  // Row 1: 4 boxes
+  // Row 1: Test Stats (4 boxes)
   const boxWidth = (pageWidth - margin * 2 - 15) / 4;
   const boxHeight = 25;
   const boxGap = 5;
@@ -285,15 +295,15 @@ export const generatePathologyReport = async (
 
   currentY += boxHeight + 5;
 
-  // Row 2: Financial metrics
+  // Row 2: Financial summary (4 boxes)
   drawMetricBox(
     doc,
     margin,
     currentY,
     boxWidth,
     boxHeight,
-    "Total Revenue",
-    `BDT ${totalRevenue.toLocaleString()}`,
+    "Test Charges",
+    `BDT ${totalTestCharges.toLocaleString()}`,
     COLORS.primary
   );
   drawMetricBox(
@@ -302,9 +312,9 @@ export const generatePathologyReport = async (
     currentY,
     boxWidth,
     boxHeight,
-    "Collected",
-    `BDT ${totalCollected.toLocaleString()}`,
-    COLORS.success
+    "Discount",
+    `- BDT ${totalDiscount.toLocaleString()}`,
+    "#dc2626"
   );
   drawMetricBox(
     doc,
@@ -312,9 +322,9 @@ export const generatePathologyReport = async (
     currentY,
     boxWidth,
     boxHeight,
-    "Outstanding Due",
-    `BDT ${totalDue.toLocaleString()}`,
-    COLORS.warning
+    "Net Revenue",
+    `BDT ${totalRevenue.toLocaleString()}`,
+    COLORS.success
   );
   drawMetricBox(
     doc,
@@ -322,8 +332,8 @@ export const generatePathologyReport = async (
     currentY,
     boxWidth,
     boxHeight,
-    "Collection Rate",
-    `${collectionRate}%`,
+    "Collected",
+    `BDT ${totalCollected.toLocaleString()}`,
     COLORS.accent
   );
 
@@ -389,21 +399,40 @@ export const generatePathologyReport = async (
     (a, b) => b[1].count - a[1].count
   );
 
+  // Calculate total revenue from all individual tests
+  const totalTestRevenue = sortedTests.reduce(
+    (sum, [, stats]) => sum + stats.revenue,
+    0
+  );
+  const totalTestCount = sortedTests.reduce(
+    (sum, [, stats]) => sum + stats.count,
+    0
+  );
+
   autoTable(doc, {
     startY: currentY,
     head: [["Test Name", "Times Conducted", "Revenue (BDT)"]],
-    body: sortedTests.map(([code, stats]) => [
-      stats.name,
-      stats.count.toString(),
-      stats.revenue.toLocaleString(),
-    ]),
+    body: [
+      ...sortedTests.map(([code, stats]) => [
+        stats.name,
+        stats.count.toString(),
+        stats.revenue.toLocaleString(),
+      ]),
+      // Total row at the bottom
+      [
+        { content: "TOTAL", styles: { fontStyle: "bold" } },
+        { content: totalTestCount.toString(), styles: { fontStyle: "bold" } },
+        {
+          content: totalTestRevenue.toLocaleString(),
+          styles: { fontStyle: "bold" },
+        },
+      ],
+    ],
     theme: "striped",
     headStyles: { fillColor: COLORS.primary, fontSize: 9 },
     styles: { fontSize: 9 },
     margin: { left: margin, right: margin },
   });
-
-  currentY = (doc as any).lastAutoTable.finalY + 10;
 
   currentY = (doc as any).lastAutoTable.finalY + 10;
 

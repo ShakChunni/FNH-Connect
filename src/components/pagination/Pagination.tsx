@@ -1,5 +1,6 @@
 "use client";
 
+import React from "react";
 import { cn } from "@/lib/utils";
 
 interface PaginationProps {
@@ -12,6 +13,8 @@ interface PaginationProps {
   onPrev?: () => void;
   onNext?: () => void;
   showResultsText?: boolean;
+  /** Optional ref to a scrollable container - scrolls this instead of the page */
+  scrollContainerRef?: React.RefObject<HTMLElement | null>;
 }
 
 export function Pagination({
@@ -24,7 +27,14 @@ export function Pagination({
   onPrev,
   onNext,
   showResultsText = true,
+  scrollContainerRef,
 }: PaginationProps) {
+  // Helper function to scroll to top of table container or page
+  const scrollToTop = () => {
+    if (scrollContainerRef?.current) {
+      scrollContainerRef.current.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  };
   if (totalPages <= 1) {
     return null;
   }
@@ -114,7 +124,7 @@ export function Pagination({
           type="button"
           onClick={() => {
             handlePrev();
-            window.scrollTo({ top: 100, behavior: "smooth" });
+            scrollToTop();
           }}
           disabled={currentPage === 1}
           className={cn(
@@ -136,7 +146,7 @@ export function Pagination({
               type="button"
               onClick={() => {
                 onPageChange(page);
-                window.scrollTo({ top: 100, behavior: "smooth" });
+                scrollToTop();
               }}
               className={cn(
                 "flex h-9 w-9 items-center justify-center rounded-full border text-xs md:text-sm font-semibold transition-all duration-200 cursor-pointer",
@@ -162,7 +172,7 @@ export function Pagination({
           type="button"
           onClick={() => {
             handleNext();
-            window.scrollTo({ top: 100, behavior: "smooth" });
+            scrollToTop();
           }}
           disabled={currentPage === totalPages || totalResults === 0}
           className={cn(

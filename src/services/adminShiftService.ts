@@ -121,6 +121,40 @@ export async function getShiftDetails(id: number) {
                   },
                 },
               },
+              paymentAllocations: {
+                include: {
+                  serviceCharge: {
+                    include: {
+                      department: {
+                        select: {
+                          id: true,
+                          name: true,
+                        },
+                      },
+                      admission: {
+                        select: {
+                          doctor: {
+                            select: {
+                              id: true,
+                              fullName: true,
+                            },
+                          },
+                        },
+                      },
+                      pathologyTest: {
+                        select: {
+                          doctor: {
+                            select: {
+                              id: true,
+                              fullName: true,
+                            },
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
             },
           },
         },
