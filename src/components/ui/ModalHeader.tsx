@@ -8,7 +8,7 @@ interface ModalHeaderProps {
   /** Icon component to display */
   icon: React.ElementType;
   /** Gradient color theme: 'blue' | 'indigo' | 'purple' | 'green' | 'red' */
-  iconColor?: "blue" | "indigo" | "purple" | "green" | "red" |   "teal";
+  iconColor?: "blue" | "indigo" | "purple" | "green" | "red" | "teal";
   /** Main title text */
   title: string;
   /** Optional subtitle/description */
@@ -61,9 +61,9 @@ export function ModalHeader({
   extra,
 }: ModalHeaderProps) {
   return (
-    <div className="sticky top-0 bg-linear-to-br from-slate-50/90 via-white/85 to-slate-100/90 border-b border-gray-100 rounded-t-3xl z-10 overflow-hidden">
+    <div className="sticky top-0 bg-linear-to-br from-slate-50/90 via-white/85 to-slate-100/90 border-b border-gray-100 rounded-t-3xl z-10">
       {/* Main header content */}
-      <div className="flex justify-between items-center p-3 sm:p-4 md:p-6 pb-2 sm:pb-3 md:pb-4 relative z-10">
+      <div className="flex justify-between items-center p-3 sm:p-4 md:p-6 pb-3 sm:pb-4 md:pb-5 relative z-10">
         {/* Icon and title section */}
         <div className="flex items-center gap-2 sm:gap-3 md:gap-4">
           {/* Icon container - hidden on mobile */}
@@ -82,7 +82,7 @@ export function ModalHeader({
             </h2>
             {subtitle && (
               <p
-                className={`${subtitleColors[iconColor]} text-xs sm:text-sm font-medium leading-tight hidden lg:block`}
+                className={`${subtitleColors[iconColor]} text-xs sm:text-sm font-medium leading-tight hidden sm:block`}
               >
                 {subtitle}
               </p>

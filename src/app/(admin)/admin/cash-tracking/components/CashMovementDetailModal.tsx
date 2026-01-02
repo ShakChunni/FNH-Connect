@@ -71,14 +71,14 @@ const CashMovementDetailModal: React.FC<CashMovementDetailModalProps> = ({
     });
   };
 
-  if (!movement) return null;
-
-  const isCollection =
-    movement.movementType === "COLLECTION" ||
-    movement.movementType === "PAYMENT_RECEIVED";
-  const isRefund = movement.movementType === "REFUND";
-  const patient = movement.payment?.patientAccount.patient;
-  const paymentAllocations = movement.payment?.paymentAllocations || [];
+  // Derive all values from movement - safely computed
+  const isCollection = movement
+    ? movement.movementType === "COLLECTION" ||
+      movement.movementType === "PAYMENT_RECEIVED"
+    : false;
+  const isRefund = movement ? movement.movementType === "REFUND" : false;
+  const patient = movement?.payment?.patientAccount.patient;
+  const paymentAllocations = movement?.payment?.paymentAllocations || [];
 
   // Extract department and doctor from allocations
   const departments = [
@@ -90,7 +90,7 @@ const CashMovementDetailModal: React.FC<CashMovementDetailModalProps> = ({
         .map(
           (a) =>
             a.serviceCharge.admission?.doctor?.fullName ||
-            a.serviceCharge.pathologyTest?.doctor?.fullName
+            a.serviceCharge.pathologyTest?.orderedBy?.fullName
         )
         .filter(Boolean)
     ),
@@ -107,7 +107,7 @@ const CashMovementDetailModal: React.FC<CashMovementDetailModalProps> = ({
 
   return (
     <AnimatePresence>
-      {isOpen && (
+      {isOpen && movement && (
         <>
           {/* Backdrop */}
           <ModalBackdrop
