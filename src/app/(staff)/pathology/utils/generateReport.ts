@@ -101,7 +101,7 @@ const drawHeader = async (doc: jsPDF, title: string, dateRange?: string) => {
   return currentY;
 };
 
-// Helper to draw a metric box
+// Clean metric box - simple and readable
 const drawMetricBox = (
   doc: jsPDF,
   x: number,
@@ -110,18 +110,24 @@ const drawMetricBox = (
   height: number,
   label: string,
   value: string,
+  _accentColor: string = COLORS.primary, // unused, kept for compatibility
   valueColor: string = COLORS.primary
 ) => {
+  // Background fill - subtle off-white (matches general-admission)
   doc.setFillColor(248, 250, 252);
-  doc.roundedRect(x, y, width, height, 2, 2, "F");
-  doc.setDrawColor(COLORS.border);
-  doc.roundedRect(x, y, width, height, 2, 2, "S");
+  doc.roundedRect(x, y, width, height, 3, 3, "F");
 
-  doc.setFont("helvetica", "normal");
+  // Border - matches general-admission
+  doc.setDrawColor(COLORS.border);
+  doc.roundedRect(x, y, width, height, 3, 3, "S");
+
+  // Label text - bold, muted
+  doc.setFont("helvetica", "bold");
   doc.setFontSize(8);
   doc.setTextColor(COLORS.lightText);
   doc.text(label, x + 5, y + 8);
 
+  // Value text - bold, colored
   doc.setFont("helvetica", "bold");
   doc.setFontSize(12);
   doc.setTextColor(valueColor);
@@ -240,17 +246,21 @@ export const generatePathologyReport = async (
   const collectionRate =
     totalRevenue > 0 ? ((totalCollected / totalRevenue) * 100).toFixed(1) : "0";
 
-  // Draw Key Metrics Title
+  // Draw Key Metrics Title with subtle underline
   doc.setFont("helvetica", "bold");
   doc.setFontSize(11);
   doc.setTextColor(COLORS.primary);
   doc.text("Key Performance Metrics", margin, currentY);
+  currentY += 2;
+  doc.setDrawColor(226, 232, 240);
+  doc.setLineWidth(0.5);
+  doc.line(margin, currentY, margin + 45, currentY);
   currentY += 6;
 
   // Row 1: Test Stats (4 boxes)
-  const boxWidth = (pageWidth - margin * 2 - 15) / 4;
-  const boxHeight = 25;
-  const boxGap = 5;
+  const boxWidth = (pageWidth - margin * 2 - 12) / 4;
+  const boxHeight = 26;
+  const boxGap = 4;
 
   drawMetricBox(
     doc,
@@ -260,6 +270,7 @@ export const generatePathologyReport = async (
     boxHeight,
     "Total Tests",
     totalTests.toString(),
+    COLORS.primary,
     COLORS.primary
   );
   drawMetricBox(
@@ -270,6 +281,7 @@ export const generatePathologyReport = async (
     boxHeight,
     "Completed",
     completedTests.toString(),
+    COLORS.success,
     COLORS.success
   );
   drawMetricBox(
@@ -280,6 +292,7 @@ export const generatePathologyReport = async (
     boxHeight,
     "Pending",
     pendingTests.toString(),
+    COLORS.warning,
     COLORS.warning
   );
   drawMetricBox(
@@ -290,12 +303,13 @@ export const generatePathologyReport = async (
     boxHeight,
     "Completion Rate",
     `${completionRate}%`,
+    COLORS.accent,
     COLORS.accent
   );
 
-  currentY += boxHeight + 5;
+  currentY += boxHeight + 4;
 
-  // Row 2: Financial summary (4 boxes)
+  // Row 2: Revenue breakdown (4 boxes)
   drawMetricBox(
     doc,
     margin,
@@ -304,6 +318,7 @@ export const generatePathologyReport = async (
     boxHeight,
     "Test Charges",
     `BDT ${totalTestCharges.toLocaleString()}`,
+    "#64748b",
     COLORS.primary
   );
   drawMetricBox(
@@ -314,6 +329,7 @@ export const generatePathologyReport = async (
     boxHeight,
     "Discount",
     `- BDT ${totalDiscount.toLocaleString()}`,
+    "#ef4444",
     "#dc2626"
   );
   drawMetricBox(
@@ -324,6 +340,7 @@ export const generatePathologyReport = async (
     boxHeight,
     "Net Revenue",
     `BDT ${totalRevenue.toLocaleString()}`,
+    COLORS.success,
     COLORS.success
   );
   drawMetricBox(
@@ -332,9 +349,38 @@ export const generatePathologyReport = async (
     currentY,
     boxWidth,
     boxHeight,
-    "Collected",
-    `BDT ${totalCollected.toLocaleString()}`,
+    "Collection Rate",
+    `${collectionRate}%`,
+    COLORS.accent,
     COLORS.accent
+  );
+
+  currentY += boxHeight + 4;
+
+  // Row 3: Payment Status (2 larger boxes - Collected & Due)
+  const wideBoxWidth = (pageWidth - margin * 2 - boxGap) / 2;
+
+  drawMetricBox(
+    doc,
+    margin,
+    currentY,
+    wideBoxWidth,
+    boxHeight,
+    "Amount Collected",
+    `BDT ${totalCollected.toLocaleString()}`,
+    COLORS.success,
+    COLORS.success
+  );
+  drawMetricBox(
+    doc,
+    margin + wideBoxWidth + boxGap,
+    currentY,
+    wideBoxWidth,
+    boxHeight,
+    "Amount Due",
+    `BDT ${totalDue.toLocaleString()}`,
+    totalDue > 0 ? "#ef4444" : COLORS.success,
+    totalDue > 0 ? "#dc2626" : COLORS.success
   );
 
   currentY += boxHeight + 10;
