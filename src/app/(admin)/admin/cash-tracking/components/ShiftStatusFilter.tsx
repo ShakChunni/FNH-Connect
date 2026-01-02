@@ -42,14 +42,16 @@ export const ShiftStatusFilter: React.FC<ShiftStatusFilterProps> = ({
         ref={buttonRef}
         onClick={() => !disabled && setIsOpen(!isOpen)}
         disabled={disabled}
-        className={`flex items-center gap-2 px-4 py-2 border rounded-xl text-sm font-semibold transition-all shadow-xs ${
+        className={`flex items-center justify-between gap-2 px-4 py-2.5 border rounded-xl text-sm font-semibold transition-all shadow-xs w-full ${
           disabled
             ? "opacity-30 cursor-not-allowed"
             : "active:scale-95 cursor-pointer"
         } ${getStatusColor(selectedOption.color)}`}
       >
-        <Filter className="w-4 h-4" />
-        {selectedOption.label}
+        <span className="flex items-center gap-2">
+          <Filter className="w-4 h-4" />
+          {selectedOption.label}
+        </span>
         <ChevronDown
           className={`w-3.5 h-3.5 transition-transform duration-300 ${
             isOpen ? "rotate-180" : ""

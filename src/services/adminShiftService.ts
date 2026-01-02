@@ -143,7 +143,7 @@ export async function getShiftDetails(id: number) {
                       },
                       pathologyTest: {
                         select: {
-                          doctor: {
+                          orderedBy: {
                             select: {
                               id: true,
                               fullName: true,
