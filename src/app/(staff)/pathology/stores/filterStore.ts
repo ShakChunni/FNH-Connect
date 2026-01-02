@@ -1,6 +1,6 @@
 /**
  * Pathology Filter Store
- * Manages filter panel state and all filter values (without department)
+ * Manages filter panel state, all filter values, and report generation
  */
 
 import { create } from "zustand";
@@ -13,12 +13,20 @@ import { useShallow } from "zustand/react/shallow";
 export type PathologyStatus = "Completed" | "Pending" | "All";
 
 export interface FilterValues {
-  doctorId: number | null;
+  // Doctor filters
+  orderedById: number | null;
+  doneById: number | null;
+  // Status
   status: PathologyStatus;
+  // Test categories (multi-select)
+  testCategories: string[];
+  // Date range
   dateRange: string;
   startDate: Date | null;
   endDate: Date | null;
+  // Search
   search: string;
+  // Pagination
   page: number;
   limit: number;
 }
@@ -27,9 +35,16 @@ interface FilterPanelState {
   isOpen: boolean;
 }
 
+interface ReportState {
+  isGenerating: boolean;
+  showReportBar: boolean; // Always visible option
+  selectedReportType: "summary" | "detailed" | "financial" | null;
+}
+
 interface FilterState {
   panel: FilterPanelState;
   filters: FilterValues;
+  report: ReportState;
 }
 
 interface FilterActions {
@@ -39,8 +54,11 @@ interface FilterActions {
   toggleFilterPanel: () => void;
 
   // Filter actions
-  setDoctorId: (id: number | null) => void;
+  setOrderedById: (id: number | null) => void;
+  setDoneById: (id: number | null) => void;
   setStatus: (status: PathologyStatus) => void;
+  setTestCategories: (categories: string[]) => void;
+  toggleTestCategory: (category: string) => void;
   setDateRange: (range: string) => void;
   setCustomDateRange: (start: Date | null, end: Date | null) => void;
   setSearch: (search: string) => void;
@@ -50,6 +68,13 @@ interface FilterActions {
   // Bulk actions
   clearAllFilters: () => void;
   getActiveFilterCount: () => number;
+
+  // Report actions
+  setShowReportBar: (show: boolean) => void;
+  setSelectedReportType: (
+    type: "summary" | "detailed" | "financial" | null
+  ) => void;
+  setIsGenerating: (generating: boolean) => void;
 }
 
 type FilterStore = FilterState & FilterActions;
@@ -59,8 +84,10 @@ type FilterStore = FilterState & FilterActions;
 // ═══════════════════════════════════════════════════════════════
 
 const initialFilterValues: FilterValues = {
-  doctorId: null,
+  orderedById: null,
+  doneById: null,
   status: "All",
+  testCategories: [],
   dateRange: "all",
   startDate: null,
   endDate: null,
@@ -71,6 +98,12 @@ const initialFilterValues: FilterValues = {
 
 const initialPanelState: FilterPanelState = {
   isOpen: false,
+};
+
+const initialReportState: ReportState = {
+  isGenerating: false,
+  showReportBar: true, // Report bar visible by default
+  selectedReportType: null,
 };
 
 // ═══════════════════════════════════════════════════════════════
@@ -110,6 +143,12 @@ export const getDateRangeFromOption = (
       const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
       return { start: startOfMonth, end: now };
     }
+    case "lastMonth": {
+      const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0);
+      lastMonthEnd.setHours(23, 59, 59, 999);
+      return { start: lastMonthStart, end: lastMonthEnd };
+    }
     default:
       return { start: null, end: null };
   }
@@ -123,6 +162,7 @@ export const usePathologyFilterStore = create<FilterStore>((set, get) => ({
   // Initial state
   panel: { ...initialPanelState },
   filters: { ...initialFilterValues },
+  report: { ...initialReportState },
 
   // Panel actions
   openFilterPanel: () =>
@@ -141,15 +181,36 @@ export const usePathologyFilterStore = create<FilterStore>((set, get) => ({
     })),
 
   // Filter actions
-  setDoctorId: (id) =>
+  setOrderedById: (id) =>
     set((state) => ({
-      filters: { ...state.filters, doctorId: id, page: 1 },
+      filters: { ...state.filters, orderedById: id, page: 1 },
+    })),
+
+  setDoneById: (id) =>
+    set((state) => ({
+      filters: { ...state.filters, doneById: id, page: 1 },
     })),
 
   setStatus: (status) =>
     set((state) => ({
       filters: { ...state.filters, status, page: 1 },
     })),
+
+  setTestCategories: (categories) =>
+    set((state) => ({
+      filters: { ...state.filters, testCategories: categories, page: 1 },
+    })),
+
+  toggleTestCategory: (category) =>
+    set((state) => {
+      const current = state.filters.testCategories;
+      const updated = current.includes(category)
+        ? current.filter((c) => c !== category)
+        : [...current, category];
+      return {
+        filters: { ...state.filters, testCategories: updated, page: 1 },
+      };
+    }),
 
   setDateRange: (range) => {
     const dateRange = getDateRangeFromOption(range);
@@ -199,12 +260,30 @@ export const usePathologyFilterStore = create<FilterStore>((set, get) => ({
   getActiveFilterCount: () => {
     const { filters } = get();
     let count = 0;
-    if (filters.doctorId !== null) count++;
+    if (filters.orderedById !== null) count++;
+    if (filters.doneById !== null) count++;
     if (filters.status !== "All") count++;
+    if (filters.testCategories.length > 0) count++;
     if (filters.dateRange !== "all") count++;
     if (filters.search !== "") count++;
     return count;
   },
+
+  // Report actions
+  setShowReportBar: (show) =>
+    set((state) => ({
+      report: { ...state.report, showReportBar: show },
+    })),
+
+  setSelectedReportType: (type) =>
+    set((state) => ({
+      report: { ...state.report, selectedReportType: type },
+    })),
+
+  setIsGenerating: (generating) =>
+    set((state) => ({
+      report: { ...state.report, isGenerating: generating },
+    })),
 }));
 
 // ═══════════════════════════════════════════════════════════════
@@ -217,14 +296,20 @@ export const usePathologyFilterPanelState = () =>
 export const usePathologyFilterValues = () =>
   usePathologyFilterStore((state) => state.filters);
 
+export const usePathologyReportState = () =>
+  usePathologyFilterStore((state) => state.report);
+
 export const usePathologyFilterActions = () =>
   usePathologyFilterStore(
     useShallow((state) => ({
       openFilterPanel: state.openFilterPanel,
       closeFilterPanel: state.closeFilterPanel,
       toggleFilterPanel: state.toggleFilterPanel,
-      setDoctorId: state.setDoctorId,
+      setOrderedById: state.setOrderedById,
+      setDoneById: state.setDoneById,
       setStatus: state.setStatus,
+      setTestCategories: state.setTestCategories,
+      toggleTestCategory: state.toggleTestCategory,
       setDateRange: state.setDateRange,
       setCustomDateRange: state.setCustomDateRange,
       setSearch: state.setSearch,
@@ -232,5 +317,14 @@ export const usePathologyFilterActions = () =>
       setLimit: state.setLimit,
       clearAllFilters: state.clearAllFilters,
       getActiveFilterCount: state.getActiveFilterCount,
+    }))
+  );
+
+export const usePathologyReportActions = () =>
+  usePathologyFilterStore(
+    useShallow((state) => ({
+      setShowReportBar: state.setShowReportBar,
+      setSelectedReportType: state.setSelectedReportType,
+      setIsGenerating: state.setIsGenerating,
     }))
   );

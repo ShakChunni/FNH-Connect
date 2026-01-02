@@ -5,21 +5,26 @@ import { Search, ChevronDown } from "lucide-react";
 import { useDebounce } from "@/hooks/useDebounce";
 import { useFetchDepartments } from "../hooks";
 import { useFilterStore } from "../stores/filterStore";
-import { FilterTriggerButton } from "./filter";
+import { FilterTriggerButton, ReportTriggerButton } from "./filter";
 import { DropdownPortal } from "@/components/ui/DropdownPortal";
+import { AdmissionPatientData } from "../types";
+import { generateAdmissionsReport } from "../utils/generateReport";
+import { exportAdmissionsToExcel } from "../utils/exportToExcel";
 
 interface AdmissionSearchProps {
   disabled?: boolean;
+  data?: AdmissionPatientData[];
 }
 
 /**
  * Admission Search Component
  * Wraps the global SearchBar with admission-specific logic
- * Includes department quick filter and filter trigger button
+ * Includes department quick filter, report button, and filter trigger button
  * Mobile-optimized for screens < sm
  */
 export const AdmissionSearch: React.FC<AdmissionSearchProps> = ({
   disabled = false,
+  data = [],
 }) => {
   const [searchValue, setSearchValue] = useState("");
   const [isDepartmentOpen, setIsDepartmentOpen] = useState(false);
@@ -68,6 +73,30 @@ export const AdmissionSearch: React.FC<AdmissionSearchProps> = ({
     },
     [setDepartmentId]
   );
+
+  const handleGenerateSummary = useCallback(() => {
+    generateAdmissionsReport(data, "summary", {
+      dateRange: filters.dateRange,
+      startDate: filters.startDate,
+      endDate: filters.endDate,
+      department: filters.departmentId?.toString(),
+      status: filters.status,
+    });
+  }, [data, filters]);
+
+  const handleGenerateDetailed = useCallback(() => {
+    generateAdmissionsReport(data, "detailed", {
+      dateRange: filters.dateRange,
+      startDate: filters.startDate,
+      endDate: filters.endDate,
+      department: filters.departmentId?.toString(),
+      status: filters.status,
+    });
+  }, [data, filters]);
+
+  const handleExportExcel = useCallback(() => {
+    exportAdmissionsToExcel(data);
+  }, [data]);
 
   return (
     <div
@@ -174,6 +203,16 @@ export const AdmissionSearch: React.FC<AdmissionSearchProps> = ({
               />
             </div>
           </div>
+        </div>
+
+        {/* Report Trigger Button */}
+        <div className="shrink-0 h-11 sm:h-14 flex items-center">
+          <ReportTriggerButton
+            disabled={disabled || data.length === 0}
+            onGenerateSummary={handleGenerateSummary}
+            onGenerateDetailed={handleGenerateDetailed}
+            onExportExcel={handleExportExcel}
+          />
         </div>
 
         {/* Filter Trigger Button */}

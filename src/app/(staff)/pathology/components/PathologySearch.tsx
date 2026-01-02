@@ -4,19 +4,24 @@ import React, { useState, useCallback } from "react";
 import { Search } from "lucide-react";
 import { useDebounce } from "@/hooks/useDebounce";
 import { usePathologyFilterStore } from "../stores/filterStore";
-import { FilterTriggerButton } from "./filter";
+import { FilterTriggerButton, ReportTriggerButton } from "./filter";
+import { PathologyPatientData } from "../types";
+import { generatePathologyReport } from "../utils/generateReport";
+import { exportPathologyToCSV } from "../utils/exportToCSV";
 
 interface PathologySearchProps {
   disabled?: boolean;
+  data?: PathologyPatientData[];
 }
 
 /**
  * Pathology Search Component
- * Clean search bar with filter trigger button
+ * Clean search bar with filter and report trigger buttons
  * Connects to Zustand filter store
  */
 export const PathologySearch: React.FC<PathologySearchProps> = ({
   disabled = false,
+  data = [],
 }) => {
   const [searchValue, setSearchValue] = useState("");
   const [isFocused, setIsFocused] = useState(false);
@@ -43,6 +48,44 @@ export const PathologySearch: React.FC<PathologySearchProps> = ({
   const handleSearchChange = useCallback((value: string) => {
     setSearchValue(value);
   }, []);
+
+  const handleGenerateSummary = useCallback(() => {
+    generatePathologyReport(data, "summary", {
+      dateRange: filters.dateRange,
+      startDate: filters.startDate,
+      endDate: filters.endDate,
+      status: filters.status,
+      orderedById: filters.orderedById,
+      testCategories: filters.testCategories,
+    });
+  }, [data, filters]);
+
+  const handleGenerateDetailed = useCallback(() => {
+    generatePathologyReport(data, "detailed", {
+      dateRange: filters.dateRange,
+      startDate: filters.startDate,
+      endDate: filters.endDate,
+      status: filters.status,
+      orderedById: filters.orderedById,
+      testCategories: filters.testCategories,
+    });
+  }, [data, filters]);
+
+  const handleGenerateFinancial = useCallback(() => {
+    // Financial uses the summary with financial focus
+    generatePathologyReport(data, "summary", {
+      dateRange: filters.dateRange,
+      startDate: filters.startDate,
+      endDate: filters.endDate,
+      status: filters.status,
+      orderedById: filters.orderedById,
+      testCategories: filters.testCategories,
+    });
+  }, [data, filters]);
+
+  const handleExportCSV = useCallback(() => {
+    exportPathologyToCSV(data);
+  }, [data]);
 
   return (
     <div
@@ -87,6 +130,17 @@ export const PathologySearch: React.FC<PathologySearchProps> = ({
               />
             </div>
           </div>
+        </div>
+
+        {/* Report Trigger Button */}
+        <div className="shrink-0 h-11 sm:h-14 flex items-center">
+          <ReportTriggerButton
+            disabled={disabled || data.length === 0}
+            onGenerateSummary={handleGenerateSummary}
+            onGenerateDetailed={handleGenerateDetailed}
+            onGenerateFinancial={handleGenerateFinancial}
+            onExportCSV={handleExportCSV}
+          />
         </div>
 
         {/* Filter Trigger Button */}

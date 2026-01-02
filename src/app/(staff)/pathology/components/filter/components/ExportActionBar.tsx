@@ -6,8 +6,10 @@ import {
   FloatingActionBar,
   FloatingAction,
 } from "@/components/ui/FloatingActionBar";
-import { usePathologyFilterStore } from "../../../stores/filterStore";
+import { usePathologyFilterStore } from "../../../stores";
 import { PathologyPatientData } from "../../../types";
+import { generatePathologyReport } from "../../../utils/generateReport";
+import { exportPathologyToCSV } from "../../../utils/exportToCSV";
 
 interface ExportActionBarProps {
   data: PathologyPatientData[];
@@ -26,28 +28,37 @@ export const ExportActionBar: React.FC<ExportActionBarProps> = ({ data }) => {
   // Show only when filters are active
   const shouldShow = activeCount > 0;
 
-  // TODO: Add PDF/Excel export functions for pathology
-  const handlePdfExport = () => {
-    console.log("PDF export for pathology data:", data.length, "records");
-    // TODO: Implement generatePathologyReport(data, filters)
+  const handlePdfExport = (type: "summary" | "detailed") => {
+    generatePathologyReport(data, type, {
+      dateRange: filters.dateRange,
+      startDate: filters.startDate,
+      endDate: filters.endDate,
+      status: filters.status,
+      orderedById: filters.orderedById,
+      testCategories: filters.testCategories,
+    });
   };
 
-  const handleExcelExport = () => {
-    console.log("Excel export for pathology data:", data.length, "records");
-    // TODO: Implement exportPathologyToExcel(data)
+  const handleCSVExport = () => {
+    exportPathologyToCSV(data);
   };
 
   const actions: FloatingAction[] = useMemo(
     () => [
       {
-        label: "PDF Report",
+        label: "PDF Summary Report",
         icon: <FileText className="w-4 h-4" />,
-        onClick: handlePdfExport,
+        onClick: () => handlePdfExport("summary"),
       },
       {
-        label: "Export to Excel",
+        label: "PDF Detailed Report",
+        icon: <Download className="w-4 h-4" />,
+        onClick: () => handlePdfExport("detailed"),
+      },
+      {
+        label: "Export to CSV",
         icon: <FileSpreadsheet className="w-4 h-4" />,
-        onClick: handleExcelExport,
+        onClick: handleCSVExport,
       },
     ],
     [data, filters]

@@ -133,6 +133,24 @@ export const pathologyFiltersSchema = z.object({
       return undefined;
     }),
   testCategory: z.string().optional(),
+  // New: multi-select test categories (comma-separated)
+  testCategories: z
+    .string()
+    .optional()
+    .transform((val) => {
+      if (!val) return undefined;
+      return val.split(",").filter(Boolean);
+    }),
+  // New: filter by ordering doctor
+  orderedById: z
+    .string()
+    .optional()
+    .transform((val) => (val ? parseInt(val, 10) : undefined)),
+  // New: filter by performing staff
+  doneById: z
+    .string()
+    .optional()
+    .transform((val) => (val ? parseInt(val, 10) : undefined)),
   page: z.string().default("1").transform(Number),
   limit: z.string().default("15").transform(Number),
 });

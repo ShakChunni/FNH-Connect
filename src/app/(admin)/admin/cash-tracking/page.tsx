@@ -6,16 +6,21 @@ import {
   Wallet,
   Search,
   RefreshCw,
-  Calendar as CalendarIcon,
+  TrendingUp,
+  TrendingDown,
+  Activity,
+  HelpCircle,
+  DollarSign,
+  Users,
 } from "lucide-react";
 import { useAdminShifts } from "./hooks/useAdminShifts";
-import { StatCard } from "@/app/(staff)/dashboard/components/StatCard";
 import ShiftTable from "./components/ShiftTable";
 import ShiftDetailModal from "./components/ShiftDetailModal";
 import { useCashTrackingStore } from "./store";
 import { useDebounce } from "@/hooks/useDebounce";
 import { ShiftStatusFilter } from "./components/ShiftStatusFilter";
 import { DateRangePicker } from "@/components/ui/date-range-picker";
+import { cn } from "@/lib/utils";
 
 const CashTrackingPage = () => {
   const { filters, setFilter, selectedShiftId, setSelectedShiftId } =
@@ -24,6 +29,9 @@ const CashTrackingPage = () => {
   // Local search state for immediate input feedback
   const [searchTerm, setSearchTerm] = useState(filters.search);
   const debouncedSearch = useDebounce(searchTerm, 500);
+
+  // Tooltip state
+  const [showVarianceHelp, setShowVarianceHelp] = useState(false);
 
   // Sync debounced search to store
   useEffect(() => {
@@ -46,6 +54,12 @@ const CashTrackingPage = () => {
     totalRefunded: 0,
     activeShiftsCount: 0,
   };
+
+  // Calculate net cash flow
+  const netCashFlow = summary.totalCollected - summary.totalRefunded;
+
+  // Calculate total variance across all shifts
+  const totalVariance = shifts.reduce((sum, shift) => sum + shift.variance, 0);
 
   return (
     <div className="min-h-screen bg-fnh-porcelain pb-4 sm:pb-6 lg:pb-8 w-full overflow-x-hidden">
@@ -72,57 +86,195 @@ const CashTrackingPage = () => {
             />
           </div>
 
-          {/* Stats Grid */}
+          {/* Enhanced Stats Grid - Mobile First */}
           <div className="px-1 sm:px-2 lg:px-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-              <StatCard
-                title="Total Collection"
-                value={formatCurrency(summary.totalCollected)}
-                icon={Wallet}
-                color="green"
-                isLoading={isLoading && !data}
-              />
-              <StatCard
-                title="Total Refunds"
-                value={formatCurrency(summary.totalRefunded)}
-                icon={RefreshCw}
-                color="red"
-                isLoading={isLoading && !data}
-              />
-              <div className="sm:col-span-2 lg:col-span-1">
-                <StatCard
-                  title="Active Shifts"
-                  value={summary.activeShiftsCount.toString()}
-                  icon={Search}
-                  color="purple"
-                  isLoading={isLoading && !data}
-                />
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
+              {/* Net Cash Flow */}
+              <div className="col-span-2 lg:col-span-1 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-2xl p-4 sm:p-5 shadow-lg shadow-emerald-500/20 text-white relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2" />
+                <div className="relative">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
+                      <DollarSign className="w-4 h-4" />
+                    </div>
+                    <span className="text-[10px] sm:text-xs font-black uppercase tracking-widest opacity-90">
+                      Net Cash Flow
+                    </span>
+                  </div>
+                  <p className="text-xl sm:text-2xl lg:text-3xl font-black">
+                    {formatCurrency(netCashFlow)}
+                  </p>
+                  <p className="text-[10px] sm:text-xs font-medium mt-1 opacity-80">
+                    Collections minus refunds
+                  </p>
+                </div>
+              </div>
+
+              {/* Total Collected */}
+              <div className="bg-white rounded-2xl p-4 sm:p-5 border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p className="text-[9px] sm:text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">
+                      Total Collected
+                    </p>
+                    <p className="text-lg sm:text-xl lg:text-2xl font-black text-gray-900">
+                      {formatCurrency(summary.totalCollected)}
+                    </p>
+                  </div>
+                  <div className="w-10 h-10 bg-emerald-50 rounded-xl flex items-center justify-center shrink-0">
+                    <TrendingUp className="w-5 h-5 text-emerald-600" />
+                  </div>
+                </div>
+                <div className="flex items-center gap-1 mt-2 text-[10px] sm:text-xs text-emerald-600 font-semibold">
+                  <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
+                  Incoming payments
+                </div>
+              </div>
+
+              {/* Total Refunds */}
+              <div className="bg-white rounded-2xl p-4 sm:p-5 border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p className="text-[9px] sm:text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">
+                      Total Refunds
+                    </p>
+                    <p className="text-lg sm:text-xl lg:text-2xl font-black text-gray-900">
+                      {formatCurrency(summary.totalRefunded)}
+                    </p>
+                  </div>
+                  <div className="w-10 h-10 bg-rose-50 rounded-xl flex items-center justify-center shrink-0">
+                    <TrendingDown className="w-5 h-5 text-rose-600" />
+                  </div>
+                </div>
+                <div className="flex items-center gap-1 mt-2 text-[10px] sm:text-xs text-rose-600 font-semibold">
+                  <span className="w-1.5 h-1.5 bg-rose-500 rounded-full" />
+                  Money returned
+                </div>
+              </div>
+
+              {/* Active Shifts & Variance Combined Card */}
+              <div className="bg-white rounded-2xl p-4 sm:p-5 border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+                <div className="flex items-start justify-between mb-3">
+                  <div>
+                    <p className="text-[9px] sm:text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">
+                      Active Shifts
+                    </p>
+                    <p className="text-lg sm:text-xl lg:text-2xl font-black text-gray-900">
+                      {summary.activeShiftsCount}
+                    </p>
+                  </div>
+                  <div className="w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center shrink-0">
+                    <Users className="w-5 h-5 text-indigo-600" />
+                  </div>
+                </div>
+                <div className="pt-3 border-t border-gray-100">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[9px] sm:text-[10px] font-black text-gray-400 uppercase tracking-wide">
+                        Total Variance
+                      </span>
+                      <button
+                        onClick={() => setShowVarianceHelp(!showVarianceHelp)}
+                        className="p-0.5 hover:bg-gray-100 rounded-full transition-colors cursor-pointer"
+                        aria-label="What is variance?"
+                      >
+                        <HelpCircle className="w-3 h-3 text-gray-400 hover:text-gray-600" />
+                      </button>
+                    </div>
+                    <span
+                      className={cn(
+                        "text-sm sm:text-base font-black",
+                        totalVariance === 0
+                          ? "text-emerald-600"
+                          : totalVariance > 0
+                          ? "text-blue-600"
+                          : "text-rose-600"
+                      )}
+                    >
+                      {totalVariance > 0 ? "+" : ""}
+                      {formatCurrency(totalVariance)}
+                    </span>
+                  </div>
+                </div>
               </div>
             </div>
+
+            {/* Variance Explanation Tooltip */}
+            {showVarianceHelp && (
+              <div className="mt-4 p-4 bg-indigo-50 border border-indigo-100 rounded-xl animate-in fade-in slide-in-from-top-2 duration-200">
+                <div className="flex items-start gap-3">
+                  <div className="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center shrink-0">
+                    <HelpCircle className="w-4 h-4 text-indigo-600" />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-black text-indigo-900 mb-1">
+                      What is Variance?
+                    </h4>
+                    <p className="text-xs text-indigo-700 leading-relaxed">
+                      <strong>Variance</strong> is the difference between{" "}
+                      <strong>Closing Cash</strong> (physically counted money at
+                      shift end) and <strong>System Cash</strong> (what the
+                      system calculated should be there).
+                    </p>
+                    <ul className="mt-2 space-y-1 text-xs text-indigo-700">
+                      <li className="flex items-center gap-2">
+                        <span className="w-2 h-2 bg-emerald-500 rounded-full" />
+                        <span>
+                          <strong>₹0 Variance:</strong> Perfect! Cash matches
+                          system records.
+                        </span>
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <span className="w-2 h-2 bg-blue-500 rounded-full" />
+                        <span>
+                          <strong>Positive Variance:</strong> More cash than
+                          expected (overage).
+                        </span>
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <span className="w-2 h-2 bg-rose-500 rounded-full" />
+                        <span>
+                          <strong>Negative Variance:</strong> Less cash than
+                          expected (shortage).
+                        </span>
+                      </li>
+                    </ul>
+                    <button
+                      onClick={() => setShowVarianceHelp(false)}
+                      className="mt-3 text-[10px] font-black text-indigo-600 uppercase tracking-widest hover:text-indigo-800 cursor-pointer"
+                    >
+                      Got it, close
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
-          {/* Filters */}
+          {/* Filters - Mobile Optimized */}
           <div className="px-1 sm:px-2 lg:px-4">
-            <div className="p-4 bg-white rounded-2xl border border-gray-100 shadow-sm flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-3 sm:gap-4 relative group">
-              <div className="flex-1 min-w-[200px] relative">
+            <div className="p-3 sm:p-4 bg-white rounded-2xl border border-gray-100 shadow-sm space-y-3 sm:space-y-0 sm:flex sm:flex-row sm:flex-wrap sm:items-center sm:gap-4 relative group">
+              {/* Search Input */}
+              <div className="flex-1 min-w-[180px] sm:min-w-[200px] relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <input
                   type="text"
                   placeholder="Search staff name..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 sm:py-2.5 bg-gray-50/50 border border-gray-100 rounded-xl text-xs sm:text-sm font-bold focus:outline-none focus:ring-2 focus:ring-fnh-blue/20 transition-all"
+                  className="w-full pl-10 pr-4 py-2.5 bg-gray-50/50 border border-gray-100 rounded-xl text-xs sm:text-sm font-bold focus:outline-none focus:ring-2 focus:ring-fnh-blue/20 transition-all"
                 />
               </div>
 
-              <div className="flex flex-wrap items-center gap-2 sm:gap-4">
+              {/* Filter Controls */}
+              <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-2 sm:gap-4">
                 <ShiftStatusFilter
                   currentStatus={filters.status}
                   onStatusChange={(status) => setFilter("status", status)}
                   disabled={isLoading && !data}
                 />
 
-                <div className="w-[240px] sm:w-[280px]">
+                <div className="w-full sm:w-[240px] lg:w-[280px]">
                   <DateRangePicker
                     value={{
                       from: filters.startDate
@@ -162,9 +314,9 @@ const CashTrackingPage = () => {
                       setSearchTerm("");
                     }}
                     disabled={isLoading && !data}
-                    className="px-2 py-1 text-[10px] sm:text-xs font-black text-rose-500 uppercase tracking-widest hover:text-rose-600 transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
+                    className="px-3 py-2 sm:px-2 sm:py-1 text-[10px] sm:text-xs font-black text-rose-500 uppercase tracking-widest hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
                   >
-                    Clear
+                    Clear Filters
                   </button>
                 )}
               </div>
@@ -173,6 +325,74 @@ const CashTrackingPage = () => {
               {isLoading && !data && (
                 <div className="absolute inset-y-0 right-0 w-[60%] sm:w-[45%] bg-white/40 backdrop-blur-[1px] rounded-r-2xl z-10 pointer-events-none transition-opacity" />
               )}
+            </div>
+          </div>
+
+          {/* Cash Flow Breakdown - Visual Summary */}
+          <div className="px-1 sm:px-2 lg:px-4">
+            <div className="p-4 sm:p-5 bg-gradient-to-r from-fnh-navy to-slate-800 rounded-2xl text-white">
+              <h3 className="text-[10px] sm:text-xs font-black uppercase tracking-widest opacity-80 mb-4">
+                Cash Flow Breakdown
+              </h3>
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
+                {/* Collections */}
+                <div className="flex-1 flex items-center gap-3 p-3 bg-white/10 rounded-xl">
+                  <TrendingUp className="w-5 h-5 text-emerald-400" />
+                  <div>
+                    <p className="text-[10px] font-bold uppercase tracking-wide opacity-70">
+                      Collected
+                    </p>
+                    <p className="text-lg font-black">
+                      {formatCurrency(summary.totalCollected)}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Minus Sign */}
+                <div className="hidden sm:flex items-center justify-center w-8 h-8 bg-white/10 rounded-full text-xl font-black">
+                  −
+                </div>
+
+                {/* Refunds */}
+                <div className="flex-1 flex items-center gap-3 p-3 bg-white/10 rounded-xl">
+                  <TrendingDown className="w-5 h-5 text-rose-400" />
+                  <div>
+                    <p className="text-[10px] font-bold uppercase tracking-wide opacity-70">
+                      Refunded
+                    </p>
+                    <p className="text-lg font-black">
+                      {formatCurrency(summary.totalRefunded)}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Equals Sign */}
+                <div className="hidden sm:flex items-center justify-center w-8 h-8 bg-white/10 rounded-full text-xl font-black">
+                  =
+                </div>
+
+                {/* Net */}
+                <div className="flex-1 flex items-center gap-3 p-3 bg-emerald-500/30 border border-emerald-400/30 rounded-xl">
+                  <Wallet className="w-5 h-5 text-emerald-300" />
+                  <div>
+                    <p className="text-[10px] font-bold uppercase tracking-wide opacity-90">
+                      Net Cash
+                    </p>
+                    <p className="text-lg font-black text-emerald-300">
+                      {formatCurrency(netCashFlow)}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Summary text for mobile */}
+              <p className="mt-4 sm:hidden text-xs text-white/70 text-center">
+                {formatCurrency(summary.totalCollected)} collected −{" "}
+                {formatCurrency(summary.totalRefunded)} refunded ={" "}
+                <span className="text-emerald-300 font-bold">
+                  {formatCurrency(netCashFlow)}
+                </span>
+              </p>
             </div>
           </div>
 

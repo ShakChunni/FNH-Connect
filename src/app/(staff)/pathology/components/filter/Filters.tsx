@@ -3,37 +3,18 @@
 import React, { useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  X,
-  RotateCcw,
-  SlidersHorizontal,
-  Calendar,
-  CheckCircle2,
-} from "lucide-react";
+import { X, RotateCcw, SlidersHorizontal } from "lucide-react";
 import { usePathologyFilterStore } from "../../stores/filterStore";
-import { DateRangePicker } from "@/components/ui/date-range-picker";
-
-// Status options for pathology
-const STATUS_OPTIONS = [
-  { value: "All", label: "All Status" },
-  { value: "Completed", label: "Completed" },
-  { value: "Pending", label: "Pending" },
-] as const;
-
-// Date range options
-const DATE_OPTIONS = [
-  { value: "all", label: "All Time" },
-  { value: "today", label: "Today" },
-  { value: "yesterday", label: "Yesterday" },
-  { value: "last7days", label: "Last 7 Days" },
-  { value: "last30days", label: "Last 30 Days" },
-  { value: "thisMonth", label: "This Month" },
-  { value: "custom", label: "Custom Range" },
-] as const;
+import {
+  DoctorFilter,
+  StatusFilter,
+  DateRangeFilter,
+  TestCategoryFilter,
+} from "./components";
 
 /**
  * Filters Panel - Slide-out drawer from right
- * Pathology version: Status and Date filters only (no Department)
+ * Contains all filter dropdowns with FNH brand styling
  */
 export const Filters: React.FC = () => {
   const isOpen = usePathologyFilterStore((state) => state.panel.isOpen);
@@ -45,12 +26,6 @@ export const Filters: React.FC = () => {
   );
   const getActiveFilterCount = usePathologyFilterStore(
     (state) => state.getActiveFilterCount
-  );
-  const filters = usePathologyFilterStore((state) => state.filters);
-  const setStatus = usePathologyFilterStore((state) => state.setStatus);
-  const setDateRange = usePathologyFilterStore((state) => state.setDateRange);
-  const setCustomDateRange = usePathologyFilterStore(
-    (state) => state.setCustomDateRange
   );
 
   const activeCount = getActiveFilterCount();
@@ -91,14 +66,6 @@ export const Filters: React.FC = () => {
     },
     [closeFilterPanel]
   );
-
-  const handleDateRangeChange = (
-    range: { from?: Date; to?: Date } | undefined
-  ) => {
-    if (range?.from && range?.to) {
-      setCustomDateRange(range.from, range.to);
-    }
-  };
 
   // Panel content
   const panelContent = (
@@ -167,71 +134,17 @@ export const Filters: React.FC = () => {
 
             {/* Filter Content */}
             <div className="flex-1 overflow-y-auto p-6 space-y-5">
+              {/* Doctor Filter */}
+              <DoctorFilter />
+
               {/* Status Filter */}
-              <div className="space-y-3">
-                <label className="flex items-center gap-2 text-sm font-semibold text-gray-700">
-                  <CheckCircle2 className="w-4 h-4 text-fnh-blue" />
-                  Test Status
-                </label>
-                <div className="grid grid-cols-3 gap-2">
-                  {STATUS_OPTIONS.map((option) => (
-                    <button
-                      key={option.value}
-                      onClick={() => setStatus(option.value)}
-                      className={`px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 cursor-pointer ${
-                        filters.status === option.value
-                          ? "bg-fnh-navy text-white shadow-md"
-                          : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                      }`}
-                    >
-                      {option.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
+              <StatusFilter />
 
               {/* Date Range Filter */}
-              <div className="space-y-3">
-                <label className="flex items-center gap-2 text-sm font-semibold text-gray-700">
-                  <Calendar className="w-4 h-4 text-fnh-blue" />
-                  Date Range
-                </label>
-                <div className="space-y-3">
-                  {/* Preset Options */}
-                  <div className="grid grid-cols-2 gap-2">
-                    {DATE_OPTIONS.filter((o) => o.value !== "custom").map(
-                      (option) => (
-                        <button
-                          key={option.value}
-                          onClick={() => setDateRange(option.value)}
-                          className={`px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 cursor-pointer ${
-                            filters.dateRange === option.value
-                              ? "bg-fnh-navy text-white shadow-md"
-                              : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                          }`}
-                        >
-                          {option.label}
-                        </button>
-                      )
-                    )}
-                  </div>
+              <DateRangeFilter />
 
-                  {/* Custom Date Picker */}
-                  <div className="pt-2">
-                    <p className="text-xs text-gray-500 mb-2">
-                      Or select custom range:
-                    </p>
-                    <DateRangePicker
-                      value={
-                        filters.startDate && filters.endDate
-                          ? { from: filters.startDate, to: filters.endDate }
-                          : undefined
-                      }
-                      onChange={handleDateRangeChange}
-                    />
-                  </div>
-                </div>
-              </div>
+              {/* Test Category Filter */}
+              <TestCategoryFilter />
             </div>
 
             {/* Footer */}

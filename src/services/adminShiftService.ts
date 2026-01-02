@@ -19,8 +19,24 @@ export async function getAdminShifts(filters: ShiftFilters) {
 
   if (filters.startDate || filters.endDate) {
     where.startTime = {};
-    if (filters.startDate) where.startTime.gte = new Date(filters.startDate);
-    if (filters.endDate) where.startTime.lte = new Date(filters.endDate);
+    // Parse dates as Bangladesh time (UTC+6). When user selects "2026-01-02",
+    // they mean midnight Bangladesh time, not midnight UTC.
+    const BDT_OFFSET_MS = 6 * 60 * 60 * 1000;
+
+    if (filters.startDate) {
+      // Start of day in Bangladesh time, converted to UTC for DB query
+      const [year, month, day] = filters.startDate.split("-").map(Number);
+      const startBDT = new Date(Date.UTC(year, month - 1, day) - BDT_OFFSET_MS);
+      where.startTime.gte = startBDT;
+    }
+    if (filters.endDate) {
+      // End of day in Bangladesh time (start of next day), converted to UTC
+      const [year, month, day] = filters.endDate.split("-").map(Number);
+      const endBDT = new Date(
+        Date.UTC(year, month - 1, day + 1) - BDT_OFFSET_MS
+      );
+      where.startTime.lte = endBDT;
+    }
   }
 
   if (filters.status) {
@@ -125,8 +141,21 @@ export async function getCashTrackingSummary(filters?: ShiftFilters) {
 
   if (filters?.startDate || filters?.endDate) {
     where.startTime = {};
-    if (filters.startDate) where.startTime.gte = new Date(filters.startDate);
-    if (filters.endDate) where.startTime.lte = new Date(filters.endDate);
+    // Parse dates as Bangladesh time (UTC+6) - same logic as getAdminShifts
+    const BDT_OFFSET_MS = 6 * 60 * 60 * 1000;
+
+    if (filters.startDate) {
+      const [year, month, day] = filters.startDate.split("-").map(Number);
+      const startBDT = new Date(Date.UTC(year, month - 1, day) - BDT_OFFSET_MS);
+      where.startTime.gte = startBDT;
+    }
+    if (filters.endDate) {
+      const [year, month, day] = filters.endDate.split("-").map(Number);
+      const endBDT = new Date(
+        Date.UTC(year, month - 1, day + 1) - BDT_OFFSET_MS
+      );
+      where.startTime.lte = endBDT;
+    }
   }
 
   if (filters?.status) {
