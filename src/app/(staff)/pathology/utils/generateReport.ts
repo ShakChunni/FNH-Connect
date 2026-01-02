@@ -559,7 +559,7 @@ export const generatePathologyReport = async (
         3: { cellWidth: 16 }, // Doctor info
         4: { cellWidth: 26 }, // Patient info reduced slightly
         5: { cellWidth: 32 }, // Tests widened slightly
-        6: { cellWidth: 15 },
+        6: { cellWidth: 18 },
         7: { cellWidth: 15, halign: "right" },
         8: { cellWidth: 14, halign: "right" },
         9: { cellWidth: 14, halign: "right" },
