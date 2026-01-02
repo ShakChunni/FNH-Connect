@@ -137,7 +137,7 @@ export function DateRangePicker({
   };
 
   return (
-    <div className="w-full space-y-2">
+    <div className="w-full">
       <Popover open={isOpen} onOpenChange={handleOpenChange}>
         <PopoverTrigger asChild>
           <Button
@@ -146,7 +146,7 @@ export function DateRangePicker({
             disabled={disabled}
             onClick={() => !disabled && setIsOpen(true)}
             className={cn(
-              "w-full justify-start text-left font-normal h-auto px-3 py-2 sm:px-4 sm:py-2.5",
+              "w-full justify-start text-left font-normal h-auto px-4 py-2.5",
               !range.from && "text-muted-foreground",
               "bg-white border border-gray-100 hover:border-fnh-blue focus:border-fnh-blue focus:ring-4 focus:ring-fnh-blue/5 cursor-pointer text-xs font-bold transition-all duration-200 rounded-xl shadow-sm",
               disabled && "opacity-50 cursor-not-allowed",
