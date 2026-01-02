@@ -92,108 +92,119 @@ const CashTrackingPage = () => {
           <div className="px-1 sm:px-2 lg:px-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
               {/* Net Cash Flow */}
-              <div className="col-span-1 sm:col-span-2 lg:col-span-1 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-2xl p-4 sm:p-5 shadow-lg shadow-emerald-500/20 text-white relative overflow-hidden group hover:scale-[1.02] transition-transform duration-300">
-                <div className="absolute top-0 right-0 w-24 h-24 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2 group-hover:scale-110 transition-transform duration-500" />
+              {/* Net Cash Flow */}
+              {/* Net Cash Flow */}
+              <div className="col-span-1 sm:col-span-2 lg:col-span-1 bg-emerald-50/50 rounded-2xl p-4 sm:p-5 border border-emerald-100 shadow-sm shadow-emerald-100/20 relative overflow-hidden group hover:shadow-md transition-all duration-300">
+                <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-100/50 rounded-full -translate-y-1/2 translate-x-1/2 group-hover:scale-110 transition-transform duration-500" />
                 <div className="relative z-10">
                   <div className="flex items-center gap-3 mb-3">
-                    <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center backdrop-blur-sm">
-                      <DollarSign className="w-4 h-4 text-white" />
+                    <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center shadow-sm">
+                      <DollarSign className="w-4 h-4 text-emerald-600" />
                     </div>
-                    <span className="text-[10px] sm:text-xs font-black uppercase tracking-widest opacity-90">
+                    <span className="text-[10px] sm:text-xs font-black uppercase tracking-widest text-emerald-900/60">
                       Net Cash Flow
                     </span>
                   </div>
                   {isLoading ? (
-                    <div className="h-8 w-32 bg-white/20 rounded animate-pulse mb-1" />
+                    <div className="h-8 w-32 bg-emerald-100/50 rounded animate-pulse mb-1" />
                   ) : (
-                    <p className="text-xl sm:text-2xl lg:text-2xl xl:text-3xl font-black break-words">
+                    <p className="text-xl sm:text-2xl lg:text-2xl xl:text-3xl font-black text-emerald-950 break-words">
                       {formatCurrency(netCashFlow)}
                     </p>
                   )}
-                  <p className="text-[10px] sm:text-xs font-medium mt-1 opacity-80">
+                  <p className="text-[10px] sm:text-xs font-medium mt-1 text-emerald-700/80">
                     Collections minus refunds
                   </p>
                 </div>
               </div>
 
               {/* Total Collected */}
-              <div className="col-span-1 sm:col-span-2 lg:col-span-1 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl p-4 sm:p-5 shadow-lg shadow-blue-500/20 text-white relative overflow-hidden group hover:scale-[1.02] transition-transform duration-300">
-                <div className="absolute top-0 right-0 w-24 h-24 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2 group-hover:scale-110 transition-transform duration-500" />
+              <div className="col-span-1 sm:col-span-2 lg:col-span-1 bg-blue-50/50 rounded-2xl p-4 sm:p-5 border border-blue-100 shadow-sm shadow-blue-100/20 relative overflow-hidden group hover:shadow-md transition-all duration-300">
+                <div className="absolute top-0 right-0 w-24 h-24 bg-blue-100/50 rounded-full -translate-y-1/2 translate-x-1/2 group-hover:scale-110 transition-transform duration-500" />
                 <div className="relative z-10">
                   <div className="flex items-center gap-3 mb-3">
-                    <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center backdrop-blur-sm">
-                      <TrendingUp className="w-4 h-4 text-white" />
+                    <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center shadow-sm">
+                      <TrendingUp className="w-4 h-4 text-blue-600" />
                     </div>
-                    <span className="text-[10px] sm:text-xs font-black uppercase tracking-widest opacity-90">
+                    <span className="text-[10px] sm:text-xs font-black uppercase tracking-widest text-blue-900/60">
                       Total Collected
                     </span>
                   </div>
                   {isLoading ? (
-                    <div className="h-8 w-32 bg-white/20 rounded animate-pulse mb-1" />
+                    <div className="h-8 w-32 bg-blue-100/50 rounded animate-pulse mb-1" />
                   ) : (
-                    <p className="text-xl sm:text-2xl lg:text-2xl xl:text-3xl font-black break-words">
+                    <p className="text-xl sm:text-2xl lg:text-2xl xl:text-3xl font-black text-blue-950 break-words">
                       {formatCurrency(summary.totalCollected)}
                     </p>
                   )}
-                  <p className="text-[10px] sm:text-xs font-medium mt-1 opacity-80">
+                  <p className="text-[10px] sm:text-xs font-medium mt-1 text-blue-700/80">
                     Gross incoming payments
                   </p>
                 </div>
               </div>
 
               {/* Total Refunds */}
-              <div className="col-span-1 sm:col-span-2 lg:col-span-1 bg-gradient-to-br from-rose-500 to-rose-600 rounded-2xl p-4 sm:p-5 shadow-lg shadow-rose-500/20 text-white relative overflow-hidden group hover:scale-[1.02] transition-transform duration-300">
-                <div className="absolute top-0 right-0 w-24 h-24 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2 group-hover:scale-110 transition-transform duration-500" />
+              <div className="col-span-1 sm:col-span-2 lg:col-span-1 bg-rose-50/50 rounded-2xl p-4 sm:p-5 border border-rose-100 shadow-sm shadow-rose-100/20 relative overflow-hidden group hover:shadow-md transition-all duration-300">
+                <div className="absolute top-0 right-0 w-24 h-24 bg-rose-100/50 rounded-full -translate-y-1/2 translate-x-1/2 group-hover:scale-110 transition-transform duration-500" />
                 <div className="relative z-10">
                   <div className="flex items-center gap-3 mb-3">
-                    <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center backdrop-blur-sm">
-                      <TrendingDown className="w-4 h-4 text-white" />
+                    <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center shadow-sm">
+                      <TrendingDown className="w-4 h-4 text-rose-600" />
                     </div>
-                    <span className="text-[10px] sm:text-xs font-black uppercase tracking-widest opacity-90">
+                    <span className="text-[10px] sm:text-xs font-black uppercase tracking-widest text-rose-900/60">
                       Total Refunds
                     </span>
                   </div>
                   {isLoading ? (
-                    <div className="h-8 w-32 bg-white/20 rounded animate-pulse mb-1" />
+                    <div className="h-8 w-32 bg-rose-100/50 rounded animate-pulse mb-1" />
                   ) : (
-                    <p className="text-xl sm:text-2xl lg:text-2xl xl:text-3xl font-black break-words">
+                    <p className="text-xl sm:text-2xl lg:text-2xl xl:text-3xl font-black text-rose-950 break-words">
                       {formatCurrency(summary.totalRefunded)}
                     </p>
                   )}
-                  <p className="text-[10px] sm:text-xs font-medium mt-1 opacity-80">
+                  <p className="text-[10px] sm:text-xs font-medium mt-1 text-rose-700/80">
                     Total returned to patients
                   </p>
                 </div>
               </div>
 
               {/* Active Shifts */}
-              <div className="col-span-1 sm:col-span-2 lg:col-span-1 bg-gradient-to-br from-violet-500 to-violet-600 rounded-2xl p-4 sm:p-5 shadow-lg shadow-violet-500/20 text-white relative overflow-hidden group hover:scale-[1.02] transition-transform duration-300">
-                <div className="absolute top-0 right-0 w-24 h-24 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2 group-hover:scale-110 transition-transform duration-500" />
+              <div className="col-span-1 sm:col-span-2 lg:col-span-1 bg-violet-50/50 rounded-2xl p-4 sm:p-5 border border-violet-100 shadow-sm shadow-violet-100/20 relative overflow-hidden group hover:shadow-md transition-all duration-300">
+                <div className="absolute top-0 right-0 w-24 h-24 bg-violet-100/50 rounded-full -translate-y-1/2 translate-x-1/2 group-hover:scale-110 transition-transform duration-500" />
                 <div className="relative z-10">
                   <div className="flex items-center gap-3 mb-3">
-                    <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center backdrop-blur-sm">
-                      <Users className="w-4 h-4 text-white" />
+                    <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center shadow-sm">
+                      <Users className="w-4 h-4 text-violet-600" />
                     </div>
-                    <span className="text-[10px] sm:text-xs font-black uppercase tracking-widest opacity-90">
+                    <span className="text-[10px] sm:text-xs font-black uppercase tracking-widest text-violet-900/60">
                       Active Shifts
                     </span>
                   </div>
                   {isLoading ? (
-                    <div className="h-8 w-16 bg-white/20 rounded animate-pulse mb-1" />
+                    <div className="h-8 w-16 bg-violet-100/50 rounded animate-pulse mb-1" />
                   ) : (
-                    <p className="text-xl sm:text-2xl lg:text-2xl xl:text-3xl font-black">
+                    <p className="text-xl sm:text-2xl lg:text-2xl xl:text-3xl font-black text-violet-950">
                       {summary.activeShiftsCount}
                     </p>
                   )}
 
-                  <div className="flex items-center gap-2 mt-1 opacity-80">
-                    <p className="text-[10px] sm:text-xs font-medium">
+                  <div className="flex items-center gap-2 mt-1">
+                    <p className="text-[10px] sm:text-xs font-medium text-violet-700/80">
                       Variance:
                     </p>
                     {isLoading ? (
-                      <div className="h-3 w-12 bg-white/20 rounded animate-pulse" />
+                      <div className="h-3 w-12 bg-white/50 rounded animate-pulse" />
                     ) : (
-                      <span className="text-[10px] sm:text-xs font-black bg-white/20 px-1.5 py-0.5 rounded">
+                      <span
+                        className={cn(
+                          "text-[10px] sm:text-xs font-black px-1.5 py-0.5 rounded shadow-sm",
+                          totalVariance === 0
+                            ? "bg-white text-emerald-600 ring-1 ring-emerald-100"
+                            : totalVariance > 0
+                            ? "bg-white text-blue-600 ring-1 ring-blue-100"
+                            : "bg-white text-rose-600 ring-1 ring-rose-100"
+                        )}
+                      >
                         {totalVariance > 0 ? "+" : ""}
                         {formatCurrency(totalVariance)}
                       </span>
@@ -203,10 +214,10 @@ const CashTrackingPage = () => {
                         e.stopPropagation();
                         setShowVarianceHelp(!showVarianceHelp);
                       }}
-                      className="p-1 hover:bg-white/20 rounded-full transition-colors cursor-pointer -ml-1"
+                      className="p-1 hover:bg-gray-100 rounded-full transition-colors cursor-pointer -ml-1"
                       aria-label="What is variance?"
                     >
-                      <HelpCircle className="w-3 h-3 text-white/70 hover:text-white" />
+                      <HelpCircle className="w-3 h-3 text-gray-400 hover:text-gray-600" />
                     </button>
                   </div>
                 </div>

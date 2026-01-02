@@ -257,6 +257,7 @@ export function CalendarWithMonthYearPicker({
     setDisplayDate(newDate);
   };
 
+
   return (
     <div className="overflow-hidden">
       <AnimatePresence mode="wait" initial={false}>
@@ -278,7 +279,7 @@ export function CalendarWithMonthYearPicker({
                 variant="ghost"
                 size="sm"
                 onClick={() => setView("years")}
-                className="text-xs font-bold text-fnh-navy hover:bg-fnh-porcelain px-3 py-2 rounded-lg transition-colors"
+                className="text-xs font-bold text-slate-900 hover:bg-gray-100 px-3 py-2 rounded-lg transition-colors"
               >
                 {currentYear}
               </Button>
@@ -296,8 +297,8 @@ export function CalendarWithMonthYearPicker({
                   className={cn(
                     "text-xs font-bold px-4 py-3 rounded-xl transition-all duration-200",
                     currentMonth === index
-                      ? "bg-fnh-yellow text-fnh-navy shadow-xs"
-                      : "bg-fnh-porcelain/50 text-fnh-navy hover:bg-fnh-porcelain"
+                      ? "bg-yellow-300 text-slate-900 shadow-xs"
+                      : "bg-gray-50 text-slate-900 hover:bg-gray-100"
                   )}
                 >
                   {month.slice(0, 3)}
@@ -325,20 +326,20 @@ export function CalendarWithMonthYearPicker({
                 variant="ghost"
                 size="sm"
                 onClick={handlePrevYearRange}
-                className="p-2 rounded-lg hover:bg-fnh-porcelain transition-colors"
+                className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
               >
-                <ChevronLeftIcon className="h-4 w-4 text-fnh-navy" />
+                <ChevronLeftIcon className="h-4 w-4 text-slate-900" />
               </Button>
-              <div className="text-xs font-bold text-fnh-navy">
+              <div className="text-xs font-bold text-slate-900">
                 {yearRange[0]} - {yearRange[yearRange.length - 1]}
               </div>
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={handleNextYearRange}
-                className="p-2 rounded-lg hover:bg-fnh-porcelain transition-colors"
+                className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
               >
-                <ChevronRightIcon className="h-4 w-4 text-fnh-navy" />
+                <ChevronRightIcon className="h-4 w-4 text-slate-900" />
               </Button>
             </div>
             <div className="grid grid-cols-4 gap-3">
@@ -351,8 +352,8 @@ export function CalendarWithMonthYearPicker({
                   className={cn(
                     "text-xs font-bold px-4 py-3 rounded-xl transition-all duration-200",
                     currentYear === year
-                      ? "bg-fnh-yellow text-fnh-navy shadow-xs"
-                      : "bg-fnh-porcelain/50 text-fnh-navy hover:bg-fnh-porcelain"
+                      ? "bg-yellow-300 text-slate-900 shadow-xs"
+                      : "bg-gray-50 text-slate-900 hover:bg-gray-100"
                   )}
                 >
                   {year}
@@ -364,7 +365,7 @@ export function CalendarWithMonthYearPicker({
                 variant="ghost"
                 size="sm"
                 onClick={() => setView("months")}
-                className="text-xs font-bold text-gray-400 hover:text-fnh-navy transition-colors"
+                className="text-xs font-bold text-gray-400 hover:text-slate-900 transition-colors"
               >
                 Back to Months
               </Button>
@@ -385,12 +386,12 @@ export function CalendarWithMonthYearPicker({
               className
             )}
           >
-            <div className="flex items-center justify-between px-4 sm:px-6 py-4 bg-linear-to-r from-fnh-porcelain/30 to-white border-b border-gray-100">
+            <div className="flex items-center justify-between px-4 sm:px-6 py-4 bg-gradient-to-r from-gray-50 to-white border-b border-gray-100">
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => setView("months")}
-                className="text-xs font-black text-fnh-navy hover:bg-fnh-porcelain px-4 py-2 rounded-lg transition-all duration-200"
+                className="text-xs font-black text-slate-900 hover:bg-gray-100 px-4 py-2 rounded-lg transition-all duration-200"
               >
                 {MONTHS[currentMonth]} {currentYear}
               </Button>
@@ -403,9 +404,9 @@ export function CalendarWithMonthYearPicker({
                     newDate.setMonth(currentMonth - 1);
                     setDisplayDate(newDate);
                   }}
-                  className="p-2 rounded-lg hover:bg-fnh-porcelain transition-colors"
+                  className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
                 >
-                  <ChevronLeftIcon className="h-4 w-4 text-fnh-navy" />
+                  <ChevronLeftIcon className="h-4 w-4 text-slate-900" />
                 </Button>
                 <Button
                   variant="ghost"
@@ -415,9 +416,9 @@ export function CalendarWithMonthYearPicker({
                     newDate.setMonth(currentMonth + 1);
                     setDisplayDate(newDate);
                   }}
-                  className="p-2 rounded-lg hover:bg-fnh-porcelain transition-colors"
+                  className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
                 >
-                  <ChevronRightIcon className="h-4 w-4 text-fnh-navy" />
+                  <ChevronRightIcon className="h-4 w-4 text-slate-900" />
                 </Button>
               </div>
             </div>
@@ -458,24 +459,24 @@ export function CalendarWithMonthYearPicker({
                   ? {
                       range_start: {
                         backgroundColor: "#fbbf24",
-                        color: "#1e293b",
+                        color: "#0f172a",
                         fontWeight: "700",
                       },
                       range_end: {
                         backgroundColor: "#fbbf24",
-                        color: "#1e293b",
+                        color: "#0f172a",
                         fontWeight: "700",
                       },
                       range_middle: {
                         backgroundColor: "rgba(251, 191, 36, 0.1)",
-                        color: "#1e293b",
+                        color: "#0f172a",
                       },
                     }
                   : selectedRange?.from
                   ? {
                       range_start: {
                         backgroundColor: "#fbbf24",
-                        color: "#1e293b",
+                        color: "#0f172a",
                         fontWeight: "700",
                       },
                     }
