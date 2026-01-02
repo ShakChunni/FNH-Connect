@@ -7,27 +7,23 @@ export const modalVariants: Variants = {
     opacity: 0,
     scale: 0.95,
     y: 10, // Slight slide up
-    filter: "blur(4px)",
   },
   visible: {
     opacity: 1,
     scale: 1,
     y: 0,
-    filter: "blur(0px)",
     transition: {
       type: "spring",
       damping: 25,
       stiffness: 300,
       mass: 0.8,
       opacity: { duration: 0.2, ease: "easeOut" },
-      filter: { duration: 0.2, ease: "easeOut" },
     },
   },
   exit: {
     opacity: 0,
     scale: 0.95,
     y: 10,
-    filter: "blur(4px)",
     transition: {
       duration: 0.2,
       ease: "easeInOut",
@@ -43,11 +39,13 @@ export const backdropVariants: Variants = {
     // Since opacity is 0, it remains invisible, but this prevents the browser
     // from interpolating "transparent" -> "rgba(0,0,0,0.2)" which causes the snap.
     background: "rgba(0, 0, 0, 0.2)",
+    transform: "translateZ(0)", // Force hardware acceleration
   },
   visible: {
     opacity: 1,
     backdropFilter: "blur(4px)",
     background: "rgba(0, 0, 0, 0.2)",
+    transform: "translateZ(0)", // Force hardware acceleration
     willChange: "opacity, backdrop-filter",
     transition: {
       duration: 0.3,
@@ -58,6 +56,7 @@ export const backdropVariants: Variants = {
     opacity: 0,
     backdropFilter: "blur(0px)",
     background: "rgba(0, 0, 0, 0.2)",
+    transform: "translateZ(0)",
     transition: {
       duration: 0.2,
       ease: "easeIn",

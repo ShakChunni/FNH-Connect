@@ -9,7 +9,7 @@ import {
   DoctorFilter,
   StatusFilter,
   DateRangeFilter,
-  TestCategoryFilter,
+  TestFilter,
 } from "./components";
 
 /**
@@ -102,7 +102,7 @@ export const Filters: React.FC = () => {
             aria-labelledby="filter-panel-title"
           >
             {/* Header */}
-            <div className="flex items-center justify-between px-6 py-5 bg-gradient-to-r from-fnh-navy-dark to-fnh-navy">
+            <div className="flex items-center justify-between px-6 py-5 bg-linear-to-r from-fnh-navy-dark to-fnh-navy">
               <div className="flex items-center gap-3">
                 <div className="p-2.5 bg-white/15 rounded-xl backdrop-blur-sm">
                   <SlidersHorizontal className="w-5 h-5 text-white" />
@@ -143,8 +143,8 @@ export const Filters: React.FC = () => {
               {/* Date Range Filter */}
               <DateRangeFilter />
 
-              {/* Test Category Filter */}
-              <TestCategoryFilter />
+              {/* Test Filter */}
+              <TestFilter />
             </div>
 
             {/* Footer */}
@@ -169,7 +169,7 @@ export const Filters: React.FC = () => {
                 <button
                   onClick={closeFilterPanel}
                   className="flex-1 px-4 py-3
-                    bg-gradient-to-r from-fnh-navy-dark to-fnh-navy rounded-xl
+                    bg-linear-to-r from-fnh-navy-dark to-fnh-navy rounded-xl
                     text-sm font-semibold text-white
                     hover:from-fnh-navy hover:to-fnh-navy-light
                     shadow-lg hover:shadow-xl

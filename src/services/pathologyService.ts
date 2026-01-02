@@ -21,6 +21,7 @@ export interface PathologyFilters {
   isCompleted?: boolean;
   testCategory?: string;
   testCategories?: string[]; // Multi-select categories
+  testNames?: string[]; // Multi-select test names
   orderedById?: number; // Filter by ordering doctor
   doneById?: number; // Filter by performing staff
   page?: number;
@@ -83,18 +84,34 @@ export async function getPathologyPatients(filters: PathologyFilters) {
 
   // Search filter - search by patient name, phone, or test number
   if (filters.search) {
-    where.OR = [
-      {
-        patient: {
-          OR: [
-            { fullName: { contains: filters.search, mode: "insensitive" } },
-            { phoneNumber: { contains: filters.search } },
-            { email: { contains: filters.search, mode: "insensitive" } },
-          ],
+    if (!where.AND) where.AND = [];
+    (where.AND as Prisma.PathologyTestWhereInput[]).push({
+      OR: [
+        {
+          patient: {
+            OR: [
+              { fullName: { contains: filters.search, mode: "insensitive" } },
+              { phoneNumber: { contains: filters.search } },
+              { email: { contains: filters.search, mode: "insensitive" } },
+            ],
+          },
         },
-      },
-      { testNumber: { contains: filters.search } },
-    ];
+        { testNumber: { contains: filters.search } },
+      ],
+    });
+  }
+
+  // Test names filter (JSON check)
+  if (filters.testNames && filters.testNames.length > 0) {
+    if (!where.AND) where.AND = [];
+    (where.AND as Prisma.PathologyTestWhereInput[]).push({
+      OR: filters.testNames.map((name) => ({
+        testResults: {
+          path: ["tests"],
+          array_contains: [name],
+        },
+      })),
+    });
   }
 
   // Date range filter - filter by testDate

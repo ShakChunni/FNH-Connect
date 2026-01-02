@@ -28,7 +28,7 @@ export const FilterTriggerButton: React.FC<FilterTriggerButtonProps> = ({
     if (filters.orderedById !== null) count++;
     if (filters.status !== "All") count++;
     if (filters.dateRange !== "all") count++;
-    if (filters.testCategories.length > 0) count++;
+    if (filters.testNames.length > 0) count++;
     if (filters.search !== "") count++;
     return count;
   }, [filters]);

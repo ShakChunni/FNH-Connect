@@ -33,6 +33,7 @@ export async function GET(request: NextRequest) {
       isCompleted: searchParams.get("isCompleted") || undefined,
       testCategory: searchParams.get("testCategory") || undefined,
       testCategories: searchParams.get("testCategories") || undefined,
+      testNames: searchParams.get("testNames") || undefined,
       orderedById: searchParams.get("orderedById") || undefined,
       doneById: searchParams.get("doneById") || undefined,
       page: searchParams.get("page") || "1",

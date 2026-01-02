@@ -5,6 +5,7 @@
 
 // Data fetching hooks
 export { useFetchAdmissions } from "./useFetchAdmissions";
+export { useFetchAdmissionsReportData } from "./useFetchAdmissionsReportData";
 export { useFetchDepartments } from "./useFetchDepartments";
 export { useFetchDoctors } from "./useFetchDoctors";
 export { useFetchHospitalInformation } from "./useFetchHospitalInformation";

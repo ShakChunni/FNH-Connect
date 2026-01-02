@@ -8,4 +8,4 @@ export { ExportActionBar } from "./ExportActionBar";
 export { DoctorFilter } from "./DoctorFilter";
 export { StatusFilter } from "./StatusFilter";
 export { DateRangeFilter } from "./DateRangeFilter";
-export { TestCategoryFilter } from "./TestCategoryFilter";
+export { TestFilter } from "./TestFilter";
