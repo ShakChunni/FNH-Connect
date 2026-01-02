@@ -544,13 +544,22 @@ export async function updatePathologyPatient(
 
       if (paidAmountDiff > 0) {
         // ADDITIONAL COLLECTION
+        // First, we need to get the correct patientAccountId (NOT patientId)
+        const patientAccountForPayment = await tx.patientAccount.findUnique({
+          where: { patientId: existingRecord.patientId },
+        });
+
+        if (!patientAccountForPayment) {
+          throw new Error("Patient account not found for payment recording");
+        }
+
         // Generate receipt number
         const paymentCount = await tx.payment.count();
         const receiptNumber = `RCP-${Date.now()}-${paymentCount + 1}`;
 
         const payment = await tx.payment.create({
           data: {
-            patientAccountId: existingRecord.patientId, // Note: We need patientAccountId, fetch it below or use relation
+            patientAccountId: patientAccountForPayment.id, // Use the correct PatientAccount ID
             amount: new Prisma.Decimal(paidAmountDiff),
             paymentMethod: "Cash",
             collectedById: staffId,
