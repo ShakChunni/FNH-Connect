@@ -54,7 +54,11 @@ const TableRow: React.FC<TableRowProps> = ({
 
   const formatDate = (dateStr: string | null) => {
     if (!dateStr) return "N/A";
-    return new Date(dateStr).toLocaleDateString("en-BD");
+    return new Date(dateStr).toLocaleDateString("en-GB", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    });
   };
 
   const handleStatusToggle = () => {

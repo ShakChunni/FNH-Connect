@@ -38,7 +38,7 @@ export const ReportTriggerButton: React.FC<ReportTriggerButtonProps> = ({
         ref={buttonRef}
         onClick={() => setIsOpen(!isOpen)}
         disabled={disabled}
-        className="relative flex items-center justify-center gap-2 h-full px-4 sm:px-5 
+        className="relative flex items-center justify-center gap-2 h-full w-full sm:w-auto px-4 sm:px-5 
           bg-white border border-gray-200 rounded-full
           text-gray-600 text-sm font-medium
           hover:bg-gray-50 hover:border-fnh-blue hover:text-fnh-blue
@@ -48,7 +48,7 @@ export const ReportTriggerButton: React.FC<ReportTriggerButtonProps> = ({
         aria-label="Generate reports"
       >
         <FileText className="w-4 h-4 sm:w-5 sm:h-5" />
-        <span className="hidden sm:inline">Report</span>
+        <span>Report</span>
       </button>
 
       <DropdownPortal

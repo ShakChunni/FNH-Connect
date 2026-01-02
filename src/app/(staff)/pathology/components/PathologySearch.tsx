@@ -223,13 +223,71 @@ export const PathologySearch: React.FC<PathologySearchProps> = ({
       className="w-full max-w-4xl mx-auto"
       style={{ pointerEvents: disabled ? "none" : "auto" }}
     >
-      <div className="flex items-center gap-2 sm:gap-3">
+      {/* Mobile Layout: Stacked */}
+      <div className="flex flex-col gap-3 sm:hidden">
+        {/* Search Bar - Full Width on Mobile */}
+        <div
+          className={`
+            flex items-center w-full
+            bg-white border rounded-full 
+            h-11
+            transition-all duration-300 ease-out
+            ${
+              isFocused
+                ? "border-fnh-blue shadow-[0_0_0_3px_rgba(59,130,246,0.12),0_0_16px_rgba(59,130,246,0.08)] ring-1 ring-fnh-blue/20"
+                : "border-gray-200 shadow-sm hover:shadow-md hover:border-gray-300"
+            }
+          `}
+        >
+          <div className="flex-1 min-w-0 h-full">
+            <div className="relative flex items-center h-full">
+              <Search
+                className={`absolute left-3 w-4 h-4 pointer-events-none transition-colors duration-200 ${
+                  isFocused ? "text-fnh-blue" : "text-gray-400"
+                }`}
+              />
+              <input
+                type="text"
+                value={searchValue}
+                onChange={(e) => handleSearchChange(e.target.value)}
+                onFocus={() => setIsFocused(true)}
+                onBlur={() => setIsFocused(false)}
+                placeholder="Search patient, test number, phone..."
+                className="w-full h-full pl-10 pr-4 bg-transparent border-0 
+                  focus:ring-0 focus:outline-none 
+                  text-gray-700 text-xs 
+                  placeholder:text-gray-400 placeholder:text-xs
+                  rounded-full"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Report & Filter Buttons - 50/50 on Mobile */}
+        <div className="flex gap-2 w-full">
+          <div className="flex-1 h-11">
+            <ReportTriggerButton
+              disabled={disabled || isGeneratingReport}
+              onGenerateSummary={handleGenerateSummary}
+              onGenerateDetailed={handleGenerateDetailed}
+              onGenerateFinancial={handleGenerateFinancial}
+              onExportCSV={handleExportCSV}
+            />
+          </div>
+          <div className="flex-1 h-11">
+            <FilterTriggerButton disabled={disabled} />
+          </div>
+        </div>
+      </div>
+
+      {/* Desktop Layout: Inline */}
+      <div className="hidden sm:flex items-center gap-3">
         {/* Main Search Bar Container */}
         <div
           className={`
             flex items-center flex-1 min-w-0
             bg-white border rounded-full 
-            h-11 sm:h-14
+            h-14
             transition-all duration-300 ease-out
             ${
               isFocused
@@ -242,7 +300,7 @@ export const PathologySearch: React.FC<PathologySearchProps> = ({
           <div className="flex-1 min-w-0 h-full">
             <div className="relative flex items-center h-full">
               <Search
-                className={`absolute left-3 sm:left-4 w-4 h-4 sm:w-5 sm:h-5 pointer-events-none transition-colors duration-200 ${
+                className={`absolute left-4 w-5 h-5 pointer-events-none transition-colors duration-200 ${
                   isFocused ? "text-fnh-blue" : "text-gray-400"
                 }`}
               />
@@ -253,10 +311,10 @@ export const PathologySearch: React.FC<PathologySearchProps> = ({
                 onFocus={() => setIsFocused(true)}
                 onBlur={() => setIsFocused(false)}
                 placeholder="Search patient, test number, phone..."
-                className="w-full h-full pl-10 sm:pl-12 pr-4 bg-transparent border-0 
+                className="w-full h-full pl-12 pr-4 bg-transparent border-0 
                   focus:ring-0 focus:outline-none 
-                  text-gray-700 text-xs sm:text-base 
-                  placeholder:text-gray-400 placeholder:text-xs sm:placeholder:text-sm
+                  text-gray-700 text-base 
+                  placeholder:text-gray-400 placeholder:text-sm
                   rounded-full"
               />
             </div>
@@ -264,7 +322,7 @@ export const PathologySearch: React.FC<PathologySearchProps> = ({
         </div>
 
         {/* Report Trigger Button */}
-        <div className="shrink-0 h-11 sm:h-14 flex items-center">
+        <div className="shrink-0 h-14 flex items-center">
           <ReportTriggerButton
             disabled={disabled || isGeneratingReport}
             onGenerateSummary={handleGenerateSummary}
@@ -275,7 +333,7 @@ export const PathologySearch: React.FC<PathologySearchProps> = ({
         </div>
 
         {/* Filter Trigger Button */}
-        <div className="shrink-0 h-11 sm:h-14 flex items-center">
+        <div className="shrink-0 h-14 flex items-center">
           <FilterTriggerButton disabled={disabled} />
         </div>
       </div>

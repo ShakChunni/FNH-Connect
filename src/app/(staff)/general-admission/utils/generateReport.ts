@@ -248,7 +248,7 @@ export const generateAdmissionsReport = async (
   doc.text("Key Performance Metrics", margin, currentY);
   currentY += 6;
 
-  // Row 1: 4 boxes
+  // Row 1: 4 boxes - Patient & Status Stats
   const boxWidth = (pageWidth - margin * 2 - 15) / 4;
   const boxHeight = 25;
   const boxGap = 5;
@@ -269,63 +269,19 @@ export const generateAdmissionsReport = async (
     currentY,
     boxWidth,
     boxHeight,
-    "Total Revenue",
-    `BDT ${totalRevenue.toLocaleString()}`,
-    COLORS.primary
-  );
-  drawMetricBox(
-    doc,
-    margin + (boxWidth + boxGap) * 2,
-    currentY,
-    boxWidth,
-    boxHeight,
-    "Collected",
-    `BDT ${totalCollected.toLocaleString()}`,
-    COLORS.success
-  );
-  drawMetricBox(
-    doc,
-    margin + (boxWidth + boxGap) * 3,
-    currentY,
-    boxWidth,
-    boxHeight,
-    "Outstanding Due",
-    `BDT ${totalDue.toLocaleString()}`,
-    COLORS.warning
-  );
-
-  currentY += boxHeight + 5;
-
-  // Row 2: 4 boxes
-  drawMetricBox(
-    doc,
-    margin,
-    currentY,
-    boxWidth,
-    boxHeight,
-    "Collection Rate",
-    `${collectionRate}%`,
-    COLORS.accent
-  );
-  drawMetricBox(
-    doc,
-    margin + boxWidth + boxGap,
-    currentY,
-    boxWidth,
-    boxHeight,
-    "Avg. Per Patient",
-    `BDT ${avgPerPatient.toLocaleString()}`,
-    COLORS.primary
-  );
-  drawMetricBox(
-    doc,
-    margin + (boxWidth + boxGap) * 2,
-    currentY,
-    boxWidth,
-    boxHeight,
     "Currently Admitted",
     admittedCount.toString(),
     COLORS.accent
+  );
+  drawMetricBox(
+    doc,
+    margin + (boxWidth + boxGap) * 2,
+    currentY,
+    boxWidth,
+    boxHeight,
+    "Under Treatment",
+    underTreatmentCount.toString(),
+    COLORS.warning
   );
   drawMetricBox(
     doc,
@@ -336,6 +292,50 @@ export const generateAdmissionsReport = async (
     "Discharged",
     dischargedCount.toString(),
     COLORS.success
+  );
+
+  currentY += boxHeight + 5;
+
+  // Row 2: Financial metrics
+  drawMetricBox(
+    doc,
+    margin,
+    currentY,
+    boxWidth,
+    boxHeight,
+    "Total Revenue",
+    `BDT ${totalRevenue.toLocaleString()}`,
+    COLORS.primary
+  );
+  drawMetricBox(
+    doc,
+    margin + boxWidth + boxGap,
+    currentY,
+    boxWidth,
+    boxHeight,
+    "Amount Collected",
+    `BDT ${totalCollected.toLocaleString()}`,
+    COLORS.success
+  );
+  drawMetricBox(
+    doc,
+    margin + (boxWidth + boxGap) * 2,
+    currentY,
+    boxWidth,
+    boxHeight,
+    "Outstanding Due",
+    `BDT ${totalDue.toLocaleString()}`,
+    COLORS.warning
+  );
+  drawMetricBox(
+    doc,
+    margin + (boxWidth + boxGap) * 3,
+    currentY,
+    boxWidth,
+    boxHeight,
+    "Collection Rate",
+    `${collectionRate}%`,
+    COLORS.accent
   );
 
   currentY += boxHeight + 10;

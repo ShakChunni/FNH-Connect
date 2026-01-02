@@ -203,13 +203,14 @@ export const AdmissionSearch: React.FC<AdmissionSearchProps> = ({
       className="w-full max-w-4xl mx-auto"
       style={{ pointerEvents: disabled ? "none" : "auto" }}
     >
-      <div className="flex items-center gap-2 sm:gap-3">
-        {/* Main Search Bar Container */}
+      {/* Mobile Layout: Stacked */}
+      <div className="flex flex-col gap-3 sm:hidden">
+        {/* Search Bar - Full Width on Mobile */}
         <div
           className={`
-            flex items-center flex-1 min-w-0
+            flex items-center w-full
             bg-white border rounded-full 
-            h-11 sm:h-14
+            h-11
             transition-all duration-300 ease-out
             ${
               isFocused
@@ -218,26 +219,76 @@ export const AdmissionSearch: React.FC<AdmissionSearchProps> = ({
             }
           `}
         >
-          {/* Left: Department Dropdown - hidden on mobile, shown on sm+ */}
-          <div className="relative shrink-0 h-full hidden sm:block">
+          <div className="flex-1 min-w-0 h-full">
+            <div className="relative flex items-center h-full">
+              <Search
+                className={`absolute left-3 w-4 h-4 pointer-events-none transition-colors duration-200 ${
+                  isFocused ? "text-fnh-blue" : "text-gray-400"
+                }`}
+              />
+              <input
+                type="text"
+                value={searchValue}
+                onChange={(e) => handleSearchChange(e.target.value)}
+                onFocus={() => setIsFocused(true)}
+                onBlur={() => setIsFocused(false)}
+                placeholder="Search patient, phone..."
+                className="w-full h-full pl-10 pr-4 bg-transparent border-0 
+                  focus:ring-0 focus:outline-none 
+                  text-gray-700 text-xs 
+                  placeholder:text-gray-400 placeholder:text-xs
+                  rounded-full"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Report & Filter Buttons - 50/50 on Mobile */}
+        <div className="flex gap-2 w-full">
+          <div className="flex-1 h-11">
+            <ReportTriggerButton
+              disabled={disabled || isGeneratingReport}
+              onGenerateSummary={handleGenerateSummary}
+              onGenerateDetailed={handleGenerateDetailed}
+              onExportExcel={handleExportExcel}
+            />
+          </div>
+          <div className="flex-1 h-11">
+            <FilterTriggerButton disabled={disabled} />
+          </div>
+        </div>
+      </div>
+
+      {/* Desktop Layout: Inline */}
+      <div className="hidden sm:flex items-center gap-3">
+        {/* Main Search Bar Container */}
+        <div
+          className={`
+            flex items-center flex-1 min-w-0
+            bg-white border rounded-full 
+            h-14
+            transition-all duration-300 ease-out
+            ${
+              isFocused
+                ? "border-fnh-blue shadow-[0_0_0_3px_rgba(59,130,246,0.12),0_0_16px_rgba(59,130,246,0.08)] ring-1 ring-fnh-blue/20"
+                : "border-gray-200 shadow-sm hover:shadow-md hover:border-gray-300"
+            }
+          `}
+        >
+          {/* Left: Department Dropdown */}
+          <div className="relative shrink-0 h-full">
             <button
               ref={departmentButtonRef}
               onClick={() => setIsDepartmentOpen(!isDepartmentOpen)}
-              className="flex items-center gap-1 sm:gap-2 h-full px-2.5 sm:px-5 
-                bg-fnh-navy-dark rounded-l-full text-white text-[10px] sm:text-sm font-medium 
+              className="flex items-center gap-2 h-full px-5 
+                bg-fnh-navy-dark rounded-l-full text-white text-sm font-medium 
                 hover:bg-fnh-navy transition-colors duration-200 
-                min-w-[70px] sm:min-w-[140px] max-w-[100px] sm:max-w-[180px]
+                min-w-[140px] max-w-[180px]
                 justify-between cursor-pointer border-r border-fnh-navy-light/30"
             >
-              {/* Show short label on mobile, full on sm+ */}
-              <span className="truncate sm:hidden">
-                {selectedDepartmentLabel.slice(0, 8)}
-              </span>
-              <span className="truncate hidden sm:inline">
-                {selectedDepartmentLabelFull}
-              </span>
+              <span className="truncate">{selectedDepartmentLabelFull}</span>
               <ChevronDown
-                className={`w-3 h-3 sm:w-4 sm:h-4 transition-transform duration-200 shrink-0 ${
+                className={`w-4 h-4 transition-transform duration-200 shrink-0 ${
                   isDepartmentOpen ? "rotate-180" : ""
                 }`}
               />
@@ -284,7 +335,7 @@ export const AdmissionSearch: React.FC<AdmissionSearchProps> = ({
           <div className="flex-1 min-w-0 h-full">
             <div className="relative flex items-center h-full">
               <Search
-                className={`absolute left-2 sm:left-4 w-4 h-4 sm:w-5 sm:h-5 pointer-events-none transition-colors duration-200 ${
+                className={`absolute left-4 w-5 h-5 pointer-events-none transition-colors duration-200 ${
                   isFocused ? "text-fnh-blue" : "text-gray-400"
                 }`}
               />
@@ -295,18 +346,18 @@ export const AdmissionSearch: React.FC<AdmissionSearchProps> = ({
                 onFocus={() => setIsFocused(true)}
                 onBlur={() => setIsFocused(false)}
                 placeholder="Search patient, phone..."
-                className="w-full h-full pl-8 sm:pl-12 pr-2 sm:pr-4 bg-transparent border-0 
+                className="w-full h-full pl-12 pr-4 bg-transparent border-0 
                   focus:ring-0 focus:outline-none 
-                  text-gray-700 text-xs sm:text-base 
-                  placeholder:text-gray-400 placeholder:text-xs sm:placeholder:text-sm
-                  rounded-full sm:rounded-r-full sm:rounded-l-none"
+                  text-gray-700 text-base 
+                  placeholder:text-gray-400 placeholder:text-sm
+                  rounded-r-full"
               />
             </div>
           </div>
         </div>
 
         {/* Report Trigger Button */}
-        <div className="shrink-0 h-11 sm:h-14 flex items-center">
+        <div className="shrink-0 h-14 flex items-center">
           <ReportTriggerButton
             disabled={disabled || isGeneratingReport}
             onGenerateSummary={handleGenerateSummary}
@@ -316,7 +367,7 @@ export const AdmissionSearch: React.FC<AdmissionSearchProps> = ({
         </div>
 
         {/* Filter Trigger Button */}
-        <div className="shrink-0 h-11 sm:h-14 flex items-center">
+        <div className="shrink-0 h-14 flex items-center">
           <FilterTriggerButton disabled={disabled} />
         </div>
       </div>
