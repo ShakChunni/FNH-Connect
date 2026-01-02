@@ -33,6 +33,8 @@ export {
   usePathologyFilterPanelState,
   usePathologyFilterValues,
   usePathologyFilterActions,
+  usePathologyReportState,
+  usePathologyReportActions,
   getDateRangeFromOption,
 } from "./filterStore";
 export type {

@@ -20,6 +20,9 @@ export interface PathologyFilters {
   endDate?: string;
   isCompleted?: boolean;
   testCategory?: string;
+  testCategories?: string[]; // Multi-select categories
+  orderedById?: number; // Filter by ordering doctor
+  doneById?: number; // Filter by performing staff
   page?: number;
   limit?: number;
 }
@@ -110,9 +113,20 @@ export async function getPathologyPatients(filters: PathologyFilters) {
     where.isCompleted = filters.isCompleted;
   }
 
-  // Test category filter
-  if (filters.testCategory) {
+  // Test category filters (multi-select takes priority)
+  if (filters.testCategories && filters.testCategories.length > 0) {
+    where.testCategory = { in: filters.testCategories };
+  } else if (filters.testCategory) {
     where.testCategory = filters.testCategory;
+  }
+
+  // Doctor/Staff filters
+  if (filters.orderedById) {
+    where.orderedById = filters.orderedById;
+  }
+
+  if (filters.doneById) {
+    where.doneById = filters.doneById;
   }
 
   // Pagination defaults

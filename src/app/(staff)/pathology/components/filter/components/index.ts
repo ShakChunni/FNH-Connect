@@ -3,4 +3,9 @@
  */
 
 export { FilterTriggerButton } from "./FilterTriggerButton";
+export { ReportTriggerButton } from "./ReportTriggerButton";
 export { ExportActionBar } from "./ExportActionBar";
+export { DoctorFilter } from "./DoctorFilter";
+export { StatusFilter } from "./StatusFilter";
+export { DateRangeFilter } from "./DateRangeFilter";
+export { TestCategoryFilter } from "./TestCategoryFilter";

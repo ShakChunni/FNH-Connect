@@ -33,12 +33,25 @@ const PathologyManagement = React.memo(() => {
   const filterValues = usePathologyFilterValues();
   const setPage = usePathologyFilterStore((state) => state.setPage);
 
-  // Map filter store values to hook format
+  // Map filter store values to hook format - properly connect ALL filters
   const hookFilters: PathologyFilters = useMemo(
     () => ({
+      // Search filter (minimum 2 characters)
       search: filterValues.search.length >= 2 ? filterValues.search : undefined,
+      // Status filter - convert to API format
+      status: filterValues.status !== "All" ? filterValues.status : undefined,
+      // Date range filters
       startDate: filterValues.startDate?.toISOString(),
       endDate: filterValues.endDate?.toISOString(),
+      // Doctor filters
+      orderedById: filterValues.orderedById ?? undefined,
+      doneById: filterValues.doneById ?? undefined,
+      // Test category filters (multi-select)
+      testCategories:
+        filterValues.testCategories.length > 0
+          ? filterValues.testCategories
+          : undefined,
+      // Pagination
       page: filterValues.page,
       limit: filterValues.limit,
     }),
@@ -154,9 +167,9 @@ const PathologyManagement = React.memo(() => {
             />
           </div>
 
-          {/* Search Bar with Filter Button */}
+          {/* Search Bar with Filter and Report Buttons */}
           <div className="px-0 sm:px-2 lg:px-4 pb-2 sm:pb-4 lg:pb-6">
-            <PathologySearch disabled={isLoading} />
+            <PathologySearch disabled={isLoading} data={tableData} />
           </div>
 
           {/* Table Container */}
@@ -183,13 +196,16 @@ const PathologyManagement = React.memo(() => {
               />
             </div>
           )}
+
+          {/* Bottom spacing for floating bar */}
+          <div className="h-20" />
         </div>
       </div>
 
       {/* Filter Panel (Slide-out) */}
       <Filters />
 
-      {/* Export Action Bar (Floating) */}
+      {/* Export Action Bar (Floating) - Only shows when filters are active */}
       <ExportActionBar data={tableData} />
 
       {/* Add New Data Portal */}

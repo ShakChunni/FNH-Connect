@@ -32,6 +32,9 @@ export async function GET(request: NextRequest) {
       endDate: searchParams.get("endDate") || undefined,
       isCompleted: searchParams.get("isCompleted") || undefined,
       testCategory: searchParams.get("testCategory") || undefined,
+      testCategories: searchParams.get("testCategories") || undefined,
+      orderedById: searchParams.get("orderedById") || undefined,
+      doneById: searchParams.get("doneById") || undefined,
       page: searchParams.get("page") || "1",
       limit: searchParams.get("limit") || "15",
     });

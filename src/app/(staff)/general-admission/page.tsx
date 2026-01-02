@@ -158,7 +158,7 @@ const GeneralAdmissionPage = React.memo(() => {
 
           {/* Search Bar with Filter Button */}
           <div className="px-0 sm:px-2 lg:px-4 pb-2 sm:pb-4 lg:pb-6">
-            <AdmissionSearch disabled={isLoading} />
+            <AdmissionSearch disabled={isLoading} data={admissions} />
           </div>
 
           {/* Table Container */}

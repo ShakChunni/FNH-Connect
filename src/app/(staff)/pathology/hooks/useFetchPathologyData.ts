@@ -27,11 +27,12 @@ export function useFetchPathologyData(filters: PathologyFilters = {}) {
     queryFn: async (): Promise<PaginatedPathology> => {
       const params = new URLSearchParams();
 
-      // Add filters
+      // Search filter
       if (filters.search) {
         params.append("search", filters.search);
       }
 
+      // Date range filters
       if (filters.startDate) {
         params.append("startDate", filters.startDate);
       }
@@ -40,15 +41,34 @@ export function useFetchPathologyData(filters: PathologyFilters = {}) {
         params.append("endDate", filters.endDate);
       }
 
-      if (filters.isCompleted !== undefined) {
+      // Status filter - convert to isCompleted for API
+      if (filters.status && filters.status !== "All") {
+        params.append(
+          "isCompleted",
+          (filters.status === "Completed").toString()
+        );
+      } else if (filters.isCompleted !== undefined) {
         params.append("isCompleted", filters.isCompleted.toString());
       }
 
-      if (filters.testCategory) {
+      // Test category filters (multi-select)
+      if (filters.testCategories && filters.testCategories.length > 0) {
+        params.append("testCategories", filters.testCategories.join(","));
+      } else if (filters.testCategory) {
+        // Legacy single category support
         params.append("testCategory", filters.testCategory);
       }
 
-      // Add pagination
+      // Doctor/Staff filters
+      if (filters.orderedById) {
+        params.append("orderedById", filters.orderedById.toString());
+      }
+
+      if (filters.doneById) {
+        params.append("doneById", filters.doneById.toString());
+      }
+
+      // Pagination
       if (filters.page) {
         params.append("page", filters.page.toString());
       }

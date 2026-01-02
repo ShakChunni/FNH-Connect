@@ -196,7 +196,11 @@ export interface PathologyFilters {
   startDate?: string; // ISO date string
   endDate?: string; // ISO date string
   isCompleted?: boolean;
-  testCategory?: string;
+  status?: "Completed" | "Pending" | "All"; // New: status filter
+  testCategory?: string; // Legacy single category
+  testCategories?: string[]; // New: multi-select categories
+  orderedById?: number; // New: filter by ordering doctor
+  doneById?: number; // New: filter by performing staff
   page?: number;
   limit?: number;
 }

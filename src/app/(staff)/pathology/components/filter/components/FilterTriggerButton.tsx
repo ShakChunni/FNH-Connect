@@ -9,52 +9,53 @@ interface FilterTriggerButtonProps {
 }
 
 /**
- * Filter Trigger Button - opens the filter panel
+ * Filter Trigger Button
+ * Opens the filter panel, shows active filter count badge
  */
 export const FilterTriggerButton: React.FC<FilterTriggerButtonProps> = ({
   disabled = false,
 }) => {
-  const toggleFilterPanel = usePathologyFilterStore(
-    (state) => state.toggleFilterPanel
-  );
-  const getActiveFilterCount = usePathologyFilterStore(
-    (state) => state.getActiveFilterCount
+  const openFilterPanel = usePathologyFilterStore(
+    (state) => state.openFilterPanel
   );
 
-  const activeCount = getActiveFilterCount();
+  // Subscribe to actual filter values to ensure reactivity
+  const filters = usePathologyFilterStore((state) => state.filters);
+
+  // Calculate active count from filters
+  const activeCount = React.useMemo(() => {
+    let count = 0;
+    if (filters.orderedById !== null) count++;
+    if (filters.status !== "All") count++;
+    if (filters.dateRange !== "all") count++;
+    if (filters.testCategories.length > 0) count++;
+    if (filters.search !== "") count++;
+    return count;
+  }, [filters]);
 
   return (
     <button
-      onClick={toggleFilterPanel}
+      onClick={openFilterPanel}
       disabled={disabled}
-      className={`
-        relative h-full px-4 sm:px-5
-        flex items-center justify-center gap-2
-        rounded-full
-        font-medium text-sm
-        transition-all duration-300 ease-out
-        cursor-pointer
-        ${
-          activeCount > 0
-            ? "bg-fnh-navy text-white shadow-lg hover:shadow-xl hover:bg-fnh-navy-dark"
-            : "bg-white text-gray-600 border border-gray-200 shadow-sm hover:shadow-md hover:border-gray-300"
-        }
+      className="relative flex items-center justify-center gap-2 h-full px-4 sm:px-5 
+        bg-white border border-gray-200 rounded-full
+        text-gray-600 text-sm font-medium
+        hover:bg-gray-50 hover:border-fnh-blue hover:text-fnh-blue
+        transition-all duration-200 
         disabled:opacity-50 disabled:cursor-not-allowed
-      `}
-      aria-label={`Open filters${
-        activeCount > 0 ? ` (${activeCount} active)` : ""
-      }`}
+        cursor-pointer shadow-sm hover:shadow-md"
+      aria-label="Open filters"
     >
-      <SlidersHorizontal className="w-4 h-4" />
+      <SlidersHorizontal className="w-4 h-4 sm:w-5 sm:h-5" />
       <span className="hidden sm:inline">Filters</span>
 
       {/* Active filter count badge */}
       {activeCount > 0 && (
         <span
-          className="absolute -top-1 -right-1 flex items-center justify-center
-          w-5 h-5 text-[10px] font-bold
-          bg-fnh-yellow text-fnh-navy
-          rounded-full shadow-md ring-2 ring-white"
+          className="absolute -top-1.5 -right-1.5 flex items-center justify-center
+            min-w-[20px] h-5 px-1.5
+            bg-fnh-blue text-white text-xs font-bold
+            rounded-full shadow-md animate-in zoom-in-50 duration-200"
         >
           {activeCount}
         </span>

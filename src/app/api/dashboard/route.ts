@@ -29,17 +29,24 @@ export async function GET(request: NextRequest) {
       searchParams.get("recentLimit") || "5"
     );
 
-    // 3. Get today's date range
-    const today = new Date();
+    // 3. Get today's date range in Bangladesh time (UTC+6)
+    // The server runs in UTC, so we need to calculate Bangladesh "today" properly
+    const BDT_OFFSET_MS = 6 * 60 * 60 * 1000; // UTC+6 in milliseconds
+    const nowUTC = new Date();
+    const nowBDT = new Date(nowUTC.getTime() + BDT_OFFSET_MS);
+
+    // Get start of day in Bangladesh time, then convert back to UTC for DB query
+    const bdtYear = nowBDT.getUTCFullYear();
+    const bdtMonth = nowBDT.getUTCMonth();
+    const bdtDate = nowBDT.getUTCDate();
+
+    // Start of Bangladesh "today" in UTC (midnight BDT = 6 PM previous day UTC)
     const startOfDay = new Date(
-      today.getFullYear(),
-      today.getMonth(),
-      today.getDate()
+      Date.UTC(bdtYear, bdtMonth, bdtDate) - BDT_OFFSET_MS
     );
+    // End of Bangladesh "today" in UTC (midnight next day BDT)
     const endOfDay = new Date(
-      today.getFullYear(),
-      today.getMonth(),
-      today.getDate() + 1
+      Date.UTC(bdtYear, bdtMonth, bdtDate + 1) - BDT_OFFSET_MS
     );
 
     // 4. Parallel queries for ALL dashboard data
