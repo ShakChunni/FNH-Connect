@@ -9,4 +9,4 @@ export { ExportActionBar } from "./components/ExportActionBar";
 export { DoctorFilter } from "./components/DoctorFilter";
 export { StatusFilter } from "./components/StatusFilter";
 export { DateRangeFilter } from "./components/DateRangeFilter";
-export { TestCategoryFilter } from "./components/TestCategoryFilter";
+export { TestFilter } from "./components/TestFilter";

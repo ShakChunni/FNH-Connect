@@ -46,11 +46,9 @@ const PathologyManagement = React.memo(() => {
       // Doctor filters
       orderedById: filterValues.orderedById ?? undefined,
       doneById: filterValues.doneById ?? undefined,
-      // Test category filters (multi-select)
-      testCategories:
-        filterValues.testCategories.length > 0
-          ? filterValues.testCategories
-          : undefined,
+      // Test name filters (multi-select)
+      testNames:
+        filterValues.testNames.length > 0 ? filterValues.testNames : undefined,
       // Pagination
       page: filterValues.page,
       limit: filterValues.limit,

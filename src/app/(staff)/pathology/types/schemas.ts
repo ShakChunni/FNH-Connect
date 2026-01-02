@@ -141,6 +141,14 @@ export const pathologyFiltersSchema = z.object({
       if (!val) return undefined;
       return val.split(",").filter(Boolean);
     }),
+  // New: multi-select test names (pipe-separated)
+  testNames: z
+    .string()
+    .optional()
+    .transform((val) => {
+      if (!val) return undefined;
+      return val.split("|").filter(Boolean);
+    }),
   // New: filter by ordering doctor
   orderedById: z
     .string()

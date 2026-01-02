@@ -51,9 +51,9 @@ export function useFetchPathologyData(filters: PathologyFilters = {}) {
         params.append("isCompleted", filters.isCompleted.toString());
       }
 
-      // Test category filters (multi-select)
-      if (filters.testCategories && filters.testCategories.length > 0) {
-        params.append("testCategories", filters.testCategories.join(","));
+      // Test name filters (multi-select)
+      if (filters.testNames && filters.testNames.length > 0) {
+        params.append("testNames", filters.testNames.join("|"));
       } else if (filters.testCategory) {
         // Legacy single category support
         params.append("testCategory", filters.testCategory);

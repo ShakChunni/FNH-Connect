@@ -134,7 +134,8 @@ interface ReportFilters {
   endDate?: Date | null;
   status?: string;
   orderedById?: number | null;
-  testCategories?: string[];
+  doneById?: number | null;
+  testNames?: string[];
 }
 
 export const generatePathologyReport = async (
@@ -340,25 +341,41 @@ export const generatePathologyReport = async (
 
   data.forEach((record) => {
     // testResults contains the selected test codes
-    const testCodes = record.testResults || [];
-    if (Array.isArray(testCodes)) {
-      testCodes.forEach((code: string) => {
-        const testInfo = getTestByCode(code);
-        const testName = testInfo?.name || code;
-        const testPrice = testInfo?.price || 0;
-
-        const current = testCountMap.get(code) || {
-          count: 0,
-          revenue: 0,
-          name: testName,
-        };
-        testCountMap.set(code, {
-          count: current.count + 1,
-          revenue: current.revenue + testPrice,
-          name: testName,
-        });
-      });
+    let testCodes: string[] = [];
+    if (Array.isArray(record.testResults)) {
+      testCodes = record.testResults as string[];
+    } else if (
+      record.testResults &&
+      typeof record.testResults === "object" &&
+      Array.isArray((record.testResults as any).tests)
+    ) {
+      testCodes = (record.testResults as any).tests;
     }
+
+    testCodes.forEach((code: string) => {
+      let testInfo = getTestByCode(code);
+
+      // Fallback: Try to find by name if code lookup fails
+      if (!testInfo) {
+        testInfo = PATHOLOGY_TESTS.find(
+          (t) => t.name === code || t.name.toLowerCase() === code.toLowerCase()
+        );
+      }
+
+      const testName = testInfo?.name || code;
+      const testPrice = testInfo?.price || 0;
+
+      const current = testCountMap.get(code) || {
+        count: 0,
+        revenue: 0,
+        name: testName,
+      };
+      testCountMap.set(code, {
+        count: current.count + 1,
+        revenue: current.revenue + testPrice,
+        name: testName,
+      });
+    });
   });
 
   doc.setFont("helvetica", "bold");
@@ -387,43 +404,6 @@ export const generatePathologyReport = async (
   });
 
   currentY = (doc as any).lastAutoTable.finalY + 10;
-
-  // ═══════════════════════════════════════════════════════════════
-  // CATEGORY BREAKDOWN
-  // ═══════════════════════════════════════════════════════════════
-
-  const categoryMap = new Map<string, { count: number; revenue: number }>();
-  data.forEach((item) => {
-    const category = item.testCategory || "General";
-    const current = categoryMap.get(category) || { count: 0, revenue: 0 };
-    categoryMap.set(category, {
-      count: current.count + 1,
-      revenue: current.revenue + (item.grandTotal || 0),
-    });
-  });
-
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(11);
-  doc.setTextColor(COLORS.primary);
-  doc.text("Category Breakdown", margin, currentY);
-  currentY += 5;
-
-  autoTable(doc, {
-    startY: currentY,
-    head: [["Category", "Tests", "Revenue (BDT)"]],
-    body: Array.from(categoryMap.entries())
-      .sort((a, b) => b[1].count - a[1].count)
-      .map(([name, stats]) => [
-        name,
-        stats.count.toString(),
-        stats.revenue.toLocaleString(),
-      ]),
-    theme: "striped",
-    headStyles: { fillColor: COLORS.primary, fontSize: 9 },
-    styles: { fontSize: 9 },
-    margin: { left: margin, right: margin },
-    tableWidth: pageWidth / 2 - margin,
-  });
 
   currentY = (doc as any).lastAutoTable.finalY + 10;
 
@@ -495,8 +475,9 @@ export const generatePathologyReport = async (
           "#",
           "Test No.",
           "Date",
+          "Doctor",
           "Patient",
-          "Category",
+          "Tests",
           "Status",
           "Total",
           "Paid",
@@ -507,8 +488,23 @@ export const generatePathologyReport = async (
         (index + 1).toString(),
         item.testNumber || "",
         format(new Date(item.testDate), "dd/MM/yy"),
+        item.orderedBy || "Self",
         item.patientFullName || "",
-        item.testCategory || "",
+        (() => {
+          let testNames: string[] = [];
+          if (Array.isArray(item.testResults)) {
+            testNames = item.testResults as string[];
+          } else if (
+            item.testResults &&
+            typeof item.testResults === "object" &&
+            Array.isArray((item.testResults as any).tests)
+          ) {
+            testNames = (item.testResults as any).tests;
+          }
+          return testNames.length > 0
+            ? testNames.join(", ")
+            : item.testCategory || "";
+        })(),
         item.isCompleted ? "Completed" : "Pending",
         (item.grandTotal || 0).toLocaleString(),
         (item.paidAmount || 0).toLocaleString(),
@@ -528,15 +524,16 @@ export const generatePathologyReport = async (
         cellWidth: "wrap",
       },
       columnStyles: {
-        0: { cellWidth: 8 },
-        1: { cellWidth: 20 },
-        2: { cellWidth: 14 },
-        3: { cellWidth: 30 },
-        4: { cellWidth: 25 },
-        5: { cellWidth: 16 },
-        6: { cellWidth: 18, halign: "right" },
-        7: { cellWidth: 16, halign: "right" },
-        8: { cellWidth: 16, halign: "right" },
+        0: { cellWidth: 7 },
+        1: { cellWidth: 18 },
+        2: { cellWidth: 12 },
+        3: { cellWidth: 16 }, // Doctor info
+        4: { cellWidth: 26 }, // Patient info reduced slightly
+        5: { cellWidth: 32 }, // Tests widened slightly
+        6: { cellWidth: 15 },
+        7: { cellWidth: 15, halign: "right" },
+        8: { cellWidth: 14, halign: "right" },
+        9: { cellWidth: 14, halign: "right" },
       },
       margin: { left: margin, right: margin },
       didDrawPage: () => {

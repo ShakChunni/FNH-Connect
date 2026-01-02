@@ -64,8 +64,11 @@ export const TestDetails: React.FC<TestDetailsProps> = ({
 
   const details = [
     {
-      label: "Test Category",
-      value: patient.testCategory,
+      label: tests.length > 1 ? "Principal Tests" : "Test Name",
+      value:
+        patient.testCategory === "Multiple Tests" && tests.length > 0
+          ? tests.map((t) => t.name).join(", ")
+          : patient.testCategory,
       icon: Activity,
       color: "bg-teal-50 text-teal-600 border-teal-100",
     },

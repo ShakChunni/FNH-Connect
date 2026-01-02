@@ -1,4 +1,5 @@
 export { useFetchPathologyData } from "./useFetchPathologyData";
+export { useFetchPathologyReportData } from "./useFetchPathologyReportData";
 export { useAddPathologyData } from "./useAddPathologyData";
 export { useEditPathologyData } from "./useEditPathologyData";
 export { useUpdatePathologyStatus } from "./useUpdatePathologyStatus";

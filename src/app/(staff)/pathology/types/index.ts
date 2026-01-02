@@ -198,9 +198,9 @@ export interface PathologyFilters {
   isCompleted?: boolean;
   status?: "Completed" | "Pending" | "All"; // New: status filter
   testCategory?: string; // Legacy single category
-  testCategories?: string[]; // New: multi-select categories
   orderedById?: number; // New: filter by ordering doctor
   doneById?: number; // New: filter by performing staff
+  testNames?: string[]; // Filter by specific test names
   page?: number;
   limit?: number;
 }

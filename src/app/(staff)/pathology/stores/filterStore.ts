@@ -18,8 +18,8 @@ export interface FilterValues {
   doneById: number | null;
   // Status
   status: PathologyStatus;
-  // Test categories (multi-select)
-  testCategories: string[];
+  // Test names (multi-select)
+  testNames: string[];
   // Date range
   dateRange: string;
   startDate: Date | null;
@@ -57,8 +57,8 @@ interface FilterActions {
   setOrderedById: (id: number | null) => void;
   setDoneById: (id: number | null) => void;
   setStatus: (status: PathologyStatus) => void;
-  setTestCategories: (categories: string[]) => void;
-  toggleTestCategory: (category: string) => void;
+  setTestNames: (names: string[]) => void;
+  toggleTestName: (name: string) => void;
   setDateRange: (range: string) => void;
   setCustomDateRange: (start: Date | null, end: Date | null) => void;
   setSearch: (search: string) => void;
@@ -87,7 +87,7 @@ const initialFilterValues: FilterValues = {
   orderedById: null,
   doneById: null,
   status: "All",
-  testCategories: [],
+  testNames: [],
   dateRange: "all",
   startDate: null,
   endDate: null,
@@ -196,19 +196,19 @@ export const usePathologyFilterStore = create<FilterStore>((set, get) => ({
       filters: { ...state.filters, status, page: 1 },
     })),
 
-  setTestCategories: (categories) =>
+  setTestNames: (names) =>
     set((state) => ({
-      filters: { ...state.filters, testCategories: categories, page: 1 },
+      filters: { ...state.filters, testNames: names, page: 1 },
     })),
 
-  toggleTestCategory: (category) =>
+  toggleTestName: (name) =>
     set((state) => {
-      const current = state.filters.testCategories;
-      const updated = current.includes(category)
-        ? current.filter((c) => c !== category)
-        : [...current, category];
+      const current = state.filters.testNames;
+      const updated = current.includes(name)
+        ? current.filter((c) => c !== name)
+        : [...current, name];
       return {
-        filters: { ...state.filters, testCategories: updated, page: 1 },
+        filters: { ...state.filters, testNames: updated, page: 1 },
       };
     }),
 
@@ -263,7 +263,7 @@ export const usePathologyFilterStore = create<FilterStore>((set, get) => ({
     if (filters.orderedById !== null) count++;
     if (filters.doneById !== null) count++;
     if (filters.status !== "All") count++;
-    if (filters.testCategories.length > 0) count++;
+    if (filters.testNames.length > 0) count++;
     if (filters.dateRange !== "all") count++;
     if (filters.search !== "") count++;
     return count;
@@ -308,8 +308,8 @@ export const usePathologyFilterActions = () =>
       setOrderedById: state.setOrderedById,
       setDoneById: state.setDoneById,
       setStatus: state.setStatus,
-      setTestCategories: state.setTestCategories,
-      toggleTestCategory: state.toggleTestCategory,
+      setTestNames: state.setTestNames,
+      toggleTestName: state.toggleTestName,
       setDateRange: state.setDateRange,
       setCustomDateRange: state.setCustomDateRange,
       setSearch: state.setSearch,
