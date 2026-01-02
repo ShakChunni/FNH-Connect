@@ -164,7 +164,7 @@ function CalendarDayButton({
       data-range-end={modifiers.range_end}
       data-range-middle={modifiers.range_middle}
       className={cn(
-        "data-[selected-single=true]:bg-fnh-navy data-[selected-single=true]:text-white data-[range-middle=true]:bg-fnh-yellow/10 data-[range-middle=true]:text-fnh-navy data-[range-start=true]:bg-fnh-navy data-[range-start=true]:text-white data-[range-end=true]:bg-fnh-navy data-[range-end=true]:text-white group-data-[focused=true]/day:border-ring group-data-[focused=true]/day:ring-ring/50 dark:hover:text-accent-foreground hover:bg-fnh-yellow hover:text-fnh-navy flex aspect-square size-auto w-full min-w-(--cell-size) flex-col gap-1 leading-none text-[0.7rem] font-bold group-data-[focused=true]/day:relative group-data-[focused=true]/day:z-10 group-data-[focused=true]/day:ring-[3px] data-[range-end=true]:rounded-md data-[range-end=true]:rounded-r-md data-[range-middle=true]:rounded-none data-[range-start=true]:rounded-md data-[range-start=true]:rounded-l-md [&>span]:text-[0.7rem] [&>span]:opacity-70 transition-colors duration-200",
+        "data-[selected-single=true]:bg-slate-900 data-[selected-single=true]:text-white data-[range-middle=true]:bg-yellow-100 data-[range-middle=true]:text-slate-900 data-[range-start=true]:bg-slate-900 data-[range-start=true]:text-white data-[range-end=true]:bg-slate-900 data-[range-end=true]:text-white group-data-[focused=true]/day:border-ring group-data-[focused=true]/day:ring-ring/50 hover:bg-fnh-navy hover:text-white flex aspect-square size-auto w-full min-w-(--cell-size) flex-col gap-1 leading-none text-[0.7rem] font-bold group-data-[focused=true]/day:relative group-data-[focused=true]/day:z-10 group-data-[focused=true]/day:ring-[3px] data-[range-end=true]:rounded-md data-[range-end=true]:rounded-r-md data-[range-middle=true]:rounded-none data-[range-start=true]:rounded-md data-[range-start=true]:rounded-l-md [&>span]:text-[0.7rem] [&>span]:opacity-70 transition-colors duration-200",
         defaultClassNames.day,
         className
       )}
@@ -256,7 +256,6 @@ export function CalendarWithMonthYearPicker({
     newDate.setFullYear(currentYear + 12);
     setDisplayDate(newDate);
   };
-
 
   return (
     <div className="overflow-hidden">
