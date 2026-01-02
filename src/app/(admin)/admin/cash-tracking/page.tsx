@@ -433,13 +433,11 @@ const CashTrackingPage = () => {
       </div>
 
       {/* Detail Modal */}
-      {selectedShiftId && (
-        <ShiftDetailModal
-          shiftId={selectedShiftId}
-          isOpen={!!selectedShiftId}
-          onClose={() => setSelectedShiftId(null)}
-        />
-      )}
+      <ShiftDetailModal
+        shiftId={selectedShiftId ?? 0}
+        isOpen={selectedShiftId !== null}
+        onClose={() => setSelectedShiftId(null)}
+      />
     </div>
   );
 };

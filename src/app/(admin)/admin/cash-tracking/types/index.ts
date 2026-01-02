@@ -66,7 +66,7 @@ export interface CashMovementDetail {
           };
         } | null;
         pathologyTest?: {
-          doctor?: {
+          orderedBy?: {
             id: number;
             fullName: string;
           };
