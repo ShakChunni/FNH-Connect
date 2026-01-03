@@ -166,10 +166,9 @@ export function generateInfertilitySummaryReport(
     );
   }
 
-  // Save the PDF
-  const reportType = detailed ? "detailed" : "summary";
-  const fileName = `infertility_${reportType}_report_${
-    new Date().toISOString().split("T")[0]
-  }.pdf`;
-  doc.save(fileName);
+  // Open in new tab for printing (like row-level printing)
+  doc.autoPrint();
+  const pdfBlob = doc.output("blob");
+  const pdfUrl = URL.createObjectURL(pdfBlob);
+  window.open(pdfUrl, "_blank");
 }

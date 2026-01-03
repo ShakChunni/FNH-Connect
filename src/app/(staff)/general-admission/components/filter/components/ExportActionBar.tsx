@@ -9,8 +9,13 @@ import {
 import { useFilterStore } from "../../../stores/filterStore";
 import { AdmissionPatientData } from "../../../types";
 import { generateAdmissionsReport } from "../../../utils/generateReport";
-import { exportAdmissionsToExcel } from "../../../utils/exportToExcel";
+import {
+  exportAdmissionsToExcel,
+  ExportFilterMeta,
+} from "../../../utils/exportToExcel";
 import { useFetchAdmissionsReportData } from "../../../hooks/useFetchAdmissionsReportData";
+import { useFetchDepartments } from "../../../hooks/useFetchDepartments";
+import { useFetchDoctors } from "../../../hooks/useFetchDoctors";
 import { toast } from "sonner";
 
 interface ExportActionBarProps {
@@ -28,6 +33,28 @@ export const ExportActionBar: React.FC<ExportActionBarProps> = ({ data }) => {
 
   // Hook for fetching all data for reports
   const { mutateAsync: fetchReportData } = useFetchAdmissionsReportData();
+
+  // Fetch departments and doctors for filter naming
+  const { data: departments = [] } = useFetchDepartments();
+  const { data: doctors = [] } = useFetchDoctors();
+
+  // Get department and doctor names for file naming
+  const getFilterMeta = useCallback((): ExportFilterMeta => {
+    const departmentName = filters.departmentId
+      ? departments.find((d) => d.id === filters.departmentId)?.name
+      : undefined;
+    const doctorName = filters.doctorId
+      ? doctors.find((d) => d.id === filters.doctorId)?.fullName
+      : undefined;
+
+    return {
+      departmentName,
+      doctorName,
+      status: filters.status,
+      startDate: filters.startDate,
+      endDate: filters.endDate,
+    };
+  }, [filters, departments, doctors]);
 
   // Show only when filters are active
   const shouldShow = activeCount > 0;
@@ -105,7 +132,7 @@ export const ExportActionBar: React.FC<ExportActionBarProps> = ({ data }) => {
         return;
       }
 
-      exportAdmissionsToExcel(allData);
+      exportAdmissionsToExcel(allData, getFilterMeta());
       toast.success(`Exported ${allData.length} records to Excel`);
     } catch (error) {
       toast.dismiss("export-loading");
@@ -114,7 +141,7 @@ export const ExportActionBar: React.FC<ExportActionBarProps> = ({ data }) => {
     } finally {
       setIsGenerating(false);
     }
-  }, [fetchAllDataForReport]);
+  }, [fetchAllDataForReport, getFilterMeta]);
 
   const actions: FloatingAction[] = useMemo(
     () => [
