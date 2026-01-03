@@ -22,6 +22,9 @@ export interface PatientFilters {
   search?: string;
   startDate?: string;
   endDate?: string;
+  // Pagination params
+  page?: number;
+  limit?: number;
 }
 
 export interface PatientFormData {
@@ -39,6 +42,11 @@ export interface PatientsApiResponse {
   success: boolean;
   data: PatientData[];
   total: number;
+  pagination?: {
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
   error?: string;
 }
 

@@ -13,6 +13,18 @@ interface TableRowProps {
   onClick?: () => void;
 }
 
+// Status badge colors
+const getStatusColor = (status: string | null) => {
+  if (!status) return "bg-gray-100 text-gray-600";
+  const s = status.toLowerCase();
+  if (s === "active" || s === "ongoing")
+    return "bg-emerald-100 text-emerald-700";
+  if (s === "completed" || s === "success") return "bg-blue-100 text-blue-700";
+  if (s === "pending") return "bg-amber-100 text-amber-700";
+  if (s === "cancelled" || s === "inactive") return "bg-red-100 text-red-700";
+  return "bg-gray-100 text-gray-600";
+};
+
 const TableRow: React.FC<TableRowProps> = ({
   row,
   index,
@@ -86,22 +98,24 @@ const TableRow: React.FC<TableRowProps> = ({
             <div className="text-[10px] text-gray-500 leading-none mt-0.5">
               {row.patientGender || "Female"}{" "}
               {row.patientAge ? `, ${row.patientAge}y` : ""}
+              {row.bloodGroup ? ` • ${row.bloodGroup}` : ""}
             </div>
           </div>
         );
 
       case "hospitalName":
         return (
-          <span className="text-gray-700">
-            {row.hospitalName || "Self / Direct"}
-          </span>
+          <div>
+            <span className="text-gray-700">
+              {row.hospitalName || "Self / Direct"}
+            </span>
+            {row.hospitalType && (
+              <div className="text-[10px] text-gray-400">
+                {row.hospitalType}
+              </div>
+            )}
+          </div>
         );
-
-      case "patientAge":
-        return row.patientAge ?? "N/A";
-
-      case "patientDOB":
-        return formatDate(row.patientDOB);
 
       case "husbandName":
         return (
@@ -114,16 +128,15 @@ const TableRow: React.FC<TableRowProps> = ({
         );
 
       case "mobileNumber":
-        return row.mobileNumber || "N/A";
-
-      case "address":
         return (
-          <span
-            className="max-w-[150px] truncate block text-[11px]"
-            title={row.address || undefined}
-          >
-            {row.address || "N/A"}
-          </span>
+          <div>
+            <div className="text-gray-700">{row.mobileNumber || "N/A"}</div>
+            {row.email && (
+              <div className="text-[10px] text-gray-400 truncate max-w-[120px]">
+                {row.email}
+              </div>
+            )}
+          </div>
         );
 
       case "infertilityType":
@@ -138,14 +151,69 @@ const TableRow: React.FC<TableRowProps> = ({
             {row.infertilityType}
           </span>
         ) : (
-          "N/A"
+          <span className="text-gray-400">N/A</span>
+        );
+
+      case "paraGravida":
+        return row.para || row.gravida ? (
+          <div className="text-gray-700">
+            <span>P{row.para || "0"}</span>
+            <span className="text-gray-400 mx-0.5">/</span>
+            <span>G{row.gravida || "0"}</span>
+          </div>
+        ) : (
+          <span className="text-gray-400">N/A</span>
+        );
+
+      case "yearsMarried":
+        return row.yearsMarried ? (
+          <span className="text-gray-700">{row.yearsMarried}</span>
+        ) : (
+          <span className="text-gray-400">N/A</span>
+        );
+
+      case "yearsTrying":
+        return row.yearsTrying ? (
+          <span className="text-gray-700">{row.yearsTrying}</span>
+        ) : (
+          <span className="text-gray-400">N/A</span>
+        );
+
+      case "status":
+        return row.status ? (
+          <span
+            className={`inline-flex px-2 py-0.5 text-[10px] font-semibold rounded-md ${getStatusColor(
+              row.status
+            )}`}
+          >
+            {row.status}
+          </span>
+        ) : (
+          <span className="text-gray-400">N/A</span>
+        );
+
+      case "nextAppointment":
+        return row.nextAppointment ? (
+          <div className="text-gray-700">
+            <div>{formatDate(row.nextAppointment)}</div>
+          </div>
+        ) : (
+          <span className="text-gray-400">Not Set</span>
         );
 
       case "createdAt":
-        return formatDate(row.createdAt);
+        return (
+          <div className="text-gray-600 text-[11px]">
+            {formatDate(row.createdAt)}
+          </div>
+        );
 
       case "updatedAt":
-        return formatDate(row.updatedAt);
+        return (
+          <div className="text-gray-600 text-[11px]">
+            {formatDate(row.updatedAt)}
+          </div>
+        );
 
       default:
         return row[header.key as keyof InfertilityPatientData] || "N/A";

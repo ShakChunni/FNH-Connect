@@ -1,8 +1,7 @@
 "use client";
 import React, { useCallback, useMemo, useRef, useEffect } from "react";
-import { Save, Building2, User, Stethoscope } from "lucide-react";
+import { Save, User, Stethoscope } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useAuth } from "@/app/AuthContext";
 import { useAddInfertilityData } from "../../hooks/useAddInfertilityData";
 import {
   modalVariants,
@@ -11,7 +10,6 @@ import {
 import { ModalHeader } from "@/components/ui/ModalHeader";
 import { ModalFooter } from "@/components/ui/ModalFooter";
 import { getTabColors } from "./utils/modalUtils";
-import HospitalInformation from "../form-sections/HosptialInformation/InfertilityHospitalInformation";
 import PatientInformation from "../form-sections/PatientInformation/PatientInformation";
 import MedicalInformation from "../form-sections/MedicalInformation/MedicalInformation";
 import {
@@ -31,13 +29,13 @@ interface AddNewDataProps {
   onClose: () => void;
 }
 
-const SECTION_IDS = ["hospital", "patient", "medical"];
+// Hospital is auto-filled as Feroza Nursing Home, only patient and medical sections are user-editable
+const SECTION_IDS = ["patient", "medical"];
 
 const AddNewDataInfertility: React.FC<AddNewDataProps> = ({
   isOpen,
   onClose,
 }) => {
-  const { user } = useAuth();
   const popupRef = useRef<HTMLDivElement>(null);
 
   // Store access
@@ -63,10 +61,9 @@ const AddNewDataInfertility: React.FC<AddNewDataProps> = ({
     },
   });
 
-  // Validation
+  // Validation - hospital is auto-filled, so only validate patient and medical data
   const isFormValid = useMemo(() => {
     return (
-      hospitalData.name.trim() !== "" &&
       patientData.firstName.trim() !== "" &&
       validationStatus.phone &&
       validationStatus.email
@@ -117,13 +114,8 @@ const AddNewDataInfertility: React.FC<AddNewDataProps> = ({
     };
   }, [isOpen, handleClose]);
 
+  // Hospital is auto-filled as Feroza Nursing Home, only show patient and medical tabs
   const sections = [
-    {
-      id: "hospital",
-      label: "Hospital Information",
-      icon: Building2,
-      color: "blue",
-    },
     {
       id: "patient",
       label: "Patient Information",
@@ -204,9 +196,7 @@ const AddNewDataInfertility: React.FC<AddNewDataProps> = ({
 
             <div className="flex-1 overflow-y-auto p-3 sm:p-4 md:p-6">
               <div className="space-y-6 sm:space-y-8 md:space-y-10">
-                <div id="hospital">
-                  <HospitalInformation />
-                </div>
+                {/* Hospital is auto-filled as Feroza Nursing Home */}
                 <div id="patient">
                   <PatientInformation />
                 </div>

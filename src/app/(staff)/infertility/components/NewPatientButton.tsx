@@ -10,32 +10,26 @@ interface NewPatientButtonProps {
 
 /**
  * New Patient Button
- * Dark navy blue button for adding new patients
- * Can be disabled during loading (no visual change, just prevents interaction)
+ * Responsive button matching general-admission style
+ * Full width centered on mobile, inline on desktop
  */
 export const NewPatientButton: React.FC<NewPatientButtonProps> = ({
   onClick,
   disabled = false,
 }) => {
-  const handleClick = () => {
-    if (!disabled) {
-      onClick();
-    }
-  };
-
   return (
     <button
-      onClick={handleClick}
-      className={`
-        flex items-center gap-2 px-4 sm:px-5 py-2.5 sm:py-3 
-        bg-fnh-navy-dark hover:bg-fnh-navy text-white 
-        rounded-xl shadow-lg hover:shadow-xl 
-        transition-all duration-300 font-semibold text-sm sm:text-base 
-        ${disabled ? "cursor-default" : "cursor-pointer"}
-      `}
-      style={{ pointerEvents: disabled ? "none" : "auto" }}
+      onClick={onClick}
+      disabled={disabled}
+      className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 sm:px-6 py-3 
+        bg-linear-to-r from-fnh-navy-dark to-fnh-navy 
+        text-white rounded-xl font-semibold 
+        shadow-lg hover:shadow-xl 
+        hover:from-fnh-navy hover:to-fnh-navy-dark 
+        transition-all duration-300 transform hover:scale-105 
+        disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
     >
-      <PlusIcon className="w-4 h-4 sm:w-5 sm:h-5" />
+      <PlusIcon className="w-5 h-5" />
       <span>New Patient</span>
     </button>
   );

@@ -21,6 +21,9 @@ export interface InfertilityFilters {
   search?: string;
   startDate?: string;
   endDate?: string;
+  // Pagination params
+  page?: number;
+  limit?: number;
 }
 
 export interface PatientData {
@@ -123,44 +126,67 @@ export async function getInfertilityPatients(filters: InfertilityFilters) {
     }
   }
 
-  return await prisma.infertilityPatient.findMany({
-    where,
-    include: {
-      patient: {
-        select: {
-          id: true,
-          fullName: true,
-          phoneNumber: true,
-          email: true,
-          gender: true,
-          dateOfBirth: true,
-          guardianName: true,
-          guardianDOB: true,
-          guardianGender: true,
-          guardianOccupation: true,
-          guardianPhone: true,
-          guardianEmail: true,
-          address: true,
-          bloodGroup: true,
-          occupation: true,
+  // Pagination defaults
+  const page = filters.page ?? 1;
+  const limit = filters.limit ?? 15;
+  const skip = (page - 1) * limit;
+
+  // Execute count and data queries in parallel
+  const [total, data] = await Promise.all([
+    prisma.infertilityPatient.count({ where }),
+    prisma.infertilityPatient.findMany({
+      where,
+      include: {
+        patient: {
+          select: {
+            id: true,
+            fullName: true,
+            phoneNumber: true,
+            email: true,
+            gender: true,
+            dateOfBirth: true,
+            guardianName: true,
+            guardianDOB: true,
+            guardianGender: true,
+            guardianOccupation: true,
+            guardianPhone: true,
+            guardianEmail: true,
+            address: true,
+            bloodGroup: true,
+            occupation: true,
+          },
+        },
+        hospital: {
+          select: {
+            id: true,
+            name: true,
+            type: true,
+            address: true,
+            phoneNumber: true,
+            email: true,
+            website: true,
+          },
         },
       },
-      hospital: {
-        select: {
-          id: true,
-          name: true,
-          type: true,
-          address: true,
-          phoneNumber: true,
-          email: true,
-          website: true,
-        },
+      orderBy: {
+        createdAt: "desc",
       },
+      skip,
+      take: limit,
+    }),
+  ]);
+
+  const totalPages = Math.ceil(total / limit);
+
+  return {
+    data,
+    pagination: {
+      total,
+      page,
+      limit,
+      totalPages,
     },
-    orderBy: {
-      createdAt: "desc",
-    },
-  });
+  };
 }
 
 export async function getInfertilityPatientById(id: number) {

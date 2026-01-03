@@ -32,6 +32,8 @@ export async function GET(request: NextRequest) {
       search: searchParams.get("search") || undefined,
       startDate: searchParams.get("startDate") || undefined,
       endDate: searchParams.get("endDate") || undefined,
+      page: searchParams.get("page") || undefined,
+      limit: searchParams.get("limit") || undefined,
     });
 
     if (!validation.success) {
@@ -45,13 +47,14 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const patients = await infertilityService.getInfertilityPatients(
+    const result = await infertilityService.getInfertilityPatients(
       validation.data
     );
 
     return NextResponse.json({
       success: true,
-      data: patients,
+      data: result.data,
+      pagination: result.pagination,
     });
   } catch (error) {
     console.error("GET /api/infertility-patients error:", error);
