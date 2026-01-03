@@ -8,16 +8,31 @@ interface PatientRecordsState {
   isEditClosing: boolean;
   selectedPatient: PatientData | null;
 
+  // Pagination state
+  pagination: {
+    page: number;
+    limit: number;
+  };
+
   // Actions
   openEditModal: (patient: PatientData) => void;
   closeEditModal: () => void;
+  setPage: (page: number) => void;
+  setLimit: (limit: number) => void;
+  resetPagination: () => void;
 }
+
+const initialPagination = {
+  page: 1,
+  limit: 15,
+};
 
 export const usePatientRecordsStore = create<PatientRecordsState>((set) => ({
   // Initial state
   isEditOpen: false,
   isEditClosing: false,
   selectedPatient: null,
+  pagination: initialPagination,
 
   // Actions
   openEditModal: (patient) =>
@@ -38,6 +53,21 @@ export const usePatientRecordsStore = create<PatientRecordsState>((set) => ({
       });
     }, 300);
   },
+
+  setPage: (page) =>
+    set((state) => ({
+      pagination: { ...state.pagination, page },
+    })),
+
+  setLimit: (limit) =>
+    set((state) => ({
+      pagination: { ...state.pagination, limit, page: 1 },
+    })),
+
+  resetPagination: () =>
+    set({
+      pagination: initialPagination,
+    }),
 }));
 
 // Selector hooks using useShallow to prevent infinite loops
@@ -50,11 +80,17 @@ export const usePatientModals = () =>
     }))
   );
 
+export const usePagination = () =>
+  usePatientRecordsStore((state) => state.pagination);
+
 export const usePatientActions = () =>
   usePatientRecordsStore(
     useShallow((state) => ({
       openEditModal: state.openEditModal,
       closeEditModal: state.closeEditModal,
+      setPage: state.setPage,
+      setLimit: state.setLimit,
+      resetPagination: state.resetPagination,
     }))
   );
 

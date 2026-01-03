@@ -2,7 +2,7 @@
  * Patient Records API Route
  * GET /api/patient-records
  *
- * Returns all patients with optional search filtering
+ * Returns all patients with optional search filtering and pagination
  */
 
 import { NextRequest, NextResponse } from "next/server";
@@ -25,6 +25,8 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get("search");
     const startDate = searchParams.get("startDate");
     const endDate = searchParams.get("endDate");
+    const page = parseInt(searchParams.get("page") || "1", 10);
+    const limit = parseInt(searchParams.get("limit") || "15", 10);
 
     // 3. Build where clause
     const where: Record<string, unknown> = {};
@@ -47,39 +49,54 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // 4. Fetch patients
-    const patients = await prisma.patient.findMany({
-      where,
-      orderBy: { createdAt: "desc" },
-      select: {
-        id: true,
-        firstName: true,
-        lastName: true,
-        fullName: true,
-        gender: true,
-        dateOfBirth: true,
-        guardianName: true,
-        guardianDOB: true,
-        guardianGender: true,
-        guardianPhone: true,
-        guardianAddress: true,
-        guardianEmail: true,
-        address: true,
-        phoneNumber: true,
-        email: true,
-        bloodGroup: true,
-        occupation: true,
-        guardianOccupation: true,
-        createdAt: true,
-        updatedAt: true,
-      },
-    });
+    // 4. Pagination calculations
+    const skip = (page - 1) * limit;
 
-    // 5. Return response
+    // 5. Fetch patients with count in parallel
+    const [total, patients] = await Promise.all([
+      prisma.patient.count({ where }),
+      prisma.patient.findMany({
+        where,
+        orderBy: { createdAt: "desc" },
+        skip,
+        take: limit,
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          fullName: true,
+          gender: true,
+          dateOfBirth: true,
+          guardianName: true,
+          guardianDOB: true,
+          guardianGender: true,
+          guardianPhone: true,
+          guardianAddress: true,
+          guardianEmail: true,
+          address: true,
+          phoneNumber: true,
+          email: true,
+          bloodGroup: true,
+          occupation: true,
+          guardianOccupation: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      }),
+    ]);
+
+    const totalPages = Math.ceil(total / limit);
+
+    // 6. Return response
     return NextResponse.json({
       success: true,
       data: patients,
-      total: patients.length,
+      total,
+      pagination: {
+        page,
+        limit,
+        totalPages,
+      },
     });
   } catch (error) {
     console.error("[Patient Records API] Error:", error);

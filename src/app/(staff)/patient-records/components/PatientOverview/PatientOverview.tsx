@@ -49,17 +49,20 @@ const InfoRow = ({
   return (
     <div
       className={cn(
-        "flex flex-col gap-1 p-3 rounded-xl border border-transparent transition-all hover:border-slate-200 hover:bg-white hover:shadow-sm",
+        "flex flex-col gap-1 p-2 sm:p-3 rounded-lg sm:rounded-xl border border-transparent transition-all hover:border-slate-200 hover:bg-white hover:shadow-sm",
         variantStyles[variant]
       )}
     >
-      <div className="flex items-center gap-2">
-        <Icon size={12} className={cn("shrink-0", iconStyles[variant])} />
-        <span className="text-[10px] font-bold uppercase tracking-wider opacity-60">
+      <div className="flex items-center gap-1.5 sm:gap-2">
+        <Icon
+          size={10}
+          className={cn("shrink-0 sm:w-3 sm:h-3", iconStyles[variant])}
+        />
+        <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider opacity-60">
           {label}
         </span>
       </div>
-      <span className="text-sm font-semibold truncate px-5">
+      <span className="text-xs sm:text-sm font-semibold truncate pl-4 sm:pl-5">
         {value || "—"}
       </span>
     </div>
@@ -96,27 +99,27 @@ const PatientOverview: React.FC<PatientOverviewProps> = ({
     <ModalShell
       isOpen={isOpen}
       onClose={onClose}
-      className="w-full max-w-[90%] md:max-w-[70%] lg:max-w-[60%] xl:max-w-[50%] h-fit max-h-[90vh] rounded-3xl overflow-hidden flex flex-col"
+      className="w-full max-w-[95%] sm:max-w-[85%] md:max-w-[70%] lg:max-w-[55%] xl:max-w-[45%] h-fit max-h-[92vh] rounded-2xl sm:rounded-3xl overflow-hidden flex flex-col"
     >
       <ModalHeader
         icon={User}
         iconColor={isFemale ? "red" : "blue"}
         title="Patient Profile"
-        subtitle="Detailed record of patient and guardian information."
+        subtitle="Patient and guardian information"
         onClose={onClose}
       >
-        <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1.5 px-2 py-1 bg-slate-50 border border-slate-100 rounded-md">
-            <span className="text-[10px] font-bold text-gray-400 uppercase">
-              Patient ID
+        <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+          <div className="flex items-center gap-1 sm:gap-1.5 px-1.5 sm:px-2 py-0.5 sm:py-1 bg-slate-50 border border-slate-100 rounded-md">
+            <span className="text-[8px] sm:text-[10px] font-bold text-gray-400 uppercase">
+              ID
             </span>
-            <span className="text-[11px] font-bold text-gray-700 font-mono">
+            <span className="text-[10px] sm:text-[11px] font-bold text-gray-700 font-mono">
               #{patient.id.toString().padStart(4, "0")}
             </span>
           </div>
           <div
             className={cn(
-              "px-2 py-1 rounded-md text-[10px] font-bold uppercase border",
+              "px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-md text-[9px] sm:text-[10px] font-bold uppercase border",
               isFemale
                 ? "bg-pink-50 text-pink-600 border-pink-100"
                 : "bg-blue-50 text-blue-600 border-blue-100"
@@ -127,72 +130,79 @@ const PatientOverview: React.FC<PatientOverviewProps> = ({
         </div>
       </ModalHeader>
 
-      <div className="flex-1 overflow-y-auto bg-slate-50/50 p-4 sm:p-6 lg:p-8">
-        <div className="space-y-6">
+      <div className="flex-1 overflow-y-auto bg-slate-50/50 p-3 sm:p-4 lg:p-6">
+        <div className="space-y-4 sm:space-y-6">
           {/* Profile Header Card */}
-          <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200/50">
-            <div className="flex flex-col sm:flex-row gap-6">
-              <div
-                className={cn(
-                  "w-20 h-20 rounded-2xl flex items-center justify-center shrink-0 mx-auto sm:mx-0",
-                  isFemale
-                    ? "bg-pink-50 text-pink-500"
-                    : "bg-blue-50 text-blue-500"
-                )}
-              >
-                <User size={40} />
-              </div>
-              <div className="flex-1 text-center sm:text-left space-y-4">
-                <div>
-                  <h2 className="text-2xl font-bold text-slate-900 leading-tight">
-                    {patient.fullName}
-                  </h2>
-                  <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3 mt-2">
-                    <div className="flex items-center gap-1.5 text-slate-500 font-medium text-sm">
-                      <Calendar size={14} className="text-slate-400" />
-                      DOB: {formatDate(patient.dateOfBirth)}
-                    </div>
-                    {patient.bloodGroup && (
-                      <div className="flex items-center gap-1.5 text-red-600 font-bold text-sm bg-red-50 px-2 py-0.5 rounded-md border border-red-100">
-                        <Droplets size={14} />
-                        {patient.bloodGroup}
+          <div className="bg-white rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-sm border border-slate-200/50">
+            <div className="flex flex-col gap-4 sm:gap-6">
+              {/* Avatar and Name - Stack on mobile */}
+              <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-4">
+                <div
+                  className={cn(
+                    "w-14 h-14 sm:w-16 sm:h-16 lg:w-20 lg:h-20 rounded-xl sm:rounded-2xl flex items-center justify-center shrink-0",
+                    isFemale
+                      ? "bg-pink-50 text-pink-500"
+                      : "bg-blue-50 text-blue-500"
+                  )}
+                >
+                  <User className="w-7 h-7 sm:w-8 sm:h-8 lg:w-10 lg:h-10" />
+                </div>
+                <div className="flex-1 text-center sm:text-left space-y-2 sm:space-y-3 w-full">
+                  <div>
+                    <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-slate-900 leading-tight">
+                      {patient.fullName}
+                    </h2>
+                    <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 sm:gap-3 mt-1.5 sm:mt-2">
+                      <div className="flex items-center gap-1 sm:gap-1.5 text-slate-500 font-medium text-xs sm:text-sm">
+                        <Calendar className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-slate-400" />
+                        <span className="whitespace-nowrap">
+                          DOB: {formatDate(patient.dateOfBirth)}
+                        </span>
                       </div>
-                    )}
+                      {patient.bloodGroup && (
+                        <div className="flex items-center gap-1 sm:gap-1.5 text-red-600 font-bold text-xs sm:text-sm bg-red-50 px-1.5 sm:px-2 py-0.5 rounded-md border border-red-100">
+                          <Droplets className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+                          {patient.bloodGroup}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
+              </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <InfoRow
-                    icon={Phone}
-                    label="Phone Number"
-                    value={patient.phoneNumber}
-                  />
-                  <InfoRow
-                    icon={Mail}
-                    label="Email Address"
-                    value={patient.email}
-                  />
-                </div>
+              {/* Contact Info */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
+                <InfoRow
+                  icon={Phone}
+                  label="Phone Number"
+                  value={patient.phoneNumber}
+                />
+                <InfoRow
+                  icon={Mail}
+                  label="Email Address"
+                  value={patient.email}
+                />
               </div>
             </div>
           </div>
 
-          {/* Additional Details Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-4">
-              <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest px-1">
+          {/* Additional Details - Stack on mobile */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+            {/* Address Section */}
+            <div className="space-y-2 sm:space-y-3">
+              <h3 className="text-[10px] sm:text-xs font-black text-slate-400 uppercase tracking-widest px-1">
                 Residential Details
               </h3>
-              <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-200/50 min-h-[120px]">
-                <div className="flex items-start gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center shrink-0">
-                    <MapPin size={16} className="text-emerald-500" />
+              <div className="bg-white rounded-xl sm:rounded-2xl p-3 sm:p-4 shadow-sm border border-slate-200/50 min-h-[80px] sm:min-h-[100px]">
+                <div className="flex items-start gap-2 sm:gap-3">
+                  <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-emerald-50 flex items-center justify-center shrink-0">
+                    <MapPin className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-500" />
                   </div>
-                  <div>
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
+                  <div className="flex-1 min-w-0">
+                    <span className="text-[9px] sm:text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-0.5 sm:mb-1">
                       Current Address
                     </span>
-                    <p className="text-sm font-medium text-slate-700 leading-relaxed">
+                    <p className="text-xs sm:text-sm font-medium text-slate-700 leading-relaxed break-words">
                       {patient.address || "No address provided"}
                     </p>
                   </div>
@@ -200,41 +210,42 @@ const PatientOverview: React.FC<PatientOverviewProps> = ({
               </div>
             </div>
 
-            <div className="space-y-4">
-              <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest px-1">
+            {/* Guardian Section */}
+            <div className="space-y-2 sm:space-y-3">
+              <h3 className="text-[10px] sm:text-xs font-black text-slate-400 uppercase tracking-widest px-1">
                 Guardian Information
               </h3>
-              <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-200/50">
-                <div className="space-y-3">
-                  <div className="flex items-center gap-3 p-2 bg-slate-50 rounded-xl">
-                    <div className="w-8 h-8 rounded-lg bg-indigo-50 flex items-center justify-center shrink-0">
-                      <User size={16} className="text-indigo-500" />
+              <div className="bg-white rounded-xl sm:rounded-2xl p-3 sm:p-4 shadow-sm border border-slate-200/50">
+                <div className="space-y-2 sm:space-y-3">
+                  <div className="flex items-center gap-2 sm:gap-3 p-1.5 sm:p-2 bg-slate-50 rounded-lg sm:rounded-xl">
+                    <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-indigo-50 flex items-center justify-center shrink-0">
+                      <User className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-indigo-500" />
                     </div>
-                    <div>
-                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block leading-none mb-1">
+                    <div className="flex-1 min-w-0">
+                      <span className="text-[9px] sm:text-[10px] font-bold text-slate-400 uppercase tracking-wider block leading-none mb-0.5">
                         Guardian Name
                       </span>
-                      <p className="text-sm font-bold text-slate-700">
+                      <p className="text-xs sm:text-sm font-bold text-slate-700 truncate">
                         {patient.guardianName || "—"}
                       </p>
                     </div>
                   </div>
 
                   {patient.guardianGender && (
-                    <div className="grid grid-cols-2 gap-2">
-                      <div className="px-3 py-2 bg-slate-50/50 rounded-lg">
-                        <span className="text-[9px] font-bold text-slate-400 uppercase block mb-0.5">
+                    <div className="grid grid-cols-2 gap-1.5 sm:gap-2">
+                      <div className="px-2 sm:px-3 py-1.5 sm:py-2 bg-slate-50/50 rounded-lg">
+                        <span className="text-[8px] sm:text-[9px] font-bold text-slate-400 uppercase block mb-0.5">
                           Gender
                         </span>
-                        <span className="text-xs font-semibold text-slate-600">
+                        <span className="text-[10px] sm:text-xs font-semibold text-slate-600">
                           {patient.guardianGender}
                         </span>
                       </div>
-                      <div className="px-3 py-2 bg-slate-50/50 rounded-lg">
-                        <span className="text-[9px] font-bold text-slate-400 uppercase block mb-0.5">
+                      <div className="px-2 sm:px-3 py-1.5 sm:py-2 bg-slate-50/50 rounded-lg">
+                        <span className="text-[8px] sm:text-[9px] font-bold text-slate-400 uppercase block mb-0.5">
                           DOB
                         </span>
-                        <span className="text-xs font-semibold text-slate-600">
+                        <span className="text-[10px] sm:text-xs font-semibold text-slate-600">
                           {formatDate(patient.guardianDOB)}
                         </span>
                       </div>
@@ -247,28 +258,29 @@ const PatientOverview: React.FC<PatientOverviewProps> = ({
         </div>
       </div>
 
-      <div className="border-t border-slate-200 bg-white p-4 sm:px-8 sm:py-4 flex items-center justify-between">
-        <div className="flex items-center gap-2 text-slate-400">
-          <Activity size={14} />
-          <span className="text-[10px] font-bold uppercase tracking-widest">
-            Audit: Registered on {formatDate(patient.createdAt || "")}
+      {/* Footer - Mobile-first responsive */}
+      <div className="border-t border-slate-200 bg-white p-3 sm:p-4 lg:px-8 lg:py-4 flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-0">
+        <div className="flex items-center gap-1.5 sm:gap-2 text-slate-400 order-2 sm:order-1">
+          <Activity className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+          <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-widest">
+            Registered: {formatDate(patient.createdAt || "")}
           </span>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto order-1 sm:order-2">
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 border border-slate-200 text-slate-600 rounded-xl hover:bg-slate-50 transition-colors text-sm font-semibold cursor-pointer"
+            className="flex-1 sm:flex-none px-3 sm:px-4 py-2 sm:py-2 border border-slate-200 text-slate-600 rounded-lg sm:rounded-xl hover:bg-slate-50 transition-colors text-xs sm:text-sm font-semibold cursor-pointer"
           >
             Close
           </button>
           <button
             type="button"
             onClick={handleEdit}
-            className="flex items-center gap-2 px-6 py-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-colors text-sm font-semibold shadow-md shadow-indigo-100 cursor-pointer"
+            className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 sm:gap-2 px-4 sm:px-6 py-2 sm:py-2 bg-indigo-600 text-white rounded-lg sm:rounded-xl hover:bg-indigo-700 transition-colors text-xs sm:text-sm font-semibold shadow-md shadow-indigo-100 cursor-pointer"
           >
-            <Edit size={16} />
-            Edit Profile
+            <Edit className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            <span>Edit</span>
           </button>
         </div>
       </div>

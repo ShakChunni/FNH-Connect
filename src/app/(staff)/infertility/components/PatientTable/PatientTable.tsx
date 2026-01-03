@@ -13,6 +13,7 @@ interface PatientTableProps {
   customOptions?: any;
   onEdit?: (patient: InfertilityPatientData) => void;
   isLoading?: boolean;
+  startIndex?: number; // For server-side pagination row numbering
 }
 
 const PatientTable: React.FC<PatientTableProps> = ({
@@ -20,6 +21,7 @@ const PatientTable: React.FC<PatientTableProps> = ({
   customOptions,
   onEdit,
   isLoading = false,
+  startIndex,
 }) => {
   const [sortConfig, setSortConfig] = useState<SortConfig | null>(null);
   const [selectedPatient, setSelectedPatient] =
@@ -254,7 +256,11 @@ const PatientTable: React.FC<PatientTableProps> = ({
                   <TableRow
                     key={row.id}
                     row={row}
-                    index={(currentPage - 1) * 15 + index + 1}
+                    index={
+                      startIndex
+                        ? startIndex + index
+                        : (currentPage - 1) * 15 + index + 1
+                    }
                     headers={headers}
                     onEdit={onEdit}
                     onClick={() => handleRowClick(row)}

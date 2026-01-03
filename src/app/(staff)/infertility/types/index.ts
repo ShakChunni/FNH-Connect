@@ -199,12 +199,21 @@ export interface InfertilityFilters {
   search?: string;
   startDate?: string; // ISO date string
   endDate?: string; // ISO date string
+  // Pagination params
+  page?: number;
+  limit?: number;
 }
 
 // Fetch response type
 export interface FetchInfertilityPatientsResponse {
   success: boolean;
   data: InfertilityPatient[];
+  pagination?: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
   error?: string;
 }
 

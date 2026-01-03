@@ -10,13 +10,24 @@ import type {
 } from "../types";
 
 // ============================================
+// Paginated Response Type
+// ============================================
+
+export interface PaginatedPatients {
+  data: PatientData[];
+  total: number;
+  totalPages: number;
+  currentPage: number;
+}
+
+// ============================================
 // Fetch All Patients Hook
 // ============================================
 
 export function useFetchPatients(filters: PatientFilters = {}) {
   return useQuery({
     queryKey: ["patients", filters],
-    queryFn: async (): Promise<PatientData[]> => {
+    queryFn: async (): Promise<PaginatedPatients> => {
       const params = new URLSearchParams();
 
       if (filters.search) {
@@ -28,6 +39,13 @@ export function useFetchPatients(filters: PatientFilters = {}) {
       if (filters.endDate) {
         params.append("endDate", filters.endDate);
       }
+      // Add pagination params
+      if (filters.page) {
+        params.append("page", filters.page.toString());
+      }
+      if (filters.limit) {
+        params.append("limit", filters.limit.toString());
+      }
 
       const queryString = params.toString();
       const url = `/patient-records${queryString ? `?${queryString}` : ""}`;
@@ -38,7 +56,12 @@ export function useFetchPatients(filters: PatientFilters = {}) {
         throw new Error(response.data.error || "Failed to fetch patients");
       }
 
-      return response.data.data;
+      return {
+        data: response.data.data,
+        total: response.data.total,
+        totalPages: response.data.pagination?.totalPages ?? 1,
+        currentPage: response.data.pagination?.page ?? 1,
+      };
     },
     staleTime: 30 * 1000, // 30 seconds
     gcTime: 5 * 60 * 1000, // 5 minutes

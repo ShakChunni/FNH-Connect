@@ -1,65 +1,57 @@
 "use client";
 
-import React, { useCallback, useMemo, useState } from "react";
-import { AnimatePresence } from "framer-motion";
+import React, { useCallback, useMemo, useRef } from "react";
 import { createPortal } from "react-dom";
 
 // Modular Components
 import { PageHeader } from "@/components/ui/PageHeader";
+import { Pagination } from "@/components/pagination/Pagination";
 import AddNewDataInfertility from "./components/AddNewData/AddNewDataInfertility";
 import EditDataInfertility from "./components/EditData/EditDataInfertility";
 import PatientTable from "./components/PatientTable/PatientTable";
 import { NewPatientButton } from "./components/NewPatientButton";
-import { InfertilitySearch } from "./components/InfertilitySearch";
+import InfertilitySearch from "./components/InfertilitySearch";
 
 // Types and Hooks
 import { InfertilityPatientData } from "./types";
 import { useFetchInfertilityData } from "./hooks";
 import type { InfertilityFilters } from "./types";
 import { normalizePatientData } from "../../../components/form-sections/utils/dataUtils";
-import { useInfertilityModals, useInfertilityActions } from "./stores";
+import {
+  useInfertilityModals,
+  useInfertilityActions,
+  usePagination,
+  useFilterActions,
+  useFilterValues,
+} from "./stores";
 
 const InfertilityManagement = React.memo(() => {
+  // Ref for scrolling table container on pagination
+  const tableContainerRef = useRef<HTMLDivElement>(null);
+
   // Zustand store selectors
   const modals = useInfertilityModals();
   const actions = useInfertilityActions();
+  const pagination = usePagination();
+  const filterActions = useFilterActions();
+  const filterValues = useFilterValues();
 
-  // Local state for filters
-  const [filters, setFilters] = useState<{
-    search?: string;
-    startDate?: Date;
-    endDate?: Date;
-  }>({});
-
-  // Map filters to hook format
+  // Map pagination and filters to hook filters format
   const hookFilters: InfertilityFilters = useMemo(
     () => ({
-      search: filters.search,
-      startDate: filters.startDate?.toISOString(),
-      endDate: filters.endDate?.toISOString(),
+      page: pagination.page,
+      limit: pagination.limit,
+      search: filterValues.search.length >= 2 ? filterValues.search : undefined,
+      startDate: filterValues.startDate?.toISOString(),
+      endDate: filterValues.endDate?.toISOString(),
     }),
-    [filters]
+    [pagination.page, pagination.limit, filterValues]
   );
 
-  const { data: patientData, isLoading } = useFetchInfertilityData(hookFilters);
+  const { data: result, isLoading } = useFetchInfertilityData(hookFilters);
 
-  // Handle filter changes from search component
-  const handleFiltersChange = useCallback(
-    (newFilters: {
-      search?: string;
-      department?: string;
-      dateRange?: string;
-      startDate?: Date;
-      endDate?: Date;
-    }) => {
-      setFilters({
-        search: newFilters.search,
-        startDate: newFilters.startDate,
-        endDate: newFilters.endDate,
-      });
-    },
-    []
-  );
+  const totalRecords = result?.total || 0;
+  const totalPages = result?.totalPages || 0;
 
   // Handle edit patient
   const handleOpenEditPopup = useCallback(
@@ -71,9 +63,27 @@ const InfertilityManagement = React.memo(() => {
 
   // Normalize patient data
   const normalizedPatientData = useMemo(
-    () => normalizePatientData(patientData),
-    [patientData]
+    () => normalizePatientData(result?.data ?? []),
+    [result?.data]
   );
+
+  // Pagination handlers
+  const handlePageChange = useCallback(
+    (page: number) => {
+      filterActions.setPage(page);
+    },
+    [filterActions]
+  );
+
+  // Calculate pagination indices
+  const startIndex = useMemo(() => {
+    return totalRecords > 0 ? (pagination.page - 1) * pagination.limit + 1 : 0;
+  }, [pagination.page, pagination.limit, totalRecords]);
+
+  const endIndex = useMemo(() => {
+    if (!result) return 0;
+    return Math.min(pagination.page * pagination.limit, result.total);
+  }, [pagination.page, pagination.limit, result]);
 
   return (
     <div className="min-h-screen bg-fnh-porcelain pb-2 sm:pb-3 lg:pb-4 w-full overflow-x-hidden">
@@ -93,21 +103,38 @@ const InfertilityManagement = React.memo(() => {
             />
           </div>
 
-          {/* Search Bar */}
-          <div className="px-1 sm:px-2 lg:px-4 pb-4 lg:pb-6">
+          {/* Search Bar with Date Range and Report Buttons */}
+          <div className="px-0 sm:px-2 lg:px-4 pb-2 sm:pb-4 lg:pb-6">
             <InfertilitySearch
-              onFiltersChange={handleFiltersChange}
               disabled={isLoading}
+              recordCount={totalRecords}
             />
           </div>
 
           {/* Table Container */}
-          <div className="px-1 sm:px-2 lg:px-4">
-            <PatientTable
-              tableData={normalizedPatientData}
-              isLoading={isLoading}
-              onEdit={handleOpenEditPopup}
-            />
+          <div className="px-0 sm:px-2 lg:px-4">
+            <div
+              ref={tableContainerRef}
+              className="bg-white rounded-xl sm:rounded-3xl shadow-sm border border-slate-100 overflow-hidden mb-4 sm:mb-8"
+            >
+              <PatientTable
+                tableData={normalizedPatientData}
+                isLoading={isLoading}
+                onEdit={handleOpenEditPopup}
+                startIndex={startIndex}
+              />
+
+              {/* Pagination UI - Using Global Component */}
+              <Pagination
+                currentPage={pagination.page}
+                totalPages={totalPages}
+                totalResults={totalRecords}
+                startIndex={startIndex}
+                endIndex={endIndex}
+                onPageChange={handlePageChange}
+                scrollContainerRef={tableContainerRef}
+              />
+            </div>
           </div>
         </div>
       </div>

@@ -12,6 +12,7 @@ interface PatientTableProps {
   tableData: PatientData[];
   isLoading?: boolean;
   onEdit: (patient: PatientData) => void;
+  startIndex?: number; // For server-side pagination row numbering
 }
 
 type SortKey = "fullName" | "phoneNumber" | "gender" | "createdAt" | "id";
@@ -112,6 +113,7 @@ export const PatientTable: React.FC<PatientTableProps> = ({
   tableData,
   isLoading = false,
   onEdit,
+  startIndex,
 }) => {
   const [sortKey, setSortKey] = useState<SortKey | null>(null);
   const [sortOrder, setSortOrder] = useState<SortOrder>("asc");
@@ -194,9 +196,9 @@ export const PatientTable: React.FC<PatientTableProps> = ({
 
   const getHeaderClasses = (index: number, sortableKey?: SortKey) => {
     const baseClasses = `
-      px-4 py-4 text-left text-[10px] sm:text-xs
+      px-2 py-3 sm:px-4 sm:py-4 text-left text-[10px] sm:text-xs
       font-semibold text-white uppercase tracking-wider
-      bg-fnh-navy transition-colors z-20
+      bg-fnh-navy transition-colors
       ${sortableKey ? "cursor-pointer hover:bg-fnh-navy-dark" : ""}
     `;
 
@@ -211,13 +213,14 @@ export const PatientTable: React.FC<PatientTableProps> = ({
   };
 
   const getCellClasses = (index: number) => {
-    const baseClasses = "px-4 py-4 transition-colors group-hover:bg-slate-50";
+    const baseClasses =
+      "px-2 py-3 sm:px-4 sm:py-4 transition-colors group-hover:bg-slate-50 text-[11px] sm:text-xs";
     if (index === 0)
-      return `${baseClasses} ${FIRST_COL_WIDTH} lg:sticky lg:left-0 lg:z-10 bg-white font-mono font-bold text-gray-400 text-xs text-center`;
+      return `${baseClasses} ${FIRST_COL_WIDTH} lg:sticky lg:left-0 lg:z-10 lg:bg-white group-hover:lg:bg-slate-50 font-mono font-bold text-gray-400 text-center`;
     if (index === 1)
-      return `${baseClasses} ${SECOND_COL_WIDTH} lg:sticky lg:left-[60px] lg:z-10 bg-white font-mono font-bold text-fnh-blue text-xs`;
+      return `${baseClasses} ${SECOND_COL_WIDTH} lg:sticky lg:left-[60px] lg:z-10 lg:bg-white group-hover:lg:bg-slate-50 font-mono font-bold text-fnh-blue`;
     if (index === 2)
-      return `${baseClasses} ${THIRD_COL_WIDTH} lg:sticky lg:left-[160px] lg:z-10 bg-white`;
+      return `${baseClasses} ${THIRD_COL_WIDTH} lg:sticky lg:left-[160px] lg:z-10 lg:bg-white group-hover:lg:bg-slate-50`;
     return baseClasses;
   };
 
@@ -250,7 +253,7 @@ export const PatientTable: React.FC<PatientTableProps> = ({
           onMouseLeave={dragScroll.onMouseLeave}
         >
           <table className="min-w-full divide-y divide-gray-200 border-separate border-spacing-0">
-            <thead className="sticky top-0 z-40">
+            <thead className="bg-fnh-navy sticky top-0 z-20">
               <tr>
                 <th className={getHeaderClasses(0)}>#</th>
                 <th
@@ -338,7 +341,9 @@ export const PatientTable: React.FC<PatientTableProps> = ({
                   onClick={() => handlePatientClick(patient)}
                 >
                   <td className={getCellClasses(0)}>
-                    {(currentPage - 1) * PAGE_SIZE + index + 1}
+                    {startIndex
+                      ? startIndex + index
+                      : (currentPage - 1) * PAGE_SIZE + index + 1}
                   </td>
                   <td className={getCellClasses(1)}>
                     #{patient.id.toString().padStart(4, "0")}

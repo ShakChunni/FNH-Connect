@@ -69,16 +69,20 @@ interface FormActions {
 // INITIAL STATE
 // ═══════════════════════════════════════════════════════════════
 
+// Feroza Nursing Home auto-fill data (hospital is always FNH for infertility)
+const FNH_HOSPITAL_DATA: HospitalData = {
+  id: 1, // FNH hospital ID in database
+  name: "Feroza Nursing Home",
+  address:
+    "1257, Sholakia, Khorompatti Kishoreganj Sadar, Kishoreganj Dhaka, Bangladesh",
+  phoneNumber: "+8801726219350",
+  email: "ferozanursinghome@gmail.com",
+  website: "",
+  type: "Private Hospital",
+};
+
 const initialFormState: FormState = {
-  hospitalData: {
-    id: null,
-    name: "",
-    address: "",
-    phoneNumber: "",
-    email: "",
-    website: "",
-    type: "",
-  },
+  hospitalData: { ...FNH_HOSPITAL_DATA },
   patientData: {
     id: null,
     firstName: "",
@@ -192,15 +196,8 @@ export const useInfertilityFormStore = create<FormState & FormActions>()(
         };
 
         set({
-          hospitalData: {
-            id: patient.hospitalId,
-            name: patient.hospitalName || "",
-            address: patient.hospitalAddress || "",
-            phoneNumber: patient.hospitalPhone || "",
-            email: patient.hospitalEmail || "",
-            website: patient.hospitalWebsite || "",
-            type: patient.hospitalType || "",
-          },
+          // Always use Feroza Nursing Home as the hospital
+          hospitalData: { ...FNH_HOSPITAL_DATA },
           patientData: {
             id: patient.patientId,
             firstName: patient.patientFirstName,

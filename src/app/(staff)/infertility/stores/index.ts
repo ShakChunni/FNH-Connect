@@ -34,6 +34,8 @@ export {
   useFilters,
   useSearchParams,
   useFilterActions,
+  usePagination,
+  useFilterValues,
 } from "./filterStore";
 
 // ═══════════════════════════════════════════════════════════════
@@ -156,4 +158,3 @@ export const useInfertilityActions = () => {
     [formActions, uiActions, filterActions]
   );
 };
-

@@ -37,6 +37,23 @@ const PatientOverview: React.FC<PatientOverviewProps> = ({
     });
   };
 
+  const formatDateWithTime = (dateStr: string | null) => {
+    if (!dateStr) return { date: "N/A", time: "" };
+    const date = new Date(dateStr);
+    const dateFormatted = date.toLocaleDateString("en-GB", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    });
+    const timeFormatted = date.toLocaleTimeString("en-BD", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+      timeZone: "Asia/Dhaka",
+    });
+    return { date: dateFormatted, time: timeFormatted };
+  };
+
   const handleEdit = () => {
     onClose();
     setTimeout(() => {
@@ -86,7 +103,10 @@ const PatientOverview: React.FC<PatientOverviewProps> = ({
               Created
             </span>
             <span className="text-[10px] font-bold text-gray-600">
-              {formatDateShort(patient.createdAt)}
+              {formatDateWithTime(patient.createdAt).date}
+            </span>
+            <span className="text-[9px] font-medium text-gray-400">
+              {formatDateWithTime(patient.createdAt).time}
             </span>
           </div>
         </div>

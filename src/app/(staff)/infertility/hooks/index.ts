@@ -3,3 +3,4 @@ export { useEditInfertilityData } from "./useEditInfertilityData";
 export { useFetchInfertilityData } from "./useFetchInfertilityData";
 export { useFetchHospitalInformation } from "./useFetchHospitalInformation";
 export { useFetchPatientInformation } from "./useFetchPatientInformation";
+export { useFetchInfertilityReportData } from "./useFetchInfertilityReportData";

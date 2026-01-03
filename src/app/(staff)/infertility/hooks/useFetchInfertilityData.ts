@@ -6,10 +6,17 @@ import type {
   FetchInfertilityPatientsResponse,
 } from "../types";
 
+export interface PaginatedInfertility {
+  data: InfertilityPatient[];
+  total: number;
+  totalPages: number;
+  currentPage: number;
+}
+
 export function useFetchInfertilityData(filters: InfertilityFilters = {}) {
   return useQuery({
     queryKey: ["infertilityPatients", filters],
-    queryFn: async (): Promise<InfertilityPatient[]> => {
+    queryFn: async (): Promise<PaginatedInfertility> => {
       const params = new URLSearchParams();
 
       // Add filters
@@ -37,6 +44,15 @@ export function useFetchInfertilityData(filters: InfertilityFilters = {}) {
         params.append("endDate", filters.endDate);
       }
 
+      // Add pagination params
+      if (filters.page) {
+        params.append("page", filters.page.toString());
+      }
+
+      if (filters.limit) {
+        params.append("limit", filters.limit.toString());
+      }
+
       const response = await api.get<FetchInfertilityPatientsResponse>(
         `/infertility-patients?${params.toString()}`
       );
@@ -47,7 +63,12 @@ export function useFetchInfertilityData(filters: InfertilityFilters = {}) {
         );
       }
 
-      return response.data.data;
+      return {
+        data: response.data.data,
+        total: response.data.pagination?.total ?? response.data.data.length,
+        totalPages: response.data.pagination?.totalPages ?? 1,
+        currentPage: response.data.pagination?.page ?? 1,
+      };
     },
     staleTime: 2 * 60 * 1000, // 2 minutes
     gcTime: 5 * 60 * 1000, // 5 minutes

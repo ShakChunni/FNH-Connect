@@ -6,6 +6,7 @@ import {
 } from "../../../stores";
 import ReferralSourceDropdown from "../../../../../../components/form-sections/Fields/ReferralSourceDropdown";
 import StatusDropdown from "../../../../../../components/form-sections/Fields/StatusDropdown";
+import AppointmentDatePicker from "../../../../../../components/form-sections/Fields/AppointmentDatePicker";
 
 const STATUS_OPTIONS = ["Active", "Follow-up", "Completed", "Discontinued"];
 const REFERRAL_SOURCES = [
@@ -32,6 +33,11 @@ const CurrentVisit: React.FC = () => {
         : `bg-gray-50 border-2 border-gray-300 ${baseStyle}`;
   }, []);
 
+  // Handle next appointment date change
+  const handleNextAppointmentChange = (date: Date | null) => {
+    updateMedicalInfo("nextAppointment", date);
+  };
+
   return (
     <div className="mb-6 border-t border-gray-200 pt-6 mt-6">
       <div className="flex items-center gap-2 mb-2">
@@ -40,7 +46,9 @@ const CurrentVisit: React.FC = () => {
           Current Visit
         </span>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+
+      {/* First Row: Referral Source, Status, Next Appointment */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
         <div>
           <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1.5 sm:mb-2">
             Referral Source
@@ -63,7 +71,20 @@ const CurrentVisit: React.FC = () => {
             inputClassName={inputClassName(medicalInfo.status)}
           />
         </div>
+        <div>
+          <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1.5 sm:mb-2">
+            Next Appointment
+          </label>
+          <AppointmentDatePicker
+            value={medicalInfo.nextAppointment}
+            onChange={handleNextAppointmentChange}
+            placeholder="Select appointment date"
+            minDate="today"
+          />
+        </div>
       </div>
+
+      {/* Chief Complaint */}
       <div>
         <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1.5 sm:mb-2">
           Chief Complaint
