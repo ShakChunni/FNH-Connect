@@ -53,6 +53,7 @@
     "clsx": "^2.1.1",
     "crypto-js": "^4.2.0",
     "date-fns": "^4.1.0",
+    "date-fns-tz": "^3.2.0",
     "framer-motion": "^12.23.22",
     "immer": "^11.0.1",
     "jose": "^6.1.0",
