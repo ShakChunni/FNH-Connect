@@ -1,7 +1,7 @@
 import {
   InfertilityPatient,
   InfertilityPatientData,
-} from "../../../app/(staff)/infertility/types";
+} from "../../../app/(authenticated)/infertility/types";
 
 const calculateAge = (dateOfBirth: Date | string | null): number | null => {
   if (!dateOfBirth) return null;

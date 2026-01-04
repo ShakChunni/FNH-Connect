@@ -3,7 +3,7 @@
  * Centralized functions for calculating age from DOB across the application
  */
 
-import type { AgeInfo } from "../../../app/(staff)/infertility/types";
+import type { AgeInfo } from "../../../app/(authenticated)/infertility/types";
 
 /**
  * Calculate age in years, months, and days from a date of birth

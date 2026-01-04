@@ -29,30 +29,36 @@ export function PasswordInput({
 }: PasswordInputProps) {
   const [showPassword, setShowPassword] = useState(false);
 
+  // Modernized input styles - cleaner border, subtle shadow
   const getInputClassName = () => {
     const base =
-      "w-full px-4 py-3.5 pr-12 rounded-xl border-2 text-sm text-fnh-navy placeholder-fnh-grey/60 transition-all duration-300 ease-out focus:outline-none";
-    const errorStyles = error
-      ? "border-red-300 bg-red-50/50 focus:border-red-400 focus:ring-2 focus:ring-red-100"
-      : "border-fnh-grey-light/50 bg-white focus:border-fnh-blue focus:ring-2 focus:ring-fnh-blue/10 hover:border-fnh-grey";
-    const disabledStyles = disabled
-      ? "bg-fnh-porcelain text-fnh-grey cursor-not-allowed opacity-60"
-      : "";
-    const focusedStyles =
-      isFocused && !error ? "border-fnh-blue shadow-sm" : "";
+      "w-full px-4 py-3.5 pr-12 rounded-xl border bg-white/50 text-sm text-fnh-navy placeholder-fnh-grey/50 transition-all duration-300 ease-out focus:outline-none focus:bg-white";
 
-    return `${base} ${errorStyles} ${disabledStyles} ${focusedStyles}`;
+    // Error state: Red tint, red border
+    const errorStyles = error
+      ? "border-red-300 bg-red-50/30 focus:border-red-400 focus:ring-4 focus:ring-red-100/50"
+      : "border-gray-200 hover:border-gray-300 focus:border-fnh-blue focus:ring-4 focus:ring-fnh-blue/10 shadow-sm hover:shadow-md";
+
+    const disabledStyles = disabled
+      ? "bg-gray-50 text-gray-400 cursor-not-allowed opacity-75 border-gray-100"
+      : "";
+
+    // Remove separate focusedStyles as they are handled in base/error logic now
+    // but we can keep the logic if needed for external control,
+    // though CSS :focus is usually snappier.
+
+    return `${base} ${errorStyles} ${disabledStyles}`;
   };
 
   return (
-    <div className="space-y-1.5">
+    <div className="space-y-1 relative">
       <label
         htmlFor="password"
-        className="block text-sm font-medium text-fnh-navy/80"
+        className="block text-sm font-semibold text-fnh-navy/80 ml-1"
       >
         Password
       </label>
-      <div className="relative">
+      <div className="relative group">
         <input
           type={showPassword ? "text" : "password"}
           id="password"
@@ -69,10 +75,10 @@ export function PasswordInput({
           type="button"
           onClick={() => setShowPassword(!showPassword)}
           disabled={disabled}
-          className={`absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-full transition-all duration-200 hover:scale-110 active:scale-95 ${
+          className={`absolute right-3 top-1/2 -translate-y-1/2 p-2 rounded-lg transition-all duration-200 active:scale-95 ${
             error
               ? "text-red-400 hover:text-red-500 hover:bg-red-50"
-              : "text-fnh-grey hover:text-fnh-navy hover:bg-fnh-grey-light/30"
+              : "text-gray-400 hover:text-fnh-blue hover:bg-blue-50"
           } ${disabled ? "cursor-not-allowed opacity-50" : "cursor-pointer"}`}
           aria-label={showPassword ? "Hide password" : "Show password"}
         >
@@ -83,21 +89,6 @@ export function PasswordInput({
           )}
         </button>
       </div>
-
-      {/* Smooth Field Error Animation */}
-      <AnimatePresence mode="wait">
-        {error && (
-          <motion.p
-            initial={{ opacity: 0, height: 0, y: -5 }}
-            animate={{ opacity: 1, height: "auto", y: 0 }}
-            exit={{ opacity: 0, height: 0, y: -5 }}
-            transition={{ duration: 0.2 }}
-            className="text-sm text-red-500 font-medium pl-1"
-          >
-            {error}
-          </motion.p>
-        )}
-      </AnimatePresence>
     </div>
   );
 }

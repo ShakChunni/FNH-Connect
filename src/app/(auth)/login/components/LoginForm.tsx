@@ -67,30 +67,18 @@ export function LoginForm({
     (field: keyof LoginFormData, value: string) => {
       setFormData((prev) => ({ ...prev, [field]: value }));
       setSubmitError(null);
-
-      if (touched[field]) {
-        const error = validateField(field, value);
-        setErrors((prev) => ({
-          ...prev,
-          [field]: error,
-        }));
+      // Clear specific field error when user types
+      if (errors[field]) {
+        setErrors((prev) => ({ ...prev, [field]: undefined }));
       }
     },
-    [touched, validateField]
+    [errors]
   );
 
-  const handleFieldBlur = useCallback(
-    (field: keyof LoginFormData) => {
-      setTouched((prev) => ({ ...prev, [field]: true }));
-      setFocusedField(null);
-      const error = validateField(field, formData[field]);
-      setErrors((prev) => ({
-        ...prev,
-        [field]: error,
-      }));
-    },
-    [formData, validateField]
-  );
+  const handleFieldBlur = useCallback((field: keyof LoginFormData) => {
+    setTouched((prev) => ({ ...prev, [field]: true }));
+    setFocusedField(null);
+  }, []);
 
   const handleFieldFocus = useCallback((field: string) => {
     setFocusedField(field);
@@ -118,6 +106,9 @@ export function LoginForm({
         username: true,
         password: true,
       });
+      // Set the first error as the main submit error
+      const firstError = Object.values(newErrors)[0];
+      setSubmitError(firstError || "Please check your inputs.");
       return;
     }
 
@@ -136,22 +127,23 @@ export function LoginForm({
     field: "username" | "password",
     hasError: boolean
   ) => {
+    // Cleaner, more modern input style
     const base =
-      "w-full px-4 py-3.5 rounded-xl border-2 text-sm text-fnh-navy placeholder-fnh-grey/60 transition-all duration-300 ease-out focus:outline-none";
-    const errorStyles = hasError
-      ? "border-red-300 bg-red-50/50 focus:border-red-400 focus:ring-2 focus:ring-red-100"
-      : "border-fnh-grey-light/50 bg-white focus:border-fnh-blue focus:ring-2 focus:ring-fnh-blue/10 hover:border-fnh-grey";
-    const disabledStyles = isLoading
-      ? "bg-fnh-porcelain text-fnh-grey cursor-not-allowed opacity-60"
-      : "";
-    const focusedStyles =
-      focusedField === field && !hasError ? "border-fnh-blue shadow-sm" : "";
+      "w-full px-4 py-3.5 rounded-xl border bg-white/50 text-sm text-fnh-navy placeholder-fnh-grey/50 transition-all duration-300 ease-out focus:outline-none focus:bg-white";
 
-    return `${base} ${errorStyles} ${disabledStyles} ${focusedStyles}`;
+    const errorStyles = hasError
+      ? "border-red-300 bg-red-50/30 focus:border-red-400 focus:ring-4 focus:ring-red-100/50"
+      : "border-gray-200 hover:border-gray-300 focus:border-fnh-blue focus:ring-4 focus:ring-fnh-blue/10 shadow-sm hover:shadow-md";
+
+    const disabledStyles = isLoading
+      ? "bg-gray-50 text-gray-400 cursor-not-allowed opacity-75 border-gray-100"
+      : "";
+
+    return `${base} ${errorStyles} ${disabledStyles}`;
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5">
+    <form onSubmit={handleSubmit} className="space-y-4 py-2">
       {/* Error Message - Smooth animated */}
       <LoginError
         message={submitError}
@@ -160,14 +152,21 @@ export function LoginForm({
 
       {/* Username Field */}
       <motion.div
-        className="space-y-1.5"
+        className="space-y-1 relative"
         initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, delay: 0.1 }}
+        animate={{
+          opacity: 1,
+          y: 0,
+          x: touched.username && errors.username ? [0, -6, 6, -6, 6, 0] : 0,
+        }}
+        transition={{
+          y: { duration: 0.4, delay: 0.1 },
+          x: { duration: 0.4 }, // fast shake
+        }}
       >
         <label
           htmlFor="username"
-          className="block text-sm font-medium text-fnh-navy/80"
+          className="block text-sm font-semibold text-fnh-navy/80 ml-1"
         >
           Username
         </label>
@@ -186,28 +185,20 @@ export function LoginForm({
             !!(touched.username && errors.username)
           )}
         />
-
-        {/* Smooth Field Error */}
-        <AnimatePresence mode="wait">
-          {touched.username && errors.username && (
-            <motion.p
-              initial={{ opacity: 0, height: 0, y: -5 }}
-              animate={{ opacity: 1, height: "auto", y: 0 }}
-              exit={{ opacity: 0, height: 0, y: -5 }}
-              transition={{ duration: 0.2 }}
-              className="text-sm text-red-500 font-medium pl-1"
-            >
-              {errors.username}
-            </motion.p>
-          )}
-        </AnimatePresence>
       </motion.div>
 
       {/* Password Field */}
       <motion.div
         initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, delay: 0.2 }}
+        animate={{
+          opacity: 1,
+          y: 0,
+          x: touched.password && errors.password ? [0, -6, 6, -6, 6, 0] : 0,
+        }}
+        transition={{
+          y: { duration: 0.4, delay: 0.2 },
+          x: { duration: 0.4 },
+        }}
       >
         <PasswordInput
           value={formData.password}
@@ -229,7 +220,7 @@ export function LoginForm({
         <button
           type="submit"
           disabled={isLoading}
-          className="w-full h-12 px-4 bg-fnh-navy text-fnh-white font-semibold rounded-xl shadow-md hover:shadow-lg hover:bg-fnh-navy-light focus:ring-2 focus:ring-offset-2 focus:ring-fnh-blue disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 cursor-pointer"
+          className="w-full h-12 px-4 bg-fnh-navy text-white font-bold rounded-xl shadow-lg hover:shadow-xl hover:bg-fnh-navy-light hover:scale-[1.01] active:scale-[0.98] focus:ring-4 focus:ring-fnh-blue/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 cursor-pointer"
         >
           {isLoading ? <LoginLoading message="Signing in..." /> : "Sign In"}
         </button>

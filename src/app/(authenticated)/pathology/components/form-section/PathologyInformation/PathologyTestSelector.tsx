@@ -11,11 +11,11 @@ import { FaChevronDown, FaTimes } from "react-icons/fa";
 import {
   PATHOLOGY_TESTS,
   PathologyTestItem,
-} from "@/app/(staff)/pathology/constants/pathologyTests";
+} from "@/app/(authenticated)/pathology/constants/pathologyTests";
 import {
   usePathologyPathologyInfo,
   usePathologyActions,
-} from "@/app/(staff)/pathology/stores";
+} from "@/app/(authenticated)/pathology/stores";
 import { DropdownPortal } from "@/components/ui/DropdownPortal";
 
 const TestItem = memo(

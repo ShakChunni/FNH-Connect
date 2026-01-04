@@ -64,11 +64,11 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="space-y-8 px-4 sm:px-0">
+    <div className="space-y-8 px-2 sm:px-0">
       {/* Header - Mobile Logo Only */}
-      <div className="flex flex-col items-center sm:items-start text-center sm:text-left space-y-2">
+      <div className="flex flex-col items-center sm:items-start text-center sm:text-left space-y-3">
         {/* Visible only on mobile/tablet where right panel is hidden */}
-        <div className="relative w-16 h-16 mb-4 lg:hidden">
+        <div className="relative w-14 h-14 mb-6 lg:hidden">
           <Image
             src="/fnh-logo.svg"
             alt="FNH Logo"
@@ -77,11 +77,10 @@ export default function LoginPage() {
           />
         </div>
 
-        {/* Adjusted text sizing for responsiveness */}
-        <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-fnh-navy">
+        <h2 className="text-3xl font-extrabold tracking-tight text-fnh-navy font-sans">
           Welcome back
         </h2>
-        <p className="text-fnh-grey-dark max-w-sm text-sm sm:text-base">
+        <p className="text-fnh-grey-dark max-w-sm text-base leading-relaxed text-opacity-90">
           Please enter your credentials to access the FNH Connect portal.
         </p>
       </div>
@@ -90,18 +89,18 @@ export default function LoginPage() {
         <LoginForm onSubmit={handleLogin} isLoading={isLoading} error={error} />
       </div>
 
-      <div className="pt-4 border-t border-fnh-grey-lighter">
-        <p className="text-center sm:text-left text-xs sm:text-sm text-fnh-grey mb-2">
-          Don't have an account or need support?
+      <div className="pt-6 border-t border-gray-100">
+        <p className="text-center sm:text-left text-xs font-medium text-gray-400 mb-3 uppercase tracking-wider">
+          Support
         </p>
         <button
           onClick={openWhatsApp}
-          // Simplified button text for mobile
-          className="flex items-center gap-2 text-sm font-semibold text-fnh-blue hover:text-fnh-blue-dark transition-colors cursor-pointer mx-auto sm:mx-0 group"
+          className="flex items-center justify-center sm:justify-start gap-2.5 text-sm font-semibold text-fnh-navy hover:text-fnh-blue transition-all duration-300 cursor-pointer mx-auto sm:mx-0 group w-full sm:w-auto p-2 sm:p-0 rounded-lg hover:bg-gray-50 sm:hover:bg-transparent"
         >
-          <FaWhatsapp className="w-4 h-4 group-hover:text-[#25D366] transition-colors" />
-          <span className="sm:hidden">Administrator</span>
-          <span className="hidden sm:inline">
+          <div className="w-8 h-8 rounded-full bg-green-50 flex items-center justify-center group-hover:bg-green-100 transition-colors">
+            <FaWhatsapp className="w-4 h-4 text-[#25D366]" />
+          </div>
+          <span className="group-hover:translate-x-0.5 transition-transform">
             Contact Administrator (F.M. Ashfaq)
           </span>
         </button>
