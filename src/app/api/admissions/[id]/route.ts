@@ -12,7 +12,7 @@ import {
 } from "@/lib/csrfProtection";
 import { getAuthenticatedUserForAPI } from "@/lib/auth-validation";
 import { prisma } from "@/lib/prisma";
-import { updateAdmissionSchema } from "@/app/(staff)/general-admission/types/schemas";
+import { updateAdmissionSchema } from "@/app/(authenticated)/general-admission/types/schemas";
 import {
   getAdmissionById,
   updateAdmission,

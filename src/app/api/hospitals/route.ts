@@ -8,7 +8,7 @@ import { prisma } from "@/lib/prisma";
 import {
   hospitalQuerySchema,
   createHospitalSchema as importedCreateHospitalSchema,
-} from "@/app/(staff)/infertility/types/schemas";
+} from "@/app/(authenticated)/infertility/types/schemas";
 
 // ═══════════════════════════════════════════════════════════════
 // GET /api/hospitals - List hospitals with optional search/filter

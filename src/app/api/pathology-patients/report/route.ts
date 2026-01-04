@@ -7,7 +7,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthenticatedUserForAPI } from "@/lib/auth-validation";
 import * as pathologyService from "@/services/pathologyService";
-import { pathologyFiltersSchema } from "@/app/(staff)/pathology/types/schemas";
+import { pathologyFiltersSchema } from "@/app/(authenticated)/pathology/types/schemas";
 
 // Maximum records to return for reports (safety limit)
 const MAX_REPORT_RECORDS = 10000;

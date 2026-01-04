@@ -6,7 +6,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthenticatedUserForAPI } from "@/lib/auth-validation";
-import { admissionFiltersSchema } from "@/app/(staff)/general-admission/types/schemas";
+import { admissionFiltersSchema } from "@/app/(authenticated)/general-admission/types/schemas";
 import {
   getAdmissions,
   transformAdmissionForResponse,

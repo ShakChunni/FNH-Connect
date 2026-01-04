@@ -14,7 +14,7 @@ import { prisma } from "@/lib/prisma";
 import {
   admissionFiltersSchema,
   createAdmissionSchema,
-} from "@/app/(staff)/general-admission/types/schemas";
+} from "@/app/(authenticated)/general-admission/types/schemas";
 import {
   getAdmissions,
   createAdmission,

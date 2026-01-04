@@ -9,7 +9,7 @@ import * as pathologyService from "@/services/pathologyService";
 import {
   pathologyFiltersSchema,
   addPatientSchema,
-} from "@/app/(staff)/pathology/types/schemas";
+} from "@/app/(authenticated)/pathology/types/schemas";
 
 // ═══════════════════════════════════════════════════════════════
 // GET /api/pathology-patients - List with filters

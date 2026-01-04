@@ -5,7 +5,7 @@ import {
 } from "@/lib/csrfProtection";
 import { getAuthenticatedUserForAPI } from "@/lib/auth-validation";
 import * as pathologyService from "@/services/pathologyService";
-import { editPatientSchema } from "@/app/(staff)/pathology/types/schemas";
+import { editPatientSchema } from "@/app/(authenticated)/pathology/types/schemas";
 import { prisma } from "@/lib/prisma";
 
 // ═══════════════════════════════════════════════════════════════
