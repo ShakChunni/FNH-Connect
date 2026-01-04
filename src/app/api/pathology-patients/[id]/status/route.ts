@@ -78,6 +78,29 @@ export async function PATCH(
       },
     });
 
+    // Log activity with device info
+    await prisma.activityLog.create({
+      data: {
+        userId: user.id,
+        action: isCompleted ? "COMPLETED" : "UPDATE",
+        description: isCompleted
+          ? `Marked pathology test ${updatedTest.testNumber} as completed`
+          : `Marked pathology test ${updatedTest.testNumber} as pending`,
+        entityType: "PathologyTest",
+        entityId: testId,
+        timestamp: new Date(),
+        // Device info from session for accountability
+        sessionId: user.sessionId,
+        ipAddress: user.sessionDeviceInfo.ipAddress,
+        deviceFingerprint: user.sessionDeviceInfo.deviceFingerprint,
+        readableFingerprint: user.sessionDeviceInfo.readableFingerprint,
+        deviceType: user.sessionDeviceInfo.deviceType,
+        browserName: user.sessionDeviceInfo.browserName,
+        browserVersion: user.sessionDeviceInfo.browserVersion,
+        osType: user.sessionDeviceInfo.osType,
+      },
+    });
+
     return NextResponse.json({
       success: true,
       data: updatedTest,

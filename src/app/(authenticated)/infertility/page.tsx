@@ -123,18 +123,22 @@ const InfertilityManagement = React.memo(() => {
                 onEdit={handleOpenEditPopup}
                 startIndex={startIndex}
               />
-
-              {/* Pagination UI - Using Global Component */}
-              <Pagination
-                currentPage={pagination.page}
-                totalPages={totalPages}
-                totalResults={totalRecords}
-                startIndex={startIndex}
-                endIndex={endIndex}
-                onPageChange={handlePageChange}
-                scrollContainerRef={tableContainerRef}
-              />
             </div>
+
+            {/* Pagination UI - Separate from table */}
+            {totalPages > 1 && (
+              <div className="mt-4">
+                <Pagination
+                  currentPage={pagination.page}
+                  totalPages={totalPages}
+                  totalResults={totalRecords}
+                  startIndex={startIndex}
+                  endIndex={endIndex}
+                  onPageChange={handlePageChange}
+                  scrollContainerRef={tableContainerRef}
+                />
+              </div>
+            )}
           </div>
         </div>
       </div>

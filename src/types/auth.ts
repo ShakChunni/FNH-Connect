@@ -103,3 +103,21 @@ export interface ApiError {
   status: number;
   code?: string;
 }
+
+// Session device info for activity logging (subset of session data)
+export interface SessionDeviceInfo {
+  ipAddress: string | null;
+  deviceFingerprint: string | null;
+  readableFingerprint: string | null;
+  deviceType: string | null;
+  browserName: string | null;
+  browserVersion: string | null;
+  osType: string | null;
+}
+
+// Authenticated User returned by getAuthenticatedUserForAPI
+// Extends SessionUser with session info for activity logging
+export interface AuthenticatedUser extends SessionUser {
+  sessionId: string;
+  sessionDeviceInfo: SessionDeviceInfo;
+}

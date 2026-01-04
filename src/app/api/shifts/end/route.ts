@@ -69,7 +69,7 @@ export async function POST(req: NextRequest) {
           where: { userId: user.id },
         });
 
-        // Log the multi-device logout
+        // Log the multi-device logout with device info
         await tx.activityLog.create({
           data: {
             userId: user.id,
@@ -77,11 +77,16 @@ export async function POST(req: NextRequest) {
             description: `Shift ended and ${sessionCount} session(s) invalidated across all devices`,
             entityType: "Shift",
             entityId: activeShift.id,
-            ipAddress:
-              req.headers.get("x-forwarded-for")?.split(",")[0].trim() ||
-              req.headers.get("x-real-ip") ||
-              "Unknown",
             timestamp: new Date(),
+            // Device info from session for accountability
+            sessionId: user.sessionId,
+            ipAddress: user.sessionDeviceInfo.ipAddress,
+            deviceFingerprint: user.sessionDeviceInfo.deviceFingerprint,
+            readableFingerprint: user.sessionDeviceInfo.readableFingerprint,
+            deviceType: user.sessionDeviceInfo.deviceType,
+            browserName: user.sessionDeviceInfo.browserName,
+            browserVersion: user.sessionDeviceInfo.browserVersion,
+            osType: user.sessionDeviceInfo.osType,
           },
         });
       }

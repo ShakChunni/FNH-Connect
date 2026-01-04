@@ -147,7 +147,12 @@ export async function POST(request: NextRequest) {
       safePathologyInfo,
       staffId,
       userId,
-      activeShift?.id || null
+      activeShift?.id || null,
+      // Pass session device info for activity logging
+      {
+        sessionId: user.sessionId,
+        deviceInfo: user.sessionDeviceInfo,
+      }
     );
 
     const response = NextResponse.json(

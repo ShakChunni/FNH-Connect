@@ -184,9 +184,11 @@ const PathologyManagement = React.memo(() => {
                 isLoading={isLoading}
                 onEdit={handleOpenEditPopup}
               />
+            </div>
 
-              {/* Server-side Pagination */}
-              {!isLoading && pagination.totalPages > 1 && (
+            {/* Server-side Pagination - Separate from table */}
+            {!isLoading && pagination.totalPages > 1 && (
+              <div className="mt-4">
                 <Pagination
                   currentPage={pagination.currentPage}
                   totalPages={pagination.totalPages}
@@ -198,8 +200,8 @@ const PathologyManagement = React.memo(() => {
                   onNext={() => handlePageChange(pagination.currentPage + 1)}
                   scrollContainerRef={tableContainerRef}
                 />
-              )}
-            </div>
+              </div>
+            )}
           </div>
 
           {/* Bottom spacing for floating bar */}
