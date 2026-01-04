@@ -164,7 +164,12 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       },
       staffId,
       userId,
-      activeShift?.id || null
+      activeShift?.id || null,
+      // Pass session device info for activity logging
+      {
+        sessionId: user.sessionId,
+        deviceInfo: user.sessionDeviceInfo,
+      }
     );
 
     const responseData = {
@@ -237,7 +242,15 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    await deleteAdmission(admissionId, user.id);
+    await deleteAdmission(
+      admissionId,
+      user.id,
+      // Pass session device info for activity logging
+      {
+        sessionId: user.sessionId,
+        deviceInfo: user.sessionDeviceInfo,
+      }
+    );
 
     const response = NextResponse.json({
       success: true,

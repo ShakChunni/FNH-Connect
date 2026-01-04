@@ -178,25 +178,29 @@ const GeneralAdmissionPage = React.memo(() => {
                 isStatusUpdating={isStatusUpdating}
                 startIndex={(filterValues.page - 1) * filterValues.limit}
               />
-
-              {/* Pagination UI - Using Global Component */}
-              <Pagination
-                currentPage={filterValues.page}
-                totalPages={totalPages}
-                totalResults={totalRecords}
-                startIndex={
-                  totalRecords > 0
-                    ? (filterValues.page - 1) * filterValues.limit + 1
-                    : 0
-                }
-                endIndex={Math.min(
-                  filterValues.page * filterValues.limit,
-                  totalRecords
-                )}
-                onPageChange={setPage}
-                scrollContainerRef={tableContainerRef}
-              />
             </div>
+
+            {/* Pagination UI - Separate from table */}
+            {totalPages > 1 && (
+              <div className="mt-4">
+                <Pagination
+                  currentPage={filterValues.page}
+                  totalPages={totalPages}
+                  totalResults={totalRecords}
+                  startIndex={
+                    totalRecords > 0
+                      ? (filterValues.page - 1) * filterValues.limit + 1
+                      : 0
+                  }
+                  endIndex={Math.min(
+                    filterValues.page * filterValues.limit,
+                    totalRecords
+                  )}
+                  onPageChange={setPage}
+                  scrollContainerRef={tableContainerRef}
+                />
+              </div>
+            )}
           </div>
         </div>
       </div>

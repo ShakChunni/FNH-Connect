@@ -10,10 +10,17 @@ import {
   formatRegistrationNumber,
   getTwoDigitYear,
 } from "@/lib/registrationNumber";
+import { SessionDeviceInfo } from "@/types/auth";
 
 // ═══════════════════════════════════════════════════════════════
 // TYPES
 // ═══════════════════════════════════════════════════════════════
+
+// Context for activity logging with device info
+export interface ActivityLogContext {
+  sessionId?: string;
+  deviceInfo?: SessionDeviceInfo;
+}
 
 export interface AdmissionFilters {
   search?: string;
@@ -179,7 +186,8 @@ export async function createAdmission(
   admissionData: AdmissionData,
   staffId: number,
   userId: number,
-  shiftId: number | null
+  shiftId: number | null,
+  activityLogContext?: ActivityLogContext
 ) {
   return await prisma.$transaction(async (tx) => {
     // 1. Get admission fee from config
@@ -381,7 +389,7 @@ export async function createAdmission(
       });
     }
 
-    // 8. Log activity
+    // 8. Log activity with device info
     await tx.activityLog.create({
       data: {
         userId,
@@ -390,6 +398,16 @@ export async function createAdmission(
         entityType: "Admission",
         entityId: admission.id,
         timestamp: new Date(),
+        // Device info from session for accountability
+        sessionId: activityLogContext?.sessionId,
+        ipAddress: activityLogContext?.deviceInfo?.ipAddress,
+        deviceFingerprint: activityLogContext?.deviceInfo?.deviceFingerprint,
+        readableFingerprint:
+          activityLogContext?.deviceInfo?.readableFingerprint,
+        deviceType: activityLogContext?.deviceInfo?.deviceType,
+        browserName: activityLogContext?.deviceInfo?.browserName,
+        browserVersion: activityLogContext?.deviceInfo?.browserVersion,
+        osType: activityLogContext?.deviceInfo?.osType,
       },
     });
 
@@ -441,7 +459,8 @@ export async function updateAdmission(
   },
   staffId: number,
   userId: number,
-  shiftId: number | null
+  shiftId: number | null,
+  activityLogContext?: ActivityLogContext
 ) {
   return await prisma.$transaction(async (tx) => {
     // Get existing record
@@ -711,7 +730,7 @@ export async function updateAdmission(
       });
     }
 
-    // Log activity
+    // Log activity with device info
     await tx.activityLog.create({
       data: {
         userId,
@@ -720,6 +739,16 @@ export async function updateAdmission(
         entityType: "Admission",
         entityId: updatedAdmission.id,
         timestamp: new Date(),
+        // Device info from session for accountability
+        sessionId: activityLogContext?.sessionId,
+        ipAddress: activityLogContext?.deviceInfo?.ipAddress,
+        deviceFingerprint: activityLogContext?.deviceInfo?.deviceFingerprint,
+        readableFingerprint:
+          activityLogContext?.deviceInfo?.readableFingerprint,
+        deviceType: activityLogContext?.deviceInfo?.deviceType,
+        browserName: activityLogContext?.deviceInfo?.browserName,
+        browserVersion: activityLogContext?.deviceInfo?.browserVersion,
+        osType: activityLogContext?.deviceInfo?.osType,
       },
     });
 
@@ -727,7 +756,11 @@ export async function updateAdmission(
   });
 }
 
-export async function deleteAdmission(id: number, userId: number) {
+export async function deleteAdmission(
+  id: number,
+  userId: number,
+  activityLogContext?: ActivityLogContext
+) {
   return await prisma.$transaction(async (tx) => {
     const existingAdmission = await tx.admission.findUnique({
       where: { id },
@@ -750,6 +783,16 @@ export async function deleteAdmission(id: number, userId: number) {
         entityType: "Admission",
         entityId: id,
         timestamp: new Date(),
+        // Device info from session for accountability
+        sessionId: activityLogContext?.sessionId,
+        ipAddress: activityLogContext?.deviceInfo?.ipAddress,
+        deviceFingerprint: activityLogContext?.deviceInfo?.deviceFingerprint,
+        readableFingerprint:
+          activityLogContext?.deviceInfo?.readableFingerprint,
+        deviceType: activityLogContext?.deviceInfo?.deviceType,
+        browserName: activityLogContext?.deviceInfo?.browserName,
+        browserVersion: activityLogContext?.deviceInfo?.browserVersion,
+        osType: activityLogContext?.deviceInfo?.osType,
       },
     });
   });

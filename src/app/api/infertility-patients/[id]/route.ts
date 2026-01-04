@@ -125,7 +125,12 @@ export async function PATCH(
       spouseInfo,
       medicalInfo,
       staffId,
-      userId
+      userId,
+      // Pass session device info for activity logging
+      {
+        sessionId: user.sessionId,
+        deviceInfo: user.sessionDeviceInfo,
+      }
     );
 
     const response = NextResponse.json({
@@ -190,7 +195,15 @@ export async function DELETE(
       );
     }
 
-    await infertilityService.deleteInfertilityPatient(patientId, userId);
+    await infertilityService.deleteInfertilityPatient(
+      patientId,
+      userId,
+      // Pass session device info for activity logging
+      {
+        sessionId: user.sessionId,
+        deviceInfo: user.sessionDeviceInfo,
+      }
+    );
 
     const response = NextResponse.json({
       success: true,

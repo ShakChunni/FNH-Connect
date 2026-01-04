@@ -8,6 +8,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getAuthenticatedUserForAPI } from "@/lib/auth-validation";
+import {
+  validateCSRFToken,
+  addCSRFTokenToResponse,
+} from "@/lib/csrfProtection";
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -15,7 +19,15 @@ interface RouteParams {
 
 export async function PATCH(request: NextRequest, { params }: RouteParams) {
   try {
-    // 1. Authenticate user
+    // 1. Validate CSRF token
+    if (!validateCSRFToken(request)) {
+      return NextResponse.json(
+        { success: false, error: "Invalid CSRF token" },
+        { status: 403 }
+      );
+    }
+
+    // 2. Authenticate user
     const user = await getAuthenticatedUserForAPI();
     if (!user) {
       return NextResponse.json(
@@ -24,7 +36,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    // 2. Get patient ID
+    // 3. Get patient ID
     const { id } = await params;
     const patientId = parseInt(id);
 
@@ -35,7 +47,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    // 3. Check if patient exists
+    // 4. Check if patient exists
     const existingPatient = await prisma.patient.findUnique({
       where: { id: patientId },
     });
@@ -47,7 +59,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    // 4. Parse request body
+    // 5. Parse request body
     const body = await request.json();
     const {
       firstName,
@@ -59,7 +71,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       address,
     } = body;
 
-    // 5. Build update data
+    // 6. Build update data
     const updateData: Record<string, unknown> = {};
 
     if (firstName !== undefined) {
@@ -95,18 +107,45 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
         : newFirstName;
     }
 
-    // 6. Update patient
-    const updatedPatient = await prisma.patient.update({
-      where: { id: patientId },
-      data: updateData,
+    // 7. Update patient and log activity in a transaction
+    const updatedPatient = await prisma.$transaction(async (tx) => {
+      const updated = await tx.patient.update({
+        where: { id: patientId },
+        data: updateData,
+      });
+
+      // Log the update activity
+      await tx.activityLog.create({
+        data: {
+          userId: user.id,
+          action: "UPDATE",
+          description: `Updated patient details for ${updated.fullName}`,
+          entityType: "Patient",
+          entityId: updated.id,
+          timestamp: new Date(),
+          // Device info from session for accountability
+          sessionId: user.sessionId,
+          ipAddress: user.sessionDeviceInfo.ipAddress,
+          deviceFingerprint: user.sessionDeviceInfo.deviceFingerprint,
+          readableFingerprint: user.sessionDeviceInfo.readableFingerprint,
+          deviceType: user.sessionDeviceInfo.deviceType,
+          browserName: user.sessionDeviceInfo.browserName,
+          browserVersion: user.sessionDeviceInfo.browserVersion,
+          osType: user.sessionDeviceInfo.osType,
+        },
+      });
+
+      return updated;
     });
 
-    // 7. Return response
-    return NextResponse.json({
+    // 8. Return response
+    const response = NextResponse.json({
       success: true,
       data: updatedPatient,
       message: "Patient updated successfully",
     });
+
+    return addCSRFTokenToResponse(response);
   } catch (error) {
     console.error("[Patient Update API] Error:", error);
     return NextResponse.json(

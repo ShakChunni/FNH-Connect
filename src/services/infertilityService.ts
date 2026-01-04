@@ -9,10 +9,17 @@ import {
   formatRegistrationNumber,
   getTwoDigitYear,
 } from "@/lib/registrationNumber";
+import { SessionDeviceInfo } from "@/types/auth";
 
 // ═══════════════════════════════════════════════════════════════
 // TYPES
 // ═══════════════════════════════════════════════════════════════
+
+// Context for activity logging with device info
+export interface ActivityLogContext {
+  sessionId?: string;
+  deviceInfo?: SessionDeviceInfo;
+}
 
 export interface InfertilityFilters {
   status?: string;
@@ -219,7 +226,8 @@ export async function createInfertilityPatient(
   spouseData: SpouseData,
   medicalData: MedicalData,
   staffId: number,
-  userId: number
+  userId: number,
+  activityLogContext?: ActivityLogContext
 ) {
   return await prisma.$transaction(async (tx) => {
     // 1. Create or get hospital (moved to start to link with patient)
@@ -369,7 +377,7 @@ export async function createInfertilityPatient(
       },
     });
 
-    // 5. Log activity
+    // 5. Log activity with device info
     await tx.activityLog.create({
       data: {
         userId,
@@ -378,6 +386,16 @@ export async function createInfertilityPatient(
         entityType: "InfertilityPatient",
         entityId: infertilityRecord.id,
         timestamp: new Date(),
+        // Device info from session for accountability
+        sessionId: activityLogContext?.sessionId,
+        ipAddress: activityLogContext?.deviceInfo?.ipAddress,
+        deviceFingerprint: activityLogContext?.deviceInfo?.deviceFingerprint,
+        readableFingerprint:
+          activityLogContext?.deviceInfo?.readableFingerprint,
+        deviceType: activityLogContext?.deviceInfo?.deviceType,
+        browserName: activityLogContext?.deviceInfo?.browserName,
+        browserVersion: activityLogContext?.deviceInfo?.browserVersion,
+        osType: activityLogContext?.deviceInfo?.osType,
       },
     });
 
@@ -408,7 +426,8 @@ export async function updateInfertilityPatient(
   spouseData: SpouseData,
   medicalData: MedicalData,
   staffId: number,
-  userId: number
+  userId: number,
+  activityLogContext?: ActivityLogContext
 ) {
   return await prisma.$transaction(async (tx) => {
     // Check if record exists
@@ -528,7 +547,7 @@ export async function updateInfertilityPatient(
       },
     });
 
-    // 4. Log activity
+    // 4. Log activity with device info
     await tx.activityLog.create({
       data: {
         userId,
@@ -537,6 +556,16 @@ export async function updateInfertilityPatient(
         entityType: "InfertilityPatient",
         entityId: updatedRecord.id,
         timestamp: new Date(),
+        // Device info from session for accountability
+        sessionId: activityLogContext?.sessionId,
+        ipAddress: activityLogContext?.deviceInfo?.ipAddress,
+        deviceFingerprint: activityLogContext?.deviceInfo?.deviceFingerprint,
+        readableFingerprint:
+          activityLogContext?.deviceInfo?.readableFingerprint,
+        deviceType: activityLogContext?.deviceInfo?.deviceType,
+        browserName: activityLogContext?.deviceInfo?.browserName,
+        browserVersion: activityLogContext?.deviceInfo?.browserVersion,
+        osType: activityLogContext?.deviceInfo?.osType,
       },
     });
 
@@ -551,7 +580,11 @@ export async function updateInfertilityPatient(
   });
 }
 
-export async function deleteInfertilityPatient(id: number, userId: number) {
+export async function deleteInfertilityPatient(
+  id: number,
+  userId: number,
+  activityLogContext?: ActivityLogContext
+) {
   return await prisma.$transaction(async (tx) => {
     const existingRecord = await tx.infertilityPatient.findUnique({
       where: { id },
@@ -574,6 +607,16 @@ export async function deleteInfertilityPatient(id: number, userId: number) {
         entityType: "InfertilityPatient",
         entityId: id,
         timestamp: new Date(),
+        // Device info from session for accountability
+        sessionId: activityLogContext?.sessionId,
+        ipAddress: activityLogContext?.deviceInfo?.ipAddress,
+        deviceFingerprint: activityLogContext?.deviceInfo?.deviceFingerprint,
+        readableFingerprint:
+          activityLogContext?.deviceInfo?.readableFingerprint,
+        deviceType: activityLogContext?.deviceInfo?.deviceType,
+        browserName: activityLogContext?.deviceInfo?.browserName,
+        browserVersion: activityLogContext?.deviceInfo?.browserVersion,
+        osType: activityLogContext?.deviceInfo?.osType,
       },
     });
   });

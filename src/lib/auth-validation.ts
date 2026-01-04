@@ -2,7 +2,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import jwt from "jsonwebtoken";
-import { SessionUser } from "@/types/auth";
+import { SessionUser, AuthenticatedUser } from "@/types/auth";
 import { isAdminRole } from "@/lib/roles";
 
 const SECRET_KEY = process.env.SECRET_KEY as string;
@@ -120,9 +120,9 @@ export async function validateAdminAccess() {
  * Use this in API routes to validate sessions without redirects.
  * Returns the authenticated user data or null if invalid.
  *
- * @returns User data if valid, null if invalid
+ * @returns User data with session info if valid, null if invalid
  */
-export async function getAuthenticatedUserForAPI() {
+export async function getAuthenticatedUserForAPI(): Promise<AuthenticatedUser | null> {
   const cookieStore = await cookies();
   const sessionToken = cookieStore.get("session")?.value;
 
@@ -192,8 +192,21 @@ export async function getAuthenticatedUserForAPI() {
       photoUrl: session.user.staff.photoUrl || undefined,
     };
 
-    // Return user data
-    return user;
+    // Return user data with session info for activity logging
+    return {
+      ...user,
+      // Session info for activity logging with device fingerprint
+      sessionId: session.id,
+      sessionDeviceInfo: {
+        ipAddress: session.ipAddress,
+        deviceFingerprint: session.deviceFingerprint,
+        readableFingerprint: session.readableFingerprint,
+        deviceType: session.deviceType,
+        browserName: session.browserName,
+        browserVersion: session.browserVersion,
+        osType: session.osType,
+      },
+    };
   } catch (error) {
     // JWT verification failed or database error
     console.error("[API Auth Validation] Error:", error);
