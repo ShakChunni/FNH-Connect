@@ -245,7 +245,7 @@ const CashTrackingPage = () => {
                       <li className="flex items-center gap-2">
                         <span className="w-2 h-2 bg-emerald-500 rounded-full" />
                         <span>
-                          <strong>₹0 Variance:</strong> Perfect! Cash matches
+                          <strong>BDT 0 Variance:</strong> Perfect! Cash matches
                           system records.
                         </span>
                       </li>
