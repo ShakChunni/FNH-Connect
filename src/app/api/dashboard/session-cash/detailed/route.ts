@@ -1,16 +1,29 @@
 /**
- * Session Cash API Route
- * GET /api/dashboard/session-cash
+ * Detailed Session Cash API Route
+ * GET /api/dashboard/session-cash/detailed
  *
- * Fetches cash collection data filtered by:
- * - Date range (today, yesterday, lastWeek, lastMonth)
- * - Department (all or specific departmentId)
- * - Returns shift-level breakdown when multiple shifts exist
+ * Fetches detailed cash collection data including patient names and payment details
+ * for generating detailed PDF reports.
  */
 
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getAuthenticatedUserForAPI } from "@/lib/auth-validation";
+import { format } from "date-fns";
+
+interface PaymentDetail {
+  paymentId: number;
+  registrationId: string; // Patient registration ID (safer than receipt number)
+  paymentDate: string;
+  amount: number;
+  paymentMethod: string;
+  patientId: number;
+  patientName: string;
+  patientPhone?: string;
+  serviceName: string;
+  serviceType: string;
+  departmentName: string;
+}
 
 interface DepartmentBreakdown {
   departmentId: number;
@@ -19,8 +32,9 @@ interface DepartmentBreakdown {
   transactionCount: number;
 }
 
-interface ShiftSummary {
+interface ShiftDetailedSummary {
   shiftId: number;
+  shiftDate: string;
   startTime: string;
   endTime?: string;
   isActive: boolean;
@@ -28,21 +42,20 @@ interface ShiftSummary {
   totalRefunded: number;
   transactionCount: number;
   departmentBreakdown: DepartmentBreakdown[];
+  payments: PaymentDetail[];
 }
 
 /**
  * Helper to calculate Bangladesh Time date ranges properly
- * Bangladesh is UTC+6, so we need to convert between BDT and UTC for DB queries
  */
 function getBangladeshDateRange(datePreset: string): {
   startDate: Date;
   endDate: Date;
 } {
-  const BDT_OFFSET_MS = 6 * 60 * 60 * 1000; // UTC+6 in milliseconds
+  const BDT_OFFSET_MS = 6 * 60 * 60 * 1000;
   const nowUTC = new Date();
   const nowBDT = new Date(nowUTC.getTime() + BDT_OFFSET_MS);
 
-  // Get Bangladesh "today" components
   const bdtYear = nowBDT.getUTCFullYear();
   const bdtMonth = nowBDT.getUTCMonth();
   const bdtDate = nowBDT.getUTCDate();
@@ -52,15 +65,12 @@ function getBangladeshDateRange(datePreset: string): {
 
   switch (datePreset) {
     case "yesterday":
-      // Yesterday in Bangladesh time
       startDate = new Date(
         Date.UTC(bdtYear, bdtMonth, bdtDate - 1) - BDT_OFFSET_MS
       );
       endDate = new Date(Date.UTC(bdtYear, bdtMonth, bdtDate) - BDT_OFFSET_MS);
       break;
-
     case "lastWeek":
-      // Last 7 days including today in Bangladesh time
       startDate = new Date(
         Date.UTC(bdtYear, bdtMonth, bdtDate - 6) - BDT_OFFSET_MS
       );
@@ -68,9 +78,7 @@ function getBangladeshDateRange(datePreset: string): {
         Date.UTC(bdtYear, bdtMonth, bdtDate + 1) - BDT_OFFSET_MS
       );
       break;
-
     case "lastMonth":
-      // Last 30 days including today in Bangladesh time
       startDate = new Date(
         Date.UTC(bdtYear, bdtMonth - 1, bdtDate) - BDT_OFFSET_MS
       );
@@ -78,10 +86,8 @@ function getBangladeshDateRange(datePreset: string): {
         Date.UTC(bdtYear, bdtMonth, bdtDate + 1) - BDT_OFFSET_MS
       );
       break;
-
     case "today":
     default:
-      // Today in Bangladesh time (midnight BDT to next midnight BDT)
       startDate = new Date(
         Date.UTC(bdtYear, bdtMonth, bdtDate) - BDT_OFFSET_MS
       );
@@ -110,36 +116,20 @@ export async function GET(request: NextRequest) {
     const datePreset = searchParams.get("datePreset") || "today";
     const departmentId = searchParams.get("departmentId");
 
-    // 3. Calculate date range based on preset (in Bangladesh Time / UTC+6)
+    // 3. Calculate date range
     const { startDate, endDate } = getBangladeshDateRange(datePreset);
 
-    // 4. Get all shifts for this user that are relevant:
-    //    - Shifts that started during the date range
-    //    - OR active shifts (regardless of when they started)
-    //    - OR shifts that have payments made during the date range
+    // 4. Get shifts with FULL payment details including patient info
     const shifts = await prisma.shift.findMany({
       where: {
         staffId: user.staffId,
         OR: [
-          // Shifts that started during the date range
-          {
-            startTime: {
-              gte: startDate,
-              lte: endDate,
-            },
-          },
-          // Active shifts (regardless of when they started)
-          {
-            isActive: true,
-          },
-          // Shifts that have payments made during the date range
+          { startTime: { gte: startDate, lte: endDate } },
+          { isActive: true },
           {
             payments: {
               some: {
-                paymentDate: {
-                  gte: startDate,
-                  lte: endDate,
-                },
+                paymentDate: { gte: startDate, lte: endDate },
               },
             },
           },
@@ -148,40 +138,39 @@ export async function GET(request: NextRequest) {
       include: {
         staff: { select: { fullName: true } },
         payments: {
-          // Filter payments to only those within the date range
           where: {
-            paymentDate: {
-              gte: startDate,
-              lte: endDate,
-            },
+            paymentDate: { gte: startDate, lte: endDate },
           },
           include: {
+            patientAccount: {
+              include: {
+                patient: {
+                  select: {
+                    id: true,
+                    fullName: true,
+                    phoneNumber: true,
+                  },
+                },
+              },
+            },
             paymentAllocations: {
               include: {
                 serviceCharge: {
                   include: {
-                    department: {
-                      select: { id: true, name: true },
-                    },
+                    department: { select: { id: true, name: true } },
                   },
                 },
               },
             },
           },
+          orderBy: { paymentDate: "desc" },
         },
       },
       orderBy: { startTime: "desc" },
     });
 
-    // 5. Get all active departments for the dropdown
-    const departments = await prisma.department.findMany({
-      where: { isActive: true },
-      select: { id: true, name: true },
-      orderBy: { name: "asc" },
-    });
-
-    // 6. Process each shift individually
-    const shiftSummaries: ShiftSummary[] = [];
+    // 5. Process shifts with detailed payment data
+    const shiftDetailedSummaries: ShiftDetailedSummary[] = [];
     let overallTotalCollected = 0;
     let overallTotalRefunded = 0;
     let overallTransactionCount = 0;
@@ -197,15 +186,37 @@ export async function GET(request: NextRequest) {
         number,
         { name: string; collected: number; count: number }
       >();
+      const shiftPayments: PaymentDetail[] = [];
 
       for (const payment of shift.payments) {
         const paymentAmount = payment.amount.toNumber();
 
-        // If no allocations, add as general
+        // Get patient info
+        const patientId = payment.patientAccount.patient.id;
+        const patientName = payment.patientAccount.patient.fullName;
+        const patientPhone =
+          payment.patientAccount.patient.phoneNumber || undefined;
+
+        // If no allocations, add as general payment
         if (payment.paymentAllocations.length === 0) {
           if (departmentId && departmentId !== "all") {
             continue;
           }
+
+          shiftPayments.push({
+            paymentId: payment.id,
+            registrationId: `REG-${String(patientId).padStart(6, "0")}`,
+            paymentDate: payment.paymentDate.toISOString(),
+            amount: paymentAmount,
+            paymentMethod: payment.paymentMethod,
+            patientId,
+            patientName,
+            patientPhone,
+            serviceName: "General",
+            serviceType: "GENERAL",
+            departmentName: "Unallocated",
+          });
+
           shiftCollected += paymentAmount;
           shiftTransactionCount += 1;
           continue;
@@ -224,10 +235,24 @@ export async function GET(request: NextRequest) {
             }
           }
 
+          shiftPayments.push({
+            paymentId: payment.id,
+            registrationId: `REG-${String(patientId).padStart(6, "0")}`,
+            paymentDate: payment.paymentDate.toISOString(),
+            amount: allocatedAmount,
+            paymentMethod: payment.paymentMethod,
+            patientId,
+            patientName,
+            patientPhone,
+            serviceName: allocation.serviceCharge.serviceName,
+            serviceType: allocation.serviceCharge.serviceType,
+            departmentName: deptName,
+          });
+
           shiftCollected += allocatedAmount;
           shiftTransactionCount += 1;
 
-          // Update shift department map
+          // Update department maps
           const existing = shiftDepartmentMap.get(deptId);
           if (existing) {
             existing.collected += allocatedAmount;
@@ -240,7 +265,6 @@ export async function GET(request: NextRequest) {
             });
           }
 
-          // Update overall department map
           const overallExisting = overallDepartmentMap.get(deptId);
           if (overallExisting) {
             overallExisting.collected += allocatedAmount;
@@ -257,7 +281,7 @@ export async function GET(request: NextRequest) {
 
       const shiftRefunded = shift.totalRefunded.toNumber();
 
-      // Build shift department breakdown
+      // Build department breakdown
       const shiftDepartmentBreakdown: DepartmentBreakdown[] = [];
       for (const [deptId, data] of shiftDepartmentMap) {
         shiftDepartmentBreakdown.push({
@@ -271,8 +295,15 @@ export async function GET(request: NextRequest) {
         (a, b) => b.totalCollected - a.totalCollected
       );
 
-      shiftSummaries.push({
+      // Format shift date in Bangladesh time
+      const shiftDateBDT = new Date(
+        shift.startTime.getTime() + 6 * 60 * 60 * 1000
+      );
+      const shiftDate = format(shiftDateBDT, "MMM dd, yyyy");
+
+      shiftDetailedSummaries.push({
         shiftId: shift.id,
+        shiftDate,
         startTime: shift.startTime.toISOString(),
         endTime: shift.endTime?.toISOString(),
         isActive: shift.isActive,
@@ -280,6 +311,7 @@ export async function GET(request: NextRequest) {
         totalRefunded: shiftRefunded,
         transactionCount: shiftTransactionCount,
         departmentBreakdown: shiftDepartmentBreakdown,
+        payments: shiftPayments,
       });
 
       overallTotalCollected += shiftCollected;
@@ -287,7 +319,7 @@ export async function GET(request: NextRequest) {
       overallTransactionCount += shiftTransactionCount;
     }
 
-    // 7. Build overall department breakdown
+    // Build overall department breakdown
     const departmentBreakdown: DepartmentBreakdown[] = [];
     for (const [deptId, data] of overallDepartmentMap) {
       departmentBreakdown.push({
@@ -299,7 +331,7 @@ export async function GET(request: NextRequest) {
     }
     departmentBreakdown.sort((a, b) => b.totalCollected - a.totalCollected);
 
-    // 8. Build period label
+    // Build period label
     let periodLabel: string;
     switch (datePreset) {
       case "yesterday":
@@ -315,7 +347,6 @@ export async function GET(request: NextRequest) {
         periodLabel = "Today";
     }
 
-    // 9. Return response
     return NextResponse.json({
       success: true,
       data: {
@@ -324,19 +355,18 @@ export async function GET(request: NextRequest) {
         netCash: overallTotalCollected - overallTotalRefunded,
         transactionCount: overallTransactionCount,
         departmentBreakdown,
-        shifts: shiftSummaries,
+        shifts: shiftDetailedSummaries,
         staffName: user.fullName || "Staff",
         periodLabel,
         startDate: startDate.toISOString(),
         endDate: endDate.toISOString(),
         shiftsCount: shifts.length,
-        departments,
       },
     });
   } catch (error) {
-    console.error("[Session Cash API] Error:", error);
+    console.error("[Detailed Session Cash API] Error:", error);
     return NextResponse.json(
-      { success: false, error: "Failed to fetch session cash data" },
+      { success: false, error: "Failed to fetch detailed cash data" },
       { status: 500 }
     );
   }

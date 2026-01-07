@@ -40,11 +40,56 @@ export async function POST(request: NextRequest) {
       // Find and delete session
       const session = await tx.session.findUnique({
         where: { token: sessionToken },
-        include: { user: true },
+        include: { user: { include: { staff: true } } },
       });
 
       if (!session) {
         throw new Error("Session not found");
+      }
+
+      // IMPORTANT: End any active shift for this user's staff
+      // This ensures shifts don't stay open indefinitely
+      if (session.user.staff) {
+        const activeShift = await tx.shift.findFirst({
+          where: {
+            staffId: session.user.staff.id,
+            isActive: true,
+          },
+        });
+
+        if (activeShift) {
+          // Close the active shift
+          await tx.shift.update({
+            where: { id: activeShift.id },
+            data: {
+              isActive: false,
+              endTime: new Date(),
+              closingCash: activeShift.systemCash,
+              variance: 0, // System cash matches closing cash when auto-closed
+              notes: "Shift auto-closed on logout",
+            },
+          });
+
+          // Log shift end
+          await tx.activityLog.create({
+            data: {
+              userId: session.userId,
+              action: "SHIFT_AUTO_CLOSED",
+              description: `Shift #${activeShift.id} auto-closed on logout for ${session.user.username}`,
+              entityType: "Shift",
+              entityId: activeShift.id,
+              ipAddress: session.ipAddress,
+              sessionId: session.id,
+              deviceFingerprint: session.deviceFingerprint,
+              readableFingerprint: session.readableFingerprint,
+              deviceType: session.deviceType,
+              browserName: session.browserName,
+              browserVersion: session.browserVersion,
+              osType: session.osType,
+              timestamp: new Date(),
+            },
+          });
+        }
       }
 
       // Format device info for logging

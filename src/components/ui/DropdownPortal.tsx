@@ -72,8 +72,8 @@ export function DropdownPortal({
   const animationVariants = {
     hidden: (direction: "up" | "down") => ({
       opacity: 0,
-      y: direction === "down" ? -10 : 10,
-      scale: 0.97,
+      y: direction === "down" ? -8 : 8,
+      scale: 0.96,
     }),
     visible: {
       opacity: 1,
@@ -94,13 +94,16 @@ export function DropdownPortal({
           animate="visible"
           exit="hidden"
           transition={{
-            duration: 0.25,
-            ease: [0.34, 1.56, 0.64, 1], // Custom spring-like easing for smooth bounce
+            type: "spring",
+            damping: 25,
+            stiffness: 300,
+            mass: 0.8,
+            opacity: { duration: 0.2, ease: "easeOut" },
           }}
           // ensure portal dropdowns in modals are always above the popup overlay
           // set a high zIndex inline so that it overrides any parent stacking context
           style={{ ...positionStyle, zIndex: 110000 }}
-          className={`bg-white border border-gray-300 rounded-lg shadow-2xl overflow-hidden ${className}`}
+          className={`bg-white border border-gray-200/60 rounded-xl shadow-xl shadow-fnh-navy/5 overflow-hidden ring-1 ring-black/5 ${className}`}
         >
           {children}
         </motion.div>

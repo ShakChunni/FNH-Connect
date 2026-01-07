@@ -1,19 +1,19 @@
 /**
- * Cash Collection Report Generator
- * Professional PDF report matching FNH brand standards
+ * Detailed Cash Collection Report Generator
+ * Professional PDF report with full payment breakdown including patient names
  */
 
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { format } from "date-fns";
-import type { SessionCashReportData } from "./types";
+import type { DetailedCashReportData, PaymentDetail } from "./types";
 
-// FNH Brand Colors - matching pathology receipt
+// FNH Brand Colors
 const COLORS = {
-  primary: "#020617", // darker navy
-  accent: "#1d4ed8", // darker blue
-  text: "#000000", // pure black
-  lightText: "#1a202c", // darker gray
+  primary: "#020617",
+  accent: "#1d4ed8",
+  text: "#000000",
+  lightText: "#1a202c",
   border: "#cbd5e1",
   faint: "#f1f5f9",
   success: "#16a34a",
@@ -48,6 +48,10 @@ const formatTime = (dateString: string): string => {
   return format(new Date(dateString), "h:mm a");
 };
 
+const formatDateTime = (dateString: string): string => {
+  return format(new Date(dateString), "MMM dd, hh:mm a");
+};
+
 /**
  * Draw a subtle logo watermark
  */
@@ -70,17 +74,17 @@ const drawLogoWatermark = async (doc: jsPDF) => {
 };
 
 /**
- * Generate Cash Collection Report PDF
+ * Generate Detailed Cash Collection Report PDF
  */
-export const generateSessionCashReport = async (
-  data: SessionCashReportData
+export const generateDetailedCashReport = async (
+  data: DetailedCashReportData
 ) => {
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.width;
   const pageHeight = doc.internal.pageSize.height;
   const margin = 15;
 
-  // Draw watermark
+  // Draw watermark on first page
   await drawLogoWatermark(doc);
 
   let currentY = 10;
@@ -127,7 +131,7 @@ export const generateSessionCashReport = async (
   doc.setFont("helvetica", "bold");
   doc.setFontSize(14);
   doc.setTextColor(COLORS.primary);
-  doc.text("CASH COLLECTION REPORT", pageWidth / 2, currentY, {
+  doc.text("DETAILED CASH COLLECTION REPORT", pageWidth / 2, currentY, {
     align: "center",
   });
   currentY += 8;
@@ -138,7 +142,6 @@ export const generateSessionCashReport = async (
   const rowHeight = 6;
   const boxHeight = boxPadding * 2 + rowHeight * 3;
 
-  // Draw box background
   doc.setFillColor(248, 250, 252);
   doc.roundedRect(margin, currentY, contentWidth, boxHeight, 2, 2, "F");
   doc.setDrawColor(COLORS.border);
@@ -148,7 +151,7 @@ export const generateSessionCashReport = async (
   let infoY = currentY + boxPadding + 4;
   doc.setFontSize(10);
 
-  // Row 1: Staff | Department
+  // Info rows
   doc.setFont("helvetica", "bold");
   doc.setTextColor(COLORS.lightText);
   doc.text("Staff:", margin + boxPadding, infoY);
@@ -164,7 +167,6 @@ export const generateSessionCashReport = async (
   doc.setFont("helvetica", "normal");
   doc.text(data.departmentFilter, col2X + 14, infoY);
 
-  // Row 2: Period | Transactions
   infoY += rowHeight;
   doc.setFont("helvetica", "bold");
   doc.setTextColor(COLORS.lightText);
@@ -180,7 +182,6 @@ export const generateSessionCashReport = async (
   doc.setFont("helvetica", "normal");
   doc.text(data.transactionCount.toString(), col2X + 30, infoY);
 
-  // Row 3: Date Range | Generated
   infoY += rowHeight;
   doc.setFont("helvetica", "bold");
   doc.setTextColor(COLORS.lightText);
@@ -202,14 +203,13 @@ export const generateSessionCashReport = async (
 
   currentY += boxHeight + 10;
 
-  // === OVERALL SUMMARY SECTION ===
+  // === OVERALL SUMMARY ===
   doc.setFont("helvetica", "bold");
   doc.setFontSize(11);
   doc.setTextColor(COLORS.primary);
   doc.text("Overall Summary", margin, currentY);
   currentY += 6;
 
-  // Summary table - compact single row
   autoTable(doc, {
     startY: currentY,
     head: [["Total Collected", "Total Refunded", "Net Cash"]],
@@ -244,86 +244,108 @@ export const generateSessionCashReport = async (
     margin: { left: margin, right: margin },
   });
 
-  currentY = (doc as any).lastAutoTable.finalY + 8;
+  currentY = (doc as any).lastAutoTable.finalY + 10;
 
-  // === SHIFT-WISE BREAKDOWN (Compact Table Format) ===
+  // === DETAILED SHIFT & PAYMENT BREAKDOWN ===
   if (data.shifts && data.shifts.length > 0) {
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(11);
-    doc.setTextColor(COLORS.primary);
-    doc.text(`Shift Breakdown`, margin, currentY);
-    currentY += 6;
+    for (let shiftIndex = 0; shiftIndex < data.shifts.length; shiftIndex++) {
+      const shift = data.shifts[shiftIndex];
 
-    // Build shift table data - one row per shift with all info including date
-    const shiftTableData = data.shifts.map((shift, index) => {
-      const shiftNum = data.shifts!.length > 1 ? `#${index + 1}` : "Shift";
-      const status = shift.isActive ? "Active" : "Closed";
-      // Format date from startTime
-      const shiftDate = format(new Date(shift.startTime), "MMM dd");
+      // Check if we need a new page
+      if (currentY > pageHeight - 80) {
+        doc.addPage();
+        await drawLogoWatermark(doc);
+        currentY = 20;
+      }
+
+      // Shift header with date - clean format
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(10);
+      doc.setTextColor(COLORS.primary);
+
+      const shiftLabel = data.shifts.length > 1 ? `#${shiftIndex + 1}` : "";
       const timeRange = shift.endTime
         ? `${formatTime(shift.startTime)} - ${formatTime(shift.endTime)}`
         : `${formatTime(shift.startTime)} - now`;
-      const netCash = shift.totalCollected - shift.totalRefunded;
+      const statusBadge = shift.isActive ? " [Active]" : " [Closed]";
 
-      return [
-        shiftNum,
-        status,
-        shiftDate,
-        timeRange,
-        shift.transactionCount.toString(),
-        formatCurrency(shift.totalCollected),
-        formatCurrency(netCash),
-      ];
-    });
+      doc.text(
+        `Shift ${shiftLabel} - ${shift.shiftDate} | ${timeRange}${statusBadge}`,
+        margin,
+        currentY
+      );
+      currentY += 6; // More spacing before table
 
-    autoTable(doc, {
-      startY: currentY,
-      head: [["Shift", "Status", "Date", "Time", "Txns", "Collected", "Net"]],
-      body: shiftTableData,
-      theme: "plain",
-      headStyles: {
-        fillColor: COLORS.primary,
-        textColor: [255, 255, 255],
-        fontStyle: "bold",
-        fontSize: 8,
-        cellPadding: 3,
-      },
-      bodyStyles: {
-        fontSize: 9,
-        cellPadding: 3,
-        textColor: COLORS.text,
-        fontStyle: "normal",
-      },
-      columnStyles: {
-        0: { cellWidth: 14, halign: "center", fontStyle: "bold" },
-        1: { cellWidth: 16, halign: "center" },
-        2: { cellWidth: 20, halign: "center" }, // Date column
-        3: { cellWidth: 38 }, // Time range
-        4: { cellWidth: 14, halign: "center" },
-        5: { cellWidth: 32, halign: "right", fontStyle: "bold" },
-        6: { cellWidth: 30, halign: "right", fontStyle: "bold" },
-      },
-      alternateRowStyles: {
-        fillColor: [248, 250, 252],
-      },
-      didParseCell: (cellData) => {
-        // Style Active status green, Closed gray
-        if (cellData.column.index === 1 && cellData.section === "body") {
-          if (cellData.cell.raw === "Active") {
-            cellData.cell.styles.textColor = COLORS.success;
-            cellData.cell.styles.fontStyle = "bold";
-          } else {
-            cellData.cell.styles.textColor = [120, 120, 120];
-          }
-        }
-      },
-      margin: { left: margin, right: margin },
-    });
+      // Payment details table (skip the crowded summary line)
+      if (shift.payments && shift.payments.length > 0) {
+        const paymentRows = shift.payments.map((payment: PaymentDetail) => [
+          payment.registrationId,
+          formatDateTime(payment.paymentDate),
+          payment.patientName.length > 22
+            ? payment.patientName.substring(0, 20) + "..."
+            : payment.patientName,
+          payment.serviceName.length > 18
+            ? payment.serviceName.substring(0, 16) + "..."
+            : payment.serviceName,
+          payment.departmentName,
+          formatCurrency(payment.amount),
+        ]);
 
-    currentY = (doc as any).lastAutoTable.finalY + 8;
+        autoTable(doc, {
+          startY: currentY,
+          head: [
+            ["Reg ID", "Date/Time", "Patient", "Service", "Dept", "Amount"],
+          ],
+          body: paymentRows,
+          theme: "plain",
+          headStyles: {
+            fillColor: [30, 41, 59], // Slate 800
+            textColor: [255, 255, 255],
+            fontStyle: "bold",
+            fontSize: 7,
+            cellPadding: 3,
+          },
+          bodyStyles: {
+            fontSize: 7,
+            cellPadding: 3,
+            textColor: COLORS.text,
+          },
+          columnStyles: {
+            0: { cellWidth: 24 }, // Reg ID
+            1: { cellWidth: 32 }, // Date/Time
+            2: { cellWidth: 40 }, // Patient - wider
+            3: { cellWidth: 32 }, // Service
+            4: { cellWidth: 26 }, // Dept
+            5: { cellWidth: 26, halign: "right", fontStyle: "bold" }, // Amount
+          },
+          alternateRowStyles: {
+            fillColor: [248, 250, 252],
+          },
+          margin: { left: margin, right: margin },
+          didDrawPage: () => {
+            // Redraw watermark on each new page
+            drawLogoWatermark(doc);
+          },
+        });
+
+        currentY = (doc as any).lastAutoTable.finalY + 10;
+      } else {
+        doc.setFont("helvetica", "italic");
+        doc.setFontSize(9);
+        doc.setTextColor(COLORS.lightText);
+        doc.text("No payments recorded for this shift.", margin, currentY);
+        currentY += 10;
+      }
+    }
   }
 
-  // === OVERALL DEPARTMENT BREAKDOWN TABLE ===
+  // === DEPARTMENT SUMMARY ===
+  if (currentY > pageHeight - 60) {
+    doc.addPage();
+    await drawLogoWatermark(doc);
+    currentY = 20;
+  }
+
   if (data.departmentBreakdown.length > 0) {
     doc.setFont("helvetica", "bold");
     doc.setFontSize(11);
@@ -338,7 +360,6 @@ export const generateSessionCashReport = async (
       formatCurrency(dept.totalCollected),
     ]);
 
-    // Add total row
     tableData.push([
       "",
       "TOTAL",
@@ -363,8 +384,6 @@ export const generateSessionCashReport = async (
         textColor: COLORS.text,
         cellPadding: 3,
         fontSize: 9,
-        valign: "middle",
-        fontStyle: "normal",
       },
       columnStyles: {
         0: { cellWidth: 12, halign: "center" },
@@ -376,7 +395,6 @@ export const generateSessionCashReport = async (
         fillColor: [248, 250, 252],
       },
       didParseCell: (cellData) => {
-        // Style the last row (total) differently
         if (cellData.row.index === tableData.length - 1) {
           cellData.cell.styles.fontStyle = "bold";
           cellData.cell.styles.fillColor = [241, 245, 249];
@@ -386,50 +404,27 @@ export const generateSessionCashReport = async (
     });
   }
 
-  // === FOOTER ===
-  const footerY = pageHeight - 25;
+  // === FOOTER (on last page) ===
+  const totalPages = (doc as any).internal.getNumberOfPages();
+  for (let i = 1; i <= totalPages; i++) {
+    doc.setPage(i);
+    const footerY = pageHeight - 15;
 
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(8);
-  doc.setTextColor(COLORS.lightText);
-  doc.text("Report Generated By", margin, footerY);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(7);
+    doc.setTextColor(COLORS.lightText);
 
-  doc.setFont("helvetica", "bold");
-  doc.setTextColor(COLORS.primary);
-  doc.text(data.staffName, margin, footerY + 5);
+    doc.text(`Page ${i} of ${totalPages}`, pageWidth - margin, footerY, {
+      align: "right",
+    });
 
-  const printTime = new Date().toLocaleString("en-BD", {
-    hour: "numeric",
-    minute: "numeric",
-    hour12: true,
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(7);
-  doc.setTextColor(COLORS.lightText);
-  doc.text(`Generated on: ${printTime}`, margin, footerY + 10);
-
-  // Page Number
-  doc.setFontSize(8);
-  doc.text(`Page 1 of 1`, pageWidth - margin, footerY + 5, { align: "right" });
-
-  // Bottom branding
-  doc.setTextColor(COLORS.lightText);
-  doc.setFontSize(7);
-  doc.text(
-    "NB: This is a computer generated report.",
-    pageWidth / 2,
-    pageHeight - 10,
-    { align: "center" }
-  );
-  doc.text(
-    "Thank you for choosing Feroza Nursing Home",
-    pageWidth / 2,
-    pageHeight - 6,
-    { align: "center" }
-  );
+    doc.text(
+      "NB: This is a computer generated detailed report.",
+      pageWidth / 2,
+      footerY,
+      { align: "center" }
+    );
+  }
 
   // Output
   doc.autoPrint();

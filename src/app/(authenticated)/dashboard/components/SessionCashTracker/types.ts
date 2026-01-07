@@ -59,3 +59,31 @@ export interface SessionCashReportData {
   departmentBreakdown: DepartmentCashBreakdown[];
   shifts?: ShiftSummary[];
 }
+
+// ===== DETAILED REPORT TYPES =====
+
+/** Individual payment transaction for detailed report */
+export interface PaymentDetail {
+  paymentId: number;
+  registrationId: string; // Patient registration ID (safer to display than receipt number)
+  paymentDate: string;
+  amount: number;
+  paymentMethod: string;
+  patientId: number;
+  patientName: string;
+  patientPhone?: string;
+  serviceName: string;
+  serviceType: string;
+  departmentName: string;
+}
+
+/** Shift with detailed payment info */
+export interface ShiftDetailedSummary extends ShiftSummary {
+  shiftDate: string; // Formatted date for display
+  payments: PaymentDetail[];
+}
+
+/** Detailed report data with patient-level information */
+export interface DetailedCashReportData extends SessionCashReportData {
+  shifts: ShiftDetailedSummary[];
+}
