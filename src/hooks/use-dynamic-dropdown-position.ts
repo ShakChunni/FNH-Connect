@@ -6,7 +6,7 @@ import { RefObject, useEffect, useState, useRef } from "react";
  * - Automatic positioning above/below based on available space
  * - Closing on outside scroll
  * - Repositioning on window resize
- * 
+ *
  * Uses a ref for onClose to prevent effect re-runs when the callback changes.
  * This fixes issues where inline callbacks like `onClose={() => setIsOpen(false)}`
  * would cause the effect to constantly re-run and create race conditions.
@@ -54,11 +54,12 @@ export const useDynamicDropdownPosition = (
 
       const spaceBelow = window.innerHeight - buttonRect.bottom;
       const verticalOffset = 8;
+      const dropdownWidth = dropdownRef.current.offsetWidth;
+      const windowWidth = window.innerWidth;
 
-      let top, left, width;
-      left = buttonRect.left + window.scrollX;
-      width = buttonRect.width;
+      let top, left;
 
+      // Vertical positioning
       if (spaceBelow >= dropdownHeight) {
         top = buttonRect.bottom + window.scrollY + verticalOffset;
         setAnimationDirection("down");
@@ -67,11 +68,31 @@ export const useDynamicDropdownPosition = (
         setAnimationDirection("up");
       }
 
+      // Horizontal positioning - Smart handling for screen edges
+      left = buttonRect.left + window.scrollX;
+
+      // If dropdown goes off the right edge of the screen
+      if (left + dropdownWidth > windowWidth - 10) {
+        // Align to the right edge of the button
+        left = buttonRect.right + window.scrollX - dropdownWidth;
+
+        // If it still goes off the left edge (e.g. huge dropdown on small screen)
+        // Force it to fit within the screen with some padding
+        if (left < 10) {
+          left = windowWidth - dropdownWidth - 10;
+        }
+      }
+
+      // Ensure it never goes off the left edge
+      if (left < 10) {
+        left = 10;
+      }
+
       setPositionStyle({
         position: "absolute" as const,
         top: `${top}px`,
         left: `${left}px`,
-        width: `${width}px`,
+        // removed width assignment to allow CSS classes to control width
         // Keep dropdowns above most UI layers; this zIndex must be less than
         // the modal overlay if the overlay intentionally sits above dropdowns.
         // For AddNewData modal we need portals to render above it, DropdownPortal

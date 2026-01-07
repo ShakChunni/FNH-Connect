@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useCallback, useEffect } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { RefreshCw } from "lucide-react";
 import { format } from "date-fns";
+import { toast } from "sonner";
 import { useSessionCashStore } from "../../store";
 import { useSessionCashData } from "../../hooks/useSessionCashData";
 import { CashTrackerSkeleton } from "./CashTrackerSkeleton";
@@ -12,7 +13,9 @@ import { CashTrackerSummary } from "./CashTrackerSummary";
 import { CashTrackerBreakdown } from "./CashTrackerBreakdown";
 import { CashTrackerShifts } from "./CashTrackerShifts";
 import { generateSessionCashReport } from "./generateCashReport";
-import type { DatePreset } from "./types";
+import { generateDetailedCashReport } from "./generateDetailedCashReport";
+import { api } from "@/lib/axios";
+import type { DatePreset, DetailedCashReportData } from "./types";
 
 interface SessionCashTrackerProps {
   staffName?: string;
@@ -43,6 +46,9 @@ export const SessionCashTracker: React.FC<SessionCashTrackerProps> = ({
     setDateDropdownOpen,
     setDepartments,
   } = useSessionCashStore();
+
+  // State for detailed report loading
+  const [isLoadingDetailedReport, setIsLoadingDetailedReport] = useState(false);
 
   // Fetch data using the hook
   const {
@@ -106,6 +112,60 @@ export const SessionCashTracker: React.FC<SessionCashTrackerProps> = ({
     });
   }, [data, departmentId, departments]);
 
+  // Handle detailed report generation
+  const handleGenerateDetailedReport = useCallback(async () => {
+    if (!data) return;
+
+    setIsLoadingDetailedReport(true);
+
+    try {
+      // Build query params
+      const queryParams = new URLSearchParams();
+      queryParams.set("datePreset", datePreset);
+      if (departmentId && departmentId !== "all") {
+        queryParams.set("departmentId", departmentId.toString());
+      }
+
+      // Fetch detailed data from API
+      const response = await api.get<{
+        success: boolean;
+        data: DetailedCashReportData;
+        error?: string;
+      }>(`/dashboard/session-cash/detailed?${queryParams.toString()}`);
+
+      if (!response.data.success) {
+        throw new Error(response.data.error || "Failed to fetch detailed data");
+      }
+
+      const detailedData = response.data.data;
+      const selectedDept =
+        departmentId === "all"
+          ? "All Departments"
+          : departments.find((d) => d.id === departmentId)?.name || "All";
+
+      // Generate detailed report
+      await generateDetailedCashReport({
+        staffName: detailedData.staffName,
+        generatedAt: format(new Date(), "MMM dd, yyyy hh:mm a"),
+        periodLabel: detailedData.periodLabel,
+        startDate: format(new Date(detailedData.startDate), "MMM dd, yyyy"),
+        endDate: format(new Date(detailedData.endDate), "MMM dd, yyyy"),
+        departmentFilter: selectedDept,
+        totalCollected: detailedData.totalCollected,
+        totalRefunded: detailedData.totalRefunded,
+        netCash: detailedData.netCash,
+        transactionCount: detailedData.transactionCount,
+        departmentBreakdown: detailedData.departmentBreakdown,
+        shifts: detailedData.shifts,
+      });
+    } catch (error) {
+      console.error("Error generating detailed report:", error);
+      toast.error("Failed to generate detailed report");
+    } finally {
+      setIsLoadingDetailedReport(false);
+    }
+  }, [data, datePreset, departmentId, departments]);
+
   // Show skeleton during initial load or props loading
   if (propsLoading || (isLoading && !data)) {
     return <CashTrackerSkeleton />;
@@ -139,7 +199,9 @@ export const SessionCashTracker: React.FC<SessionCashTrackerProps> = ({
         shiftsCount={data?.shiftsCount || 0}
         isFetching={isFetching}
         hasData={!!data}
+        isLoadingDetailedReport={isLoadingDetailedReport}
         onGenerateReport={handleGenerateReport}
+        onGenerateDetailedReport={handleGenerateDetailedReport}
         onRefresh={handleRefresh}
       />
 

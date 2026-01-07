@@ -10,4 +10,5 @@ export { CashTrackerBreakdown } from "./CashTrackerBreakdown";
 export { CashTrackerShifts } from "./CashTrackerShifts";
 export { CashTrackerSkeleton } from "./CashTrackerSkeleton";
 export { generateSessionCashReport } from "./generateCashReport";
+export { generateDetailedCashReport } from "./generateDetailedCashReport";
 export * from "./types";
