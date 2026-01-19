@@ -69,7 +69,7 @@ export const StatusFilter: React.FC = () => {
           {selectedStatus && (
             <span
               className={`w-2 h-2 rounded-full ${getStatusColor(
-                selectedStatus.color
+                selectedStatus.color,
               )}`}
             />
           )}
@@ -92,7 +92,7 @@ export const StatusFilter: React.FC = () => {
         isOpen={isOpen}
         onClose={() => setIsOpen(false)}
         buttonRef={buttonRef}
-        className="w-full min-w-[200px]"
+        className="min-w-[200px]"
       >
         <div className="py-1 max-h-[280px] overflow-y-auto">
           {/* Status options */}

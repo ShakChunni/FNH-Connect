@@ -61,7 +61,7 @@ export const DepartmentFilter: React.FC = () => {
         isOpen={isOpen}
         onClose={() => setIsOpen(false)}
         buttonRef={buttonRef}
-        className="w-full min-w-[200px]"
+        className="min-w-[200px]"
       >
         <div className="py-1 max-h-[280px] overflow-y-auto">
           {/* All Departments option */}
