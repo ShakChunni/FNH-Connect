@@ -16,10 +16,10 @@ export const DoctorFilter: React.FC = () => {
 
   const { data: doctors = [] } = useFetchDoctors();
   const orderedById = usePathologyFilterStore(
-    (state) => state.filters.orderedById
+    (state) => state.filters.orderedById,
   );
   const setOrderedById = usePathologyFilterStore(
-    (state) => state.setOrderedById
+    (state) => state.setOrderedById,
   );
 
   const selectedDoctor = doctors.find((d) => d.id === orderedById);
@@ -65,7 +65,7 @@ export const DoctorFilter: React.FC = () => {
         isOpen={isOpen}
         onClose={() => setIsOpen(false)}
         buttonRef={buttonRef}
-        className="w-full min-w-[200px]"
+        className="min-w-[200px]"
       >
         <div className="py-1 max-h-[280px] overflow-y-auto">
           {/* All Doctors option */}
