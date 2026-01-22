@@ -6,7 +6,6 @@ import {
   User,
   MapPin,
   ArrowUpRight,
-  Baby,
   Microscope,
   Building2,
 } from "lucide-react";
@@ -39,7 +38,6 @@ const statusConfig = {
 };
 
 const departmentIcons: Record<string, React.ElementType> = {
-  infertility: Baby,
   pathology: Microscope,
   general: Building2,
 };

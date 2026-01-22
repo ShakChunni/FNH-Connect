@@ -19,14 +19,14 @@ export async function GET(request: NextRequest) {
     if (!user) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
     // 2. Get query params
     const { searchParams } = new URL(request.url);
     const recentPatientsLimit = parseInt(
-      searchParams.get("recentLimit") || "5"
+      searchParams.get("recentLimit") || "5",
     );
 
     // 3. Get today's date range in Bangladesh time (UTC+6)
@@ -42,11 +42,11 @@ export async function GET(request: NextRequest) {
 
     // Start of Bangladesh "today" in UTC (midnight BDT = 6 PM previous day UTC)
     const startOfDay = new Date(
-      Date.UTC(bdtYear, bdtMonth, bdtDate) - BDT_OFFSET_MS
+      Date.UTC(bdtYear, bdtMonth, bdtDate) - BDT_OFFSET_MS,
     );
     // End of Bangladesh "today" in UTC (midnight next day BDT)
     const endOfDay = new Date(
-      Date.UTC(bdtYear, bdtMonth, bdtDate + 1) - BDT_OFFSET_MS
+      Date.UTC(bdtYear, bdtMonth, bdtDate + 1) - BDT_OFFSET_MS,
     );
 
     // 4. Parallel queries for ALL dashboard data
@@ -57,17 +57,12 @@ export async function GET(request: NextRequest) {
       generalDischargedToday,
       generalDischargedAllTime,
 
-      // Infertility counts
-      infertilityActivePatients,
-      infertilityCreatedToday,
-
       // Pathology counts
       pathologyCompletedToday,
       pathologyCompletedAllTime,
 
       // Recent data from all sources
       recentAdmissions,
-      recentInfertility,
       recentPathology,
 
       // Cash session for current user
@@ -96,18 +91,6 @@ export async function GET(request: NextRequest) {
       // Stats: General discharged all time
       prisma.admission.count({
         where: { isDischarged: true },
-      }),
-
-      // Stats: Infertility active
-      prisma.infertilityPatient.count({
-        where: { status: "Active" },
-      }),
-
-      // Stats: Infertility created today
-      prisma.infertilityPatient.count({
-        where: {
-          createdAt: { gte: startOfDay, lt: endOfDay },
-        },
       }),
 
       // Stats: Pathology completed today
@@ -141,19 +124,6 @@ export async function GET(request: NextRequest) {
         },
       }),
 
-      // Recent: Infertility
-      prisma.infertilityPatient.findMany({
-        take: recentPatientsLimit,
-        orderBy: { createdAt: "desc" },
-        select: {
-          id: true,
-          patientId: true,
-          createdAt: true,
-          status: true,
-          patient: { select: { fullName: true, phoneNumber: true } },
-        },
-      }),
-
       // Recent: Pathology
       prisma.pathologyTest.findMany({
         take: recentPatientsLimit,
@@ -183,13 +153,11 @@ export async function GET(request: NextRequest) {
     ]);
 
     // 5. Calculate stats
-    const totalActivePatients =
-      generalActivePatients + infertilityActivePatients;
-    const patientsAdmittedToday =
-      generalAdmittedToday + infertilityCreatedToday;
+    const totalActivePatients = generalActivePatients;
+    const patientsAdmittedToday = generalAdmittedToday;
     const totalBedCapacity = 60;
     const occupancyRate = Math.round(
-      (generalActivePatients / totalBedCapacity) * 100
+      (generalActivePatients / totalBedCapacity) * 100,
     );
 
     // 6. Transform recent patients
@@ -205,25 +173,11 @@ export async function GET(request: NextRequest) {
         status: a.isDischarged
           ? ("discharged" as const)
           : a.paidAmount.toNumber() === 0
-          ? ("pending" as const)
-          : ("admitted" as const),
+            ? ("pending" as const)
+            : ("admitted" as const),
         roomNumber: a.seatNumber
           ? `${a.ward || ""}${a.seatNumber}`.trim()
           : undefined,
-      })),
-      ...recentInfertility.map((p) => ({
-        id: p.id + 10000,
-        patientId: p.patientId,
-        name: p.patient.fullName,
-        phoneNumber: p.patient.phoneNumber,
-        admissionDate: p.createdAt.toISOString(),
-        department: "Infertility",
-        departmentType: "infertility" as const,
-        status:
-          p.status === "Active"
-            ? ("admitted" as const)
-            : ("discharged" as const),
-        roomNumber: undefined,
       })),
       ...recentPathology.map((t) => ({
         id: t.id + 20000,
@@ -240,7 +194,7 @@ export async function GET(request: NextRequest) {
       .sort(
         (a, b) =>
           new Date(b.admissionDate).getTime() -
-          new Date(a.admissionDate).getTime()
+          new Date(a.admissionDate).getTime(),
       )
       .slice(0, recentPatientsLimit);
 
@@ -291,7 +245,7 @@ export async function GET(request: NextRequest) {
     console.error("[Dashboard API] Error:", error);
     return NextResponse.json(
       { success: false, error: "Failed to fetch dashboard data" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
