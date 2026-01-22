@@ -22,7 +22,7 @@ export interface RecentPatient {
   phoneNumber: string | null;
   admissionDate: string;
   department: string;
-  departmentType?: "general" | "infertility" | "pathology";
+  departmentType?: "general" | "pathology";
   status: "admitted" | "pending" | "discharged";
   roomNumber?: string;
 }
@@ -73,12 +73,10 @@ export const DashboardDataResponseSchema = z.object({
         phoneNumber: z.string().nullable(),
         admissionDate: z.string(),
         department: z.string(),
-        departmentType: z
-          .enum(["general", "infertility", "pathology"])
-          .optional(),
+        departmentType: z.enum(["general", "pathology"]).optional(),
         status: z.enum(["admitted", "pending", "discharged"]),
         roomNumber: z.string().optional(),
-      })
+      }),
     ),
     cashSession: z
       .object({

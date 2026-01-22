@@ -41,9 +41,10 @@ const mockData: DashboardData = {
       name: "Ayesha Begum",
       phoneNumber: "01823456789",
       admissionDate: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-      department: "Infertility",
-      departmentType: "infertility",
+      department: "Gynecology",
+      departmentType: "general",
       status: "admitted",
+      roomNumber: "105-B",
     },
     {
       id: 3,
@@ -77,7 +78,7 @@ export function useDashboardData() {
         const response = await api.get<DashboardApiResponse>("/dashboard");
         if (!response.data.success) {
           throw new Error(
-            response.data.error || "Failed to fetch dashboard data"
+            response.data.error || "Failed to fetch dashboard data",
           );
         }
         return response.data.data;
