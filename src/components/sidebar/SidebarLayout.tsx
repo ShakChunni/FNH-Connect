@@ -32,7 +32,7 @@ function SidebarLayoutContent({ children }: { children: React.ReactNode }) {
         className={`flex min-h-screen min-w-0 flex-1 flex-col transition-all duration-300 ease-[cubic-bezier(0.25,0.1,0.25,1)] ${desktopOffsetClass}`}
       >
         <div className="flex lg:px-4 min-h-screen min-w-0 flex-1 flex-col pb-0 pt-0 sm:pb-2 sm:pt-2 lg:pb-6 lg:pt-3 overflow-hidden">
-          <div className="relative  flex w-full min-w-0 flex-1 flex-col overflow-hidden sm:rounded-t-[2rem] lg:rounded-t-[3rem] bg-fnh-porcelain shadow-lg">
+          <div className="relative flex w-full min-w-0 flex-1 flex-col overflow-hidden sm:rounded-[2rem] lg:rounded-[3rem] bg-fnh-porcelain shadow-lg">
             {children}
           </div>
         </div>
