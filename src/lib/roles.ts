@@ -33,15 +33,14 @@ export enum HospitalRole {
 }
 
 // Routes that receptionists can access
+// Note: patient-records is admin-only
 export const RECEPTIONIST_ALLOWED_ROUTES = [
   "/dashboard",
   "/general-admission",
   "/pathology",
-  "/patient-records",
   "/api/dashboard",
   "/api/general-admission",
   "/api/pathology",
-  "/api/patient-records",
   "/api/auth", // Auth routes are always allowed
   "/api/staff", // Staff/doctors list for dropdowns
   "/api/hospitals", // Hospitals list for dropdowns
@@ -179,13 +178,13 @@ export function canViewActivityLogs(userRole: string): boolean {
  */
 export function canReceptionistAccessPath(
   pathname: string,
-  role: string
+  role: string,
 ): boolean {
   const allowedRoutes = isReceptionistInfertilityRole(role)
     ? RECEPTIONIST_INFERTILITY_ALLOWED_ROUTES
     : RECEPTIONIST_ALLOWED_ROUTES;
 
   return allowedRoutes.some(
-    (route) => pathname === route || pathname.startsWith(route + "/")
+    (route) => pathname === route || pathname.startsWith(route + "/"),
   );
 }

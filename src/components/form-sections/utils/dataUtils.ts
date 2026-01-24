@@ -17,7 +17,7 @@ const calculateAge = (dateOfBirth: Date | string | null): number | null => {
 };
 
 export const normalizePatientData = (
-  patientData: InfertilityPatient[] | undefined
+  patientData: InfertilityPatient[] | undefined,
 ): InfertilityPatientData[] =>
   (patientData || []).map((row) => ({
     id: row.id,
@@ -30,8 +30,8 @@ export const normalizePatientData = (
     hospitalEmail: row.hospital.email,
     hospitalWebsite: row.hospital.website,
     hospitalType: row.hospital.type,
-    patientFirstName: row.patient.fullName.split(" ")[0] || "",
-    patientLastName: row.patient.fullName.split(" ").slice(1).join(" ") || null,
+    patientFirstName: row.patient.firstName,
+    patientLastName: row.patient.lastName,
     patientFullName: row.patient.fullName,
     patientGender: row.patient.gender,
     patientAge: calculateAge(row.patient.dateOfBirth),

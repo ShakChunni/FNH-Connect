@@ -56,7 +56,7 @@ const PathologyManagement = React.memo(() => {
       page: filterValues.page,
       limit: filterValues.limit,
     }),
-    [filterValues]
+    [filterValues],
   );
 
   const { data: pathologyResult, isLoading } =
@@ -75,7 +75,7 @@ const PathologyManagement = React.memo(() => {
     (patient: PathologyPatientData) => {
       actions.openEditModal(patient);
     },
-    [actions]
+    [actions],
   );
 
   // Handle page change
@@ -83,7 +83,7 @@ const PathologyManagement = React.memo(() => {
     (page: number) => {
       setPage(page);
     },
-    [setPage]
+    [setPage],
   );
 
   // Transform response data to match table format
@@ -93,9 +93,8 @@ const PathologyManagement = React.memo(() => {
       patientId: patient.patientId,
       testNumber: patient.testNumber,
       patientFullName: patient.patient.fullName,
-      patientFirstName: patient.patient.fullName.split(" ")[0] || "",
-      patientLastName:
-        patient.patient.fullName.split(" ").slice(1).join(" ") || null,
+      patientFirstName: patient.patient.firstName,
+      patientLastName: patient.patient.lastName,
       patientGender: patient.patient.gender,
       patientAge: patient.patient.age,
       patientDOB: patient.patient.dateOfBirth
@@ -147,7 +146,7 @@ const PathologyManagement = React.memo(() => {
   const startIndex = (pagination.currentPage - 1) * filterValues.limit + 1;
   const endIndex = Math.min(
     pagination.currentPage * filterValues.limit,
-    pagination.total
+    pagination.total,
   );
 
   return (
@@ -223,7 +222,7 @@ const PathologyManagement = React.memo(() => {
             isOpen={modals.isAddOpen && !modals.isAddClosing}
             onClose={actions.closeAddModal}
           />,
-          document.body
+          document.body,
         )}
 
       {/* Edit Data Portal */}
@@ -236,7 +235,7 @@ const PathologyManagement = React.memo(() => {
             onClose={actions.closeEditModal}
             patientData={modals.selectedPatient}
           />,
-          document.body
+          document.body,
         )}
     </div>
   );

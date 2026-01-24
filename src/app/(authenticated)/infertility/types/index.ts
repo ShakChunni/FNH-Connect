@@ -140,6 +140,8 @@ export interface InfertilityPatient {
   hospitalId: number;
   patient: {
     id: number;
+    firstName: string;
+    lastName: string | null;
     fullName: string;
     age: number | null;
     phoneNumber: string | null;

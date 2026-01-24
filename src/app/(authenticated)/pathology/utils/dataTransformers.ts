@@ -10,16 +10,15 @@ import { PathologyPatient, PathologyPatientData } from "../types";
  * This is used for report generation and table display
  */
 export function transformPathologyPatient(
-  patient: PathologyPatient
+  patient: PathologyPatient,
 ): PathologyPatientData {
   return {
     id: patient.id,
     patientId: patient.patientId,
     testNumber: patient.testNumber,
     patientFullName: patient.patient.fullName,
-    patientFirstName: patient.patient.fullName.split(" ")[0] || "",
-    patientLastName:
-      patient.patient.fullName.split(" ").slice(1).join(" ") || null,
+    patientFirstName: patient.patient.firstName,
+    patientLastName: patient.patient.lastName,
     patientGender: patient.patient.gender,
     patientAge: patient.patient.age,
     patientDOB: patient.patient.dateOfBirth
@@ -69,7 +68,7 @@ export function transformPathologyPatient(
  * Transform array of PathologyPatient to PathologyPatientData
  */
 export function transformPathologyPatients(
-  patients: PathologyPatient[]
+  patients: PathologyPatient[],
 ): PathologyPatientData[] {
   return patients.map(transformPathologyPatient);
 }

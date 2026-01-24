@@ -147,6 +147,8 @@ export async function getInfertilityPatients(filters: InfertilityFilters) {
         patient: {
           select: {
             id: true,
+            firstName: true,
+            lastName: true,
             fullName: true,
             phoneNumber: true,
             email: true,
@@ -227,7 +229,7 @@ export async function createInfertilityPatient(
   medicalData: MedicalData,
   staffId: number,
   userId: number,
-  activityLogContext?: ActivityLogContext
+  activityLogContext?: ActivityLogContext,
 ) {
   return await prisma.$transaction(async (tx) => {
     // 1. Create or get hospital (moved to start to link with patient)
@@ -327,7 +329,7 @@ export async function createInfertilityPatient(
     const caseNumber = formatRegistrationNumber(
       "INF",
       currentYear,
-      countThisYear + 1
+      countThisYear + 1,
     );
 
     // 4. Create infertility record
@@ -343,7 +345,7 @@ export async function createInfertilityPatient(
 
     if (existingInfertilityRecord) {
       throw new Error(
-        `This patient already has an active infertility record at ${hospital.name}. Please edit the existing record instead of creating a new one.`
+        `This patient already has an active infertility record at ${hospital.name}. Please edit the existing record instead of creating a new one.`,
       );
     }
 
@@ -427,7 +429,7 @@ export async function updateInfertilityPatient(
   medicalData: MedicalData,
   staffId: number,
   userId: number,
-  activityLogContext?: ActivityLogContext
+  activityLogContext?: ActivityLogContext,
 ) {
   return await prisma.$transaction(async (tx) => {
     // Check if record exists
@@ -487,7 +489,7 @@ export async function updateInfertilityPatient(
 
       if (collisionRecord) {
         throw new Error(
-          `This patient already has an infertility record at ${hospital.name}. You cannot move this record to that hospital.`
+          `This patient already has an infertility record at ${hospital.name}. You cannot move this record to that hospital.`,
         );
       }
     }
@@ -583,7 +585,7 @@ export async function updateInfertilityPatient(
 export async function deleteInfertilityPatient(
   id: number,
   userId: number,
-  activityLogContext?: ActivityLogContext
+  activityLogContext?: ActivityLogContext,
 ) {
   return await prisma.$transaction(async (tx) => {
     const existingRecord = await tx.infertilityPatient.findUnique({

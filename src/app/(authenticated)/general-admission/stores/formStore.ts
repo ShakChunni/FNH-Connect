@@ -38,12 +38,12 @@ interface FormActions {
   setAdmissionInfo: (data: Partial<AdmissionInfo>) => void;
   updateAdmissionInfo: <K extends keyof AdmissionInfo>(
     key: K,
-    value: AdmissionInfo[K]
+    value: AdmissionInfo[K],
   ) => void;
   setFinancialData: (data: Partial<FinancialData>) => void;
   updateFinancialData: <K extends keyof FinancialData>(
     key: K,
-    value: FinancialData[K]
+    value: FinancialData[K],
   ) => void;
   setValidationStatus: (status: Partial<ValidationStatus>) => void;
   initializeFormForEdit: (admission: AdmissionPatientData) => void;
@@ -302,9 +302,8 @@ export const useAdmissionFormStore = create<FormStore>((set, get) => ({
       },
       patientData: {
         id: admission.patientId,
-        firstName: admission.patientFullName?.split(" ")[0] || "",
-        lastName:
-          admission.patientFullName?.split(" ").slice(1).join(" ") || "",
+        firstName: admission.patientFirstName || "",
+        lastName: admission.patientLastName || "",
         fullName: admission.patientFullName || "",
         gender: admission.patientGender || "",
         age: admission.patientAge,
@@ -485,5 +484,5 @@ export const useAdmissionFormActions = () =>
       setPaidAmount: state.setPaidAmount,
       afterAddModalClosed: state.afterAddModalClosed,
       afterEditModalClosed: state.afterEditModalClosed,
-    }))
+    })),
   );

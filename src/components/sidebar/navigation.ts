@@ -17,11 +17,11 @@ import {
 } from "@/lib/roles";
 
 // Receptionist allowed routes for sidebar filtering
+// Note: patient-records is admin-only
 const RECEPTIONIST_SIDEBAR_ROUTES = [
   "/dashboard",
   "/general-admission",
   "/pathology",
-  "/patient-records",
 ];
 
 // Receptionist-infertility allowed routes (includes infertility)
@@ -56,6 +56,7 @@ export const navigationItems: NavigationItem[] = [
     label: "Patient Records",
     href: "/patient-records",
     icon: ClipboardList,
+    adminOnly: true,
   },
   {
     label: "Cash Tracking",
@@ -98,7 +99,7 @@ export function getNavigationItems(userRole?: string): NavigationItem[] {
     return navigationItems.filter(
       (item) =>
         !item.adminOnly &&
-        RECEPTIONIST_INFERTILITY_SIDEBAR_ROUTES.includes(item.href)
+        RECEPTIONIST_INFERTILITY_SIDEBAR_ROUTES.includes(item.href),
     );
   }
 
@@ -106,7 +107,7 @@ export function getNavigationItems(userRole?: string): NavigationItem[] {
   if (isReceptionistRole(userRole)) {
     return navigationItems.filter(
       (item) =>
-        !item.adminOnly && RECEPTIONIST_SIDEBAR_ROUTES.includes(item.href)
+        !item.adminOnly && RECEPTIONIST_SIDEBAR_ROUTES.includes(item.href),
     );
   }
 
