@@ -30,6 +30,12 @@ const gotham = localFont({
   variable: "--font-gotham",
 });
 
+import type { Viewport } from "next";
+
+export const viewport: Viewport = {
+  themeColor: "#0f172a",
+};
+
 export { metadata };
 
 const MAINTENANCE_MODE = process.env.NEXT_PUBLIC_MAINTENANCE === "true";
