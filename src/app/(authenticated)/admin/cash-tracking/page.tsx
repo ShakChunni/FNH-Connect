@@ -90,11 +90,9 @@ const CashTrackingPage = () => {
 
           {/* Enhanced Stats Grid - Mobile First */}
           <div className="px-1 sm:px-2 lg:px-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 2xl:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
               {/* Net Cash Flow */}
-              {/* Net Cash Flow */}
-              {/* Net Cash Flow */}
-              <div className="col-span-1 sm:col-span-2 lg:col-span-1 bg-emerald-50/50 rounded-2xl p-4 sm:p-5 border border-emerald-100 shadow-sm shadow-emerald-100/20 relative overflow-hidden group hover:shadow-md transition-all duration-300">
+              <div className="bg-emerald-50/50 rounded-2xl p-4 sm:p-5 lg:p-6 border border-emerald-100 shadow-sm shadow-emerald-100/20 relative overflow-hidden group hover:shadow-md transition-all duration-300">
                 <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-100/50 rounded-full -translate-y-1/2 translate-x-1/2 group-hover:scale-110 transition-transform duration-500" />
                 <div className="relative z-10">
                   <div className="flex items-center gap-3 mb-3">
@@ -108,7 +106,10 @@ const CashTrackingPage = () => {
                   {isLoading ? (
                     <div className="h-8 w-32 bg-emerald-100/50 rounded animate-pulse mb-1" />
                   ) : (
-                    <p className="text-xl sm:text-2xl lg:text-2xl xl:text-3xl font-black text-emerald-950 break-words">
+                    <p
+                      className="text-xl sm:text-2xl xl:text-3xl font-black text-emerald-950 truncate"
+                      title={formatCurrency(netCashFlow)}
+                    >
                       {formatCurrency(netCashFlow)}
                     </p>
                   )}
@@ -119,7 +120,7 @@ const CashTrackingPage = () => {
               </div>
 
               {/* Total Collected */}
-              <div className="col-span-1 sm:col-span-2 lg:col-span-1 bg-blue-50/50 rounded-2xl p-4 sm:p-5 border border-blue-100 shadow-sm shadow-blue-100/20 relative overflow-hidden group hover:shadow-md transition-all duration-300">
+              <div className="bg-blue-50/50 rounded-2xl p-4 sm:p-5 lg:p-6 border border-blue-100 shadow-sm shadow-blue-100/20 relative overflow-hidden group hover:shadow-md transition-all duration-300">
                 <div className="absolute top-0 right-0 w-24 h-24 bg-blue-100/50 rounded-full -translate-y-1/2 translate-x-1/2 group-hover:scale-110 transition-transform duration-500" />
                 <div className="relative z-10">
                   <div className="flex items-center gap-3 mb-3">
@@ -133,7 +134,10 @@ const CashTrackingPage = () => {
                   {isLoading ? (
                     <div className="h-8 w-32 bg-blue-100/50 rounded animate-pulse mb-1" />
                   ) : (
-                    <p className="text-xl sm:text-2xl lg:text-2xl xl:text-3xl font-black text-blue-950 break-words">
+                    <p
+                      className="text-xl sm:text-2xl xl:text-3xl font-black text-blue-950 truncate"
+                      title={formatCurrency(summary.totalCollected)}
+                    >
                       {formatCurrency(summary.totalCollected)}
                     </p>
                   )}
@@ -144,7 +148,7 @@ const CashTrackingPage = () => {
               </div>
 
               {/* Total Refunds */}
-              <div className="col-span-1 sm:col-span-2 lg:col-span-1 bg-rose-50/50 rounded-2xl p-4 sm:p-5 border border-rose-100 shadow-sm shadow-rose-100/20 relative overflow-hidden group hover:shadow-md transition-all duration-300">
+              <div className="bg-rose-50/50 rounded-2xl p-4 sm:p-5 lg:p-6 border border-rose-100 shadow-sm shadow-rose-100/20 relative overflow-hidden group hover:shadow-md transition-all duration-300">
                 <div className="absolute top-0 right-0 w-24 h-24 bg-rose-100/50 rounded-full -translate-y-1/2 translate-x-1/2 group-hover:scale-110 transition-transform duration-500" />
                 <div className="relative z-10">
                   <div className="flex items-center gap-3 mb-3">
@@ -158,7 +162,10 @@ const CashTrackingPage = () => {
                   {isLoading ? (
                     <div className="h-8 w-32 bg-rose-100/50 rounded animate-pulse mb-1" />
                   ) : (
-                    <p className="text-xl sm:text-2xl lg:text-2xl xl:text-3xl font-black text-rose-950 break-words">
+                    <p
+                      className="text-xl sm:text-2xl xl:text-3xl font-black text-rose-950 truncate"
+                      title={formatCurrency(summary.totalRefunded)}
+                    >
                       {formatCurrency(summary.totalRefunded)}
                     </p>
                   )}
@@ -169,7 +176,7 @@ const CashTrackingPage = () => {
               </div>
 
               {/* Active Shifts */}
-              <div className="col-span-1 sm:col-span-2 lg:col-span-1 bg-violet-50/50 rounded-2xl p-4 sm:p-5 border border-violet-100 shadow-sm shadow-violet-100/20 relative overflow-hidden group hover:shadow-md transition-all duration-300">
+              <div className="bg-violet-50/50 rounded-2xl p-4 sm:p-5 lg:p-6 border border-violet-100 shadow-sm shadow-violet-100/20 relative overflow-hidden group hover:shadow-md transition-all duration-300">
                 <div className="absolute top-0 right-0 w-24 h-24 bg-violet-100/50 rounded-full -translate-y-1/2 translate-x-1/2 group-hover:scale-110 transition-transform duration-500" />
                 <div className="relative z-10">
                   <div className="flex items-center gap-3 mb-3">
@@ -183,12 +190,12 @@ const CashTrackingPage = () => {
                   {isLoading ? (
                     <div className="h-8 w-16 bg-violet-100/50 rounded animate-pulse mb-1" />
                   ) : (
-                    <p className="text-xl sm:text-2xl lg:text-2xl xl:text-3xl font-black text-violet-950">
+                    <p className="text-xl sm:text-2xl xl:text-3xl font-black text-violet-950">
                       {summary.activeShiftsCount}
                     </p>
                   )}
 
-                  <div className="flex items-center gap-2 mt-1">
+                  <div className="flex items-center flex-wrap gap-2 mt-1">
                     <p className="text-[10px] sm:text-xs font-medium text-violet-700/80">
                       Variance:
                     </p>
@@ -197,12 +204,12 @@ const CashTrackingPage = () => {
                     ) : (
                       <span
                         className={cn(
-                          "text-[10px] sm:text-xs font-black px-1.5 py-0.5 rounded shadow-sm",
+                          "text-[10px] sm:text-xs font-black px-1.5 py-0.5 rounded shadow-sm whitespace-nowrap",
                           totalVariance === 0
                             ? "bg-white text-emerald-600 ring-1 ring-emerald-100"
                             : totalVariance > 0
-                            ? "bg-white text-blue-600 ring-1 ring-blue-100"
-                            : "bg-white text-rose-600 ring-1 ring-rose-100"
+                              ? "bg-white text-blue-600 ring-1 ring-blue-100"
+                              : "bg-white text-rose-600 ring-1 ring-rose-100",
                         )}
                       >
                         {totalVariance > 0 ? "+" : ""}
@@ -214,7 +221,7 @@ const CashTrackingPage = () => {
                         e.stopPropagation();
                         setShowVarianceHelp(!showVarianceHelp);
                       }}
-                      className="p-1 hover:bg-gray-100 rounded-full transition-colors cursor-pointer -ml-1"
+                      className="p-1 hover:bg-gray-100 rounded-full transition-colors cursor-pointer -ml-1 shrink-0"
                       aria-label="What is variance?"
                     >
                       <HelpCircle className="w-3 h-3 text-gray-400 hover:text-gray-600" />
@@ -316,7 +323,7 @@ const CashTrackingPage = () => {
                         const year = date.getFullYear();
                         const month = String(date.getMonth() + 1).padStart(
                           2,
-                          "0"
+                          "0",
                         );
                         const day = String(date.getDate()).padStart(2, "0");
                         return `${year}-${month}-${day}`;
@@ -359,51 +366,50 @@ const CashTrackingPage = () => {
               <h3 className="text-[10px] sm:text-xs font-black uppercase tracking-widest opacity-80 mb-4">
                 Cash Flow Breakdown
               </h3>
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {/* Collections */}
-                <div className="flex-1 flex items-center gap-3 p-3 bg-white/10 rounded-xl">
-                  <TrendingUp className="w-5 h-5 text-emerald-400" />
-                  <div>
-                    <p className="text-[10px] font-bold uppercase tracking-wide opacity-70">
+                <div className="flex items-center gap-3 p-3 bg-white/10 rounded-xl border border-white/5">
+                  <TrendingUp className="w-5 h-5 text-emerald-400 shrink-0" />
+                  <div className="min-w-0">
+                    <p className="text-[10px] font-bold uppercase tracking-wide opacity-70 truncate">
                       Collected
                     </p>
-                    <p className="text-lg font-black">
+                    <p
+                      className="text-base sm:text-lg font-black truncate"
+                      title={formatCurrency(summary.totalCollected)}
+                    >
                       {formatCurrency(summary.totalCollected)}
                     </p>
                   </div>
                 </div>
 
-                {/* Minus Sign */}
-                <div className="hidden sm:flex items-center justify-center w-8 h-8 bg-white/10 rounded-full text-xl font-black">
-                  −
-                </div>
-
                 {/* Refunds */}
-                <div className="flex-1 flex items-center gap-3 p-3 bg-white/10 rounded-xl">
-                  <TrendingDown className="w-5 h-5 text-rose-400" />
-                  <div>
-                    <p className="text-[10px] font-bold uppercase tracking-wide opacity-70">
+                <div className="flex items-center gap-3 p-3 bg-white/10 rounded-xl border border-white/5">
+                  <TrendingDown className="w-5 h-5 text-rose-400 shrink-0" />
+                  <div className="min-w-0">
+                    <p className="text-[10px] font-bold uppercase tracking-wide opacity-70 truncate">
                       Refunded
                     </p>
-                    <p className="text-lg font-black">
+                    <p
+                      className="text-base sm:text-lg font-black truncate"
+                      title={formatCurrency(summary.totalRefunded)}
+                    >
                       {formatCurrency(summary.totalRefunded)}
                     </p>
                   </div>
                 </div>
 
-                {/* Equals Sign */}
-                <div className="hidden sm:flex items-center justify-center w-8 h-8 bg-white/10 rounded-full text-xl font-black">
-                  =
-                </div>
-
                 {/* Net */}
-                <div className="flex-1 flex items-center gap-3 p-3 bg-emerald-500/30 border border-emerald-400/30 rounded-xl">
-                  <Wallet className="w-5 h-5 text-emerald-300" />
-                  <div>
-                    <p className="text-[10px] font-bold uppercase tracking-wide opacity-90">
+                <div className="flex items-center gap-3 p-3 bg-emerald-500/20 border border-emerald-400/30 rounded-xl">
+                  <Wallet className="w-5 h-5 text-emerald-300 shrink-0" />
+                  <div className="min-w-0">
+                    <p className="text-[10px] font-bold uppercase tracking-wide opacity-90 truncate">
                       Net Cash
                     </p>
-                    <p className="text-lg font-black text-emerald-300">
+                    <p
+                      className="text-base sm:text-lg font-black text-emerald-300 truncate"
+                      title={formatCurrency(netCashFlow)}
+                    >
                       {formatCurrency(netCashFlow)}
                     </p>
                   </div>
