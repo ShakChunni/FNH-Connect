@@ -60,7 +60,7 @@ export const EditPatientModal: React.FC<EditPatientModalProps> = ({
       const { name, value } = e.target;
       setFormData((prev) => ({ ...prev, [name]: value }));
     },
-    []
+    [],
   );
 
   const handleGenderChange = useCallback((value: string) => {
@@ -82,7 +82,7 @@ export const EditPatientModal: React.FC<EditPatientModalProps> = ({
         id: patientData.id,
         data: {
           firstName: formData.firstName,
-          lastName: formData.lastName || undefined,
+          lastName: formData.lastName, // Allow empty string to clear lastName
           gender: formData.gender,
           dateOfBirth: formData.dateOfBirth?.toISOString() || null,
           guardianName: formData.guardianName || undefined,

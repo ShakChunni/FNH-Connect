@@ -118,6 +118,8 @@ export interface AdmissionPatientData {
   id: number;
   admissionNumber: string;
   patientId: number;
+  patientFirstName: string;
+  patientLastName: string | null;
   patientFullName: string;
   patientDateOfBirth: string | null;
   patientAge: number | null;

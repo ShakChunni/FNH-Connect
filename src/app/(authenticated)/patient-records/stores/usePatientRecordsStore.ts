@@ -14,17 +14,28 @@ interface PatientRecordsState {
     limit: number;
   };
 
+  // Filter state
+  filters: {
+    search: string;
+  };
+
   // Actions
   openEditModal: (patient: PatientData) => void;
   closeEditModal: () => void;
   setPage: (page: number) => void;
   setLimit: (limit: number) => void;
   resetPagination: () => void;
+  setSearch: (search: string) => void;
+  resetFilters: () => void;
 }
 
 const initialPagination = {
   page: 1,
   limit: 15,
+};
+
+const initialFilters = {
+  search: "",
 };
 
 export const usePatientRecordsStore = create<PatientRecordsState>((set) => ({
@@ -33,6 +44,7 @@ export const usePatientRecordsStore = create<PatientRecordsState>((set) => ({
   isEditClosing: false,
   selectedPatient: null,
   pagination: initialPagination,
+  filters: initialFilters,
 
   // Actions
   openEditModal: (patient) =>
@@ -68,6 +80,18 @@ export const usePatientRecordsStore = create<PatientRecordsState>((set) => ({
     set({
       pagination: initialPagination,
     }),
+
+  setSearch: (search) =>
+    set((state) => ({
+      filters: { ...state.filters, search },
+      pagination: { ...state.pagination, page: 1 }, // Reset to page 1 on search
+    })),
+
+  resetFilters: () =>
+    set({
+      filters: initialFilters,
+      pagination: initialPagination,
+    }),
 }));
 
 // Selector hooks using useShallow to prevent infinite loops
@@ -77,11 +101,14 @@ export const usePatientModals = () =>
       isEditOpen: state.isEditOpen,
       isEditClosing: state.isEditClosing,
       selectedPatient: state.selectedPatient,
-    }))
+    })),
   );
 
 export const usePagination = () =>
   usePatientRecordsStore((state) => state.pagination);
+
+export const useFilters = () =>
+  usePatientRecordsStore((state) => state.filters);
 
 export const usePatientActions = () =>
   usePatientRecordsStore(
@@ -91,7 +118,9 @@ export const usePatientActions = () =>
       setPage: state.setPage,
       setLimit: state.setLimit,
       resetPagination: state.resetPagination,
-    }))
+      setSearch: state.setSearch,
+      resetFilters: state.resetFilters,
+    })),
   );
 
 export default usePatientRecordsStore;

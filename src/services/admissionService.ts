@@ -187,7 +187,7 @@ export async function createAdmission(
   staffId: number,
   userId: number,
   shiftId: number | null,
-  activityLogContext?: ActivityLogContext
+  activityLogContext?: ActivityLogContext,
 ) {
   return await prisma.$transaction(async (tx) => {
     // 1. Get admission fee from config
@@ -269,7 +269,7 @@ export async function createAdmission(
     const admissionNumber = formatRegistrationNumber(
       departmentCode,
       currentYear,
-      countThisYear + 1
+      countThisYear + 1,
     );
 
     // 5. Create admission record
@@ -460,7 +460,7 @@ export async function updateAdmission(
   staffId: number,
   userId: number,
   shiftId: number | null,
-  activityLogContext?: ActivityLogContext
+  activityLogContext?: ActivityLogContext,
 ) {
   return await prisma.$transaction(async (tx) => {
     // Get existing record
@@ -554,7 +554,7 @@ export async function updateAdmission(
       medicineCharge +
       otherCharges;
 
-    let discountAmount = isCanceling ? 0 : updateData.discountAmount ?? 0;
+    let discountAmount = isCanceling ? 0 : (updateData.discountAmount ?? 0);
     if (!isCanceling && updateData.discountType && updateData.discountValue) {
       if (updateData.discountType === "percentage") {
         discountAmount = (totalAmount * updateData.discountValue) / 100;
@@ -588,7 +588,7 @@ export async function updateAdmission(
           ? `[CANCELED] ${
               existingAdmission.remarks || ""
             } - Previous charges refunded`
-          : updateData.remarks ?? existingAdmission.remarks,
+          : (updateData.remarks ?? existingAdmission.remarks),
         admissionFee, // Include admission fee for cancellation/restore
         serviceCharge,
         seatRent,
@@ -602,10 +602,10 @@ export async function updateAdmission(
         totalAmount,
         discountType: isCanceling
           ? null
-          : updateData.discountType ?? existingAdmission.discountType,
+          : (updateData.discountType ?? existingAdmission.discountType),
         discountValue: isCanceling
           ? null
-          : updateData.discountValue ?? existingAdmission.discountValue,
+          : (updateData.discountValue ?? existingAdmission.discountValue),
         discountAmount,
         grandTotal,
         paidAmount,
@@ -759,7 +759,7 @@ export async function updateAdmission(
 export async function deleteAdmission(
   id: number,
   userId: number,
-  activityLogContext?: ActivityLogContext
+  activityLogContext?: ActivityLogContext,
 ) {
   return await prisma.$transaction(async (tx) => {
     const existingAdmission = await tx.admission.findUnique({
@@ -807,12 +807,14 @@ export function transformAdmissionForResponse(admission: any) {
     id: admission.id,
     admissionNumber: admission.admissionNumber,
     patientId: admission.patientId,
+    patientFirstName: admission.patient.firstName,
+    patientLastName: admission.patient.lastName || null,
     patientFullName: admission.patient.fullName,
     patientDateOfBirth: admission.patient.dateOfBirth?.toISOString() || null,
     patientAge: admission.patient.dateOfBirth
       ? Math.floor(
           (Date.now() - new Date(admission.patient.dateOfBirth).getTime()) /
-            (365.25 * 24 * 60 * 60 * 1000)
+            (365.25 * 24 * 60 * 60 * 1000),
         )
       : null,
     patientGender: admission.patient.gender,

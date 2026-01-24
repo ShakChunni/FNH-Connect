@@ -6,26 +6,37 @@ import { createPortal } from "react-dom";
 // Modular Components
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Pagination } from "@/components/pagination/Pagination";
-import { PatientSearch, PatientTable, EditPatientModal } from "./components";
+import {
+  PatientRecordsSearch,
+  PatientTable,
+  EditPatientModal,
+} from "./components";
 
 // Types and Hooks
 import type { PatientData, PatientFilters } from "./types";
 import { useFetchPatients } from "./hooks";
-import { usePatientModals, usePatientActions, usePagination } from "./stores";
+import {
+  usePatientModals,
+  usePatientActions,
+  usePagination,
+  useFilters,
+} from "./stores";
 
 const PatientRecordsPage = React.memo(() => {
   // Zustand store selectors
   const modals = usePatientModals();
   const actions = usePatientActions();
   const pagination = usePagination();
+  const filters = useFilters();
 
-  // Map pagination to hook filters format
+  // Map pagination and filters to hook filters format
   const hookFilters: PatientFilters = useMemo(
     () => ({
       page: pagination.page,
       limit: pagination.limit,
+      search: filters.search.length >= 2 ? filters.search : undefined,
     }),
-    [pagination.page, pagination.limit]
+    [pagination.page, pagination.limit, filters.search],
   );
 
   const { data: result, isLoading } = useFetchPatients(hookFilters);
@@ -35,7 +46,7 @@ const PatientRecordsPage = React.memo(() => {
     (patient: PatientData) => {
       actions.openEditModal(patient);
     },
-    [actions]
+    [actions],
   );
 
   // Normalize patient data (ensure dates are Date objects)
@@ -56,7 +67,7 @@ const PatientRecordsPage = React.memo(() => {
     (page: number) => {
       actions.setPage(page);
     },
-    [actions]
+    [actions],
   );
 
   const handlePrevPage = useCallback(() => {
@@ -90,6 +101,14 @@ const PatientRecordsPage = React.memo(() => {
             <PageHeader
               title="Patient Records"
               subtitle="View and manage all patient information"
+            />
+          </div>
+
+          {/* Search Bar */}
+          <div className="px-0 sm:px-2 lg:px-4 pb-2 sm:pb-4 lg:pb-6">
+            <PatientRecordsSearch
+              disabled={isLoading}
+              recordCount={result?.total || 0}
             />
           </div>
 
@@ -131,7 +150,7 @@ const PatientRecordsPage = React.memo(() => {
             onClose={actions.closeEditModal}
             patientData={modals.selectedPatient}
           />,
-          document.body
+          document.body,
         )}
     </div>
   );

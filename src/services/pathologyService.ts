@@ -167,6 +167,8 @@ export async function getPathologyPatients(filters: PathologyFilters) {
       patient: {
         select: {
           id: true,
+          firstName: true,
+          lastName: true,
           fullName: true,
           phoneNumber: true,
           email: true,
@@ -264,7 +266,7 @@ export async function createPathologyPatient(
   staffId: number,
   userId: number,
   shiftId: number | null, // Current active shift for cash tracking
-  activityLogContext?: ActivityLogContext // Session device info for activity logging
+  activityLogContext?: ActivityLogContext, // Session device info for activity logging
 ) {
   return await prisma.$transaction(async (tx) => {
     // 2. Get or create Pathology department
@@ -345,7 +347,7 @@ export async function createPathologyPatient(
     const testNumber = formatRegistrationNumber(
       "PATH",
       currentYear,
-      countThisYear + 1
+      countThisYear + 1,
     );
 
     // 4. Validate orderedById - required field, must be provided from frontend
@@ -517,7 +519,7 @@ export async function updatePathologyPatient(
   staffId: number,
   userId: number,
   shiftId: number | null,
-  activityLogContext?: ActivityLogContext
+  activityLogContext?: ActivityLogContext,
 ) {
   return await prisma.$transaction(async (tx) => {
     // Check if record exists
@@ -730,7 +732,7 @@ export async function updatePathologyPatient(
 export async function deletePathologyPatient(
   id: number,
   userId: number,
-  activityLogContext?: ActivityLogContext
+  activityLogContext?: ActivityLogContext,
 ) {
   return await prisma.$transaction(async (tx) => {
     const existingRecord = await tx.pathologyTest.findUnique({

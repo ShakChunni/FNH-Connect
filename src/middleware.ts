@@ -138,7 +138,7 @@ function getClientIP(request: NextRequest): string {
 function isSuspiciousPath(pathname: string): boolean {
   const lowerPath = pathname.toLowerCase();
   return SUSPICIOUS_PATTERNS.some((pattern) =>
-    lowerPath.includes(pattern.toLowerCase())
+    lowerPath.includes(pattern.toLowerCase()),
   );
 }
 
@@ -146,7 +146,7 @@ function isSuspiciousPath(pathname: string): boolean {
 function pruneMap(
   map: Map<string, RateLimitEntry>,
   now: number,
-  maxSize: number
+  maxSize: number,
 ) {
   // Remove expired entries
   let removed = 0;
@@ -200,7 +200,7 @@ function cleanupMaps(now: number) {
   // Log cleanup stats in development
   if (process.env.NODE_ENV === "development") {
     console.log(
-      `[Middleware Cleanup] General: ${generalRemoved}, API: ${apiRemoved}, Suspicious: ${suspiciousRemoved}, Events: ${securityEvents.length}, Total Requests: ${globalForMiddleware.totalRequestsProcessed}`
+      `[Middleware Cleanup] General: ${generalRemoved}, API: ${apiRemoved}, Suspicious: ${suspiciousRemoved}, Events: ${securityEvents.length}, Total Requests: ${globalForMiddleware.totalRequestsProcessed}`,
     );
   }
 }
@@ -211,7 +211,7 @@ function recordRequest(
   ip: string,
   windowMs: number,
   maxRequests: number,
-  now: number
+  now: number,
 ): boolean {
   const entry = map.get(ip);
 
@@ -392,7 +392,7 @@ export async function middleware(request: NextRequest) {
           {
             status: 403,
             headers: { "Content-Type": "application/json" },
-          }
+          },
         );
       }
       return NextResponse.redirect(new URL("/dashboard", request.url));
@@ -409,19 +409,18 @@ export async function middleware(request: NextRequest) {
 
     if (isReceptionist || isReceptionistInfertility) {
       // Define allowed routes for base receptionists
-      // They can access: dashboard, general-admission, pathology, patient-records
+      // They can access: dashboard, general-admission, pathology
+      // Note: patient-records is admin-only
       const baseReceptionistPaths = [
         // Page routes
         "/dashboard",
         "/general-admission",
         "/pathology",
-        "/patient-records",
         "/login",
         // API routes for pages
         "/api/dashboard",
         "/api/general-admission",
         "/api/pathology",
-        "/api/patient-records",
         // Supporting API routes
         "/api/auth",
         "/api/staff",
@@ -449,7 +448,7 @@ export async function middleware(request: NextRequest) {
       const isAllowed = receptionistAllowedPaths.some(
         (allowedPath) =>
           normalizedPath === allowedPath ||
-          normalizedPath.startsWith(allowedPath + "/")
+          normalizedPath.startsWith(allowedPath + "/"),
       );
 
       if (!isAllowed && !isAdminRoute) {
@@ -462,7 +461,7 @@ export async function middleware(request: NextRequest) {
             {
               status: 403,
               headers: { "Content-Type": "application/json" },
-            }
+            },
           );
         }
         return NextResponse.redirect(new URL("/dashboard", request.url));
