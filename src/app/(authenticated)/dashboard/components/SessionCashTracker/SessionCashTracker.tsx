@@ -15,7 +15,11 @@ import { CashTrackerShifts } from "./CashTrackerShifts";
 import { generateSessionCashReport } from "./generateCashReport";
 import { generateDetailedCashReport } from "./generateDetailedCashReport";
 import { api } from "@/lib/axios";
-import type { DatePreset, DetailedCashReportData } from "./types";
+import type {
+  DatePreset,
+  DetailedCashReportData,
+  CustomDateRange,
+} from "./types";
 
 interface SessionCashTrackerProps {
   staffName?: string;
@@ -40,10 +44,14 @@ export const SessionCashTracker: React.FC<SessionCashTrackerProps> = ({
     departments,
     isDeptDropdownOpen,
     isDateDropdownOpen,
+    isCustomRangePickerOpen,
+    customDateRange,
     setDatePreset,
     setDepartmentId,
+    setCustomDateRange,
     setDeptDropdownOpen,
     setDateDropdownOpen,
+    setCustomRangePickerOpen,
     setDepartments,
   } = useSessionCashStore();
 
@@ -60,6 +68,7 @@ export const SessionCashTracker: React.FC<SessionCashTrackerProps> = ({
   } = useSessionCashData({
     datePreset,
     departmentId,
+    customDateRange,
   });
 
   // Update departments in store when fetched
@@ -74,14 +83,21 @@ export const SessionCashTracker: React.FC<SessionCashTrackerProps> = ({
     (deptId: number | "all") => {
       setDepartmentId(deptId);
     },
-    [setDepartmentId]
+    [setDepartmentId],
   );
 
   const handleDatePresetSelect = useCallback(
     (preset: DatePreset) => {
       setDatePreset(preset);
     },
-    [setDatePreset]
+    [setDatePreset],
+  );
+
+  const handleCustomDateRangeSelect = useCallback(
+    (range: CustomDateRange | null) => {
+      setCustomDateRange(range);
+    },
+    [setCustomDateRange],
   );
 
   const handleRefresh = useCallback(() => {
@@ -125,6 +141,20 @@ export const SessionCashTracker: React.FC<SessionCashTrackerProps> = ({
       if (departmentId && departmentId !== "all") {
         queryParams.set("departmentId", departmentId.toString());
       }
+      // Add custom date range parameters if using custom preset
+      if (
+        datePreset === "custom" &&
+        customDateRange?.from &&
+        customDateRange?.to
+      ) {
+        const BDT_OFFSET_MS = 6 * 60 * 60 * 1000;
+        const fromBDT = new Date(
+          customDateRange.from.getTime() + BDT_OFFSET_MS,
+        );
+        const toBDT = new Date(customDateRange.to.getTime() + BDT_OFFSET_MS);
+        queryParams.set("startDate", fromBDT.toISOString().split("T")[0]);
+        queryParams.set("endDate", toBDT.toISOString().split("T")[0]);
+      }
 
       // Fetch detailed data from API
       const response = await api.get<{
@@ -164,7 +194,7 @@ export const SessionCashTracker: React.FC<SessionCashTrackerProps> = ({
     } finally {
       setIsLoadingDetailedReport(false);
     }
-  }, [data, datePreset, departmentId, departments]);
+  }, [data, datePreset, departmentId, departments, customDateRange]);
 
   // Show skeleton during initial load or props loading
   if (propsLoading || (isLoading && !data)) {
@@ -212,13 +242,20 @@ export const SessionCashTracker: React.FC<SessionCashTrackerProps> = ({
         departments={departments}
         isDeptDropdownOpen={isDeptDropdownOpen}
         isDateDropdownOpen={isDateDropdownOpen}
+        isCustomRangePickerOpen={isCustomRangePickerOpen}
+        customDateRange={customDateRange}
         isFetching={isFetching}
         onDepartmentSelect={handleDepartmentSelect}
         onDatePresetSelect={handleDatePresetSelect}
+        onCustomDateRangeSelect={handleCustomDateRangeSelect}
         onDeptDropdownToggle={() => setDeptDropdownOpen(!isDeptDropdownOpen)}
         onDateDropdownToggle={() => setDateDropdownOpen(!isDateDropdownOpen)}
+        onCustomRangePickerToggle={() =>
+          setCustomRangePickerOpen(!isCustomRangePickerOpen)
+        }
         onDeptDropdownClose={() => setDeptDropdownOpen(false)}
         onDateDropdownClose={() => setDateDropdownOpen(false)}
+        onCustomRangePickerClose={() => setCustomRangePickerOpen(false)}
       />
 
       {/* Summary Stats */}

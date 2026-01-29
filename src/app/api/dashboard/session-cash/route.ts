@@ -3,7 +3,7 @@
  * GET /api/dashboard/session-cash
  *
  * Fetches cash collection data filtered by:
- * - Date range (today, yesterday, lastWeek, lastMonth)
+ * - Date range (today, yesterday, lastWeek, thisMonth, lastMonth, custom)
  * - Department (all or specific departmentId)
  * - Returns shift-level breakdown when multiple shifts exist
  */
@@ -34,9 +34,14 @@ interface ShiftSummary {
  * Helper to calculate Bangladesh Time date ranges properly
  * Bangladesh is UTC+6, so we need to convert between BDT and UTC for DB queries
  */
-function getBangladeshDateRange(datePreset: string): {
+function getBangladeshDateRange(
+  datePreset: string,
+  customStartDate?: string,
+  customEndDate?: string,
+): {
   startDate: Date;
   endDate: Date;
+  periodLabel: string;
 } {
   const BDT_OFFSET_MS = 6 * 60 * 60 * 1000; // UTC+6 in milliseconds
   const nowUTC = new Date();
@@ -49,49 +54,99 @@ function getBangladeshDateRange(datePreset: string): {
 
   let startDate: Date;
   let endDate: Date;
+  let periodLabel: string;
 
   switch (datePreset) {
     case "yesterday":
       // Yesterday in Bangladesh time
       startDate = new Date(
-        Date.UTC(bdtYear, bdtMonth, bdtDate - 1) - BDT_OFFSET_MS
+        Date.UTC(bdtYear, bdtMonth, bdtDate - 1) - BDT_OFFSET_MS,
       );
       endDate = new Date(Date.UTC(bdtYear, bdtMonth, bdtDate) - BDT_OFFSET_MS);
+      periodLabel = "Yesterday";
       break;
 
     case "lastWeek":
       // Last 7 days including today in Bangladesh time
       startDate = new Date(
-        Date.UTC(bdtYear, bdtMonth, bdtDate - 6) - BDT_OFFSET_MS
+        Date.UTC(bdtYear, bdtMonth, bdtDate - 6) - BDT_OFFSET_MS,
       );
       endDate = new Date(
-        Date.UTC(bdtYear, bdtMonth, bdtDate + 1) - BDT_OFFSET_MS
+        Date.UTC(bdtYear, bdtMonth, bdtDate + 1) - BDT_OFFSET_MS,
       );
+      periodLabel = "Last Week";
+      break;
+
+    case "thisMonth":
+      // Current calendar month in Bangladesh time (1st of month to now)
+      startDate = new Date(Date.UTC(bdtYear, bdtMonth, 1) - BDT_OFFSET_MS);
+      endDate = new Date(
+        Date.UTC(bdtYear, bdtMonth, bdtDate + 1) - BDT_OFFSET_MS,
+      );
+      periodLabel = "This Month";
       break;
 
     case "lastMonth":
       // Last 30 days including today in Bangladesh time
       startDate = new Date(
-        Date.UTC(bdtYear, bdtMonth - 1, bdtDate) - BDT_OFFSET_MS
+        Date.UTC(bdtYear, bdtMonth - 1, bdtDate) - BDT_OFFSET_MS,
       );
       endDate = new Date(
-        Date.UTC(bdtYear, bdtMonth, bdtDate + 1) - BDT_OFFSET_MS
+        Date.UTC(bdtYear, bdtMonth, bdtDate + 1) - BDT_OFFSET_MS,
       );
+      periodLabel = "Last Month";
+      break;
+
+    case "custom":
+      // Custom date range provided via query params
+      if (customStartDate && customEndDate) {
+        // Parse the date strings as BDT dates (YYYY-MM-DD format)
+        const [startYear, startMonth, startDay] = customStartDate
+          .split("-")
+          .map(Number);
+        const [endYear, endMonth, endDay] = customEndDate
+          .split("-")
+          .map(Number);
+
+        // Convert BDT midnight to UTC
+        startDate = new Date(
+          Date.UTC(startYear, startMonth - 1, startDay) - BDT_OFFSET_MS,
+        );
+        // End date should be the end of the day (next day midnight)
+        endDate = new Date(
+          Date.UTC(endYear, endMonth - 1, endDay + 1) - BDT_OFFSET_MS,
+        );
+
+        // Format period label for display
+        const startFormatted = `${startDay}/${startMonth}/${startYear}`;
+        const endFormatted = `${endDay}/${endMonth}/${endYear}`;
+        periodLabel = `${startFormatted} - ${endFormatted}`;
+      } else {
+        // Fallback to today if no custom dates provided
+        startDate = new Date(
+          Date.UTC(bdtYear, bdtMonth, bdtDate) - BDT_OFFSET_MS,
+        );
+        endDate = new Date(
+          Date.UTC(bdtYear, bdtMonth, bdtDate + 1) - BDT_OFFSET_MS,
+        );
+        periodLabel = "Today";
+      }
       break;
 
     case "today":
     default:
       // Today in Bangladesh time (midnight BDT to next midnight BDT)
       startDate = new Date(
-        Date.UTC(bdtYear, bdtMonth, bdtDate) - BDT_OFFSET_MS
+        Date.UTC(bdtYear, bdtMonth, bdtDate) - BDT_OFFSET_MS,
       );
       endDate = new Date(
-        Date.UTC(bdtYear, bdtMonth, bdtDate + 1) - BDT_OFFSET_MS
+        Date.UTC(bdtYear, bdtMonth, bdtDate + 1) - BDT_OFFSET_MS,
       );
+      periodLabel = "Today";
       break;
   }
 
-  return { startDate, endDate };
+  return { startDate, endDate, periodLabel };
 }
 
 export async function GET(request: NextRequest) {
@@ -101,7 +156,7 @@ export async function GET(request: NextRequest) {
     if (!user) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -109,9 +164,15 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const datePreset = searchParams.get("datePreset") || "today";
     const departmentId = searchParams.get("departmentId");
+    const customStartDate = searchParams.get("startDate") || undefined;
+    const customEndDate = searchParams.get("endDate") || undefined;
 
     // 3. Calculate date range based on preset (in Bangladesh Time / UTC+6)
-    const { startDate, endDate } = getBangladeshDateRange(datePreset);
+    const { startDate, endDate, periodLabel } = getBangladeshDateRange(
+      datePreset,
+      customStartDate,
+      customEndDate,
+    );
 
     // 4. Get all shifts for this user that are relevant:
     //    - Shifts that started during the date range
@@ -268,7 +329,7 @@ export async function GET(request: NextRequest) {
         });
       }
       shiftDepartmentBreakdown.sort(
-        (a, b) => b.totalCollected - a.totalCollected
+        (a, b) => b.totalCollected - a.totalCollected,
       );
 
       shiftSummaries.push({
@@ -299,23 +360,7 @@ export async function GET(request: NextRequest) {
     }
     departmentBreakdown.sort((a, b) => b.totalCollected - a.totalCollected);
 
-    // 8. Build period label
-    let periodLabel: string;
-    switch (datePreset) {
-      case "yesterday":
-        periodLabel = "Yesterday";
-        break;
-      case "lastWeek":
-        periodLabel = "Last Week";
-        break;
-      case "lastMonth":
-        periodLabel = "Last Month";
-        break;
-      default:
-        periodLabel = "Today";
-    }
-
-    // 9. Return response
+    // 8. Return response (periodLabel is already calculated in getBangladeshDateRange)
     return NextResponse.json({
       success: true,
       data: {
@@ -337,7 +382,7 @@ export async function GET(request: NextRequest) {
     console.error("[Session Cash API] Error:", error);
     return NextResponse.json(
       { success: false, error: "Failed to fetch session cash data" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

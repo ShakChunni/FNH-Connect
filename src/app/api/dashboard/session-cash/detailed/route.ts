@@ -47,10 +47,16 @@ interface ShiftDetailedSummary {
 
 /**
  * Helper to calculate Bangladesh Time date ranges properly
+ * Bangladesh is UTC+6, so we need to convert between BDT and UTC for DB queries
  */
-function getBangladeshDateRange(datePreset: string): {
+function getBangladeshDateRange(
+  datePreset: string,
+  customStartDate?: string,
+  customEndDate?: string,
+): {
   startDate: Date;
   endDate: Date;
+  periodLabel: string;
 } {
   const BDT_OFFSET_MS = 6 * 60 * 60 * 1000;
   const nowUTC = new Date();
@@ -62,42 +68,85 @@ function getBangladeshDateRange(datePreset: string): {
 
   let startDate: Date;
   let endDate: Date;
+  let periodLabel: string;
 
   switch (datePreset) {
     case "yesterday":
       startDate = new Date(
-        Date.UTC(bdtYear, bdtMonth, bdtDate - 1) - BDT_OFFSET_MS
+        Date.UTC(bdtYear, bdtMonth, bdtDate - 1) - BDT_OFFSET_MS,
       );
       endDate = new Date(Date.UTC(bdtYear, bdtMonth, bdtDate) - BDT_OFFSET_MS);
+      periodLabel = "Yesterday";
       break;
     case "lastWeek":
       startDate = new Date(
-        Date.UTC(bdtYear, bdtMonth, bdtDate - 6) - BDT_OFFSET_MS
+        Date.UTC(bdtYear, bdtMonth, bdtDate - 6) - BDT_OFFSET_MS,
       );
       endDate = new Date(
-        Date.UTC(bdtYear, bdtMonth, bdtDate + 1) - BDT_OFFSET_MS
+        Date.UTC(bdtYear, bdtMonth, bdtDate + 1) - BDT_OFFSET_MS,
       );
+      periodLabel = "Last Week";
+      break;
+    case "thisMonth":
+      // Current calendar month in Bangladesh time (1st of month to now)
+      startDate = new Date(Date.UTC(bdtYear, bdtMonth, 1) - BDT_OFFSET_MS);
+      endDate = new Date(
+        Date.UTC(bdtYear, bdtMonth, bdtDate + 1) - BDT_OFFSET_MS,
+      );
+      periodLabel = "This Month";
       break;
     case "lastMonth":
       startDate = new Date(
-        Date.UTC(bdtYear, bdtMonth - 1, bdtDate) - BDT_OFFSET_MS
+        Date.UTC(bdtYear, bdtMonth - 1, bdtDate) - BDT_OFFSET_MS,
       );
       endDate = new Date(
-        Date.UTC(bdtYear, bdtMonth, bdtDate + 1) - BDT_OFFSET_MS
+        Date.UTC(bdtYear, bdtMonth, bdtDate + 1) - BDT_OFFSET_MS,
       );
+      periodLabel = "Last Month";
+      break;
+    case "custom":
+      // Custom date range provided via query params
+      if (customStartDate && customEndDate) {
+        const [startYear, startMonth, startDay] = customStartDate
+          .split("-")
+          .map(Number);
+        const [endYear, endMonth, endDay] = customEndDate
+          .split("-")
+          .map(Number);
+
+        startDate = new Date(
+          Date.UTC(startYear, startMonth - 1, startDay) - BDT_OFFSET_MS,
+        );
+        endDate = new Date(
+          Date.UTC(endYear, endMonth - 1, endDay + 1) - BDT_OFFSET_MS,
+        );
+
+        const startFormatted = `${startDay}/${startMonth}/${startYear}`;
+        const endFormatted = `${endDay}/${endMonth}/${endYear}`;
+        periodLabel = `${startFormatted} - ${endFormatted}`;
+      } else {
+        startDate = new Date(
+          Date.UTC(bdtYear, bdtMonth, bdtDate) - BDT_OFFSET_MS,
+        );
+        endDate = new Date(
+          Date.UTC(bdtYear, bdtMonth, bdtDate + 1) - BDT_OFFSET_MS,
+        );
+        periodLabel = "Today";
+      }
       break;
     case "today":
     default:
       startDate = new Date(
-        Date.UTC(bdtYear, bdtMonth, bdtDate) - BDT_OFFSET_MS
+        Date.UTC(bdtYear, bdtMonth, bdtDate) - BDT_OFFSET_MS,
       );
       endDate = new Date(
-        Date.UTC(bdtYear, bdtMonth, bdtDate + 1) - BDT_OFFSET_MS
+        Date.UTC(bdtYear, bdtMonth, bdtDate + 1) - BDT_OFFSET_MS,
       );
+      periodLabel = "Today";
       break;
   }
 
-  return { startDate, endDate };
+  return { startDate, endDate, periodLabel };
 }
 
 export async function GET(request: NextRequest) {
@@ -107,7 +156,7 @@ export async function GET(request: NextRequest) {
     if (!user) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -115,9 +164,15 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const datePreset = searchParams.get("datePreset") || "today";
     const departmentId = searchParams.get("departmentId");
+    const customStartDate = searchParams.get("startDate") || undefined;
+    const customEndDate = searchParams.get("endDate") || undefined;
 
     // 3. Calculate date range
-    const { startDate, endDate } = getBangladeshDateRange(datePreset);
+    const { startDate, endDate, periodLabel } = getBangladeshDateRange(
+      datePreset,
+      customStartDate,
+      customEndDate,
+    );
 
     // 4. Get shifts with FULL payment details including patient info
     const shifts = await prisma.shift.findMany({
@@ -292,12 +347,12 @@ export async function GET(request: NextRequest) {
         });
       }
       shiftDepartmentBreakdown.sort(
-        (a, b) => b.totalCollected - a.totalCollected
+        (a, b) => b.totalCollected - a.totalCollected,
       );
 
       // Format shift date in Bangladesh time
       const shiftDateBDT = new Date(
-        shift.startTime.getTime() + 6 * 60 * 60 * 1000
+        shift.startTime.getTime() + 6 * 60 * 60 * 1000,
       );
       const shiftDate = format(shiftDateBDT, "MMM dd, yyyy");
 
@@ -331,21 +386,7 @@ export async function GET(request: NextRequest) {
     }
     departmentBreakdown.sort((a, b) => b.totalCollected - a.totalCollected);
 
-    // Build period label
-    let periodLabel: string;
-    switch (datePreset) {
-      case "yesterday":
-        periodLabel = "Yesterday";
-        break;
-      case "lastWeek":
-        periodLabel = "Last Week";
-        break;
-      case "lastMonth":
-        periodLabel = "Last Month";
-        break;
-      default:
-        periodLabel = "Today";
-    }
+    // periodLabel is already calculated in getBangladeshDateRange
 
     return NextResponse.json({
       success: true,
@@ -367,7 +408,7 @@ export async function GET(request: NextRequest) {
     console.error("[Detailed Session Cash API] Error:", error);
     return NextResponse.json(
       { success: false, error: "Failed to fetch detailed cash data" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

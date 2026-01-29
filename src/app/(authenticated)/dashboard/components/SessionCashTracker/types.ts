@@ -2,7 +2,18 @@
  * Session Cash Tracker Types
  */
 
-export type DatePreset = "today" | "yesterday" | "lastWeek" | "lastMonth";
+export type DatePreset =
+  | "today"
+  | "yesterday"
+  | "lastWeek"
+  | "lastMonth"
+  | "thisMonth"
+  | "custom";
+
+export interface CustomDateRange {
+  from: Date;
+  to: Date;
+}
 
 export interface Department {
   id: number;
