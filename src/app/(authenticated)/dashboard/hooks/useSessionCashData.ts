@@ -8,6 +8,7 @@ import type {
   Department,
   DepartmentCashBreakdown,
   ShiftSummary,
+  CustomDateRange,
 } from "../components/SessionCashTracker/types";
 
 interface SessionCashApiResponse {
@@ -32,6 +33,7 @@ interface SessionCashApiResponse {
 interface UseSessionCashDataOptions {
   datePreset: DatePreset;
   departmentId: number | "all";
+  customDateRange?: CustomDateRange | null;
 }
 
 export interface SessionCashDataResult extends SessionCashData {
@@ -39,9 +41,20 @@ export interface SessionCashDataResult extends SessionCashData {
   shiftsCount: number;
 }
 
+/**
+ * Formats a date to ISO date string (YYYY-MM-DD) in Bangladesh Time (UTC+6)
+ * This ensures consistency with how the API handles dates
+ */
+function formatDateToBDTISO(date: Date): string {
+  const BDT_OFFSET_MS = 6 * 60 * 60 * 1000;
+  const dateInBDT = new Date(date.getTime() + BDT_OFFSET_MS);
+  return dateInBDT.toISOString().split("T")[0];
+}
+
 export function useSessionCashData({
   datePreset,
   departmentId,
+  customDateRange,
 }: UseSessionCashDataOptions) {
   // Build query params
   const queryParams = new URLSearchParams();
@@ -51,18 +64,34 @@ export function useSessionCashData({
     queryParams.set("departmentId", departmentId.toString());
   }
 
-  const queryKey = ["session-cash", datePreset, departmentId];
+  // Add custom date range parameters if using custom preset
+  if (datePreset === "custom" && customDateRange?.from && customDateRange?.to) {
+    queryParams.set("startDate", formatDateToBDTISO(customDateRange.from));
+    queryParams.set("endDate", formatDateToBDTISO(customDateRange.to));
+  }
+
+  const queryKey = [
+    "session-cash",
+    datePreset,
+    departmentId,
+    datePreset === "custom" && customDateRange?.from
+      ? formatDateToBDTISO(customDateRange.from)
+      : null,
+    datePreset === "custom" && customDateRange?.to
+      ? formatDateToBDTISO(customDateRange.to)
+      : null,
+  ];
 
   const query = useQuery({
     queryKey,
     queryFn: async (): Promise<SessionCashDataResult> => {
       const response = await api.get<SessionCashApiResponse>(
-        `/dashboard/session-cash?${queryParams.toString()}`
+        `/dashboard/session-cash?${queryParams.toString()}`,
       );
 
       if (!response.data.success) {
         throw new Error(
-          response.data.error || "Failed to fetch session cash data"
+          response.data.error || "Failed to fetch session cash data",
         );
       }
 
@@ -84,6 +113,11 @@ export function useSessionCashData({
     staleTime: 30 * 1000, // 30 seconds
     gcTime: 5 * 60 * 1000, // 5 minutes
     refetchOnWindowFocus: true,
+    // Only fetch when we have valid custom range for custom preset
+    enabled:
+      datePreset !== "custom" ||
+      (customDateRange?.from !== undefined &&
+        customDateRange?.to !== undefined),
   });
 
   return {
