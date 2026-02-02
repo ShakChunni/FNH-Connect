@@ -15,9 +15,10 @@ interface DateRangeState {
 const DATE_PRESETS: { value: DatePreset; label: string }[] = [
   { value: "today", label: "Today" },
   { value: "yesterday", label: "Yesterday" },
-  { value: "lastWeek", label: "Last Week" },
+  { value: "lastWeek", label: "Last 7 Days" },
   { value: "thisMonth", label: "This Month" },
-  { value: "lastMonth", label: "Last Month" },
+  { value: "lastCalendarMonth", label: "Last Month" },
+  { value: "last30Days", label: "Last 30 Days" },
   { value: "custom", label: "Custom Range" },
 ];
 

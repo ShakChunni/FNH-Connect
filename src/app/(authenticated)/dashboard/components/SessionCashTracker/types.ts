@@ -6,8 +6,9 @@ export type DatePreset =
   | "today"
   | "yesterday"
   | "lastWeek"
-  | "lastMonth"
   | "thisMonth"
+  | "lastCalendarMonth"
+  | "last30Days"
   | "custom";
 
 export interface CustomDateRange {
