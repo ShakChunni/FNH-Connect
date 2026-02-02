@@ -381,6 +381,12 @@ export async function GET(request: NextRequest) {
         (a, b) => b.totalCollected - a.totalCollected,
       );
 
+      // Skip shifts that have no payments within the date range
+      // This prevents active shifts from appearing when they have no relevant transactions
+      if (shift.payments.length === 0) {
+        continue;
+      }
+
       // Format shift date in Bangladesh time
       const shiftDateBDT = new Date(
         shift.startTime.getTime() + 6 * 60 * 60 * 1000,
