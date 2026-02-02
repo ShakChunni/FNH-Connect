@@ -17,13 +17,14 @@ export const DEPARTMENT_CODES: Record<string, string> = {
   Eye: "EYE",
   Pathology: "PATH",
   Anesthesia: "ANES",
+  Infertility: "INF",
   // Fallback for unknown departments
   General: "GEN",
 };
 
 // Reverse mapping for code to department name
 export const CODE_TO_DEPARTMENT: Record<string, string> = Object.fromEntries(
-  Object.entries(DEPARTMENT_CODES).map(([name, code]) => [code, name])
+  Object.entries(DEPARTMENT_CODES).map(([name, code]) => [code, name]),
 );
 
 /**
@@ -45,7 +46,7 @@ export function getDepartmentCode(departmentName: string): string {
 export function formatRegistrationNumber(
   departmentCode: string,
   year: string,
-  sequence: number
+  sequence: number,
 ): string {
   return `${departmentCode}-${year}-${String(sequence).padStart(5, "0")}`;
 }

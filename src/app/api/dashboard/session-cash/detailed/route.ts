@@ -10,10 +10,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getAuthenticatedUserForAPI } from "@/lib/auth-validation";
 import { format } from "date-fns";
+import { getDepartmentCode, getTwoDigitYear } from "@/lib/registrationNumber";
 
 interface PaymentDetail {
   paymentId: number;
-  registrationId: string; // Patient registration ID (safer than receipt number)
+  registrationId: string; // Service registration ID (PATH-YY-XXXXX, GYNE-YY-XXXXX, etc.)
   paymentDate: string;
   amount: number;
   paymentMethod: string;
@@ -95,14 +96,21 @@ function getBangladeshDateRange(
       );
       periodLabel = "This Month";
       break;
-    case "lastMonth":
+    case "lastCalendarMonth":
+      // Previous calendar month (1st to last day of previous month)
+      startDate = new Date(Date.UTC(bdtYear, bdtMonth - 1, 1) - BDT_OFFSET_MS);
+      endDate = new Date(Date.UTC(bdtYear, bdtMonth, 1) - BDT_OFFSET_MS);
+      periodLabel = "Last Month";
+      break;
+    case "last30Days":
+      // Last 30 days including today
       startDate = new Date(
-        Date.UTC(bdtYear, bdtMonth - 1, bdtDate) - BDT_OFFSET_MS,
+        Date.UTC(bdtYear, bdtMonth, bdtDate - 29) - BDT_OFFSET_MS,
       );
       endDate = new Date(
         Date.UTC(bdtYear, bdtMonth, bdtDate + 1) - BDT_OFFSET_MS,
       );
-      periodLabel = "Last Month";
+      periodLabel = "Last 30 Days";
       break;
     case "custom":
       // Custom date range provided via query params
@@ -213,6 +221,9 @@ export async function GET(request: NextRequest) {
                 serviceCharge: {
                   include: {
                     department: { select: { id: true, name: true } },
+                    // Include admission and pathologyTest to get proper registration numbers
+                    admission: { select: { admissionNumber: true } },
+                    pathologyTest: { select: { testNumber: true } },
                   },
                 },
               },
@@ -258,9 +269,13 @@ export async function GET(request: NextRequest) {
             continue;
           }
 
+          // For unallocated payments, use a general identifier
+          const year = getTwoDigitYear(new Date(payment.paymentDate));
+          const generalRegId = `GEN-${year}-${String(patientId).padStart(5, "0")}`;
+
           shiftPayments.push({
             paymentId: payment.id,
-            registrationId: `REG-${String(patientId).padStart(6, "0")}`,
+            registrationId: generalRegId,
             paymentDate: payment.paymentDate.toISOString(),
             amount: paymentAmount,
             paymentMethod: payment.paymentMethod,
@@ -290,9 +305,25 @@ export async function GET(request: NextRequest) {
             }
           }
 
+          // Determine the registration ID based on service type
+          // Priority: pathologyTest > admission > department-based fallback
+          let registrationId: string;
+          if (allocation.serviceCharge.pathologyTest?.testNumber) {
+            // Pathology: Use testNumber (e.g., PATH-25-00001)
+            registrationId = allocation.serviceCharge.pathologyTest.testNumber;
+          } else if (allocation.serviceCharge.admission?.admissionNumber) {
+            // Admission: Use admissionNumber (e.g., GYNE-25-00001)
+            registrationId = allocation.serviceCharge.admission.admissionNumber;
+          } else {
+            // Fallback: Generate a department-based ID
+            const deptCode = getDepartmentCode(deptName);
+            const year = getTwoDigitYear(new Date(payment.paymentDate));
+            registrationId = `${deptCode}-${year}-${String(patientId).padStart(5, "0")}`;
+          }
+
           shiftPayments.push({
             paymentId: payment.id,
-            registrationId: `REG-${String(patientId).padStart(6, "0")}`,
+            registrationId,
             paymentDate: payment.paymentDate.toISOString(),
             amount: allocatedAmount,
             paymentMethod: payment.paymentMethod,

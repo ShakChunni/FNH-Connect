@@ -86,15 +86,22 @@ function getBangladeshDateRange(
       periodLabel = "This Month";
       break;
 
-    case "lastMonth":
+    case "lastCalendarMonth":
+      // Previous calendar month (1st to last day of previous month)
+      startDate = new Date(Date.UTC(bdtYear, bdtMonth - 1, 1) - BDT_OFFSET_MS);
+      endDate = new Date(Date.UTC(bdtYear, bdtMonth, 1) - BDT_OFFSET_MS);
+      periodLabel = "Last Month";
+      break;
+
+    case "last30Days":
       // Last 30 days including today in Bangladesh time
       startDate = new Date(
-        Date.UTC(bdtYear, bdtMonth - 1, bdtDate) - BDT_OFFSET_MS,
+        Date.UTC(bdtYear, bdtMonth, bdtDate - 29) - BDT_OFFSET_MS,
       );
       endDate = new Date(
         Date.UTC(bdtYear, bdtMonth, bdtDate + 1) - BDT_OFFSET_MS,
       );
-      periodLabel = "Last Month";
+      periodLabel = "Last 30 Days";
       break;
 
     case "custom":

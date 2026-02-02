@@ -3,7 +3,7 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { RefreshCw } from "lucide-react";
 import { format } from "date-fns";
-import { toast } from "sonner";
+import { useNotification } from "@/hooks/useNotification";
 import { useSessionCashStore } from "../../store";
 import { useSessionCashData } from "../../hooks/useSessionCashData";
 import { CashTrackerSkeleton } from "./CashTrackerSkeleton";
@@ -37,6 +37,9 @@ export const SessionCashTracker: React.FC<SessionCashTrackerProps> = ({
   staffName: propsStaffName,
   isLoading: propsLoading = false,
 }) => {
+  // Notification hook for report generation feedback
+  const { showNotification, hideNotification } = useNotification();
+
   // Get state from Zustand store
   const {
     datePreset,
@@ -104,35 +107,47 @@ export const SessionCashTracker: React.FC<SessionCashTrackerProps> = ({
     refetch();
   }, [refetch]);
 
-  const handleGenerateReport = useCallback(() => {
+  const handleGenerateReport = useCallback(async () => {
     if (!data) return;
 
-    const selectedDept =
-      departmentId === "all"
-        ? "All Departments"
-        : departments.find((d) => d.id === departmentId)?.name || "All";
+    const loadingId = showNotification("Generating summary report", "loading");
 
-    generateSessionCashReport({
-      staffName: data.staffName,
-      generatedAt: format(new Date(), "MMM dd, yyyy hh:mm a"),
-      periodLabel: data.periodLabel,
-      startDate: format(new Date(data.startDate), "MMM dd, yyyy"),
-      endDate: format(new Date(data.endDate), "MMM dd, yyyy"),
-      departmentFilter: selectedDept,
-      totalCollected: data.totalCollected,
-      totalRefunded: data.totalRefunded,
-      netCash: data.netCash,
-      transactionCount: data.transactionCount,
-      departmentBreakdown: data.departmentBreakdown,
-      shifts: data.shifts,
-    });
-  }, [data, departmentId, departments]);
+    try {
+      const selectedDept =
+        departmentId === "all"
+          ? "All Departments"
+          : departments.find((d) => d.id === departmentId)?.name || "All";
+
+      await generateSessionCashReport({
+        staffName: data.staffName,
+        generatedAt: format(new Date(), "MMM dd, yyyy hh:mm a"),
+        periodLabel: data.periodLabel,
+        startDate: format(new Date(data.startDate), "MMM dd, yyyy"),
+        endDate: format(new Date(data.endDate), "MMM dd, yyyy"),
+        departmentFilter: selectedDept,
+        totalCollected: data.totalCollected,
+        totalRefunded: data.totalRefunded,
+        netCash: data.netCash,
+        transactionCount: data.transactionCount,
+        departmentBreakdown: data.departmentBreakdown,
+        shifts: data.shifts,
+      });
+
+      hideNotification(loadingId);
+      showNotification("Summary report generated successfully", "success");
+    } catch (error) {
+      hideNotification(loadingId);
+      showNotification("Failed to generate summary report", "error");
+      console.error("Error generating summary report:", error);
+    }
+  }, [data, departmentId, departments, showNotification, hideNotification]);
 
   // Handle detailed report generation
   const handleGenerateDetailedReport = useCallback(async () => {
     if (!data) return;
 
     setIsLoadingDetailedReport(true);
+    const loadingId = showNotification("Generating detailed report", "loading");
 
     try {
       // Build query params
@@ -188,13 +203,25 @@ export const SessionCashTracker: React.FC<SessionCashTrackerProps> = ({
         departmentBreakdown: detailedData.departmentBreakdown,
         shifts: detailedData.shifts,
       });
+
+      hideNotification(loadingId);
+      showNotification("Detailed report generated successfully", "success");
     } catch (error) {
       console.error("Error generating detailed report:", error);
-      toast.error("Failed to generate detailed report");
+      hideNotification(loadingId);
+      showNotification("Failed to generate detailed report", "error");
     } finally {
       setIsLoadingDetailedReport(false);
     }
-  }, [data, datePreset, departmentId, departments, customDateRange]);
+  }, [
+    data,
+    datePreset,
+    departmentId,
+    departments,
+    customDateRange,
+    showNotification,
+    hideNotification,
+  ]);
 
   // Show skeleton during initial load or props loading
   if (propsLoading || (isLoading && !data)) {
