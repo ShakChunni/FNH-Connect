@@ -59,7 +59,7 @@
     "jose": "^6.1.0",
     "js-cookie": "^3.0.5",
     "jsonwebtoken": "^9.0.2",
-    "jspdf": "^3.0.4",
+    "jspdf": "^4.1.0",
     "jspdf-autotable": "^5.0.2",
     "libphonenumber-js": "^1.12.24",
     "lodash": "^4.17.21",
