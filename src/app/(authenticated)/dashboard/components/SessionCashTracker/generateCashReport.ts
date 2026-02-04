@@ -73,7 +73,7 @@ const drawLogoWatermark = async (doc: jsPDF) => {
  * Generate Cash Collection Report PDF
  */
 export const generateSessionCashReport = async (
-  data: SessionCashReportData
+  data: SessionCashReportData,
 ) => {
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.width;
@@ -113,7 +113,7 @@ export const generateSessionCashReport = async (
     `${COMPANY_INFO.phone}  |  ${COMPANY_INFO.email}`,
     pageWidth / 2,
     currentY,
-    { align: "center" }
+    { align: "center" },
   );
   currentY += 6;
 
@@ -190,7 +190,7 @@ export const generateSessionCashReport = async (
   doc.text(
     `${data.startDate} - ${data.endDate}`,
     margin + boxPadding + 17,
-    infoY
+    infoY,
   );
 
   doc.setFont("helvetica", "bold");
@@ -256,7 +256,8 @@ export const generateSessionCashReport = async (
 
     // Build shift table data - one row per shift with all info including date
     const shiftTableData = data.shifts.map((shift, index) => {
-      const shiftNum = data.shifts!.length > 1 ? `#${index + 1}` : "Shift";
+      const shiftNum =
+        data.shifts!.length > 1 ? `#${data.shifts!.length - index}` : "Shift";
       const status = shift.isActive ? "Active" : "Closed";
       // Format date from startTime
       const shiftDate = format(new Date(shift.startTime), "MMM dd");
@@ -422,13 +423,13 @@ export const generateSessionCashReport = async (
     "NB: This is a computer generated report.",
     pageWidth / 2,
     pageHeight - 10,
-    { align: "center" }
+    { align: "center" },
   );
   doc.text(
     "Thank you for choosing Feroza Nursing Home",
     pageWidth / 2,
     pageHeight - 6,
-    { align: "center" }
+    { align: "center" },
   );
 
   // Output

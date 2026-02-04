@@ -77,7 +77,7 @@ const drawLogoWatermark = async (doc: jsPDF) => {
  * Generate Detailed Cash Collection Report PDF
  */
 export const generateDetailedCashReport = async (
-  data: DetailedCashReportData
+  data: DetailedCashReportData,
 ) => {
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.width;
@@ -117,7 +117,7 @@ export const generateDetailedCashReport = async (
     `${COMPANY_INFO.phone}  |  ${COMPANY_INFO.email}`,
     pageWidth / 2,
     currentY,
-    { align: "center" }
+    { align: "center" },
   );
   currentY += 6;
 
@@ -191,7 +191,7 @@ export const generateDetailedCashReport = async (
   doc.text(
     `${data.startDate} - ${data.endDate}`,
     margin + boxPadding + 17,
-    infoY
+    infoY,
   );
 
   doc.setFont("helvetica", "bold");
@@ -246,6 +246,67 @@ export const generateDetailedCashReport = async (
 
   currentY = (doc as any).lastAutoTable.finalY + 10;
 
+  // === DEPARTMENT SUMMARY (moved to top) ===
+  if (data.departmentBreakdown.length > 0) {
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(11);
+    doc.setTextColor(COLORS.primary);
+    doc.text("Department Breakdown", margin, currentY);
+    currentY += 6;
+
+    const deptTableData = data.departmentBreakdown.map((dept, index) => [
+      (index + 1).toString(),
+      dept.departmentName,
+      dept.transactionCount.toString(),
+      formatCurrency(dept.totalCollected),
+    ]);
+
+    deptTableData.push([
+      "",
+      "TOTAL",
+      data.transactionCount.toString(),
+      formatCurrency(data.totalCollected),
+    ]);
+
+    autoTable(doc, {
+      startY: currentY,
+      head: [["#", "Department", "Txns", "Amount"]],
+      body: deptTableData,
+      theme: "plain",
+      headStyles: {
+        fillColor: COLORS.primary,
+        textColor: [255, 255, 255],
+        fontStyle: "bold",
+        halign: "left",
+        cellPadding: 3,
+        fontSize: 9,
+      },
+      bodyStyles: {
+        textColor: COLORS.text,
+        cellPadding: 3,
+        fontSize: 9,
+      },
+      columnStyles: {
+        0: { cellWidth: 12, halign: "center" },
+        1: { cellWidth: "auto", fontStyle: "bold" },
+        2: { cellWidth: 25, halign: "center" },
+        3: { cellWidth: 45, halign: "right", fontStyle: "bold" },
+      },
+      alternateRowStyles: {
+        fillColor: [248, 250, 252],
+      },
+      didParseCell: (cellData) => {
+        if (cellData.row.index === deptTableData.length - 1) {
+          cellData.cell.styles.fontStyle = "bold";
+          cellData.cell.styles.fillColor = [241, 245, 249];
+        }
+      },
+      margin: { left: margin, right: margin },
+    });
+
+    currentY = (doc as any).lastAutoTable.finalY + 10;
+  }
+
   // === DETAILED SHIFT & PAYMENT BREAKDOWN ===
   if (data.shifts && data.shifts.length > 0) {
     for (let shiftIndex = 0; shiftIndex < data.shifts.length; shiftIndex++) {
@@ -258,12 +319,13 @@ export const generateDetailedCashReport = async (
         currentY = 20;
       }
 
-      // Shift header with date - clean format
+      // Shift header with date - clean format (descending numbering)
       doc.setFont("helvetica", "bold");
       doc.setFontSize(10);
       doc.setTextColor(COLORS.primary);
 
-      const shiftLabel = data.shifts.length > 1 ? `#${shiftIndex + 1}` : "";
+      const shiftLabel =
+        data.shifts.length > 1 ? `#${data.shifts.length - shiftIndex}` : "";
       const timeRange = shift.endTime
         ? `${formatTime(shift.startTime)} - ${formatTime(shift.endTime)}`
         : `${formatTime(shift.startTime)} - now`;
@@ -272,7 +334,7 @@ export const generateDetailedCashReport = async (
       doc.text(
         `Shift ${shiftLabel} - ${shift.shiftDate} | ${timeRange}${statusBadge}`,
         margin,
-        currentY
+        currentY,
       );
       currentY += 6; // More spacing before table
 
@@ -339,71 +401,6 @@ export const generateDetailedCashReport = async (
     }
   }
 
-  // === DEPARTMENT SUMMARY ===
-  if (currentY > pageHeight - 60) {
-    doc.addPage();
-    await drawLogoWatermark(doc);
-    currentY = 20;
-  }
-
-  if (data.departmentBreakdown.length > 0) {
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(11);
-    doc.setTextColor(COLORS.primary);
-    doc.text("Department Summary", margin, currentY);
-    currentY += 6;
-
-    const tableData = data.departmentBreakdown.map((dept, index) => [
-      (index + 1).toString(),
-      dept.departmentName,
-      dept.transactionCount.toString(),
-      formatCurrency(dept.totalCollected),
-    ]);
-
-    tableData.push([
-      "",
-      "TOTAL",
-      data.transactionCount.toString(),
-      formatCurrency(data.totalCollected),
-    ]);
-
-    autoTable(doc, {
-      startY: currentY,
-      head: [["#", "Department", "Txns", "Amount"]],
-      body: tableData,
-      theme: "plain",
-      headStyles: {
-        fillColor: COLORS.primary,
-        textColor: [255, 255, 255],
-        fontStyle: "bold",
-        halign: "left",
-        cellPadding: 3,
-        fontSize: 9,
-      },
-      bodyStyles: {
-        textColor: COLORS.text,
-        cellPadding: 3,
-        fontSize: 9,
-      },
-      columnStyles: {
-        0: { cellWidth: 12, halign: "center" },
-        1: { cellWidth: "auto", fontStyle: "bold" },
-        2: { cellWidth: 25, halign: "center" },
-        3: { cellWidth: 45, halign: "right", fontStyle: "bold" },
-      },
-      alternateRowStyles: {
-        fillColor: [248, 250, 252],
-      },
-      didParseCell: (cellData) => {
-        if (cellData.row.index === tableData.length - 1) {
-          cellData.cell.styles.fontStyle = "bold";
-          cellData.cell.styles.fillColor = [241, 245, 249];
-        }
-      },
-      margin: { left: margin, right: margin },
-    });
-  }
-
   // === FOOTER (on last page) ===
   const totalPages = (doc as any).internal.getNumberOfPages();
   for (let i = 1; i <= totalPages; i++) {
@@ -422,7 +419,7 @@ export const generateDetailedCashReport = async (
       "NB: This is a computer generated detailed report.",
       pageWidth / 2,
       footerY,
-      { align: "center" }
+      { align: "center" },
     );
   }
 

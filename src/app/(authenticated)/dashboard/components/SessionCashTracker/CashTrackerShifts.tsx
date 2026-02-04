@@ -100,7 +100,7 @@ export const CashTrackerShifts: React.FC<CashTrackerShiftsProps> = ({
                     <span className="text-[10px] sm:text-xs font-medium text-fnh-navy-dark">
                       {isActive
                         ? "Active"
-                        : `Shift ${hasMultipleShifts ? index + 1 : ""}`}
+                        : `Shift ${hasMultipleShifts ? shifts.length - index : ""}`}
                     </span>
                     <span className="text-[9px] text-gray-500">
                       {formatTime(shift.startTime)}
