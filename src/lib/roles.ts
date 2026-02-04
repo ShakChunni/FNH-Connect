@@ -5,12 +5,13 @@
  * - system-admin: Full system access, can manage everything
  * - admin: Administrative access, can manage users and system settings
  * - receptionist: Limited access - dashboard, general-admission, pathology only
+ * - medicine-pharmacist: Limited access - dashboard and medicine-inventory only
  * - staff: Regular staff access, limited to their department/patient data
  *
  * Note: We also handle legacy formats like "SysAdmin", "System Admin", etc.
  *
  * Hospital Roles (Staff.role):
- * - System Admin, Admin, Doctor, Nurse, PIC, Receptionist, etc.
+ * - System Admin, Admin, Doctor, Nurse, PIC, Receptionist, Pharmacist, etc.
  */
 
 // System roles - canonical values (lowercase with hyphens)
@@ -19,6 +20,7 @@ export enum SystemRole {
   ADMIN = "admin",
   RECEPTIONIST = "receptionist",
   RECEPTIONIST_INFERTILITY = "receptionist-infertility",
+  MEDICINE_PHARMACIST = "medicine-pharmacist",
   STAFF = "staff",
 }
 
@@ -30,6 +32,7 @@ export enum HospitalRole {
   NURSE = "Nurse",
   PIC = "PIC",
   RECEPTIONIST = "Receptionist",
+  PHARMACIST = "Pharmacist",
 }
 
 // Routes that receptionists can access
@@ -54,6 +57,14 @@ export const RECEPTIONIST_INFERTILITY_ALLOWED_ROUTES = [
   "/api/infertility",
 ];
 
+// Routes that medicine-pharmacist can access
+export const PHARMACIST_ALLOWED_ROUTES = [
+  "/medicine-inventory",
+  "/api/medicine-inventory",
+  "/api/auth", // Auth routes are always allowed
+  "/api/patients", // Patient lookup for sales
+];
+
 /**
  * Normalize role string to check against canonical values
  * Handles various formats: "system-admin", "SysAdmin", "System Admin", "systemadmin", etc.
@@ -73,6 +84,9 @@ function normalizeRole(role: string): string {
   }
   if (lower === "receptionist") {
     return SystemRole.RECEPTIONIST;
+  }
+  if (lower === "medicinepharmacist" || lower === "pharmacist") {
+    return SystemRole.MEDICINE_PHARMACIST;
   }
   if (lower === "staff" || lower === "employee") {
     return SystemRole.STAFF;
@@ -138,6 +152,8 @@ export function getRoleDisplayName(role: string): string {
       return "Receptionist";
     case SystemRole.RECEPTIONIST_INFERTILITY:
       return "Receptionist (Infertility)";
+    case SystemRole.MEDICINE_PHARMACIST:
+      return "Pharmacist";
     case SystemRole.STAFF:
       return "Staff";
     default:
@@ -185,6 +201,22 @@ export function canReceptionistAccessPath(
     : RECEPTIONIST_ALLOWED_ROUTES;
 
   return allowedRoutes.some(
+    (route) => pathname === route || pathname.startsWith(route + "/"),
+  );
+}
+
+/**
+ * Check if user has pharmacist role
+ */
+export function isPharmacistRole(role: string): boolean {
+  return normalizeRole(role) === SystemRole.MEDICINE_PHARMACIST;
+}
+
+/**
+ * Check if a pharmacist can access a given path
+ */
+export function canPharmacistAccessPath(pathname: string): boolean {
+  return PHARMACIST_ALLOWED_ROUTES.some(
     (route) => pathname === route || pathname.startsWith(route + "/"),
   );
 }

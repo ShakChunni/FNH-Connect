@@ -349,8 +349,15 @@ export async function middleware(request: NextRequest) {
   const isLoginPage = normalizedPath === "/login";
   const isRootPath = normalizedPath === "/";
 
-  // REDIRECT 1: Root path with valid session → /dashboard
+  // REDIRECT 1: Root path with valid session
   if (isRootPath && hasValidSession) {
+    const normalizedRole = userRole?.toLowerCase().replace(/[\s_-]/g, "") || "";
+    if (
+      normalizedRole === "medicinepharmacist" ||
+      normalizedRole === "pharmacist"
+    ) {
+      return NextResponse.redirect(new URL("/medicine-inventory", request.url));
+    }
     return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 
@@ -359,8 +366,15 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
-  // REDIRECT 3: Login page with valid session → /dashboard
+  // REDIRECT 3: Login page with valid session
   if (isLoginPage && hasValidSession) {
+    const normalizedRole = userRole?.toLowerCase().replace(/[\s_-]/g, "") || "";
+    if (
+      normalizedRole === "medicinepharmacist" ||
+      normalizedRole === "pharmacist"
+    ) {
+      return NextResponse.redirect(new URL("/medicine-inventory", request.url));
+    }
     return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 
@@ -465,6 +479,47 @@ export async function middleware(request: NextRequest) {
           );
         }
         return NextResponse.redirect(new URL("/dashboard", request.url));
+      }
+    }
+
+    // REDIRECT 5.6: Pharmacist role restrictions
+    // Pharmacists can only access dashboard and medicine-inventory
+    const isPharmacist =
+      normalizedRole === "medicinepharmacist" ||
+      normalizedRole === "pharmacist";
+
+    if (isPharmacist) {
+      const pharmacistAllowedPaths = [
+        // Page routes
+        "/medicine-inventory",
+        "/login",
+        // API routes
+        "/api/medicine-inventory",
+        "/api/auth",
+        "/api/patients", // For patient lookup during sales
+      ];
+
+      const isAllowed = pharmacistAllowedPaths.some(
+        (allowedPath) =>
+          normalizedPath === allowedPath ||
+          normalizedPath.startsWith(allowedPath + "/"),
+      );
+
+      if (!isAllowed && !isAdminRoute) {
+        if (isAPIRoute) {
+          return new NextResponse(
+            JSON.stringify({
+              message: "Forbidden - Access not allowed for your role",
+            }),
+            {
+              status: 403,
+              headers: { "Content-Type": "application/json" },
+            },
+          );
+        }
+        return NextResponse.redirect(
+          new URL("/medicine-inventory", request.url),
+        );
       }
     }
   }

@@ -8,12 +8,14 @@ import {
   ClipboardList,
   Building2,
   Wallet,
+  Pill,
 } from "lucide-react";
 import { NavigationItem } from "./types";
 import {
   isAdminRole,
   isReceptionistRole,
   isReceptionistInfertilityRole,
+  isPharmacistRole,
 } from "@/lib/roles";
 
 // Receptionist allowed routes for sidebar filtering
@@ -29,6 +31,9 @@ const RECEPTIONIST_INFERTILITY_SIDEBAR_ROUTES = [
   ...RECEPTIONIST_SIDEBAR_ROUTES,
   "/infertility",
 ];
+
+// Pharmacist allowed routes for sidebar filtering
+const PHARMACIST_SIDEBAR_ROUTES = ["/medicine-inventory"];
 
 // Full navigation items - will be filtered based on user role
 export const navigationItems: NavigationItem[] = [
@@ -51,6 +56,11 @@ export const navigationItems: NavigationItem[] = [
     label: "Pathology",
     href: "/pathology",
     icon: Microscope,
+  },
+  {
+    label: "Medicine Inventory",
+    href: "/medicine-inventory",
+    icon: Pill,
   },
   {
     label: "Patient Records",
@@ -116,5 +126,18 @@ export function getNavigationItems(userRole?: string): NavigationItem[] {
     return navigationItems;
   }
 
-  return navigationItems.filter((item) => !item.adminOnly);
+  // Check if user is a pharmacist - strictly medicine inventory
+  if (isPharmacistRole(userRole)) {
+    return navigationItems.filter(
+      (item) =>
+        !item.adminOnly && PHARMACIST_SIDEBAR_ROUTES.includes(item.href),
+    );
+  }
+
+  return navigationItems.filter((item) => {
+    if (item.adminOnly) return false;
+    // Medicine inventory is special - only for admins and pharmacists
+    if (item.href === "/medicine-inventory") return false;
+    return true;
+  });
 }

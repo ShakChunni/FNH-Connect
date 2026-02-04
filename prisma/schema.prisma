@@ -40,6 +40,7 @@ model Patient {
   infertilityRecords InfertilityPatient[] // Infertility department records
   hospital           Hospital?            @relation(fields: [hospitalId], references: [id])
   hospitalId         Int?
+  medicineSales      MedicineSale[] // Medicine sales to this patient
 
   @@index([fullName])
   @@index([phoneNumber])
@@ -155,10 +156,10 @@ model Admission {
   ward       String?
 
   // Medical details
-  diagnosis String?
-  otType    String?
-  treatment String?
-  remarks   String?
+  diagnosis      String?
+  otType         String?
+  treatment      String?
+  remarks        String?
   chiefComplaint String? // Main reason for admission
 
   // Tracking
@@ -590,4 +591,127 @@ model LoginAttempt {
   @@index([username])
   @@index([timestamp])
   @@index([success])
+}
+
+// ============================================
+// Medicine Inventory Management System
+// ============================================
+
+// Medicine categories/groups (Antibiotic, Painkiller, Antacid, etc.)
+model MedicineGroup {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  medicines Medicine[]
+
+  @@index([name])
+}
+
+// Pharmaceutical companies/suppliers (Square, Beximco, Incepta, etc.)
+model MedicineCompany {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
+  address     String?
+  phoneNumber String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  purchases MedicinePurchase[]
+
+  @@index([name])
+}
+
+// Master list of medicines with stock tracking
+model Medicine {
+  id          Int     @id @default(autoincrement())
+  genericName String // "Cefixime", "Paracetamol", etc.
+  brandName   String? // Optional brand name
+  groupId     Int
+  strength    String? // "200mg", "500mg", etc.
+  dosageForm  String? // "Tablet", "Capsule", "Syrup", etc.
+
+  // Stock tracking
+  currentStock      Int @default(0) // Total available units
+  lowStockThreshold Int @default(10) // Alert when below this
+
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  group     MedicineGroup      @relation(fields: [groupId], references: [id])
+  purchases MedicinePurchase[]
+  sales     MedicineSale[]
+
+  @@unique([genericName, groupId])
+  @@index([groupId])
+  @@index([genericName])
+  @@index([currentStock])
+}
+
+// Purchase entries - when medicine is bought from suppliers
+model MedicinePurchase {
+  id            Int    @id @default(autoincrement())
+  invoiceNumber String // Purchase voucher number
+  companyId     Int // Supplier
+  medicineId    Int // Medicine purchased
+
+  quantity    Int // Units purchased
+  unitPrice   Decimal // Price per unit
+  totalAmount Decimal // quantity × unitPrice
+
+  purchaseDate DateTime  @default(now())
+  expiryDate   DateTime?
+  batchNumber  String?
+
+  // Stock tracking - how many units from this purchase are still available
+  remainingQty Int
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  createdBy Int // Staff who recorded this
+
+  // Relations
+  company  MedicineCompany @relation(fields: [companyId], references: [id])
+  medicine Medicine        @relation(fields: [medicineId], references: [id])
+  sales    MedicineSale[]
+
+  @@index([companyId])
+  @@index([medicineId])
+  @@index([purchaseDate])
+  @@index([invoiceNumber])
+}
+
+// Sales entries - when medicine is sold to patients
+model MedicineSale {
+  id         Int @id @default(autoincrement())
+  patientId  Int // Patient receiving medicine
+  medicineId Int // Medicine sold
+  purchaseId Int // Which purchase batch this came from
+
+  quantity    Int // Units sold
+  unitPrice   Decimal // Price per unit (from purchase)
+  totalAmount Decimal // quantity × unitPrice
+
+  saleDate DateTime @default(now())
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  createdBy Int // Staff who recorded this
+
+  // Relations
+  patient  Patient          @relation(fields: [patientId], references: [id])
+  medicine Medicine         @relation(fields: [medicineId], references: [id])
+  purchase MedicinePurchase @relation(fields: [purchaseId], references: [id])
+
+  @@index([patientId])
+  @@index([medicineId])
+  @@index([purchaseId])
+  @@index([saleDate])
 }
