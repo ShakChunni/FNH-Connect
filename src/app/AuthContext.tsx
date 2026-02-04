@@ -143,7 +143,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setLoading(false);
       }
     },
-    [initialLoad, router]
+    [initialLoad, router],
   );
 
   // Initial session check - only run once on mount
@@ -156,12 +156,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     // Don't start interval if logging out or no user
     if (user && !loggingOut) {
-      const interval = setInterval(() => {
-        // Double-check we're not logging out before checking session
-        if (!loggingOut) {
-          checkSession(false);
-        }
-      }, 5 * 60 * 1000); // 5 minutes
+      const interval = setInterval(
+        () => {
+          // Double-check we're not logging out before checking session
+          if (!loggingOut) {
+            checkSession(false);
+          }
+        },
+        5 * 60 * 1000,
+      ); // 5 minutes
 
       // Ensure cleanup happens properly
       return () => {
@@ -178,13 +181,25 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       try {
         setUser(userData);
         sessionManager.current.reset(); // Reset session manager state
-        router.push("/dashboard");
+
+        // Role-based redirection
+        const normalizedRole = userData.role
+          ?.toLowerCase()
+          .replace(/[\s_-]/g, "");
+        if (
+          normalizedRole === "medicinepharmacist" ||
+          normalizedRole === "pharmacist"
+        ) {
+          router.push("/medicine-inventory");
+        } else {
+          router.push("/dashboard");
+        }
       } catch (error) {
         sessionManager.current.reset();
         throw error;
       }
     },
-    [router]
+    [router],
   );
 
   const logout = useCallback(async () => {
