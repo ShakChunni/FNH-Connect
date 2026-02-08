@@ -10,6 +10,7 @@ import {
   getTwoDigitYear,
 } from "@/lib/registrationNumber";
 import { SessionDeviceInfo } from "@/types/auth";
+import { shiftService } from "@/services/shiftService";
 
 // ═══════════════════════════════════════════════════════════════
 // TYPES
@@ -426,7 +427,12 @@ export async function createPathologyPatient(
     });
 
     // 8. Record initial payment if any
-    if (pathologyData.paidAmount > 0 && shiftId) {
+    if (pathologyData.paidAmount > 0) {
+      // Always ensure a shift exists so payments are never silently lost
+      const activeShift = shiftId
+        ? { id: shiftId }
+        : await shiftService.ensureActiveShift(staffId, tx);
+
       // Generate unique receipt number
       const paymentCount = await tx.payment.count();
       const receiptNumber = `RCP-${Date.now()}-${paymentCount + 1}`;
@@ -437,7 +443,7 @@ export async function createPathologyPatient(
           amount: pathologyData.paidAmount,
           paymentMethod: "Cash", // Default to cash
           collectedById: staffId,
-          shiftId: shiftId,
+          shiftId: activeShift.id,
           receiptNumber,
           notes: `Initial payment for pathology test ${testNumber}`,
         },
@@ -455,7 +461,7 @@ export async function createPathologyPatient(
       // Track cash movement for shift
       await tx.cashMovement.create({
         data: {
-          shiftId: shiftId,
+          shiftId: activeShift.id,
           amount: pathologyData.paidAmount,
           movementType: "COLLECTION",
           description: `Pathology test payment - ${testNumber}`,
@@ -465,7 +471,7 @@ export async function createPathologyPatient(
 
       // Update shift totals
       await tx.shift.update({
-        where: { id: shiftId },
+        where: { id: activeShift.id },
         data: {
           systemCash: { increment: pathologyData.paidAmount },
           totalCollected: { increment: pathologyData.paidAmount },
@@ -587,8 +593,23 @@ export async function updatePathologyPatient(
       },
     });
 
+    // Update ServiceCharge to reflect edited amounts
+    await tx.serviceCharge.updateMany({
+      where: { pathologyTestId: id },
+      data: {
+        originalAmount: pathologyData.testCharge,
+        discountAmount: pathologyData.discountAmount,
+        finalAmount: pathologyData.grandTotal,
+      },
+    });
+
     // 4.5 Handle financial updates (Payments & Refunds)
-    if (paidAmountDiff !== 0 && shiftId) {
+    if (paidAmountDiff !== 0) {
+      // Always ensure a shift exists so payments are never silently lost
+      const activeShift = shiftId
+        ? { id: shiftId }
+        : await shiftService.ensureActiveShift(staffId, tx);
+
       // Find the existing service charge for this pathology test
       const existingServiceCharge = await tx.serviceCharge.findFirst({
         where: { pathologyTestId: id },
@@ -615,7 +636,7 @@ export async function updatePathologyPatient(
             amount: new Prisma.Decimal(paidAmountDiff),
             paymentMethod: "Cash",
             collectedById: staffId,
-            shiftId: shiftId,
+            shiftId: activeShift.id,
             receiptNumber,
             notes: `Additional payment for pathology test ${existingRecord.testNumber}`,
           },
@@ -635,7 +656,7 @@ export async function updatePathologyPatient(
         // Track cash movement
         await tx.cashMovement.create({
           data: {
-            shiftId: shiftId,
+            shiftId: activeShift.id,
             amount: new Prisma.Decimal(paidAmountDiff),
             movementType: "COLLECTION",
             description: `Additional collection for ${existingRecord.testNumber}`,
@@ -645,7 +666,7 @@ export async function updatePathologyPatient(
 
         // Update shift
         await tx.shift.update({
-          where: { id: shiftId },
+          where: { id: activeShift.id },
           data: {
             systemCash: { increment: paidAmountDiff },
             totalCollected: { increment: paidAmountDiff },
@@ -658,18 +679,16 @@ export async function updatePathologyPatient(
         // Track cash movement (Refund)
         await tx.cashMovement.create({
           data: {
-            shiftId: shiftId,
+            shiftId: activeShift.id,
             amount: new Prisma.Decimal(refundAmount),
             movementType: "REFUND",
             description: `Refund/Correction for ${existingRecord.testNumber}`,
-            // We don't link a positive payment ID here usually, unless we create a negative payment record.
-            // For now, just tracking the movement.
           },
         });
 
         // Update shift
         await tx.shift.update({
-          where: { id: shiftId },
+          where: { id: activeShift.id },
           data: {
             systemCash: { decrement: refundAmount },
             totalRefunded: { increment: refundAmount },
@@ -744,6 +763,87 @@ export async function deletePathologyPatient(
       throw new Error("Pathology test record not found");
     }
 
+    // ── Reverse financial records before deleting ──
+
+    // 1. Find all ServiceCharges linked to this pathology test
+    const serviceCharges = await tx.serviceCharge.findMany({
+      where: { pathologyTestId: id },
+      select: { id: true, patientAccountId: true, finalAmount: true },
+    });
+
+    if (serviceCharges.length > 0) {
+      const serviceChargeIds = serviceCharges.map((sc) => sc.id);
+
+      // 2. Find all PaymentAllocations linked to these service charges
+      const paymentAllocations = await tx.paymentAllocation.findMany({
+        where: { serviceChargeId: { in: serviceChargeIds } },
+        select: { id: true, paymentId: true, allocatedAmount: true },
+      });
+
+      // 3. Delete PaymentAllocations first
+      if (paymentAllocations.length > 0) {
+        await tx.paymentAllocation.deleteMany({
+          where: { serviceChargeId: { in: serviceChargeIds } },
+        });
+      }
+
+      // 4. Find all unique Payment IDs that were linked to this pathology test
+      const paymentIds = [
+        ...new Set(paymentAllocations.map((pa) => pa.paymentId)),
+      ];
+
+      if (paymentIds.length > 0) {
+        // 5. For each payment, reverse the shift cash tracking
+        const payments = await tx.payment.findMany({
+          where: { id: { in: paymentIds } },
+          select: { id: true, shiftId: true, amount: true },
+        });
+
+        for (const payment of payments) {
+          await tx.shift.update({
+            where: { id: payment.shiftId },
+            data: {
+              systemCash: { decrement: payment.amount },
+              totalCollected: { decrement: payment.amount },
+            },
+          });
+        }
+
+        // 6. Delete CashMovements linked to these payments
+        await tx.cashMovement.deleteMany({
+          where: { paymentId: { in: paymentIds } },
+        });
+
+        // 7. Delete the Payments themselves
+        await tx.payment.deleteMany({
+          where: { id: { in: paymentIds } },
+        });
+      }
+
+      // 8. Update PatientAccount totals
+      const patientAccountId = serviceCharges[0].patientAccountId;
+      const totalChargeAmount = serviceCharges.reduce(
+        (sum, sc) => sum + Number(sc.finalAmount),
+        0,
+      );
+      const totalPaidAmount = Number(existingRecord.paidAmount);
+
+      await tx.patientAccount.update({
+        where: { id: patientAccountId },
+        data: {
+          totalCharges: { decrement: totalChargeAmount },
+          totalPaid: { decrement: totalPaidAmount },
+          totalDue: { decrement: totalChargeAmount - totalPaidAmount },
+        },
+      });
+
+      // 9. Delete ServiceCharges
+      await tx.serviceCharge.deleteMany({
+        where: { pathologyTestId: id },
+      });
+    }
+
+    // 10. Delete the pathology test record
     await tx.pathologyTest.delete({
       where: { id },
     });
@@ -752,11 +852,10 @@ export async function deletePathologyPatient(
       data: {
         userId,
         action: "DELETE",
-        description: `Deleted pathology test ${existingRecord.testNumber} for ${existingRecord.patient.fullName}`,
+        description: `Deleted pathology test ${existingRecord.testNumber} for ${existingRecord.patient.fullName} (financials reversed)`,
         entityType: "PathologyTest",
         entityId: id,
         timestamp: new Date(),
-        // Device info from session for accountability
         sessionId: activityLogContext?.sessionId,
         ipAddress: activityLogContext?.deviceInfo?.ipAddress,
         deviceFingerprint: activityLogContext?.deviceInfo?.deviceFingerprint,
