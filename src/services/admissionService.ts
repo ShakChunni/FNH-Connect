@@ -11,6 +11,7 @@ import {
   getTwoDigitYear,
 } from "@/lib/registrationNumber";
 import { SessionDeviceInfo } from "@/types/auth";
+import { shiftService } from "@/services/shiftService";
 
 // ═══════════════════════════════════════════════════════════════
 // TYPES
@@ -347,47 +348,50 @@ export async function createAdmission(
     });
 
     // 7. Create Payment and Cash Movement for initial admission fee
-    if (shiftId) {
-      const paymentCount = await tx.payment.count();
-      const receiptNumber = `RCP-${Date.now()}-${paymentCount + 1}`;
+    // Always ensure a shift exists so payments are never silently lost
+    const activeShift = shiftId
+      ? { id: shiftId }
+      : await shiftService.ensureActiveShift(staffId, tx);
 
-      const payment = await tx.payment.create({
-        data: {
-          patientAccountId: patientAccount.id,
-          amount: new Prisma.Decimal(admissionFee),
-          paymentMethod: "Cash",
-          collectedById: staffId,
-          shiftId,
-          receiptNumber,
-          notes: `Initial Admission Fee for ${admissionNumber}`,
-          // Create PaymentAllocation to link payment to service charge for department tracking
-          paymentAllocations: {
-            create: {
-              serviceChargeId: serviceCharge.id,
-              allocatedAmount: new Prisma.Decimal(admissionFee),
-            },
+    const paymentCount = await tx.payment.count();
+    const receiptNumber = `RCP-${Date.now()}-${paymentCount + 1}`;
+
+    const payment = await tx.payment.create({
+      data: {
+        patientAccountId: patientAccount.id,
+        amount: new Prisma.Decimal(admissionFee),
+        paymentMethod: "Cash",
+        collectedById: staffId,
+        shiftId: activeShift.id,
+        receiptNumber,
+        notes: `Initial Admission Fee for ${admissionNumber}`,
+        // Create PaymentAllocation to link payment to service charge for department tracking
+        paymentAllocations: {
+          create: {
+            serviceChargeId: serviceCharge.id,
+            allocatedAmount: new Prisma.Decimal(admissionFee),
           },
         },
-      });
+      },
+    });
 
-      await tx.cashMovement.create({
-        data: {
-          shiftId,
-          amount: new Prisma.Decimal(admissionFee),
-          movementType: "COLLECTION",
-          description: `Admission Fee collection for ${admissionNumber}`,
-          paymentId: payment.id,
-        },
-      });
+    await tx.cashMovement.create({
+      data: {
+        shiftId: activeShift.id,
+        amount: new Prisma.Decimal(admissionFee),
+        movementType: "COLLECTION",
+        description: `Admission Fee collection for ${admissionNumber}`,
+        paymentId: payment.id,
+      },
+    });
 
-      await tx.shift.update({
-        where: { id: shiftId },
-        data: {
-          systemCash: { increment: admissionFee },
-          totalCollected: { increment: admissionFee },
-        },
-      });
-    }
+    await tx.shift.update({
+      where: { id: activeShift.id },
+      data: {
+        systemCash: { increment: admissionFee },
+        totalCollected: { increment: admissionFee },
+      },
+    });
 
     // 8. Log activity with device info
     await tx.activityLog.create({
@@ -627,8 +631,23 @@ export async function updateAdmission(
       },
     });
 
+    // Update ServiceCharge to reflect edited amounts
+    await tx.serviceCharge.updateMany({
+      where: { admissionId: id },
+      data: {
+        originalAmount: totalAmount,
+        discountAmount: discountAmount,
+        finalAmount: grandTotal,
+      },
+    });
+
     // Handle payment tracking if there's a payment difference
-    if (paidAmountDiff !== 0 && shiftId) {
+    if (paidAmountDiff !== 0) {
+      // Always ensure a shift exists so payments are never silently lost
+      const activeShift = shiftId
+        ? { id: shiftId }
+        : await shiftService.ensureActiveShift(staffId, tx);
+
       // Find the existing service charge for this admission to link payments
       const existingServiceCharge = await tx.serviceCharge.findFirst({
         where: { admissionId: id },
@@ -654,7 +673,7 @@ export async function updateAdmission(
             amount: new Prisma.Decimal(paidAmountDiff),
             paymentMethod: "Cash",
             collectedById: staffId,
-            shiftId,
+            shiftId: activeShift.id,
             receiptNumber,
             notes: `Payment for admission ${existingAdmission.admissionNumber}`,
             // Link payment to service charge for department tracking
@@ -671,7 +690,7 @@ export async function updateAdmission(
 
         await tx.cashMovement.create({
           data: {
-            shiftId,
+            shiftId: activeShift.id,
             amount: new Prisma.Decimal(paidAmountDiff),
             movementType: "COLLECTION",
             description: `Collection for ${existingAdmission.admissionNumber}`,
@@ -680,7 +699,7 @@ export async function updateAdmission(
         });
 
         await tx.shift.update({
-          where: { id: shiftId },
+          where: { id: activeShift.id },
           data: {
             systemCash: { increment: paidAmountDiff },
             totalCollected: { increment: paidAmountDiff },
@@ -692,7 +711,7 @@ export async function updateAdmission(
 
         await tx.cashMovement.create({
           data: {
-            shiftId,
+            shiftId: activeShift.id,
             amount: new Prisma.Decimal(refundAmount),
             movementType: "REFUND",
             description: `Refund for ${existingAdmission.admissionNumber}`,
@@ -700,7 +719,7 @@ export async function updateAdmission(
         });
 
         await tx.shift.update({
-          where: { id: shiftId },
+          where: { id: activeShift.id },
           data: {
             systemCash: { decrement: refundAmount },
             totalRefunded: { increment: refundAmount },
@@ -771,6 +790,92 @@ export async function deleteAdmission(
       throw new Error("Admission record not found");
     }
 
+    // ── Reverse financial records before deleting ──
+
+    // 1. Find all ServiceCharges linked to this admission
+    const serviceCharges = await tx.serviceCharge.findMany({
+      where: { admissionId: id },
+      select: { id: true, patientAccountId: true, finalAmount: true },
+    });
+
+    if (serviceCharges.length > 0) {
+      const serviceChargeIds = serviceCharges.map((sc) => sc.id);
+
+      // 2. Find all PaymentAllocations linked to these service charges
+      const paymentAllocations = await tx.paymentAllocation.findMany({
+        where: { serviceChargeId: { in: serviceChargeIds } },
+        select: { id: true, paymentId: true, allocatedAmount: true },
+      });
+
+      // 3. Delete PaymentAllocations first (depends on both Payment and ServiceCharge)
+      if (paymentAllocations.length > 0) {
+        await tx.paymentAllocation.deleteMany({
+          where: { serviceChargeId: { in: serviceChargeIds } },
+        });
+      }
+
+      // 4. Find all unique Payment IDs that were linked to this admission
+      const paymentIds = [
+        ...new Set(paymentAllocations.map((pa) => pa.paymentId)),
+      ];
+
+      if (paymentIds.length > 0) {
+        // 5. For each payment, reverse the shift cash tracking
+        const payments = await tx.payment.findMany({
+          where: { id: { in: paymentIds } },
+          select: { id: true, shiftId: true, amount: true },
+        });
+
+        for (const payment of payments) {
+          // Reverse the shift totals (decrement what was collected)
+          await tx.shift.update({
+            where: { id: payment.shiftId },
+            data: {
+              systemCash: { decrement: payment.amount },
+              totalCollected: { decrement: payment.amount },
+            },
+          });
+        }
+
+        // 6. Delete CashMovements linked to these payments
+        await tx.cashMovement.deleteMany({
+          where: { paymentId: { in: paymentIds } },
+        });
+
+        // 7. Delete the Payments themselves
+        await tx.payment.deleteMany({
+          where: { id: { in: paymentIds } },
+        });
+      }
+
+      // 8. Update PatientAccount totals
+      const patientAccountId = serviceCharges[0].patientAccountId;
+      const totalChargeAmount = serviceCharges.reduce(
+        (sum, sc) => sum + Number(sc.finalAmount),
+        0,
+      );
+      const totalPaidAmount = Number(existingAdmission.paidAmount);
+
+      await tx.patientAccount.update({
+        where: { id: patientAccountId },
+        data: {
+          totalCharges: { decrement: totalChargeAmount },
+          totalPaid: { decrement: totalPaidAmount },
+          totalDue: { decrement: totalChargeAmount - totalPaidAmount },
+        },
+      });
+
+      // 9. Delete ServiceCharges
+      await tx.serviceCharge.deleteMany({
+        where: { admissionId: id },
+      });
+    }
+
+    // 10. Also find and reverse any refund CashMovements for shifts
+    //     (refunds are CashMovements without a paymentId, linked to shifts)
+    //     These are already handled by the shift reversal above for collections.
+
+    // 11. Delete the admission record
     await tx.admission.delete({
       where: { id },
     });
@@ -779,11 +884,10 @@ export async function deleteAdmission(
       data: {
         userId,
         action: "DELETE",
-        description: `Deleted admission ${existingAdmission.admissionNumber} for ${existingAdmission.patient.fullName}`,
+        description: `Deleted admission ${existingAdmission.admissionNumber} for ${existingAdmission.patient.fullName} (financials reversed)`,
         entityType: "Admission",
         entityId: id,
         timestamp: new Date(),
-        // Device info from session for accountability
         sessionId: activityLogContext?.sessionId,
         ipAddress: activityLogContext?.deviceInfo?.ipAddress,
         deviceFingerprint: activityLogContext?.deviceInfo?.deviceFingerprint,

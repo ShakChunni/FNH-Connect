@@ -237,6 +237,20 @@ export async function GET(request: NextRequest) {
             },
           },
         },
+        // Also fetch cash movements (date-filtered) to accurately calculate refunds
+        cashMovements: {
+          where: {
+            timestamp: {
+              gte: startDate,
+              lte: endDate,
+            },
+            movementType: "REFUND",
+          },
+          select: {
+            amount: true,
+            movementType: true,
+          },
+        },
       },
       orderBy: { startTime: "desc" },
     });
@@ -323,7 +337,15 @@ export async function GET(request: NextRequest) {
         }
       }
 
-      const shiftRefunded = shift.totalRefunded.toNumber();
+      // Calculate refunds from date-filtered cash movements instead of shift.totalRefunded
+      // This ensures refund numbers are consistent with the date range filter
+      const shiftRefunded = shift.cashMovements.reduce(
+        (
+          sum: number,
+          cm: { amount: { toNumber: () => number }; movementType: string },
+        ) => sum + cm.amount.toNumber(),
+        0,
+      );
 
       // Build shift department breakdown
       const shiftDepartmentBreakdown: DepartmentBreakdown[] = [];
