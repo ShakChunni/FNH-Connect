@@ -15,14 +15,14 @@ export const useDynamicDropdownPosition = (
   isOpen: boolean,
   buttonRef: RefObject<HTMLElement | null>,
   dropdownRef: RefObject<HTMLElement | null>,
-  onClose: () => void
+  onClose: () => void,
 ) => {
   const [positionStyle, setPositionStyle] = useState<React.CSSProperties>({
     // Start with opacity 0 to prevent flicker
     opacity: 0,
   });
   const [animationDirection, setAnimationDirection] = useState<"up" | "down">(
-    "down"
+    "down",
   );
 
   // Store onClose in a ref so it doesn't trigger effect re-runs
@@ -92,7 +92,7 @@ export const useDynamicDropdownPosition = (
         position: "absolute" as const,
         top: `${top}px`,
         left: `${left}px`,
-        // removed width assignment to allow CSS classes to control width
+        width: `${buttonRect.width}px`,
         // Keep dropdowns above most UI layers; this zIndex must be less than
         // the modal overlay if the overlay intentionally sits above dropdowns.
         // For AddNewData modal we need portals to render above it, DropdownPortal
