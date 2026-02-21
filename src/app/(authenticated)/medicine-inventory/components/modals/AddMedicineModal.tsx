@@ -12,7 +12,7 @@ import React, {
   useEffect,
   useState,
 } from "react";
-import { Save, Pill, Layers, AlertTriangle } from "lucide-react";
+import { Save, Pill, Layers, AlertTriangle, ChevronDown } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   modalVariants,
@@ -27,6 +27,7 @@ import { useAddMedicineData, useAddGroupData } from "../../hooks";
 import { useUIStore } from "../../stores";
 import { GroupSearch } from "../shared";
 import type { MedicineGroup } from "../../types";
+import { DropdownPortal } from "@/components/ui/DropdownPortal";
 
 interface AddMedicineModalProps {
   isOpen: boolean;
@@ -67,6 +68,10 @@ const AddMedicineModal: React.FC<AddMedicineModalProps> = ({
   const [dosageForm, setDosageForm] = useState("");
   const [lowStockThreshold, setLowStockThreshold] = useState(10);
 
+  // For dosage form dropdown
+  const [isDosageOpen, setIsDosageOpen] = useState(false);
+  const dosageBtnRef = useRef<HTMLButtonElement>(null);
+
   // For inline group creation
   const [isAddingGroup, setIsAddingGroup] = useState(false);
   const [newGroupName, setNewGroupName] = useState("");
@@ -91,6 +96,7 @@ const AddMedicineModal: React.FC<AddMedicineModalProps> = ({
       setLowStockThreshold(10);
       setIsAddingGroup(false);
       setNewGroupName("");
+      setIsDosageOpen(false);
     } else {
       preserveUnlockBodyScroll();
     }
@@ -396,18 +402,61 @@ const AddMedicineModal: React.FC<AddMedicineModalProps> = ({
                       <label className="block text-xs font-semibold text-gray-700 mb-2">
                         Dosage Form
                       </label>
-                      <select
-                        value={dosageForm}
-                        onChange={(e) => setDosageForm(e.target.value)}
-                        className={getInputClass(!!dosageForm)}
+                      <button
+                        ref={dosageBtnRef}
+                        type="button"
+                        onClick={() => setIsDosageOpen(!isDosageOpen)}
+                        className={`${getInputClass(!!dosageForm)} flex justify-between items-center`}
                       >
-                        <option value="">Select form...</option>
-                        {DOSAGE_FORMS.map((form) => (
-                          <option key={form} value={form}>
-                            {form}
-                          </option>
-                        ))}
-                      </select>
+                        <span
+                          className={`${
+                            dosageForm
+                              ? "text-gray-700 font-normal"
+                              : "text-gray-400 font-light"
+                          } text-xs sm:text-sm`}
+                        >
+                          {dosageForm || "Select form..."}
+                        </span>
+                        <ChevronDown
+                          className={`transition-transform duration-200 text-gray-400 ${
+                            isDosageOpen ? "rotate-180" : ""
+                          }`}
+                          size={16}
+                        />
+                      </button>
+                      <DropdownPortal
+                        isOpen={isDosageOpen}
+                        onClose={() => setIsDosageOpen(false)}
+                        buttonRef={dosageBtnRef}
+                      >
+                        <div
+                          className="overflow-y-auto p-2"
+                          style={{
+                            maxHeight:
+                              typeof window !== "undefined" &&
+                              window.innerWidth < 640
+                                ? "220px"
+                                : "280px",
+                          }}
+                        >
+                          {DOSAGE_FORMS.map((form) => (
+                            <div
+                              key={form}
+                              onClick={() => {
+                                setDosageForm(form);
+                                setIsDosageOpen(false);
+                              }}
+                              className={`cursor-pointer px-4 py-3 transition-colors duration-200 rounded-md mx-1 ${
+                                dosageForm === form
+                                  ? "bg-blue-900 text-white"
+                                  : "hover:bg-blue-900 hover:text-white"
+                              }`}
+                            >
+                              <span className="text-xs sm:text-sm">{form}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </DropdownPortal>
                     </div>
                   </div>
                 </div>

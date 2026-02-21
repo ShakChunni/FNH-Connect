@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import {
   Pill,
@@ -11,6 +11,8 @@ import {
   Package,
   ShoppingCart,
   Plus,
+  ClipboardList,
+  Settings,
 } from "lucide-react";
 import { useFetchMedicineStats } from "./hooks";
 import { useUIStore, useMedicineFilterStore } from "./stores";
@@ -23,6 +25,82 @@ import {
   AddCompanyModal,
   AddGroupModal,
 } from "./components/modals";
+import {
+  MedicineTable,
+  PurchaseTable,
+  SaleTable,
+  ActivityTable,
+} from "./components/shared";
+
+// Manage Dropdown — clean way to access Add Medicine/Group/Company
+const ManageDropdown: React.FC<{
+  openModal: (
+    type: "addMedicine" | "addGroup" | "addCompany",
+    data?: Record<string, unknown>,
+  ) => void;
+}> = ({ openModal }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(e.target as Node)
+      ) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  return (
+    <div className="relative" ref={dropdownRef}>
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="flex items-center gap-1.5 px-3 py-2.5 bg-gray-50 hover:bg-gray-100 rounded-xl text-xs font-semibold text-gray-700 transition-colors cursor-pointer border border-gray-100"
+      >
+        <Settings className="w-3.5 h-3.5" />
+        <span>Manage</span>
+      </button>
+      {isOpen && (
+        <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl border border-gray-100 shadow-lg z-50 py-1 overflow-hidden">
+          <button
+            onClick={() => {
+              openModal("addMedicine");
+              setIsOpen(false);
+            }}
+            className="w-full flex items-center gap-2 px-4 py-2.5 text-xs font-semibold text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer"
+          >
+            <Plus className="w-3.5 h-3.5 text-blue-500" />
+            Add Medicine
+          </button>
+          <button
+            onClick={() => {
+              openModal("addGroup");
+              setIsOpen(false);
+            }}
+            className="w-full flex items-center gap-2 px-4 py-2.5 text-xs font-semibold text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer"
+          >
+            <Plus className="w-3.5 h-3.5 text-purple-500" />
+            Add Group
+          </button>
+          <button
+            onClick={() => {
+              openModal("addCompany");
+              setIsOpen(false);
+            }}
+            className="w-full flex items-center gap-2 px-4 py-2.5 text-xs font-semibold text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer"
+          >
+            <Plus className="w-3.5 h-3.5 text-emerald-500" />
+            Add Company
+          </button>
+        </div>
+      )}
+    </div>
+  );
+};
 
 const MedicineInventoryPage = () => {
   const {
@@ -236,6 +314,11 @@ const MedicineInventoryPage = () => {
           <div className="px-1 sm:px-2 lg:px-4">
             <div className="flex gap-1 p-1 bg-white rounded-xl border border-gray-100 shadow-sm w-fit">
               {[
+                {
+                  id: "activity" as const,
+                  label: "Activity",
+                  icon: ClipboardList,
+                },
                 { id: "medicines" as const, label: "Medicines", icon: Pill },
                 {
                   id: "purchases" as const,
@@ -255,7 +338,7 @@ const MedicineInventoryPage = () => {
                   )}
                 >
                   <tab.icon className="w-4 h-4" />
-                  <span>{tab.label}</span>
+                  <span className="hidden sm:inline">{tab.label}</span>
                 </button>
               ))}
             </div>
@@ -263,91 +346,42 @@ const MedicineInventoryPage = () => {
 
           {/* Search and Filters */}
           <div className="px-1 sm:px-2 lg:px-4">
-            <div className="p-3 sm:p-4 bg-white rounded-2xl border border-gray-100 shadow-sm space-y-3 sm:space-y-0 sm:flex sm:flex-row sm:flex-wrap sm:items-center sm:gap-4">
+            <div className="p-3 sm:p-4 bg-white rounded-2xl border border-gray-100 shadow-sm flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-3 sm:gap-4">
               {/* Search Input */}
               <div className="flex-1 min-w-[180px] sm:min-w-[200px] relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <input
                   type="text"
-                  placeholder={`Search ${activeTab}...`}
+                  placeholder={`Search ${activeTab === "activity" ? "medicines" : activeTab}...`}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="w-full pl-10 pr-4 py-2.5 bg-gray-50/50 border border-gray-100 rounded-xl text-xs sm:text-sm font-bold focus:outline-none focus:ring-2 focus:ring-fnh-blue/20 transition-all"
                 />
               </div>
 
-              {/* Quick Actions */}
-              <div className="flex flex-wrap items-center gap-2">
-                <button
-                  onClick={() => openModal("addMedicine")}
-                  className="flex items-center gap-1.5 px-3 py-2 bg-gray-50 hover:bg-gray-100 rounded-lg text-xs font-semibold text-gray-700 transition-colors cursor-pointer"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  <span>Add Medicine</span>
-                </button>
-                <button
-                  onClick={() => openModal("addGroup")}
-                  className="flex items-center gap-1.5 px-3 py-2 bg-gray-50 hover:bg-gray-100 rounded-lg text-xs font-semibold text-gray-700 transition-colors cursor-pointer"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  <span>Add Group</span>
-                </button>
-                <button
-                  onClick={() => openModal("addCompany")}
-                  className="flex items-center gap-1.5 px-3 py-2 bg-gray-50 hover:bg-gray-100 rounded-lg text-xs font-semibold text-gray-700 transition-colors cursor-pointer"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  <span>Add Company</span>
-                </button>
+              {/* Manage Dropdown */}
+              <ManageDropdown openModal={openModal} />
 
-                {(filters.search ||
-                  filters.groupId ||
-                  filters.lowStockOnly) && (
-                  <button
-                    onClick={() => {
-                      resetFilters();
-                      setSearchTerm("");
-                    }}
-                    className="px-3 py-2 text-[10px] sm:text-xs font-black text-rose-500 uppercase tracking-widest hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
-                  >
-                    Clear Filters
-                  </button>
-                )}
-              </div>
+              {(filters.search || filters.groupId || filters.lowStockOnly) && (
+                <button
+                  onClick={() => {
+                    resetFilters();
+                    setSearchTerm("");
+                  }}
+                  className="px-3 py-2 text-[10px] sm:text-xs font-black text-rose-500 uppercase tracking-widest hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                >
+                  Clear Filters
+                </button>
+              )}
             </div>
           </div>
 
-          {/* Content Area - Placeholder for now */}
+          {/* Content Area - Data Tables */}
           <div className="px-1 sm:px-2 lg:px-4 pb-10">
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8 text-center">
-              <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                {activeTab === "medicines" && (
-                  <Pill className="w-8 h-8 text-gray-400" />
-                )}
-                {activeTab === "purchases" && (
-                  <TrendingUp className="w-8 h-8 text-gray-400" />
-                )}
-                {activeTab === "sales" && (
-                  <ShoppingCart className="w-8 h-8 text-gray-400" />
-                )}
-              </div>
-              <h3 className="text-lg font-black text-gray-900 mb-2">
-                {activeTab === "medicines" && "Medicine List"}
-                {activeTab === "purchases" && "Purchase History"}
-                {activeTab === "sales" && "Sales History"}
-              </h3>
-              <p className="text-sm text-gray-500 mb-4">
-                {activeTab === "medicines" &&
-                  "View and manage all medicines in your inventory."}
-                {activeTab === "purchases" &&
-                  "Track all medicine purchases from suppliers."}
-                {activeTab === "sales" &&
-                  "View all medicine sales to patients."}
-              </p>
-              <p className="text-xs text-gray-400">
-                Total Medicines: {stats?.totalMedicines || 0}
-              </p>
-            </div>
+            {activeTab === "activity" && <ActivityTable />}
+            {activeTab === "medicines" && <MedicineTable />}
+            {activeTab === "purchases" && <PurchaseTable />}
+            {activeTab === "sales" && <SaleTable />}
           </div>
         </div>
       </div>

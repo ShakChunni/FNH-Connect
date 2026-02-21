@@ -67,8 +67,8 @@ export const useSaleFormStore = create<SaleFormState>((set) => ({
     set((state) => {
       const newFormData = { ...state.formData, ...data };
 
-      // Auto-calculate total if quantity changed
-      if ("quantity" in data) {
+      // Auto-calculate total if quantity or unitPrice changed
+      if ("quantity" in data || "unitPrice" in data) {
         newFormData.totalAmount = newFormData.quantity * newFormData.unitPrice;
       }
 

@@ -17,6 +17,7 @@ const createSaleSchema = z.object({
   patientId: z.number().int().positive("Patient ID is required"),
   medicineId: z.number().int().positive("Medicine is required"),
   quantity: z.number().int().positive("Quantity must be positive"),
+  unitPrice: z.number().positive("Unit price must be positive").optional(),
   saleDate: z.string().optional(),
 });
 
@@ -127,6 +128,7 @@ export async function POST(request: NextRequest) {
         patientId: validated.patientId,
         medicineId: validated.medicineId,
         quantity: validated.quantity,
+        unitPrice: validated.unitPrice,
         saleDate: validated.saleDate ? new Date(validated.saleDate) : undefined,
       },
       staffId,

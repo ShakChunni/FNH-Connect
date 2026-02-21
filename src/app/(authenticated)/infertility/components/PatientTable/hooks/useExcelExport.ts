@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import * as XLSX from "xlsx";
+import ExcelJS from "exceljs";
 
 const useExcelExport = (tableData: any[]) => {
   const exportTableAsExcel = useCallback(() => {
@@ -84,30 +84,30 @@ const useExcelExport = (tableData: any[]) => {
       return processed;
     });
 
-    // Create worksheet and workbook
-    const worksheet = XLSX.utils.json_to_sheet(exportData, {
-      header: headers.map((h) => h.label),
-      skipHeader: false,
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet("Leads");
+
+    const headerLabels = headers.map((header) => header.label);
+    worksheet.addRow(headerLabels);
+
+    exportData.forEach((row) => {
+      worksheet.addRow(headerLabels.map((label) => row[label]));
     });
 
-    // Set column widths (adjust as needed)
-    worksheet["!cols"] = headers.map(() => ({ wch: 24 }));
+    worksheet.columns = headers.map(() => ({ width: 24 }));
+    worksheet.getRow(1).font = { bold: true };
 
-    // Bold header styling (xlsx uses cell objects for styling)
-    headers.forEach((header, idx) => {
-      const cellAddress = XLSX.utils.encode_cell({ r: 0, c: idx });
-      if (worksheet[cellAddress]) {
-        worksheet[cellAddress].s = {
-          font: { bold: true },
-        };
-      }
+    workbook.xlsx.writeBuffer().then((buffer) => {
+      const blob = new Blob([buffer], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      });
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = "leads_export.xlsx";
+      anchor.click();
+      URL.revokeObjectURL(url);
     });
-
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Leads");
-
-    // Export as Excel file
-    XLSX.writeFile(workbook, "leads_export.xlsx", { bookType: "xlsx" });
   }, [tableData]);
 
   return { exportTableAsExcel };

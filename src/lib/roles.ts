@@ -63,6 +63,7 @@ export const PHARMACIST_ALLOWED_ROUTES = [
   "/api/medicine-inventory",
   "/api/auth", // Auth routes are always allowed
   "/api/patients", // Patient lookup for sales
+  "/api/patient-records", // Patient search endpoint used by medicine inventory
 ];
 
 /**
@@ -219,4 +220,11 @@ export function canPharmacistAccessPath(pathname: string): boolean {
   return PHARMACIST_ALLOWED_ROUTES.some(
     (route) => pathname === route || pathname.startsWith(route + "/"),
   );
+}
+
+/**
+ * Get default landing route for authenticated users by role
+ */
+export function getDefaultRouteForRole(userRole: string): string {
+  return isPharmacistRole(userRole) ? "/medicine-inventory" : "/dashboard";
 }

@@ -1,6 +1,6 @@
 {
   "name": "fnh-connect",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
@@ -45,7 +45,7 @@
     "@types/react-dom": "^19",
     "@types/react-window": "^1.8.8",
     "@types/react-world-flags": "^1.6.0",
-    "@types/xlsx": "^0.0.35",
+    "exceljs": "^4.4.0",
     "axios": "^1.12.2",
     "bcrypt": "^6.0.0",
     "bcryptjs": "^3.0.2",
@@ -89,9 +89,11 @@
     "tailwindcss": "^4",
     "typescript": "^5",
     "ua-parser-js": "^2.0.5",
-    "xlsx": "^0.18.5",
     "zod": "^4.1.11",
     "zustand": "^5.0.9"
+  },
+  "overrides": {
+    "minimatch": "^10.2.2"
   },
   "devDependencies": {
     "babel-plugin-react-compiler": "^19.1.0-rc.3",

@@ -9,6 +9,7 @@ const titleMap: { [key: string]: string } = {
   "/general-admission": "General Admission",
   "/infertility": "Infertility",
   "/pathology": "Pathology",
+  "/medicine-inventory": "Medicine Inventory",
   "/admin-dashboard": "Admin Dashboard",
   "/admin/user-management": "User Management",
   "/admin/activity-logs": "Activity Logs",

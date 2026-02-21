@@ -48,7 +48,7 @@ interface UIState {
 
 export const useUIStore = create<UIState>((set) => ({
   // Tab state
-  activeTab: "medicines",
+  activeTab: "activity",
   setActiveTab: (tab) => set({ activeTab: tab }),
 
   // Modal state

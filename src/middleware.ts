@@ -483,7 +483,7 @@ export async function middleware(request: NextRequest) {
     }
 
     // REDIRECT 5.6: Pharmacist role restrictions
-    // Pharmacists can only access dashboard and medicine-inventory
+    // Pharmacists can only access medicine-inventory and required APIs
     const isPharmacist =
       normalizedRole === "medicinepharmacist" ||
       normalizedRole === "pharmacist";
@@ -497,6 +497,7 @@ export async function middleware(request: NextRequest) {
         "/api/medicine-inventory",
         "/api/auth",
         "/api/patients", // For patient lookup during sales
+        "/api/patient-records", // For patient search dropdown in medicine inventory
       ];
 
       const isAllowed = pharmacistAllowedPaths.some(

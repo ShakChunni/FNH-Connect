@@ -718,6 +718,7 @@ export async function createSale(
     patientId: number;
     medicineId: number;
     quantity: number;
+    unitPrice?: number; // Optional override — defaults to FIFO batch price
     saleDate?: Date;
   },
   staffId: number,
@@ -749,8 +750,8 @@ export async function createSale(
       );
     }
 
-    // Find the oldest purchase with remaining stock (FIFO)
-    const availablePurchase = await tx.medicinePurchase.findFirst({
+    // Find ALL purchase batches with remaining stock, ordered oldest first (FIFO)
+    const availablePurchases = await tx.medicinePurchase.findMany({
       where: {
         medicineId: data.medicineId,
         remainingQty: {
@@ -762,85 +763,107 @@ export async function createSale(
       },
     });
 
-    if (!availablePurchase) {
+    if (availablePurchases.length === 0) {
       throw new Error("No stock available from purchases");
     }
 
-    if (availablePurchase.remainingQty < data.quantity) {
+    // Calculate total available across all batches
+    const totalAvailable = availablePurchases.reduce(
+      (sum, p) => sum + p.remainingQty,
+      0,
+    );
+
+    if (totalAvailable < data.quantity) {
       throw new Error(
-        `Insufficient batch stock. This batch has ${availablePurchase.remainingQty} units. Consider splitting the sale.`,
+        `Insufficient stock across all batches. Available: ${totalAvailable}, Requested: ${data.quantity}`,
       );
     }
 
-    // Calculate total amount using purchase price
-    const unitPrice = Number(availablePurchase.unitPrice);
-    const totalAmount = data.quantity * unitPrice;
+    // Consume stock across batches using FIFO
+    let remainingToSell = data.quantity;
+    const saleRecords = [];
+    let overallTotalAmount = 0;
 
-    // Create sale entry
-    const sale = await tx.medicineSale.create({
-      data: {
-        patientId: data.patientId,
-        medicineId: data.medicineId,
-        purchaseId: availablePurchase.id,
-        quantity: data.quantity,
-        unitPrice: unitPrice,
-        totalAmount: totalAmount,
-        saleDate: data.saleDate || new Date(),
-        createdBy: staffId,
-      },
-      select: {
-        id: true,
-        quantity: true,
-        unitPrice: true,
-        totalAmount: true,
-        saleDate: true,
-        patient: {
-          select: {
-            id: true,
-            fullName: true,
-            phoneNumber: true,
-          },
+    for (const purchase of availablePurchases) {
+      if (remainingToSell <= 0) break;
+
+      const qtyFromThisBatch = Math.min(remainingToSell, purchase.remainingQty);
+      const batchUnitPrice =
+        data.unitPrice !== undefined
+          ? data.unitPrice
+          : Number(purchase.unitPrice);
+      const batchTotalAmount = qtyFromThisBatch * batchUnitPrice;
+
+      // Create sale entry for this batch portion
+      const sale = await tx.medicineSale.create({
+        data: {
+          patientId: data.patientId,
+          medicineId: data.medicineId,
+          purchaseId: purchase.id,
+          quantity: qtyFromThisBatch,
+          unitPrice: batchUnitPrice,
+          totalAmount: batchTotalAmount,
+          saleDate: data.saleDate || new Date(),
+          createdBy: staffId,
         },
-        medicine: {
-          select: {
-            id: true,
-            genericName: true,
-            brandName: true,
-            group: {
-              select: {
-                id: true,
-                name: true,
+        select: {
+          id: true,
+          quantity: true,
+          unitPrice: true,
+          totalAmount: true,
+          saleDate: true,
+          patient: {
+            select: {
+              id: true,
+              fullName: true,
+              phoneNumber: true,
+            },
+          },
+          medicine: {
+            select: {
+              id: true,
+              genericName: true,
+              brandName: true,
+              group: {
+                select: {
+                  id: true,
+                  name: true,
+                },
+              },
+            },
+          },
+          purchase: {
+            select: {
+              id: true,
+              invoiceNumber: true,
+              batchNumber: true,
+              company: {
+                select: {
+                  id: true,
+                  name: true,
+                },
               },
             },
           },
         },
-        purchase: {
-          select: {
-            id: true,
-            invoiceNumber: true,
-            batchNumber: true,
-            company: {
-              select: {
-                id: true,
-                name: true,
-              },
-            },
+      });
+
+      // Update this purchase batch's remaining quantity
+      await tx.medicinePurchase.update({
+        where: { id: purchase.id },
+        data: {
+          remainingQty: {
+            decrement: qtyFromThisBatch,
           },
         },
-      },
-    });
+      });
 
-    // Update purchase remaining quantity
-    await tx.medicinePurchase.update({
-      where: { id: availablePurchase.id },
-      data: {
-        remainingQty: {
-          decrement: data.quantity,
-        },
-      },
-    });
+      saleRecords.push(sale);
+      overallTotalAmount += batchTotalAmount;
+      remainingToSell -= qtyFromThisBatch;
+    }
 
-    // Update medicine stock
+    // Update medicine stock (total quantity sold)
     await tx.medicine.update({
       where: { id: data.medicineId },
       data: {
@@ -851,13 +874,14 @@ export async function createSale(
     });
 
     // Log activity
+    const primarySale = saleRecords[0];
     await tx.activityLog.create({
       data: {
         userId,
         action: "CREATE",
-        description: `Sold ${data.quantity} units of ${medicine.genericName} to ${patient.fullName}. Amount: BDT ${totalAmount}`,
+        description: `Sold ${data.quantity} units of ${medicine.genericName} to ${patient.fullName}. Amount: BDT ${overallTotalAmount}${saleRecords.length > 1 ? ` (across ${saleRecords.length} batches)` : ""}`,
         entityType: "MedicineSale",
-        entityId: sale.id,
+        entityId: primarySale.id,
         timestamp: new Date(),
         sessionId: activityLogContext?.sessionId,
         ipAddress: activityLogContext?.deviceInfo?.ipAddress,
@@ -871,7 +895,9 @@ export async function createSale(
       },
     });
 
-    return sale;
+    // Return the first sale record for backward compatibility
+    // The primary sale captures the main transaction details
+    return primarySale;
   });
 }
 
