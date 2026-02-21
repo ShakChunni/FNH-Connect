@@ -121,6 +121,7 @@ const MedicineTable: React.FC = () => {
             {medicines.map((medicine) => {
               const isLowStock =
                 medicine.currentStock <= medicine.lowStockThreshold;
+              const groupName = medicine.group?.name || "Unknown Group";
               return (
                 <tr
                   key={medicine.id}
@@ -140,7 +141,7 @@ const MedicineTable: React.FC = () => {
                   </td>
                   <td className="px-6 py-3.5">
                     <span className="inline-flex px-2 py-1 bg-blue-50 text-blue-700 text-xs font-semibold rounded-lg">
-                      {medicine.group.name}
+                      {groupName}
                     </span>
                   </td>
                   <td className="px-6 py-3.5 text-sm text-gray-600">
@@ -182,6 +183,7 @@ const MedicineTable: React.FC = () => {
         {medicines.map((medicine) => {
           const isLowStock =
             medicine.currentStock <= medicine.lowStockThreshold;
+          const groupName = medicine.group?.name || "Unknown Group";
           return (
             <div key={medicine.id} className="p-4 space-y-2">
               <div className="flex items-start justify-between">
@@ -209,7 +211,7 @@ const MedicineTable: React.FC = () => {
               <div className="flex flex-wrap gap-3 text-xs text-gray-600">
                 <span>
                   <span className="font-semibold text-gray-500">Group:</span>{" "}
-                  {medicine.group.name}
+                  {groupName}
                 </span>
                 {medicine.strength && (
                   <span>

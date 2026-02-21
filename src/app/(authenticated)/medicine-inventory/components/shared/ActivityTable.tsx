@@ -54,11 +54,11 @@ const ActivityTable: React.FC = () => {
           date: p.purchaseDate,
           medicineName: p.medicine.genericName,
           medicineBrand: p.medicine.brandName || undefined,
-          groupName: p.medicine.group.name,
+          groupName: p.medicine.group?.name || "Unknown Group",
           quantity: p.quantity,
           unitPrice: p.unitPrice,
           totalAmount: p.totalAmount,
-          companyName: p.company.name,
+          companyName: p.company?.name || "Unknown Company",
           invoiceNumber: p.invoiceNumber,
         });
       });
@@ -73,13 +73,13 @@ const ActivityTable: React.FC = () => {
           date: s.saleDate,
           medicineName: s.medicine.genericName,
           medicineBrand: s.medicine.brandName || undefined,
-          groupName: s.medicine.group.name,
+          groupName: s.medicine.group?.name || "Unknown Group",
           quantity: s.quantity,
           unitPrice: s.unitPrice,
           totalAmount: s.totalAmount,
-          patientName: s.patient.fullName,
+          patientName: s.patient?.fullName || "Unknown Patient",
           patientPhone: s.patient.phoneNumber || undefined,
-          companyName: s.purchase.company.name,
+          companyName: s.purchase.company?.name || "Unknown Company",
         });
       });
     }
