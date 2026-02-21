@@ -210,7 +210,7 @@ const AddPurchaseModal: React.FC<AddPurchaseModalProps> = ({
         setFormData({
           medicineId: medicine.id,
           medicineName: medicine.genericName,
-          medicineGroupName: medicine.group.name,
+          medicineGroupName: medicine.group?.name || "Unknown Group",
         });
       } else {
         setFormData({

@@ -272,7 +272,7 @@ const AddSaleModal: React.FC<AddSaleModalProps> = ({ isOpen, onClose }) => {
         setMedicineWithFIFO({
           medicineId: medicine.id,
           medicineName: medicine.genericName,
-          medicineGroupName: medicine.group.name,
+          medicineGroupName: medicine.group?.name || "Unknown Group",
           availableStock: medicine.currentStock,
           companyName: "", // Will be populated by FIFO query
           unitPrice: 0, // Will be populated by FIFO query

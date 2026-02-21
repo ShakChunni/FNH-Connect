@@ -79,8 +79,8 @@ export const MedicineSearch: React.FC<MedicineSearchProps> = ({
     if (inputRef.current) {
       const rect = inputRef.current.getBoundingClientRect();
       setDropdownPosition({
-        top: rect.bottom + window.scrollY + 4,
-        left: rect.left + window.scrollX,
+        top: rect.bottom + 4,
+        left: rect.left,
         width: rect.width,
       });
     }
@@ -102,7 +102,7 @@ export const MedicineSearch: React.FC<MedicineSearchProps> = ({
         (m) =>
           m.genericName.toLowerCase().includes(query) ||
           (m.brandName && m.brandName.toLowerCase().includes(query)) ||
-          m.group.name.toLowerCase().includes(query),
+          (m.group?.name || "").toLowerCase().includes(query),
       );
     }
 
@@ -320,7 +320,7 @@ export const MedicineSearch: React.FC<MedicineSearchProps> = ({
                           </div>
                           <div className="flex items-center gap-2 mt-0.5">
                             <span className="text-xs text-gray-500">
-                              {medicine.group.name}
+                              {medicine.group?.name || "Unknown Group"}
                             </span>
                             {showStock && (
                               <>

@@ -157,7 +157,7 @@ const PurchaseTable: React.FC = () => {
                 </td>
                 <td className="px-6 py-3.5">
                   <span className="text-sm text-gray-700 font-medium">
-                    {purchase.company.name}
+                    {purchase.company?.name || "Unknown Company"}
                   </span>
                 </td>
                 <td className="px-6 py-3.5">
@@ -172,7 +172,7 @@ const PurchaseTable: React.FC = () => {
                 </td>
                 <td className="px-6 py-3.5">
                   <span className="inline-flex px-2 py-1 bg-blue-50 text-blue-700 text-xs font-semibold rounded-lg">
-                    {purchase.medicine.group.name}
+                    {purchase.medicine.group?.name || "Unknown Group"}
                   </span>
                 </td>
                 <td className="px-6 py-3.5 text-right text-sm font-bold text-gray-900">
@@ -215,7 +215,7 @@ const PurchaseTable: React.FC = () => {
             <div className="flex flex-wrap gap-3 text-xs text-gray-600">
               <span>
                 <span className="font-semibold text-gray-500">Company:</span>{" "}
-                {purchase.company.name}
+                {purchase.company?.name || "Unknown Company"}
               </span>
               <span>
                 <span className="font-semibold text-gray-500">Qty:</span>{" "}

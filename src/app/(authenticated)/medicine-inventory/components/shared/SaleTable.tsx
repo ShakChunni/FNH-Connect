@@ -156,7 +156,7 @@ const SaleTable: React.FC = () => {
                 <td className="px-6 py-3.5">
                   <div>
                     <p className="text-sm font-bold text-gray-900">
-                      {sale.patient.fullName}
+                      {sale.patient?.fullName || "Unknown Patient"}
                     </p>
                     {sale.patient.phoneNumber && (
                       <p className="text-xs text-gray-500">
@@ -177,11 +177,11 @@ const SaleTable: React.FC = () => {
                 </td>
                 <td className="px-6 py-3.5">
                   <span className="inline-flex px-2 py-1 bg-blue-50 text-blue-700 text-xs font-semibold rounded-lg">
-                    {sale.medicine.group.name}
+                    {sale.medicine.group?.name || "Unknown Group"}
                   </span>
                 </td>
                 <td className="px-6 py-3.5 text-sm text-gray-700 font-medium">
-                  {sale.purchase.company.name}
+                  {sale.purchase.company?.name || "Unknown Company"}
                 </td>
                 <td className="px-6 py-3.5 text-right text-sm font-bold text-gray-900">
                   {formatNumber(sale.quantity)}
@@ -210,7 +210,7 @@ const SaleTable: React.FC = () => {
             <div className="flex items-start justify-between">
               <div>
                 <p className="text-sm font-bold text-gray-900">
-                  {sale.patient.fullName}
+                  {sale.patient?.fullName || "Unknown Patient"}
                 </p>
                 <p className="text-xs text-gray-500">
                   {sale.medicine.genericName}
@@ -223,7 +223,7 @@ const SaleTable: React.FC = () => {
             <div className="flex flex-wrap gap-3 text-xs text-gray-600">
               <span>
                 <span className="font-semibold text-gray-500">Company:</span>{" "}
-                {sale.purchase.company.name}
+                {sale.purchase.company?.name || "Unknown Company"}
               </span>
               <span>
                 <span className="font-semibold text-gray-500">Qty:</span>{" "}

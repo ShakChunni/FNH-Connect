@@ -9,7 +9,16 @@ import type { Medicine, MedicineFilters } from "../types";
 
 interface MedicinesResponse {
   success: boolean;
-  data: Medicine[];
+  data: Array<
+    Medicine & {
+      group?: {
+        id: number;
+        name: string;
+      };
+      groupId?: number;
+      groupName?: string;
+    }
+  >;
   pagination: {
     total: number;
     page: number;
@@ -60,8 +69,18 @@ export function useFetchMedicines(filters: MedicineFilters = {}) {
         throw new Error(response.data.error || "Failed to fetch medicines");
       }
 
+      const normalizedMedicines: Medicine[] = response.data.data.map(
+        (medicine) => ({
+          ...medicine,
+          group: medicine.group ?? {
+            id: medicine.groupId ?? 0,
+            name: medicine.groupName || "Unknown Group",
+          },
+        }),
+      );
+
       return {
-        data: response.data.data,
+        data: normalizedMedicines,
         total: response.data.pagination.total,
         totalPages: response.data.pagination.totalPages,
         currentPage: response.data.pagination.page,

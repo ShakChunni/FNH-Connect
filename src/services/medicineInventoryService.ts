@@ -931,6 +931,10 @@ export function transformMedicineForResponse(medicine: {
     isActive: medicine.isActive,
     isLowStock: medicine.currentStock <= medicine.lowStockThreshold,
     createdAt: medicine.createdAt.toISOString(),
+    group: {
+      id: medicine.group.id,
+      name: medicine.group.name,
+    },
     groupId: medicine.group.id,
     groupName: medicine.group.name,
   };
