@@ -158,6 +158,7 @@ export const createSaleSchema = z.object({
   patientId: z.number().int().positive("Patient ID is required"),
   medicineId: z.number().int().positive("Medicine is required"),
   quantity: z.number().int().positive("Quantity must be positive"),
+  unitPrice: z.number().positive("Unit price must be positive").optional(),
   saleDate: z.string().optional(),
 });
 
@@ -255,4 +256,4 @@ export type ModalType =
   | "addSale"
   | null;
 
-export type TabType = "medicines" | "purchases" | "sales";
+export type TabType = "activity" | "medicines" | "purchases" | "sales";

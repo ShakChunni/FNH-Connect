@@ -12,6 +12,7 @@ import { useRouter } from "next/navigation";
 import Cookies from "js-cookie";
 import LoadingState from "./LoadingState";
 import { fetchWithCSRF } from "@/lib/fetchWithCSRF";
+import { getDefaultRouteForRole } from "@/lib/roles";
 import type { SessionUser } from "@/types/auth";
 
 interface AuthContextType {
@@ -183,17 +184,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         sessionManager.current.reset(); // Reset session manager state
 
         // Role-based redirection
-        const normalizedRole = userData.role
-          ?.toLowerCase()
-          .replace(/[\s_-]/g, "");
-        if (
-          normalizedRole === "medicinepharmacist" ||
-          normalizedRole === "pharmacist"
-        ) {
-          router.push("/medicine-inventory");
-        } else {
-          router.push("/dashboard");
-        }
+        router.push(getDefaultRouteForRole(userData.role));
       } catch (error) {
         sessionManager.current.reset();
         throw error;

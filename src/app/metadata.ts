@@ -4,7 +4,7 @@ const siteConfig = {
   name: "FNH Connect",
   title: "FNH-Connect",
   description:
-    "Comprehensive hospital management system for patient care, admissions, pathology, and financial tracking",
+    "Comprehensive hospital management system for patient care, admissions, pathology, medicine inventory, and financial tracking",
   url: process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
 };
 

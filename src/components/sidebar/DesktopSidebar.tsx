@@ -4,12 +4,13 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LogOut, Pin, Settings } from "lucide-react";
-import { navigationItems, getNavigationItems } from "./navigation";
+import { getNavigationItems } from "./navigation";
 import { SidebarProps } from "./types";
 import Image from "next/image";
 import { useAuth } from "@/app/AuthContext";
 import ViewSwitcher from "./ViewSwitcher";
 import { useEndShift } from "@/hooks/useEndShift";
+import { getDefaultRouteForRole } from "@/lib/roles";
 
 const SIDEBAR_BG = "#0f172a"; // FNH Black
 const CONTAINER_BG = "#1e293b"; // FNH Navy - slightly lighter slate 800
@@ -187,6 +188,7 @@ export default function DesktopSidebar({
   };
 
   const pathname = usePathname();
+  const homeRoute = getDefaultRouteForRole(user?.role || "");
 
   return (
     <>
@@ -232,7 +234,7 @@ export default function DesktopSidebar({
               ) : (
                 <>
                   <Link
-                    href="/dashboard"
+                    href={homeRoute}
                     className="flex items-center gap-3 flex-1 min-w-0"
                   >
                     <Image

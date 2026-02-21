@@ -20,8 +20,8 @@ import {
   Package,
   Calendar,
   Hash,
-  DollarSign,
 } from "lucide-react";
+import { format } from "date-fns";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   modalVariants,
@@ -41,6 +41,8 @@ import {
 import { useUIStore } from "../../stores";
 import { CompanySearch, MedicineSearch } from "../shared";
 import type { MedicineCompany, Medicine } from "../../types";
+import CustomCalendar from "@/components/form-sections/Fields/CustomCalendar";
+import { DropdownPortal } from "@/components/ui/DropdownPortal";
 
 interface AddPurchaseModalProps {
   isOpen: boolean;
@@ -60,13 +62,15 @@ const AddPurchaseModal: React.FC<AddPurchaseModalProps> = ({
   const resetForm = useResetPurchaseForm();
   const { openModal: openUIModal } = useUIStore();
 
-  // Local state for date inputs
-  const [purchaseDateStr, setPurchaseDateStr] = useState(
-    formData.purchaseDate.toISOString().split("T")[0],
-  );
-  const [expiryDateStr, setExpiryDateStr] = useState(
-    formData.expiryDate ? formData.expiryDate.toISOString().split("T")[0] : "",
-  );
+  // Calendar date state
+  const [purchaseDate, setPurchaseDate] = useState<Date>(new Date());
+  const [expiryDate, setExpiryDate] = useState<Date | null>(null);
+  const [showPurchaseCalendar, setShowPurchaseCalendar] = useState(false);
+  const [showExpiryCalendar, setShowExpiryCalendar] = useState(false);
+
+  // Refs for calendar trigger buttons
+  const purchaseDateBtnRef = useRef<HTMLButtonElement>(null);
+  const expiryDateBtnRef = useRef<HTMLButtonElement>(null);
 
   // Notification
   const { showNotification } = useNotification();
@@ -77,8 +81,10 @@ const AddPurchaseModal: React.FC<AddPurchaseModalProps> = ({
       preserveLockBodyScroll();
       // Reset form when opening
       resetForm();
-      setPurchaseDateStr(new Date().toISOString().split("T")[0]);
-      setExpiryDateStr("");
+      setPurchaseDate(new Date());
+      setExpiryDate(null);
+      setShowPurchaseCalendar(false);
+      setShowExpiryCalendar(false);
     } else {
       preserveUnlockBodyScroll();
     }
@@ -147,8 +153,8 @@ const AddPurchaseModal: React.FC<AddPurchaseModalProps> = ({
       medicineId: formData.medicineId!,
       quantity: formData.quantity,
       unitPrice: formData.unitPrice,
-      purchaseDate: purchaseDateStr,
-      expiryDate: expiryDateStr || undefined,
+      purchaseDate: purchaseDate.toISOString(),
+      expiryDate: expiryDate ? expiryDate.toISOString() : undefined,
       batchNumber: formData.batchNumber.trim() || undefined,
     };
 
@@ -157,8 +163,8 @@ const AddPurchaseModal: React.FC<AddPurchaseModalProps> = ({
     isFormValid,
     isSubmitting,
     formData,
-    purchaseDateStr,
-    expiryDateStr,
+    purchaseDate,
+    expiryDate,
     addPurchase,
     validationErrors,
     showNotification,
@@ -220,7 +226,6 @@ const AddPurchaseModal: React.FC<AddPurchaseModalProps> = ({
   // Add new company handler
   const handleAddNewCompany = useCallback(
     (name: string) => {
-      // Open the add company modal with the pre-filled name
       openUIModal("addCompany", { name });
     },
     [openUIModal],
@@ -390,7 +395,11 @@ const AddPurchaseModal: React.FC<AddPurchaseModalProps> = ({
                     )}
 
                     {/* Batch Number */}
-                    <div>
+                    <div
+                      className={
+                        formData.medicineGroupName ? "" : "md:col-span-2"
+                      }
+                    >
                       <label className="block text-xs font-semibold text-gray-700 mb-2">
                         Batch Number
                       </label>
@@ -444,7 +453,9 @@ const AddPurchaseModal: React.FC<AddPurchaseModalProps> = ({
                         Unit Price (৳) <span className="text-red-500">*</span>
                       </label>
                       <div className="relative">
-                        <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-bold text-gray-400">
+                          ৳
+                        </span>
                         <input
                           type="number"
                           min="0"
@@ -492,12 +503,34 @@ const AddPurchaseModal: React.FC<AddPurchaseModalProps> = ({
                       <label className="block text-xs font-semibold text-gray-700 mb-2">
                         Purchase Date
                       </label>
-                      <input
-                        type="date"
-                        value={purchaseDateStr}
-                        onChange={(e) => setPurchaseDateStr(e.target.value)}
-                        className={getInputClass(!!purchaseDateStr)}
-                      />
+                      <button
+                        ref={purchaseDateBtnRef}
+                        type="button"
+                        onClick={() => {
+                          setShowPurchaseCalendar(!showPurchaseCalendar);
+                          setShowExpiryCalendar(false);
+                        }}
+                        className={`${getInputClass(!!purchaseDate)} flex items-center gap-3 text-left`}
+                      >
+                        <Calendar className="w-4 h-4 text-gray-400 shrink-0" />
+                        <span className="text-sm font-medium text-gray-700">
+                          {format(purchaseDate, "dd MMM yyyy")}
+                        </span>
+                      </button>
+                      <DropdownPortal
+                        isOpen={showPurchaseCalendar}
+                        onClose={() => setShowPurchaseCalendar(false)}
+                        buttonRef={purchaseDateBtnRef}
+                      >
+                        <CustomCalendar
+                          selectedDisplayDate={purchaseDate}
+                          handleDateSelect={(date) => {
+                            setPurchaseDate(date);
+                            setShowPurchaseCalendar(false);
+                          }}
+                          colorScheme="emerald"
+                        />
+                      </DropdownPortal>
                     </div>
 
                     {/* Expiry Date */}
@@ -505,12 +538,39 @@ const AddPurchaseModal: React.FC<AddPurchaseModalProps> = ({
                       <label className="block text-xs font-semibold text-gray-700 mb-2">
                         Expiry Date (Optional)
                       </label>
-                      <input
-                        type="date"
-                        value={expiryDateStr}
-                        onChange={(e) => setExpiryDateStr(e.target.value)}
-                        className={getInputClass(!!expiryDateStr)}
-                      />
+                      <button
+                        ref={expiryDateBtnRef}
+                        type="button"
+                        onClick={() => {
+                          setShowExpiryCalendar(!showExpiryCalendar);
+                          setShowPurchaseCalendar(false);
+                        }}
+                        className={`${getInputClass(!!expiryDate)} flex items-center gap-3 text-left`}
+                      >
+                        <Calendar className="w-4 h-4 text-gray-400 shrink-0" />
+                        <span
+                          className={`text-sm font-medium ${expiryDate ? "text-gray-700" : "text-gray-400"}`}
+                        >
+                          {expiryDate
+                            ? format(expiryDate, "dd MMM yyyy")
+                            : "Select expiry date..."}
+                        </span>
+                      </button>
+                      <DropdownPortal
+                        isOpen={showExpiryCalendar}
+                        onClose={() => setShowExpiryCalendar(false)}
+                        buttonRef={expiryDateBtnRef}
+                      >
+                        <CustomCalendar
+                          selectedDisplayDate={expiryDate}
+                          handleDateSelect={(date) => {
+                            setExpiryDate(date);
+                            setShowExpiryCalendar(false);
+                          }}
+                          colorScheme="amber"
+                          minDate={purchaseDate}
+                        />
+                      </DropdownPortal>
                     </div>
                   </div>
                 </div>

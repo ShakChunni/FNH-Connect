@@ -10,6 +10,7 @@ import { useAuth } from "@/app/AuthContext";
 import ViewSwitcher from "./ViewSwitcher";
 import { useEndShift } from "@/hooks/useEndShift";
 import ConfirmModal from "@/components/ui/ConfirmModal";
+import { getDefaultRouteForRole } from "@/lib/roles";
 
 const SIDEBAR_BG = "var(--fnh-black)"; // FNH Black
 const CONTAINER_BG = "var(--sidebar)"; // Dark navy
@@ -23,6 +24,7 @@ export default function MobileSidebar() {
   const { user, logout } = useAuth();
   const { endShift, isEnding: isEndingShift } = useEndShift();
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const homeRoute = getDefaultRouteForRole(user?.role || "");
 
   // ... (useMemo for initials, displayName)
   const initials = useMemo(() => {
@@ -53,7 +55,7 @@ export default function MobileSidebar() {
         handleClose();
       }
     },
-    [handleClose]
+    [handleClose],
   );
 
   // ... (useEffect for body scroll)
@@ -134,7 +136,7 @@ export default function MobileSidebar() {
           <Menu className="h-5 w-5" />
         </button>
 
-        <Link href="/dashboard" className="flex flex-1 flex-col">
+        <Link href={homeRoute} className="flex flex-1 flex-col">
           <span className="text-sm font-semibold text-jd-rich-black">
             FNH Connect
           </span>

@@ -3,6 +3,7 @@ import { useAuth } from "./AuthContext";
 import LoadingState from "./LoadingState";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { getDefaultRouteForRole } from "@/lib/roles";
 
 export default function MainContent({
   children,
@@ -38,13 +39,23 @@ export default function MainContent({
     pathname.startsWith("/reset-password");
 
   const isProtectedRoute = !isPublicAuthPage && pathname !== "/";
+  const authenticatedHomePath = user
+    ? getDefaultRouteForRole(user.role)
+    : "/dashboard";
 
   // Redirect authenticated users away from auth pages
   useEffect(() => {
     if (hasHydrated && !loading && user && isPublicAuthPage) {
-      router.replace("/dashboard");
+      router.replace(authenticatedHomePath);
     }
-  }, [hasHydrated, loading, user, isPublicAuthPage, router]);
+  }, [
+    hasHydrated,
+    loading,
+    user,
+    isPublicAuthPage,
+    router,
+    authenticatedHomePath,
+  ]);
 
   // Redirect unauthenticated users away from protected routes
   useEffect(() => {

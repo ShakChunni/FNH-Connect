@@ -1,4 +1,4 @@
-import * as XLSX from "xlsx";
+import ExcelJS from "exceljs";
 import { AdmissionPatientData } from "../types";
 import { format } from "date-fns";
 import { toZonedTime } from "date-fns-tz";
@@ -87,7 +87,7 @@ const generateFileName = (filterMeta?: ExportFilterMeta): string => {
 
 export const exportAdmissionsToExcel = (
   data: AdmissionPatientData[],
-  filterMeta?: ExportFilterMeta
+  filterMeta?: ExportFilterMeta,
 ) => {
   const worksheetData = data.map((item, index) => ({
     SL: index + 1,
@@ -103,27 +103,56 @@ export const exportAdmissionsToExcel = (
     Taka: formatFee(item.grandTotal),
   }));
 
-  const worksheet = XLSX.utils.json_to_sheet(worksheetData);
+  const workbook = new ExcelJS.Workbook();
+  const worksheet = workbook.addWorksheet("Admissions");
 
-  // Set column widths for better readability
-  worksheet["!cols"] = [
-    { wch: 5 }, // SL
-    { wch: 12 }, // Reg:No
-    { wch: 12 }, // Admit Date
-    { wch: 25 }, // Patient Name
-    { wch: 6 }, // Age
-    { wch: 15 }, // Mobile
-    { wch: 20 }, // Name of Operation
-    { wch: 12 }, // Ward/Cabin
-    { wch: 12 }, // Release Date
-    { wch: 12 }, // Anaesthesia
-    { wch: 12 }, // Taka
+  const headers = [
+    "SL",
+    "Reg:No",
+    "Admit Date",
+    "Patient Name",
+    "Age",
+    "Mobile",
+    "Name of Operation",
+    "Ward/Cabin",
+    "Release Date",
+    "Anaesthesia",
+    "Taka",
   ];
 
-  const workbook = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(workbook, worksheet, "Admissions");
+  worksheet.addRow(headers);
+  worksheetData.forEach((row) => {
+    worksheet.addRow(headers.map((header) => row[header as keyof typeof row]));
+  });
 
-  // Generate file using writeFile for more reliable download
+  worksheet.columns = [
+    { width: 5 },
+    { width: 12 },
+    { width: 12 },
+    { width: 25 },
+    { width: 6 },
+    { width: 15 },
+    { width: 20 },
+    { width: 12 },
+    { width: 12 },
+    { width: 12 },
+    { width: 12 },
+  ];
+
+  const headerRow = worksheet.getRow(1);
+  headerRow.font = { bold: true };
+
   const fileName = generateFileName(filterMeta);
-  XLSX.writeFile(workbook, fileName);
+
+  workbook.xlsx.writeBuffer().then((buffer) => {
+    const blob = new Blob([buffer], {
+      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = fileName;
+    anchor.click();
+    URL.revokeObjectURL(url);
+  });
 };

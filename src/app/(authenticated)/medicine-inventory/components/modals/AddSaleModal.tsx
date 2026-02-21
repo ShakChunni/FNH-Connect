@@ -20,10 +20,12 @@ import {
   Pill,
   Package,
   Calendar,
-  DollarSign,
   Building2,
   AlertTriangle,
 } from "lucide-react";
+import { format } from "date-fns";
+import CustomCalendar from "@/components/form-sections/Fields/CustomCalendar";
+import { DropdownPortal } from "@/components/ui/DropdownPortal";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   modalVariants,
@@ -110,10 +112,10 @@ const AddSaleModal: React.FC<AddSaleModalProps> = ({ isOpen, onClose }) => {
   const setMedicineWithFIFO = useSetSaleFormDataWithFIFO();
   const resetForm = useResetSaleForm();
 
-  // Local state for date input
-  const [saleDateStr, setSaleDateStr] = useState(
-    formData.saleDate.toISOString().split("T")[0],
-  );
+  // Calendar state
+  const [saleDate, setSaleDate] = useState<Date>(new Date());
+  const [showSaleCalendar, setShowSaleCalendar] = useState(false);
+  const saleDateBtnRef = useRef<HTMLButtonElement>(null);
 
   // Notification
   const { showNotification } = useNotification();
@@ -140,7 +142,8 @@ const AddSaleModal: React.FC<AddSaleModalProps> = ({ isOpen, onClose }) => {
       preserveLockBodyScroll();
       // Reset form when opening
       resetForm();
-      setSaleDateStr(new Date().toISOString().split("T")[0]);
+      setSaleDate(new Date());
+      setShowSaleCalendar(false);
     } else {
       preserveUnlockBodyScroll();
     }
@@ -206,7 +209,8 @@ const AddSaleModal: React.FC<AddSaleModalProps> = ({ isOpen, onClose }) => {
       patientId: formData.patientId!,
       medicineId: formData.medicineId!,
       quantity: formData.quantity,
-      saleDate: saleDateStr,
+      unitPrice: formData.unitPrice > 0 ? formData.unitPrice : undefined,
+      saleDate: saleDate.toISOString(),
     };
 
     addSale(payload);
@@ -214,7 +218,7 @@ const AddSaleModal: React.FC<AddSaleModalProps> = ({ isOpen, onClose }) => {
     isFormValid,
     isSubmitting,
     formData,
-    saleDateStr,
+    saleDate,
     addSale,
     validationErrors,
     showNotification,
@@ -517,16 +521,24 @@ const AddSaleModal: React.FC<AddSaleModalProps> = ({ isOpen, onClose }) => {
                         )}
                       </div>
 
-                      {/* Unit Price (Auto-filled) */}
+                      {/* Unit Price (Editable — defaults to FIFO price) */}
                       <div>
                         <label className="block text-xs font-semibold text-gray-700 mb-2">
-                          Unit Price (৳)
+                          Price (৳) <span className="text-red-500">*</span>
                         </label>
-                        <div className="h-12 md:h-14 px-4 py-2 bg-gray-100 border-2 border-gray-200 rounded-lg flex items-center justify-center">
-                          <span className="text-base font-bold text-gray-700">
-                            {formatCurrency(formData.unitPrice)}
-                          </span>
-                        </div>
+                        <input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={formData.unitPrice || ""}
+                          onChange={(e) =>
+                            setFormData({
+                              unitPrice: parseFloat(e.target.value) || 0,
+                            })
+                          }
+                          placeholder="Enter price"
+                          className={getInputClass(formData.unitPrice > 0)}
+                        />
                       </div>
 
                       {/* Total Amount (Auto-calculated) */}
@@ -555,16 +567,35 @@ const AddSaleModal: React.FC<AddSaleModalProps> = ({ isOpen, onClose }) => {
                     </h3>
                   </div>
 
-                  <div className="max-w-xs">
+                  <div>
                     <label className="block text-xs font-semibold text-gray-700 mb-2">
                       Date
                     </label>
-                    <input
-                      type="date"
-                      value={saleDateStr}
-                      onChange={(e) => setSaleDateStr(e.target.value)}
-                      className={getInputClass(!!saleDateStr)}
-                    />
+                    <button
+                      ref={saleDateBtnRef}
+                      type="button"
+                      onClick={() => setShowSaleCalendar(!showSaleCalendar)}
+                      className={`${getInputClass(!!saleDate)} flex items-center gap-3 text-left`}
+                    >
+                      <Calendar className="w-4 h-4 text-gray-400 shrink-0" />
+                      <span className="text-sm font-medium text-gray-700">
+                        {format(saleDate, "dd MMM yyyy")}
+                      </span>
+                    </button>
+                    <DropdownPortal
+                      isOpen={showSaleCalendar}
+                      onClose={() => setShowSaleCalendar(false)}
+                      buttonRef={saleDateBtnRef}
+                    >
+                      <CustomCalendar
+                        selectedDisplayDate={saleDate}
+                        handleDateSelect={(date) => {
+                          setSaleDate(date);
+                          setShowSaleCalendar(false);
+                        }}
+                        colorScheme="indigo"
+                      />
+                    </DropdownPortal>
                   </div>
                 </div>
               </div>
