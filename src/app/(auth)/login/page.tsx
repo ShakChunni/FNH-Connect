@@ -8,7 +8,7 @@ import { fetchWithCSRF } from "@/lib/fetchWithCSRF";
 import type { LoginFormData, LoginResponse } from "./types";
 import { FaWhatsapp } from "react-icons/fa";
 
-const ADMIN_WHATSAPP = "+8801736436786";
+const ADMIN_WHATSAPP = "+61421705876";
 
 export default function LoginPage() {
   const { login } = useAuth();

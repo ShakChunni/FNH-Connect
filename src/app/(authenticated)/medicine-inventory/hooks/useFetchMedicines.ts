@@ -54,6 +54,14 @@ export function useFetchMedicines(filters: MedicineFilters = {}) {
         params.append("lowStockOnly", "true");
       }
 
+      if (filters.startDate) {
+        params.append("startDate", filters.startDate);
+      }
+
+      if (filters.endDate) {
+        params.append("endDate", filters.endDate);
+      }
+
       if (filters.page) {
         params.append("page", filters.page.toString());
       }

@@ -80,6 +80,8 @@ const defaultMedicineFilters: MedicineFilters = {
   search: undefined,
   groupId: undefined,
   lowStockOnly: false,
+  startDate: undefined,
+  endDate: undefined,
   page: 1,
   limit: 20,
 };

@@ -21,6 +21,8 @@ export interface MedicineFilters {
   groupId?: number;
   lowStockOnly?: boolean;
   activeOnly?: boolean;
+  startDate?: string;
+  endDate?: string;
   page?: number;
   limit?: number;
 }
@@ -48,6 +50,8 @@ export interface SaleFilters {
 export interface GroupFilters {
   activeOnly?: boolean;
   search?: string;
+  startDate?: string;
+  endDate?: string;
   page?: number;
   limit?: number;
 }
@@ -55,6 +59,8 @@ export interface GroupFilters {
 export interface CompanyFilters {
   activeOnly?: boolean;
   search?: string;
+  startDate?: string;
+  endDate?: string;
   page?: number;
   limit?: number;
 }
@@ -75,43 +81,85 @@ export async function getMedicineInventoryStats(
   startDate?: Date,
   endDate?: Date,
 ) {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const tomorrow = new Date(today);
-  tomorrow.setDate(tomorrow.getDate() + 1);
+  const hasDateFilter = Boolean(startDate || endDate);
 
-  const dateFrom = startDate || today;
-  const dateTo = endDate || tomorrow;
+  const salesDateFilter =
+    startDate || endDate
+      ? {
+          saleDate: {
+            ...(startDate ? { gte: startDate } : {}),
+            ...(endDate ? { lte: endDate } : {}),
+          },
+        }
+      : {};
 
-  const [totalMedicines, todaysSales, todaysPurchases, lowStockItems] =
+  const purchasesDateFilter =
+    startDate || endDate
+      ? {
+          purchaseDate: {
+            ...(startDate ? { gte: startDate } : {}),
+            ...(endDate ? { lte: endDate } : {}),
+          },
+        }
+      : {};
+
+  let scopedMedicineIds: number[] | undefined;
+
+  if (hasDateFilter) {
+    const [purchaseMedicineIds, saleMedicineIds] = await Promise.all([
+      prisma.medicinePurchase.findMany({
+        where: purchasesDateFilter,
+        select: { medicineId: true },
+        distinct: ["medicineId"],
+      }),
+      prisma.medicineSale.findMany({
+        where: salesDateFilter,
+        select: { medicineId: true },
+        distinct: ["medicineId"],
+      }),
+    ]);
+
+    scopedMedicineIds = Array.from(
+      new Set([
+        ...purchaseMedicineIds.map((item) => item.medicineId),
+        ...saleMedicineIds.map((item) => item.medicineId),
+      ]),
+    );
+  }
+
+  const medicineScopeWhere: Prisma.MedicineWhereInput = {
+    isActive: true,
+    ...(hasDateFilter
+      ? {
+          id: {
+            in:
+              scopedMedicineIds && scopedMedicineIds.length > 0
+                ? scopedMedicineIds
+                : [-1],
+          },
+        }
+      : {}),
+  };
+
+  const [totalMedicines, totalSales, totalPurchases, lowStockItems] =
     await Promise.all([
-      // Total active medicines count
+      // Total medicines in scope (all active by default, date-scoped when range is selected)
       prisma.medicine.count({
-        where: { isActive: true },
+        where: medicineScopeWhere,
       }),
 
-      // Today's sales total
+      // Total sales (optionally date-filtered)
       prisma.medicineSale.aggregate({
-        where: {
-          saleDate: {
-            gte: dateFrom,
-            lt: dateTo,
-          },
-        },
+        where: salesDateFilter,
         _sum: {
           totalAmount: true,
         },
         _count: true,
       }),
 
-      // Today's purchases total
+      // Total purchases (optionally date-filtered)
       prisma.medicinePurchase.aggregate({
-        where: {
-          purchaseDate: {
-            gte: dateFrom,
-            lt: dateTo,
-          },
-        },
+        where: purchasesDateFilter,
         _sum: {
           totalAmount: true,
         },
@@ -120,9 +168,7 @@ export async function getMedicineInventoryStats(
 
       // Low stock items list (for alerts)
       prisma.medicine.findMany({
-        where: {
-          isActive: true,
-        },
+        where: medicineScopeWhere,
         select: {
           id: true,
           genericName: true,
@@ -146,28 +192,40 @@ export async function getMedicineInventoryStats(
     (item) => item.currentStock <= item.lowStockThreshold,
   );
 
-  // Calculate total stock value (sum of current stock × unit price from latest purchases)
-  const stockValue = await prisma.$queryRaw<{ total: number }[]>`
-    SELECT COALESCE(SUM(m."currentStock" * COALESCE(
-      (SELECT mp."unitPrice"::numeric 
-       FROM "MedicinePurchase" mp 
-       WHERE mp."medicineId" = m.id 
-       ORDER BY mp."purchaseDate" DESC 
-       LIMIT 1), 0
-    )), 0) as total
-    FROM "Medicine" m
-    WHERE m."isActive" = true
-  `;
+  // Calculate stock value for the current scope
+  let stockValueTotal = 0;
+
+  if (!(hasDateFilter && scopedMedicineIds && scopedMedicineIds.length === 0)) {
+    const stockScopeSql =
+      hasDateFilter && scopedMedicineIds
+        ? Prisma.sql`AND m.id IN (${Prisma.join(scopedMedicineIds)})`
+        : Prisma.empty;
+
+    const stockValue = await prisma.$queryRaw<{ total: number }[]>`
+      SELECT COALESCE(SUM(m."currentStock" * COALESCE(
+        (SELECT mp."unitPrice"::numeric
+         FROM "MedicinePurchase" mp
+         WHERE mp."medicineId" = m.id
+         ORDER BY mp."purchaseDate" DESC
+         LIMIT 1), 0
+      )), 0) as total
+      FROM "Medicine" m
+      WHERE m."isActive" = true
+      ${stockScopeSql}
+    `;
+
+    stockValueTotal = Number(stockValue[0]?.total || 0);
+  }
 
   return {
     stats: {
       totalMedicines,
       lowStockCount: actualLowStockItems.length,
-      todaysSalesAmount: Number(todaysSales._sum.totalAmount || 0),
-      todaysSalesCount: todaysSales._count,
-      todaysPurchasesAmount: Number(todaysPurchases._sum.totalAmount || 0),
-      todaysPurchasesCount: todaysPurchases._count,
-      totalStockValue: Number(stockValue[0]?.total || 0),
+      totalSalesAmount: Number(totalSales._sum.totalAmount || 0),
+      totalSalesCount: totalSales._count,
+      totalPurchasesAmount: Number(totalPurchases._sum.totalAmount || 0),
+      totalPurchasesCount: totalPurchases._count,
+      totalStockValue: stockValueTotal,
     },
     lowStockItems: actualLowStockItems.slice(0, 10), // Top 10
   };
@@ -391,6 +449,14 @@ export async function getMedicines(filters: MedicineFilters) {
         }
       : {}),
     ...(filters.groupId ? { groupId: filters.groupId } : {}),
+    ...(filters.startDate || filters.endDate
+      ? {
+          createdAt: {
+            ...(filters.startDate ? { gte: new Date(filters.startDate) } : {}),
+            ...(filters.endDate ? { lte: new Date(filters.endDate) } : {}),
+          },
+        }
+      : {}),
   };
 
   const [medicines, total] = await Promise.all([
@@ -1165,6 +1231,14 @@ export async function getPaginatedMedicineGroups(filters: GroupFilters) {
           },
         }
       : {}),
+    ...(filters.startDate || filters.endDate
+      ? {
+          createdAt: {
+            ...(filters.startDate ? { gte: new Date(filters.startDate) } : {}),
+            ...(filters.endDate ? { lte: new Date(filters.endDate) } : {}),
+          },
+        }
+      : {}),
   };
 
   const [groups, total] = await Promise.all([
@@ -1220,6 +1294,14 @@ export async function getPaginatedMedicineCompanies(filters: CompanyFilters) {
               },
             },
           ],
+        }
+      : {}),
+    ...(filters.startDate || filters.endDate
+      ? {
+          createdAt: {
+            ...(filters.startDate ? { gte: new Date(filters.startDate) } : {}),
+            ...(filters.endDate ? { lte: new Date(filters.endDate) } : {}),
+          },
         }
       : {}),
   };

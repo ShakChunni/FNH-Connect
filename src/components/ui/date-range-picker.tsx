@@ -25,12 +25,14 @@ interface DateRangePickerProps {
   minDate?: Date;
   maxDate?: Date;
   className?: string;
+  popoverClassName?: string;
+  hideSelectedSummary?: boolean;
   disableFutureDates?: boolean;
   autoOpen?: boolean;
 }
 
 const parseDateString = (
-  value: Date | string | undefined
+  value: Date | string | undefined,
 ): Date | undefined => {
   if (!value) return undefined;
 
@@ -57,6 +59,8 @@ export function DateRangePicker({
   minDate,
   maxDate,
   className,
+  popoverClassName,
+  hideSelectedSummary = false,
   disableFutureDates = false,
   autoOpen = false,
 }: DateRangePickerProps) {
@@ -132,7 +136,7 @@ export function DateRangePicker({
     if (!range.to) return format(range.from, "MMM dd, yyyy");
     return `${format(range.from, "MMM dd")} - ${format(
       range.to,
-      "MMM dd, yyyy"
+      "MMM dd, yyyy",
     )}`;
   };
 
@@ -146,20 +150,29 @@ export function DateRangePicker({
             disabled={disabled}
             onClick={() => !disabled && setIsOpen(true)}
             className={cn(
-              "w-full justify-between text-left font-normal h-auto px-4 py-2.5",
-              !range.from && "text-muted-foreground",
-              "bg-white border border-gray-100 hover:border-fnh-blue focus:border-fnh-blue focus:ring-4 focus:ring-fnh-blue/5 cursor-pointer text-xs font-bold transition-all duration-200 rounded-xl shadow-sm",
+              "w-full justify-between text-left h-auto px-4 py-2.5 bg-white border border-gray-100 hover:border-fnh-blue focus:border-fnh-blue focus:ring-4 focus:ring-fnh-blue/5 cursor-pointer text-xs font-bold transition-all duration-200 rounded-xl shadow-sm text-gray-700 hover:text-gray-700",
               disabled && "opacity-50 cursor-not-allowed",
-              className
+              className,
             )}
           >
             <div className="flex items-center gap-2">
-              <CalendarIcon className="h-3 w-3 shrink-0" />
-              <span className="text-xs">{formatDateRange()}</span>
+              <CalendarIcon className="h-3 w-3 shrink-0 text-gray-500" />
+              <span
+                className={cn(
+                  "text-xs",
+                  !range.from ? "text-gray-500" : "text-gray-700",
+                )}
+              >
+                {formatDateRange()}
+              </span>
             </div>
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-auto p-0" align="start" sideOffset={8}>
+        <PopoverContent
+          className={cn("w-auto p-0", popoverClassName)}
+          align="start"
+          sideOffset={8}
+        >
           <div className="p-4 space-y-4">
             <CalendarWithMonthYearPicker
               value={tempRange.from}
@@ -222,7 +235,7 @@ export function DateRangePicker({
         </PopoverContent>
       </Popover>
 
-      {range.from && range.to && (
+      {!hideSelectedSummary && range.from && range.to && (
         <div className="text-xs text-jd-sandstone pt-1 font-medium">
           Selected range: {format(range.from, "MMM dd, yyyy")} to{" "}
           {format(range.to, "MMM dd, yyyy")}

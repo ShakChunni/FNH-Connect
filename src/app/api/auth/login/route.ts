@@ -25,7 +25,7 @@ const SECRET_KEY = process.env.SECRET_KEY as string;
 // Session Configuration
 const SESSION_EXPIRATION_HOURS = parseInt(
   process.env.SESSION_EXPIRATION_HOURS || "24",
-  10
+  10,
 );
 const EXPIRATION_TIME = 60 * 60 * SESSION_EXPIRATION_HOURS; // in seconds
 
@@ -56,7 +56,7 @@ function generateDeviceFingerprint(
   device: any,
   os: any,
   client: any,
-  userId?: number
+  userId?: number,
 ): string {
   const components = [
     ip,
@@ -89,7 +89,7 @@ interface DeviceInfoType {
 function getDeviceInfo(
   userAgent: string,
   clientIp: string,
-  userId?: number
+  userId?: number,
 ): DeviceInfoType {
   const detector = new DeviceDetector({
     clientIndexes: true,
@@ -125,7 +125,7 @@ function getDeviceInfo(
     result.device,
     result.os,
     result.client,
-    userId
+    userId,
   );
 
   const readableFingerprint = deviceFingerprint
@@ -186,7 +186,7 @@ export async function POST(request: NextRequest) {
     if (!csrfValid) {
       return NextResponse.json<LoginResponse>(
         { success: false, error: "Invalid CSRF token" },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -225,7 +225,7 @@ export async function POST(request: NextRequest) {
           error:
             "Access denied. Your IP has been blocked due to suspicious activity.",
         },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -240,7 +240,7 @@ export async function POST(request: NextRequest) {
           error: "Invalid request data",
           details: validation.error.flatten().fieldErrors,
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -251,7 +251,7 @@ export async function POST(request: NextRequest) {
     const failedIPAttempts = await getFailedLoginAttempts(clientIp, 15);
     const failedUserAttempts = await getFailedLoginAttemptsForUser(
       username,
-      15
+      15,
     );
 
     // Block IP after 10 failed attempts in 15 minutes
@@ -280,7 +280,7 @@ export async function POST(request: NextRequest) {
           error:
             "Too many failed login attempts. Your IP has been temporarily blocked.",
         },
-        { status: 429 }
+        { status: 429 },
       );
     }
 
@@ -341,7 +341,9 @@ export async function POST(request: NextRequest) {
           userAgent,
           metadata: { reason: "User account deactivated" },
         });
-        throw new Error("Account has been deactivated");
+        throw new Error(
+          "Your account has been deactivated. Please contact an administrator.",
+        );
       }
 
       if (!user.staff.isActive) {
@@ -380,7 +382,7 @@ export async function POST(request: NextRequest) {
           role: user.role, // Use User.role (system role: admin, system-admin, staff) NOT staff.role (hospital role: Doctor, Nurse)
         },
         SECRET_KEY,
-        { expiresIn: EXPIRATION_TIME }
+        { expiresIn: EXPIRATION_TIME },
       );
 
       // Calculate expiration time
@@ -500,7 +502,7 @@ export async function POST(request: NextRequest) {
         message: "Login successful",
         user: result.user,
       },
-      { status: 200 }
+      { status: 200 },
     );
 
     // Set httpOnly session cookie
@@ -560,7 +562,7 @@ export async function POST(request: NextRequest) {
             ? error.message
             : "An error occurred during login",
       },
-      { status: isAuthError ? 401 : 500 }
+      { status: isAuthError ? 401 : 500 },
     );
   }
 }

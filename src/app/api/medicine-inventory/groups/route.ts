@@ -27,6 +27,8 @@ const groupFiltersSchema = z.object({
     .optional()
     .transform((v) => v !== "false"),
   search: z.string().optional(),
+  startDate: z.string().optional(),
+  endDate: z.string().optional(),
   page: z.coerce.number().int().min(1).optional(),
   limit: z.coerce.number().int().min(1).max(20).optional(),
 });
@@ -66,6 +68,8 @@ export async function GET(request: NextRequest) {
       const { groups, total, page, limit } = await getPaginatedMedicineGroups({
         activeOnly: filters.activeOnly,
         search: filters.search,
+        startDate: filters.startDate,
+        endDate: filters.endDate,
         page: filters.page,
         limit: filters.limit,
       });
