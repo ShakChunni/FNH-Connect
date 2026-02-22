@@ -360,7 +360,7 @@ const RECEPTIONIST_USERS: ReceptionistUser[] = [
 
 async function fullCleanup() {
   console.log(
-    "🧹 FULL DATABASE CLEANUP: Using TRUNCATE to reset ALL data and sequences...\n"
+    "🧹 FULL DATABASE CLEANUP: Using TRUNCATE to reset ALL data and sequences...\n",
   );
 
   // Use raw SQL TRUNCATE with CASCADE to delete all data and reset sequences
@@ -477,12 +477,12 @@ async function main() {
   });
   staffMap.set(SYSTEM_ADMIN.staff.fullName, systemAdminStaff.id);
   console.log(
-    `  ✅ Created Staff: ${SYSTEM_ADMIN.staff.fullName} (ID: ${systemAdminStaff.id})`
+    `  ✅ Created Staff: ${SYSTEM_ADMIN.staff.fullName} (ID: ${systemAdminStaff.id})`,
   );
 
   const hashedSysAdminPassword = await bcrypt.hash(
     SYSTEM_ADMIN.user.password,
-    12
+    12,
   );
   const systemAdminUser = await prisma.user.create({
     data: {
@@ -494,7 +494,7 @@ async function main() {
     },
   });
   console.log(
-    `  ✅ Created User: ${SYSTEM_ADMIN.user.username} (ID: ${systemAdminUser.id})`
+    `  ✅ Created User: ${SYSTEM_ADMIN.user.username} (ID: ${systemAdminUser.id})`,
   );
   console.log("\n✨ System Admin created as FIRST user!\n");
 
@@ -599,7 +599,7 @@ async function main() {
     });
 
     console.log(
-      `  ✅ Created: ${adminUser.username} → ${adminUser.doctorFullName} (ID: ${created.id})`
+      `  ✅ Created: ${adminUser.username} → ${adminUser.doctorFullName} (ID: ${created.id})`,
     );
   }
 
@@ -628,7 +628,7 @@ async function main() {
     });
     staffMap.set(recepUser.fullName, receptionistStaff.id);
     console.log(
-      `  ✅ Created Staff: ${recepUser.fullName} (ID: ${receptionistStaff.id})`
+      `  ✅ Created Staff: ${recepUser.fullName} (ID: ${receptionistStaff.id})`,
     );
 
     const hashedPassword = await bcrypt.hash(recepUser.password, 12);
@@ -644,7 +644,7 @@ async function main() {
     });
 
     console.log(
-      `  ✅ Created User: ${recepUser.username} (${recepUser.role}) (ID: ${created.id})`
+      `  ✅ Created User: ${recepUser.username} (${recepUser.role}) (ID: ${created.id})`,
     );
   }
 

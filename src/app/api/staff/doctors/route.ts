@@ -3,7 +3,7 @@ import { getAuthenticatedUserForAPI } from "@/lib/auth-validation";
 import { prisma } from "@/lib/prisma";
 
 // ═══════════════════════════════════════════════════════════════
-// GET /api/staff/doctors - Get all doctors/staff
+// GET /api/staff/doctors - Get all active doctors
 // ═══════════════════════════════════════════════════════════════
 
 // Helper function to determine doctor rank from their name prefix
@@ -41,20 +41,15 @@ export async function GET(request: NextRequest) {
     if (!user) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
-    // Fetch all active staff members who are doctors or the "Self" entry
+    // Fetch only active staff members with Doctor role
     const doctors = await prisma.staff.findMany({
       where: {
         isActive: true,
-        OR: [
-          { role: { equals: "Self", mode: "insensitive" } }, // Include "Self" for self-referred
-          { role: { contains: "Doctor", mode: "insensitive" } },
-          { role: { contains: "Dr", mode: "insensitive" } },
-          { specialization: { not: null } },
-        ],
+        role: { equals: "Doctor", mode: "insensitive" },
       },
       select: {
         id: true,
@@ -64,12 +59,8 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    // Sort: Self first, then by rank (Prof > Associate > Asst > Dr), then alphabetically
+    // Sort by rank (Prof > Associate > Asst > Dr), then alphabetically
     const sortedDoctors = doctors.sort((a, b) => {
-      // Self always comes first
-      if (a.role.toLowerCase() === "self") return -1;
-      if (b.role.toLowerCase() === "self") return 1;
-
       // Sort by rank
       const rankA = getDoctorRankOrder(a.fullName);
       const rankB = getDoctorRankOrder(b.fullName);
@@ -93,7 +84,7 @@ export async function GET(request: NextRequest) {
         error: "Failed to fetch doctors",
         message: error instanceof Error ? error.message : "Unknown error",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
