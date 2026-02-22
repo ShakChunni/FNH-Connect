@@ -60,6 +60,7 @@ interface FIFOData {
   companyName: string;
   availableQty: number;
   batchNumber?: string;
+  firstPurchaseDate?: string | null;
 }
 
 // Fetch FIFO data for a medicine
@@ -76,6 +77,7 @@ function useFetchMedicineFIFO(medicineId: number | null) {
           remainingQty: number;
           unitPrice: number;
           batchNumber?: string;
+          firstPurchaseDate?: string | null;
           company: {
             id: number;
             name: string;
@@ -94,6 +96,7 @@ function useFetchMedicineFIFO(medicineId: number | null) {
         companyName: purchase.company.name,
         availableQty: purchase.remainingQty,
         batchNumber: purchase.batchNumber,
+        firstPurchaseDate: purchase.firstPurchaseDate || null,
       };
     },
     enabled: !!medicineId,
@@ -124,6 +127,19 @@ const AddSaleModal: React.FC<AddSaleModalProps> = ({ isOpen, onClose }) => {
     formData.medicineId,
   );
 
+  const today = useMemo(() => {
+    const date = new Date();
+    date.setHours(23, 59, 59, 999);
+    return date;
+  }, []);
+
+  const minSaleDate = useMemo(() => {
+    if (!fifoData?.firstPurchaseDate) return undefined;
+    const date = new Date(fifoData.firstPurchaseDate);
+    date.setHours(0, 0, 0, 0);
+    return date;
+  }, [fifoData?.firstPurchaseDate]);
+
   // Update form when FIFO data is loaded
   useEffect(() => {
     if (fifoData && formData.medicineId) {
@@ -131,8 +147,23 @@ const AddSaleModal: React.FC<AddSaleModalProps> = ({ isOpen, onClose }) => {
         companyName: fifoData.companyName,
         availableStock: fifoData.availableQty,
       });
+
+      if (minSaleDate && saleDate < minSaleDate) {
+        setSaleDate(minSaleDate);
+      }
+
+      if (saleDate > today) {
+        setSaleDate(today);
+      }
     }
-  }, [fifoData, formData.medicineId, setFormData]);
+  }, [
+    fifoData,
+    formData.medicineId,
+    minSaleDate,
+    saleDate,
+    setFormData,
+    today,
+  ]);
 
   // Handle body scroll locking
   useEffect(() => {
@@ -582,6 +613,8 @@ const AddSaleModal: React.FC<AddSaleModalProps> = ({ isOpen, onClose }) => {
                       isOpen={showSaleCalendar}
                       onClose={() => setShowSaleCalendar(false)}
                       buttonRef={saleDateBtnRef}
+                      matchButtonWidth={false}
+                      withContainerStyles={false}
                     >
                       <CustomCalendar
                         selectedDisplayDate={saleDate}
@@ -590,6 +623,8 @@ const AddSaleModal: React.FC<AddSaleModalProps> = ({ isOpen, onClose }) => {
                           setShowSaleCalendar(false);
                         }}
                         colorScheme="indigo"
+                        minDate={minSaleDate}
+                        maxDate={today}
                       />
                     </DropdownPortal>
                   </div>

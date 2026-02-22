@@ -155,6 +155,9 @@ export async function POST(request: NextRequest) {
         "Insufficient stock",
         "No stock available",
         "Insufficient batch",
+        "cannot be in the future",
+        "cannot be before first stock purchase date",
+        "No stock purchase history found",
       ];
       if (knownErrors.some((msg) => error.message.includes(msg))) {
         return NextResponse.json(

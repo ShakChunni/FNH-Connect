@@ -135,7 +135,7 @@ const CustomCalendar: React.FC<CustomCalendarProps> = ({
   maxDate,
 }) => {
   const [currentDate, setCurrentDate] = useState(
-    () => selectedDisplayDate || new Date()
+    () => selectedDisplayDate || new Date(),
   );
   const [showYearDropdown, setShowYearDropdown] = useState(false);
   const today = TODAY;
@@ -149,18 +149,18 @@ const CustomCalendar: React.FC<CustomCalendarProps> = ({
   const maxYear = maxDate ? maxDate.getFullYear() : currentYear + 50;
   const yearRange = Array.from(
     { length: maxYear - minYear + 1 },
-    (_, i) => minYear + i
+    (_, i) => minYear + i,
   );
 
   const daysInMonth = new Date(
     currentDate.getFullYear(),
     currentDate.getMonth() + 1,
-    0
+    0,
   ).getDate();
   const firstDayOfMonth = new Date(
     currentDate.getFullYear(),
     currentDate.getMonth(),
-    1
+    1,
   ).getDay();
   const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
   const emptyDays = Array.from({ length: firstDayOfMonth }, (_, i) => i);
@@ -186,7 +186,7 @@ const CustomCalendar: React.FC<CustomCalendarProps> = ({
   useEffect(() => {
     if (showYearDropdown && yearListRef.current) {
       const selectedYearIndex = yearRange.findIndex(
-        (year) => year === currentDate.getFullYear()
+        (year) => year === currentDate.getFullYear(),
       );
       if (selectedYearIndex !== -1) {
         const yearElement = yearListRef.current.children[
@@ -204,7 +204,7 @@ const CustomCalendar: React.FC<CustomCalendarProps> = ({
       month: currentDate.getMonth(),
       year: currentDate.getFullYear(),
     }),
-    [currentDate]
+    [currentDate],
   );
 
   const todayInfo = useMemo(
@@ -213,7 +213,7 @@ const CustomCalendar: React.FC<CustomCalendarProps> = ({
       month: today.getMonth(),
       year: today.getFullYear(),
     }),
-    [today]
+    [today],
   );
 
   const selectedInfo = useMemo(() => {
@@ -246,7 +246,7 @@ const CustomCalendar: React.FC<CustomCalendarProps> = ({
     const dayDate = new Date(
       currentDate.getFullYear(),
       currentDate.getMonth(),
-      day
+      day,
     );
     dayDate.setHours(0, 0, 0, 0);
     if (minDate && dayDate < minDate) return true;
@@ -256,13 +256,13 @@ const CustomCalendar: React.FC<CustomCalendarProps> = ({
 
   const handlePrevMonth = () => {
     setCurrentDate(
-      (prev) => new Date(prev.getFullYear(), prev.getMonth() - 1, 1)
+      (prev) => new Date(prev.getFullYear(), prev.getMonth() - 1, 1),
     );
   };
 
   const handleNextMonth = () => {
     setCurrentDate(
-      (prev) => new Date(prev.getFullYear(), prev.getMonth() + 1, 1)
+      (prev) => new Date(prev.getFullYear(), prev.getMonth() + 1, 1),
     );
   };
 
@@ -281,7 +281,7 @@ const CustomCalendar: React.FC<CustomCalendarProps> = ({
     const newDate = new Date(
       currentDate.getFullYear(),
       currentDate.getMonth(),
-      day
+      day,
     );
     handleDateSelect(newDate);
   };
@@ -297,7 +297,7 @@ const CustomCalendar: React.FC<CustomCalendarProps> = ({
 
   return (
     <div
-      className={`bg-white ${colors.border} border rounded-3xl ${colors.dropdownShadow} p-4 w-full max-w-[300px]`}
+      className={`bg-white ${colors.border} border rounded-3xl ${colors.dropdownShadow} p-4 w-[300px] max-w-[calc(100vw-1rem)]`}
       onClick={(e) => e.stopPropagation()}
     >
       <div className="flex items-center justify-between mb-4">
@@ -399,14 +399,14 @@ const CustomCalendar: React.FC<CustomCalendarProps> = ({
               isDisabled(day)
                 ? `${colors.disabledText} cursor-not-allowed`
                 : isSelected(day)
-                ? `${colors.selectedBg} ${colors.selectedText} ${colors.selectedShadow}`
-                : isToday(day)
-                ? `${colors.todayBg} ${colors.todayText} border ${colors.todayBorder} font-semibold`
-                : `${colors.dayText} ${colors.dayHoverBg} ${colors.dayHoverText}`,
+                  ? `${colors.selectedBg} ${colors.selectedText} ${colors.selectedShadow}`
+                  : isToday(day)
+                    ? `${colors.todayBg} ${colors.todayText} border ${colors.todayBorder} font-semibold`
+                    : `${colors.dayText} ${colors.dayHoverBg} ${colors.dayHoverText}`,
             ].join(" ")}
             aria-label={`Select ${format(
               new Date(currentDate.getFullYear(), currentDate.getMonth(), day),
-              "dd MMM yyyy"
+              "dd MMM yyyy",
             )}`}
           >
             {day}

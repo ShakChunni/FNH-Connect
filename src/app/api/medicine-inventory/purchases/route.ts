@@ -166,7 +166,12 @@ export async function POST(request: NextRequest) {
     console.error("POST /api/medicine-inventory/purchases error:", error);
 
     if (error instanceof Error) {
-      const knownErrors = ["Invalid or inactive", "already exists"];
+      const knownErrors = [
+        "Invalid or inactive",
+        "already exists",
+        "cannot be in the future",
+        "Expiry date cannot be earlier than purchase date",
+      ];
       if (knownErrors.some((msg) => error.message.includes(msg))) {
         return NextResponse.json(
           { success: false, error: error.message },
