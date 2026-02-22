@@ -21,8 +21,11 @@ import {
   X,
   Check,
   AlertTriangle,
+  Layers,
+  ChevronDown,
 } from "lucide-react";
-import { useFetchMedicines } from "../../hooks";
+import { DropdownPortal } from "@/components/ui/DropdownPortal";
+import { useFetchMedicines, useFetchMedicineGroups } from "../../hooks";
 import type { Medicine } from "../../types";
 
 interface MedicineSearchProps {
@@ -49,6 +52,7 @@ export const MedicineSearch: React.FC<MedicineSearchProps> = ({
   stockFilter = "all",
 }) => {
   const [searchQuery, setSearchQuery] = useState(displayValue);
+  const [selectedGroupId, setSelectedGroupId] = useState<number | null>(null);
   const [isOpen, setIsOpen] = useState(false);
   const [dropdownPosition, setDropdownPosition] = useState({
     top: 0,
@@ -58,6 +62,8 @@ export const MedicineSearch: React.FC<MedicineSearchProps> = ({
 
   const inputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const groupFilterButtonRef = useRef<HTMLButtonElement>(null);
+  const [isGroupFilterOpen, setIsGroupFilterOpen] = useState(false);
 
   // Sync search query with display value from parent
   useEffect(() => {
@@ -69,9 +75,11 @@ export const MedicineSearch: React.FC<MedicineSearchProps> = ({
   // Fetch medicines with search
   const { data, isLoading } = useFetchMedicines({
     search: isOpen ? searchQuery : undefined,
+    groupId: selectedGroupId ?? undefined,
     lowStockOnly: stockFilter === "lowStock",
     limit: 20,
   });
+  const { data: groups = [] } = useFetchMedicineGroups(true);
 
   const medicines = data?.data || [];
 
@@ -140,6 +148,7 @@ export const MedicineSearch: React.FC<MedicineSearchProps> = ({
   const handleClear = () => {
     onChange(null);
     setSearchQuery("");
+    setSelectedGroupId(null);
     setIsOpen(false);
     inputRef.current?.focus();
   };
@@ -181,6 +190,12 @@ export const MedicineSearch: React.FC<MedicineSearchProps> = ({
       window.removeEventListener("resize", handleScrollResize);
     };
   }, [isOpen, updateDropdownPosition]);
+
+  useEffect(() => {
+    if (!isOpen) {
+      setIsGroupFilterOpen(false);
+    }
+  }, [isOpen]);
 
   const inputClassName = useMemo(() => {
     let base =
@@ -264,6 +279,75 @@ export const MedicineSearch: React.FC<MedicineSearchProps> = ({
                   <span className="ml-2 text-sm text-gray-500">
                     Searching...
                   </span>
+                </div>
+              )}
+
+              {/* Group Filter */}
+              {!isLoading && (
+                <div className="px-3 py-2 border-b border-gray-100 bg-gray-50/60">
+                  <label className="block text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-1.5">
+                    Filter by Group
+                  </label>
+                  <button
+                    ref={groupFilterButtonRef}
+                    type="button"
+                    onClick={() => setIsGroupFilterOpen(!isGroupFilterOpen)}
+                    className="w-full h-9 px-2.5 flex items-center justify-between gap-1.5 text-xs text-gray-700 bg-white border border-gray-200 rounded-lg focus:border-blue-900 focus:ring-2 focus:ring-blue-950 outline-none cursor-pointer"
+                  >
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <Layers className="w-3.5 h-3.5 text-purple-500 shrink-0" />
+                      <span className="truncate">
+                        {selectedGroupId
+                          ? groups.find((group) => group.id === selectedGroupId)
+                              ?.name || "All groups"
+                          : "All groups"}
+                      </span>
+                    </div>
+                    <ChevronDown
+                      className={`w-3.5 h-3.5 text-gray-400 transition-transform duration-200 ${
+                        isGroupFilterOpen ? "rotate-180" : ""
+                      }`}
+                    />
+                  </button>
+
+                  <DropdownPortal
+                    isOpen={isGroupFilterOpen}
+                    onClose={() => setIsGroupFilterOpen(false)}
+                    buttonRef={groupFilterButtonRef}
+                    className="w-48"
+                  >
+                    <div className="py-1 max-h-64 overflow-y-auto">
+                      <button
+                        onClick={() => {
+                          setSelectedGroupId(null);
+                          setIsGroupFilterOpen(false);
+                        }}
+                        className={`w-full px-3 py-2 text-left text-xs font-medium hover:bg-gray-50 transition-colors cursor-pointer ${
+                          !selectedGroupId
+                            ? "text-fnh-navy bg-fnh-navy/5"
+                            : "text-gray-700"
+                        }`}
+                      >
+                        All Groups
+                      </button>
+                      {groups.map((group) => (
+                        <button
+                          key={group.id}
+                          onClick={() => {
+                            setSelectedGroupId(group.id);
+                            setIsGroupFilterOpen(false);
+                          }}
+                          className={`w-full px-3 py-2 text-left text-xs font-medium hover:bg-gray-50 transition-colors cursor-pointer ${
+                            selectedGroupId === group.id
+                              ? "text-fnh-navy bg-fnh-navy/5"
+                              : "text-gray-700"
+                          }`}
+                        >
+                          {group.name}
+                        </button>
+                      ))}
+                    </div>
+                  </DropdownPortal>
                 </div>
               )}
 

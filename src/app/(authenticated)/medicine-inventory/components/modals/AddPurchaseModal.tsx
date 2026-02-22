@@ -22,6 +22,7 @@ import {
   Hash,
 } from "lucide-react";
 import { format } from "date-fns";
+import NumberInput from "@/components/form-sections/Fields/NumberInput";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   modalVariants,
@@ -433,8 +434,7 @@ const AddPurchaseModal: React.FC<AddPurchaseModalProps> = ({
                       <label className="block text-xs font-semibold text-gray-700 mb-2">
                         Quantity <span className="text-red-500">*</span>
                       </label>
-                      <input
-                        type="number"
+                      <NumberInput
                         min="1"
                         value={formData.quantity || ""}
                         onChange={(e) =>
@@ -456,8 +456,7 @@ const AddPurchaseModal: React.FC<AddPurchaseModalProps> = ({
                         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-bold text-gray-400">
                           ৳
                         </span>
-                        <input
-                          type="number"
+                        <NumberInput
                           min="0"
                           step="0.01"
                           value={formData.unitPrice || ""}

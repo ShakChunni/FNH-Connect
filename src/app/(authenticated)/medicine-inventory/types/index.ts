@@ -80,6 +80,21 @@ export const createMedicineSchema = z.object({
 
 export type CreateMedicineInput = z.infer<typeof createMedicineSchema>;
 
+export const updateMedicineSchema = z.object({
+  genericName: z.string().min(1, "Generic name is required").max(200),
+  brandName: z.string().max(200).optional(),
+  groupId: z.number().int().positive("Group is required"),
+  strength: z.string().max(50).optional(),
+  dosageForm: z.string().max(50).optional(),
+  defaultSalePrice: z
+    .number()
+    .min(0, "Default sale price cannot be negative")
+    .default(0),
+  lowStockThreshold: z.number().int().min(0).default(10),
+});
+
+export type UpdateMedicineInput = z.infer<typeof updateMedicineSchema>;
+
 // ============================================
 // Purchase Types
 // ============================================

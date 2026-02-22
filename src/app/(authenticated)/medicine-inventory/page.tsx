@@ -13,15 +13,19 @@ import {
   Plus,
   ClipboardList,
   Settings,
+  Layers,
+  ChevronDown,
 } from "lucide-react";
-import { useFetchMedicineStats } from "./hooks";
+import { useFetchMedicineStats, useFetchMedicineGroups } from "./hooks";
 import { useUIStore, useMedicineFilterStore } from "./stores";
 import { useDebounce } from "@/hooks/useDebounce";
 import { cn } from "@/lib/utils";
+import { DropdownPortal } from "@/components/ui/DropdownPortal";
 import {
   AddPurchaseModal,
   AddSaleModal,
   AddMedicineModal,
+  EditMedicineModal,
   AddCompanyModal,
   AddGroupModal,
 } from "./components/modals";
@@ -40,32 +44,32 @@ const ManageDropdown: React.FC<{
   ) => void;
 }> = ({ openModal }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(e.target as Node)
-      ) {
-        setIsOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+  const buttonRef = useRef<HTMLButtonElement>(null);
 
   return (
-    <div className="relative" ref={dropdownRef}>
+    <div className="relative">
       <button
+        ref={buttonRef}
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center gap-1.5 px-3 py-2.5 bg-gray-50 hover:bg-gray-100 rounded-xl text-xs font-semibold text-gray-700 transition-colors cursor-pointer border border-gray-100"
       >
         <Settings className="w-3.5 h-3.5" />
         <span>Manage</span>
+        <ChevronDown
+          className={cn(
+            "w-3.5 h-3.5 text-gray-400 transition-transform duration-200",
+            isOpen && "rotate-180",
+          )}
+        />
       </button>
-      {isOpen && (
-        <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl border border-gray-100 shadow-lg z-50 py-1 overflow-hidden">
+
+      <DropdownPortal
+        isOpen={isOpen}
+        onClose={() => setIsOpen(false)}
+        buttonRef={buttonRef}
+        className="w-48"
+      >
+        <div className="py-1">
           <button
             onClick={() => {
               openModal("addMedicine");
@@ -97,7 +101,81 @@ const ManageDropdown: React.FC<{
             Add Company
           </button>
         </div>
-      )}
+      </DropdownPortal>
+    </div>
+  );
+};
+
+const GroupFilterDropdown: React.FC<{
+  value?: number | null;
+  onChange: (value: number | null) => void;
+}> = ({ value, onChange }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const { data: groups = [] } = useFetchMedicineGroups(true);
+
+  const selectedGroupLabel =
+    value && groups.find((group) => group.id === value)?.name
+      ? groups.find((group) => group.id === value)?.name
+      : "All Groups";
+
+  return (
+    <div className="relative">
+      <button
+        ref={buttonRef}
+        onClick={() => setIsOpen(!isOpen)}
+        className="flex items-center justify-between gap-1.5 min-w-[160px] px-3 py-2.5 bg-gray-50 hover:bg-gray-100 rounded-xl text-xs font-semibold text-gray-700 transition-colors cursor-pointer border border-gray-100"
+      >
+        <div className="flex items-center gap-1.5 min-w-0">
+          <Layers className="w-3.5 h-3.5 text-purple-500 shrink-0" />
+          <span className="truncate">{selectedGroupLabel}</span>
+        </div>
+        <ChevronDown
+          className={cn(
+            "w-3.5 h-3.5 text-gray-400 transition-transform duration-200",
+            isOpen && "rotate-180",
+          )}
+        />
+      </button>
+
+      <DropdownPortal
+        isOpen={isOpen}
+        onClose={() => setIsOpen(false)}
+        buttonRef={buttonRef}
+        className="w-48"
+      >
+        <div className="py-1 max-h-64 overflow-y-auto">
+          <button
+            onClick={() => {
+              onChange(null);
+              setIsOpen(false);
+            }}
+            className={cn(
+              "w-full px-3 py-2 text-left text-xs font-medium hover:bg-gray-50 transition-colors cursor-pointer",
+              !value ? "text-fnh-navy bg-fnh-navy/5" : "text-gray-700",
+            )}
+          >
+            All Groups
+          </button>
+          {groups.map((group) => (
+            <button
+              key={group.id}
+              onClick={() => {
+                onChange(group.id);
+                setIsOpen(false);
+              }}
+              className={cn(
+                "w-full px-3 py-2 text-left text-xs font-medium hover:bg-gray-50 transition-colors cursor-pointer",
+                value === group.id
+                  ? "text-fnh-navy bg-fnh-navy/5"
+                  : "text-gray-700",
+              )}
+            >
+              {group.name}
+            </button>
+          ))}
+        </div>
+      </DropdownPortal>
     </div>
   );
 };
@@ -362,6 +440,13 @@ const MedicineInventoryPage = () => {
               {/* Manage Dropdown */}
               <ManageDropdown openModal={openModal} />
 
+              {activeTab === "medicines" && (
+                <GroupFilterDropdown
+                  value={filters.groupId}
+                  onChange={(value) => setFilter("groupId", value)}
+                />
+              )}
+
               {(filters.search || filters.groupId || filters.lowStockOnly) && (
                 <button
                   onClick={() => {
@@ -395,6 +480,13 @@ const MedicineInventoryPage = () => {
       <AddMedicineModal
         isOpen={activeModal === "addMedicine"}
         onClose={closeModal}
+      />
+      <EditMedicineModal
+        isOpen={activeModal === "editMedicine"}
+        onClose={closeModal}
+        medicine={
+          (modalData?.medicine as import("./types").Medicine | null) || null
+        }
       />
       <AddCompanyModal
         isOpen={activeModal === "addCompany"}
