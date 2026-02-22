@@ -16,6 +16,7 @@ export const useDynamicDropdownPosition = (
   buttonRef: RefObject<HTMLElement | null>,
   dropdownRef: RefObject<HTMLElement | null>,
   onClose: () => void,
+  matchButtonWidth: boolean = true,
 ) => {
   const [positionStyle, setPositionStyle] = useState<React.CSSProperties>({
     // Start with opacity 0 to prevent flicker
@@ -92,7 +93,7 @@ export const useDynamicDropdownPosition = (
         position: "absolute" as const,
         top: `${top}px`,
         left: `${left}px`,
-        width: `${buttonRect.width}px`,
+        ...(matchButtonWidth ? { width: `${buttonRect.width}px` } : {}),
         // Keep dropdowns above most UI layers; this zIndex must be less than
         // the modal overlay if the overlay intentionally sits above dropdowns.
         // For AddNewData modal we need portals to render above it, DropdownPortal
@@ -141,7 +142,7 @@ export const useDynamicDropdownPosition = (
       window.removeEventListener("resize", updatePosition);
       window.removeEventListener("scroll", handleScroll, true);
     };
-  }, [isOpen, buttonRef, dropdownRef]); // Note: onClose removed from deps - we use the ref instead
+  }, [isOpen, buttonRef, dropdownRef, matchButtonWidth]); // Note: onClose removed from deps - we use the ref instead
 
   return { positionStyle, animationDirection };
 };

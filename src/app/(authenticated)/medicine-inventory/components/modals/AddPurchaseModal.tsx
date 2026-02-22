@@ -520,6 +520,8 @@ const AddPurchaseModal: React.FC<AddPurchaseModalProps> = ({
                         isOpen={showPurchaseCalendar}
                         onClose={() => setShowPurchaseCalendar(false)}
                         buttonRef={purchaseDateBtnRef}
+                        matchButtonWidth={false}
+                        withContainerStyles={false}
                       >
                         <CustomCalendar
                           selectedDisplayDate={purchaseDate}
@@ -528,6 +530,7 @@ const AddPurchaseModal: React.FC<AddPurchaseModalProps> = ({
                             setShowPurchaseCalendar(false);
                           }}
                           colorScheme="emerald"
+                          maxDate={new Date()}
                         />
                       </DropdownPortal>
                     </div>
@@ -559,6 +562,8 @@ const AddPurchaseModal: React.FC<AddPurchaseModalProps> = ({
                         isOpen={showExpiryCalendar}
                         onClose={() => setShowExpiryCalendar(false)}
                         buttonRef={expiryDateBtnRef}
+                        matchButtonWidth={false}
+                        withContainerStyles={false}
                       >
                         <CustomCalendar
                           selectedDisplayDate={expiryDate}

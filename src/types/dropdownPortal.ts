@@ -4,4 +4,6 @@ export interface DropdownPortalProps {
   buttonRef: React.RefObject<any>;
   children: React.ReactNode;
   className?: string;
+  matchButtonWidth?: boolean;
+  withContainerStyles?: boolean;
 }

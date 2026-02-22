@@ -671,6 +671,17 @@ export async function createPurchase(
   userId: number,
   activityLogContext?: ActivityLogContext,
 ) {
+  const now = new Date();
+  const effectivePurchaseDate = data.purchaseDate || now;
+
+  if (effectivePurchaseDate > now) {
+    throw new Error("Purchase date cannot be in the future");
+  }
+
+  if (data.expiryDate && data.expiryDate < effectivePurchaseDate) {
+    throw new Error("Expiry date cannot be earlier than purchase date");
+  }
+
   const totalAmount = data.quantity * data.unitPrice;
 
   return prisma.$transaction(async (tx) => {
@@ -701,7 +712,7 @@ export async function createPurchase(
         quantity: data.quantity,
         unitPrice: data.unitPrice,
         totalAmount: totalAmount,
-        purchaseDate: data.purchaseDate || new Date(),
+        purchaseDate: effectivePurchaseDate,
         expiryDate: data.expiryDate || null,
         batchNumber: data.batchNumber,
         remainingQty: data.quantity, // All units available initially
@@ -783,31 +794,51 @@ export async function createPurchase(
  * This is used to determine the price and company when making a sale
  */
 export async function getOldestPurchaseForMedicine(medicineId: number) {
-  const purchase = await prisma.medicinePurchase.findFirst({
-    where: {
-      medicineId: medicineId,
-      remainingQty: {
-        gt: 0,
-      },
-    },
-    orderBy: {
-      purchaseDate: "asc", // FIFO - oldest first
-    },
-    select: {
-      id: true,
-      remainingQty: true,
-      unitPrice: true,
-      batchNumber: true,
-      company: {
-        select: {
-          id: true,
-          name: true,
+  const [oldestWithStock, firstPurchase] = await Promise.all([
+    prisma.medicinePurchase.findFirst({
+      where: {
+        medicineId: medicineId,
+        remainingQty: {
+          gt: 0,
         },
       },
-    },
-  });
+      orderBy: {
+        purchaseDate: "asc", // FIFO - oldest first
+      },
+      select: {
+        id: true,
+        remainingQty: true,
+        unitPrice: true,
+        batchNumber: true,
+        company: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+    }),
+    prisma.medicinePurchase.findFirst({
+      where: {
+        medicineId: medicineId,
+      },
+      orderBy: {
+        purchaseDate: "asc",
+      },
+      select: {
+        purchaseDate: true,
+      },
+    }),
+  ]);
 
-  return purchase;
+  if (!oldestWithStock) {
+    return null;
+  }
+
+  return {
+    ...oldestWithStock,
+    firstPurchaseDate: firstPurchase?.purchaseDate || null,
+  };
 }
 
 export async function getSales(filters: SaleFilters) {
@@ -911,6 +942,13 @@ export async function createSale(
   activityLogContext?: ActivityLogContext,
 ) {
   return prisma.$transaction(async (tx) => {
+    const now = new Date();
+    const effectiveSaleDate = data.saleDate || now;
+
+    if (effectiveSaleDate > now) {
+      throw new Error("Sale date cannot be in the future");
+    }
+
     // Verify patient exists
     const patient = await tx.patient.findUnique({
       where: { id: data.patientId },
@@ -932,6 +970,28 @@ export async function createSale(
     if (medicine.currentStock < data.quantity) {
       throw new Error(
         `Insufficient stock. Available: ${medicine.currentStock}, Requested: ${data.quantity}`,
+      );
+    }
+
+    const firstPurchase = await tx.medicinePurchase.findFirst({
+      where: {
+        medicineId: data.medicineId,
+      },
+      orderBy: {
+        purchaseDate: "asc",
+      },
+      select: {
+        purchaseDate: true,
+      },
+    });
+
+    if (!firstPurchase) {
+      throw new Error("No stock purchase history found for this medicine");
+    }
+
+    if (effectiveSaleDate < firstPurchase.purchaseDate) {
+      throw new Error(
+        `Sale date cannot be before first stock purchase date (${firstPurchase.purchaseDate.toISOString()})`,
       );
     }
 
@@ -988,7 +1048,7 @@ export async function createSale(
           quantity: qtyFromThisBatch,
           unitPrice: batchUnitPrice,
           totalAmount: batchTotalAmount,
-          saleDate: data.saleDate || new Date(),
+          saleDate: effectiveSaleDate,
           createdBy: staffId,
         },
         select: {

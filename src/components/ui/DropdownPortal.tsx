@@ -23,6 +23,8 @@ export function DropdownPortal({
   buttonRef,
   children,
   className = "",
+  matchButtonWidth = true,
+  withContainerStyles = true,
 }: DropdownPortalProps) {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [mounted, setMounted] = useState(false);
@@ -39,7 +41,8 @@ export function DropdownPortal({
     isOpen,
     buttonRef,
     dropdownRef,
-    onClose
+    onClose,
+    matchButtonWidth,
   );
 
   // Track if component is mounted (for portal)
@@ -106,7 +109,7 @@ export function DropdownPortal({
           // ensure portal dropdowns in modals are always above the popup overlay
           // set a high zIndex inline so that it overrides any parent stacking context
           style={{ ...positionStyle, zIndex: 110000 }}
-          className={`bg-white border border-gray-200/60 rounded-xl shadow-xl shadow-fnh-navy/5 overflow-hidden ring-1 ring-black/5 origin-top ${className}`}
+          className={`${withContainerStyles ? "bg-white border border-gray-200/60 rounded-xl shadow-xl shadow-fnh-navy/5 overflow-hidden ring-1 ring-black/5" : "origin-top"} ${className}`}
         >
           {children}
         </motion.div>
