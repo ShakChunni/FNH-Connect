@@ -38,6 +38,8 @@ const medicineFiltersSchema = z.object({
     .enum(["true", "false"])
     .optional()
     .transform((v) => v !== "false"),
+  startDate: z.string().optional(),
+  endDate: z.string().optional(),
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(20).default(20),
 });

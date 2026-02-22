@@ -197,10 +197,10 @@ export type CreateSaleInput = z.infer<typeof createSaleSchema>;
 export interface MedicineInventoryStats {
   totalMedicines: number;
   lowStockCount: number;
-  todaysSalesAmount: number;
-  todaysSalesCount: number;
-  todaysPurchasesAmount: number;
-  todaysPurchasesCount: number;
+  totalSalesAmount: number;
+  totalSalesCount: number;
+  totalPurchasesAmount: number;
+  totalPurchasesCount: number;
   totalStockValue: number;
 }
 
@@ -245,6 +245,8 @@ export interface MedicineFilters {
   search?: string;
   groupId?: number | null;
   lowStockOnly?: boolean;
+  startDate?: string;
+  endDate?: string;
   page?: number;
   limit?: number;
 }

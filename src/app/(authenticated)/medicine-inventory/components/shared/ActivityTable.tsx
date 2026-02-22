@@ -12,13 +12,21 @@ import { useFetchActivity } from "../../hooks";
 
 interface ActivityTableProps {
   search?: string;
+  startDate?: string;
+  endDate?: string;
 }
 
-const ActivityTable: React.FC<ActivityTableProps> = ({ search = "" }) => {
+const ActivityTable: React.FC<ActivityTableProps> = ({
+  search = "",
+  startDate,
+  endDate,
+}) => {
   const [page, setPage] = useState(1);
 
   const { data, isLoading } = useFetchActivity({
     search: search.trim() || undefined,
+    startDate,
+    endDate,
     page,
     limit: 20,
   });
@@ -33,7 +41,7 @@ const ActivityTable: React.FC<ActivityTableProps> = ({ search = "" }) => {
 
   useEffect(() => {
     setPage(1);
-  }, [search]);
+  }, [search, startDate, endDate]);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("en-BD", {

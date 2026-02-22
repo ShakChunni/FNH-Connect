@@ -1,10 +1,15 @@
+/**
+ * Fetch Users Hook
+ * React Query hook for fetching users with filters and pagination
+ */
+
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/axios";
-import type { MedicineCompany } from "../types";
+import type { UserWithStaff, UserFilters } from "../types";
 
-interface CompaniesResponse {
+interface UsersResponse {
   success: boolean;
-  data: MedicineCompany[];
+  data: UserWithStaff[];
   pagination: {
     total: number;
     page: number;
@@ -14,42 +19,30 @@ interface CompaniesResponse {
   error?: string;
 }
 
-export interface CompanyFilters {
-  search?: string;
-  activeOnly?: boolean;
-  startDate?: string;
-  endDate?: string;
-  page?: number;
-  limit?: number;
-}
-
-export interface PaginatedCompanies {
-  data: MedicineCompany[];
+export interface PaginatedUsers {
+  data: UserWithStaff[];
   total: number;
   totalPages: number;
   currentPage: number;
   limit: number;
 }
 
-export function useFetchPaginatedMedicineCompanies(
-  filters: CompanyFilters = {},
-) {
+export function useFetchUsers(filters: UserFilters = {}) {
   return useQuery({
-    queryKey: ["medicine-inventory", "companies", "paginated", filters],
-    queryFn: async (): Promise<PaginatedCompanies> => {
+    queryKey: ["user-management", "users", filters],
+    queryFn: async (): Promise<PaginatedUsers> => {
       const params = new URLSearchParams();
-      params.append("activeOnly", String(filters.activeOnly !== false));
 
       if (filters.search) {
         params.append("search", filters.search);
       }
 
-      if (filters.startDate) {
-        params.append("startDate", filters.startDate);
+      if (filters.role) {
+        params.append("role", filters.role);
       }
 
-      if (filters.endDate) {
-        params.append("endDate", filters.endDate);
+      if (filters.status && filters.status !== "all") {
+        params.append("status", filters.status);
       }
 
       if (filters.page) {
@@ -60,23 +53,22 @@ export function useFetchPaginatedMedicineCompanies(
         params.append("limit", filters.limit.toString());
       }
 
-      const response = await api.get<CompaniesResponse>(
-        `/medicine-inventory/companies?${params.toString()}`,
+      const response = await api.get<UsersResponse>(
+        `/admin/user-management?${params.toString()}`,
       );
 
       if (!response.data.success) {
-        throw new Error(response.data.error || "Failed to fetch companies");
+        throw new Error(response.data.error || "Failed to fetch users");
       }
 
       return {
-        data: response.data.data || [],
+        data: response.data.data,
         total: response.data.pagination.total,
         totalPages: response.data.pagination.totalPages,
         currentPage: response.data.pagination.page,
         limit: response.data.pagination.limit,
       };
     },
-
     staleTime: 2 * 60 * 1000,
     gcTime: 5 * 60 * 1000,
     retry: (failureCount, error) => {

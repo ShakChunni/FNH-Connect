@@ -29,6 +29,7 @@ import {
 import { useDebounce } from "@/hooks/useDebounce";
 import { cn } from "@/lib/utils";
 import { DropdownPortal } from "@/components/ui/DropdownPortal";
+import { DateRangePicker } from "@/components/ui/date-range-picker";
 import {
   AddPurchaseModal,
   AddSaleModal,
@@ -193,6 +194,28 @@ const GroupFilterDropdown: React.FC<{
 };
 
 const MedicineInventoryPage = () => {
+  const DHAKA_UTC_OFFSET_HOURS = 6;
+
+  const getDhakaBoundaryIso = React.useCallback(
+    (date: Date, boundary: "start" | "end") => {
+      const year = date.getFullYear();
+      const month = date.getMonth();
+      const day = date.getDate();
+
+      const hour = boundary === "start" ? 0 : 23;
+      const minute = boundary === "start" ? 0 : 59;
+      const second = boundary === "start" ? 0 : 59;
+      const millisecond = boundary === "start" ? 0 : 999;
+
+      const utcTimestamp =
+        Date.UTC(year, month, day, hour, minute, second, millisecond) -
+        DHAKA_UTC_OFFSET_HOURS * 60 * 60 * 1000;
+
+      return new Date(utcTimestamp).toISOString();
+    },
+    [],
+  );
+
   const {
     activeTab,
     setActiveTab,
@@ -207,10 +230,22 @@ const MedicineInventoryPage = () => {
   const tabsScrollRef = useRef<HTMLDivElement>(null);
   const [showLeftIndicator, setShowLeftIndicator] = useState(false);
   const [showRightIndicator, setShowRightIndicator] = useState(false);
+  const [startDate, setStartDate] = useState<Date | null>(null);
+  const [endDate, setEndDate] = useState<Date | null>(null);
 
   // Local search state for immediate input feedback
   const [searchTerm, setSearchTerm] = useState(filters.search || "");
   const debouncedSearch = useDebounce(searchTerm, 500);
+
+  const startDateIso = React.useMemo(() => {
+    if (!startDate) return undefined;
+    return getDhakaBoundaryIso(startDate, "start");
+  }, [startDate, getDhakaBoundaryIso]);
+
+  const endDateIso = React.useMemo(() => {
+    if (!endDate) return undefined;
+    return getDhakaBoundaryIso(endDate, "end");
+  }, [endDate, getDhakaBoundaryIso]);
 
   // Sync debounced search to active tab store
   useEffect(() => {
@@ -232,7 +267,21 @@ const MedicineInventoryPage = () => {
     }
   }, [activeTab, debouncedSearch, setFilter, setPurchaseFilter, setSaleFilter]);
 
-  const { data, isLoading } = useFetchMedicineStats();
+  useEffect(() => {
+    setFilter("startDate", startDateIso);
+    setFilter("endDate", endDateIso);
+    setFilter("page", 1);
+
+    setPurchaseFilter("startDate", startDateIso);
+    setPurchaseFilter("endDate", endDateIso);
+    setPurchaseFilter("page", 1);
+
+    setSaleFilter("startDate", startDateIso);
+    setSaleFilter("endDate", endDateIso);
+    setSaleFilter("page", 1);
+  }, [startDateIso, endDateIso, setFilter, setPurchaseFilter, setSaleFilter]);
+
+  const { data, isLoading } = useFetchMedicineStats(startDateIso, endDateIso);
 
   const stats = data?.stats;
   const lowStockItems = data?.lowStockItems || [];
@@ -284,7 +333,25 @@ const MedicineInventoryPage = () => {
               title="Medicine Inventory"
               subtitle="Track medicine purchases, sales, and stock levels."
               actions={
-                <div className="w-full flex flex-col sm:flex-row gap-2 sm:gap-3 justify-center sm:w-auto">
+                <div className="w-full flex flex-col sm:flex-row gap-2 sm:gap-3 justify-center sm:w-auto sm:items-center">
+                  <div className="w-full sm:w-[260px]">
+                    <DateRangePicker
+                      value={{
+                        from: startDate || undefined,
+                        to: endDate || undefined,
+                      }}
+                      onChange={(range) => {
+                        setStartDate(range?.from ?? null);
+                        setEndDate(range?.to ?? null);
+                      }}
+                      placeholder="Filter date range"
+                      hideSelectedSummary
+                      className="bg-gray-50/80 border-gray-100 hover:bg-gray-100 hover:border-gray-200 focus:border-fnh-blue focus:ring-fnh-blue/20 text-xs font-semibold text-gray-700 shadow-sm"
+                      popoverClassName="rounded-2xl border border-gray-200 shadow-xl"
+                      disableFutureDates
+                    />
+                  </div>
+
                   <button
                     onClick={() => openModal("addPurchase")}
                     className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl transition-all shadow-sm text-xs sm:text-sm font-semibold cursor-pointer active:scale-95"
@@ -406,23 +473,23 @@ const MedicineInventoryPage = () => {
                       <TrendingDown className="w-4 h-4 text-blue-600" />
                     </div>
                     <span className="text-[10px] sm:text-xs font-black uppercase tracking-widest text-blue-900/60">
-                      Today&apos;s Sales
+                      Total Sales
                     </span>
                   </div>
                   {isLoading ? (
                     <div className="h-8 w-32 bg-blue-100/50 rounded animate-pulse mb-1" />
                   ) : (
                     <p className="text-xl sm:text-2xl lg:text-2xl xl:text-3xl font-black text-blue-950 wrap-break-word">
-                      {formatCurrency(stats?.todaysSalesAmount || 0)}
+                      {formatCurrency(stats?.totalSalesAmount || 0)}
                     </p>
                   )}
                   <p className="text-[10px] sm:text-xs font-medium mt-1 text-blue-700/80">
-                    {stats?.todaysSalesCount || 0} sale(s) today
+                    {stats?.totalSalesCount || 0} sale(s)
                   </p>
                 </div>
               </div>
 
-              {/* Today's Purchases */}
+              {/* Total Purchases */}
               <div className="col-span-1 sm:col-span-2 lg:col-span-1 bg-violet-50/50 rounded-2xl p-4 sm:p-5 border border-violet-100 shadow-sm shadow-violet-100/20 relative overflow-hidden group hover:shadow-md transition-all duration-300">
                 <div className="absolute top-0 right-0 w-24 h-24 bg-violet-100/50 rounded-full -translate-y-1/2 translate-x-1/2 group-hover:scale-110 transition-transform duration-500" />
                 <div className="relative z-10">
@@ -431,18 +498,18 @@ const MedicineInventoryPage = () => {
                       <TrendingUp className="w-4 h-4 text-violet-600" />
                     </div>
                     <span className="text-[10px] sm:text-xs font-black uppercase tracking-widest text-violet-900/60">
-                      Today&apos;s Purchases
+                      Total Purchases
                     </span>
                   </div>
                   {isLoading ? (
                     <div className="h-8 w-32 bg-violet-100/50 rounded animate-pulse mb-1" />
                   ) : (
                     <p className="text-xl sm:text-2xl lg:text-2xl xl:text-3xl font-black text-violet-950 wrap-break-word">
-                      {formatCurrency(stats?.todaysPurchasesAmount || 0)}
+                      {formatCurrency(stats?.totalPurchasesAmount || 0)}
                     </p>
                   )}
                   <p className="text-[10px] sm:text-xs font-medium mt-1 text-violet-700/80">
-                    {stats?.todaysPurchasesCount || 0} purchase(s) today
+                    {stats?.totalPurchasesCount || 0} purchase(s)
                   </p>
                 </div>
               </div>
@@ -543,14 +610,28 @@ const MedicineInventoryPage = () => {
                 transition={{ duration: 0.2, ease: "easeOut" }}
               >
                 {activeTab === "activity" && (
-                  <ActivityTable search={searchTerm} />
+                  <ActivityTable
+                    search={searchTerm}
+                    startDate={startDateIso}
+                    endDate={endDateIso}
+                  />
                 )}
                 {activeTab === "purchases" && <PurchaseTable />}
                 {activeTab === "sales" && <SaleTable />}
                 {activeTab === "medicines" && <MedicineTable />}
-                {activeTab === "groups" && <GroupTable search={searchTerm} />}
+                {activeTab === "groups" && (
+                  <GroupTable
+                    search={searchTerm}
+                    startDate={startDateIso}
+                    endDate={endDateIso}
+                  />
+                )}
                 {activeTab === "companies" && (
-                  <CompanyTable search={searchTerm} />
+                  <CompanyTable
+                    search={searchTerm}
+                    startDate={startDateIso}
+                    endDate={endDateIso}
+                  />
                 )}
               </motion.div>
             </AnimatePresence>

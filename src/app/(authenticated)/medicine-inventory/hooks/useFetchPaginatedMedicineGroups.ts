@@ -17,6 +17,8 @@ interface GroupsResponse {
 export interface GroupFilters {
   search?: string;
   activeOnly?: boolean;
+  startDate?: string;
+  endDate?: string;
   page?: number;
   limit?: number;
 }
@@ -38,6 +40,14 @@ export function useFetchPaginatedMedicineGroups(filters: GroupFilters = {}) {
 
       if (filters.search) {
         params.append("search", filters.search);
+      }
+
+      if (filters.startDate) {
+        params.append("startDate", filters.startDate);
+      }
+
+      if (filters.endDate) {
+        params.append("endDate", filters.endDate);
       }
 
       if (filters.page) {

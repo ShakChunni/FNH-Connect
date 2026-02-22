@@ -13,14 +13,22 @@ import { useUIStore } from "../../stores";
 
 interface GroupTableProps {
   search?: string;
+  startDate?: string;
+  endDate?: string;
 }
 
-const GroupTable: React.FC<GroupTableProps> = ({ search = "" }) => {
+const GroupTable: React.FC<GroupTableProps> = ({
+  search = "",
+  startDate,
+  endDate,
+}) => {
   const [page, setPage] = useState(1);
 
   const { data, isLoading, isError, error } = useFetchPaginatedMedicineGroups({
     activeOnly: true,
     search: search.trim() || undefined,
+    startDate,
+    endDate,
     page,
     limit: 20,
   });
@@ -36,7 +44,7 @@ const GroupTable: React.FC<GroupTableProps> = ({ search = "" }) => {
 
   useEffect(() => {
     setPage(1);
-  }, [search]);
+  }, [search, startDate, endDate]);
 
   if (isLoading) {
     return (

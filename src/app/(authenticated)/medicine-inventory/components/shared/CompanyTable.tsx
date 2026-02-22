@@ -13,15 +13,23 @@ import { useUIStore } from "../../stores";
 
 interface CompanyTableProps {
   search?: string;
+  startDate?: string;
+  endDate?: string;
 }
 
-const CompanyTable: React.FC<CompanyTableProps> = ({ search = "" }) => {
+const CompanyTable: React.FC<CompanyTableProps> = ({
+  search = "",
+  startDate,
+  endDate,
+}) => {
   const [page, setPage] = useState(1);
 
   const { data, isLoading, isError, error } =
     useFetchPaginatedMedicineCompanies({
       activeOnly: true,
       search: search.trim() || undefined,
+      startDate,
+      endDate,
       page,
       limit: 20,
     });
@@ -37,7 +45,7 @@ const CompanyTable: React.FC<CompanyTableProps> = ({ search = "" }) => {
 
   useEffect(() => {
     setPage(1);
-  }, [search]);
+  }, [search, startDate, endDate]);
 
   if (isLoading) {
     return (
