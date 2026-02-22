@@ -7,16 +7,22 @@
 
 import React from "react";
 import { Pill, AlertTriangle } from "lucide-react";
+import { Pagination } from "@/components/pagination/Pagination";
 import { useFetchMedicines } from "../../hooks";
 import { useMedicineFilterStore, useUIStore } from "../../stores";
 
 const MedicineTable: React.FC = () => {
-  const { filters } = useMedicineFilterStore();
+  const { filters, setFilter } = useMedicineFilterStore();
   const { openModal } = useUIStore();
   const { data, isLoading, isError, error } = useFetchMedicines(filters);
 
   const medicines = data?.data || [];
   const total = data?.total || 0;
+  const totalPages = data?.totalPages || 1;
+  const currentPage = data?.currentPage || filters.page || 1;
+  const limit = data?.limit || filters.limit || 20;
+  const startIndex = total === 0 ? 0 : (currentPage - 1) * limit + 1;
+  const endIndex = Math.min(currentPage * limit, total);
 
   const formatNumber = (num: number) => {
     return new Intl.NumberFormat("en-BD").format(num);
@@ -85,64 +91,150 @@ const MedicineTable: React.FC = () => {
   }
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-      {/* Table Header */}
-      <div className="px-4 sm:px-6 py-3 bg-gray-50/50 border-b border-gray-100">
-        <p className="text-xs font-bold text-gray-500 uppercase tracking-widest">
-          {formatNumber(total)} medicine{total !== 1 ? "s" : ""}
-        </p>
-      </div>
+    <>
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+        {/* Table Header */}
+        <div className="px-4 sm:px-6 py-3 bg-gray-50/50 border-b border-gray-100">
+          <p className="text-xs font-bold text-gray-500 uppercase tracking-widest">
+            {formatNumber(total)} medicine{total !== 1 ? "s" : ""}
+          </p>
+        </div>
 
-      {/* Desktop Table */}
-      <div className="hidden md:block overflow-x-auto">
-        <table className="w-full">
-          <thead>
-            <tr className="border-b border-gray-100">
-              <th className="text-left px-6 py-3 text-[10px] font-black uppercase tracking-widest text-gray-500">
-                Generic Name
-              </th>
-              <th className="text-left px-6 py-3 text-[10px] font-black uppercase tracking-widest text-gray-500">
-                Group
-              </th>
-              <th className="text-left px-6 py-3 text-[10px] font-black uppercase tracking-widest text-gray-500">
-                Strength
-              </th>
-              <th className="text-left px-6 py-3 text-[10px] font-black uppercase tracking-widest text-gray-500">
-                Form
-              </th>
-              <th className="text-right px-6 py-3 text-[10px] font-black uppercase tracking-widest text-gray-500">
-                Stock
-              </th>
-              <th className="text-center px-6 py-3 text-[10px] font-black uppercase tracking-widest text-gray-500">
-                Status
-              </th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-50">
-            {medicines.map((medicine) => {
-              const isLowStock =
-                medicine.currentStock <= medicine.lowStockThreshold;
-              const groupName = medicine.group?.name || "Unknown Group";
-              return (
-                <tr
-                  key={medicine.id}
-                  className="hover:bg-gray-50/50 transition-colors cursor-pointer"
-                  onClick={() => openModal("editMedicine", { medicine })}
-                >
-                  <td className="px-6 py-3.5">
-                    <div>
-                      <p className="text-sm font-bold text-gray-900">
-                        {medicine.genericName}
-                      </p>
-                      {medicine.brandName && (
-                        <p className="text-xs text-gray-500">
-                          {medicine.brandName}
+        {/* Desktop Table */}
+        <div className="hidden md:block overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-gray-100">
+                <th className="text-left px-6 py-3 text-[10px] font-black uppercase tracking-widest text-gray-500">
+                  Generic Name
+                </th>
+                <th className="text-left px-6 py-3 text-[10px] font-black uppercase tracking-widest text-gray-500">
+                  Group
+                </th>
+                <th className="text-left px-6 py-3 text-[10px] font-black uppercase tracking-widest text-gray-500">
+                  Strength
+                </th>
+                <th className="text-left px-6 py-3 text-[10px] font-black uppercase tracking-widest text-gray-500">
+                  Form
+                </th>
+                <th className="text-right px-6 py-3 text-[10px] font-black uppercase tracking-widest text-gray-500">
+                  Stock
+                </th>
+                <th className="text-center px-6 py-3 text-[10px] font-black uppercase tracking-widest text-gray-500">
+                  Status
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-50">
+              {medicines.map((medicine) => {
+                const isLowStock =
+                  medicine.currentStock <= medicine.lowStockThreshold;
+                const groupName = medicine.group?.name || "Unknown Group";
+                return (
+                  <tr
+                    key={medicine.id}
+                    className="hover:bg-gray-50/50 transition-colors cursor-pointer"
+                    onClick={() => openModal("editMedicine", { medicine })}
+                  >
+                    <td className="px-6 py-3.5">
+                      <div>
+                        <p className="text-sm font-bold text-gray-900">
+                          {medicine.genericName}
                         </p>
+                        {medicine.brandName && (
+                          <p className="text-xs text-gray-500">
+                            {medicine.brandName}
+                          </p>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-6 py-3.5">
+                      <span
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openModal("editGroup", {
+                            groupId: medicine.group?.id,
+                            groupName,
+                          });
+                        }}
+                        className="inline-flex px-2 py-1 bg-blue-50 text-blue-700 text-xs font-semibold rounded-lg hover:bg-blue-100 transition-colors cursor-pointer"
+                      >
+                        {groupName}
+                      </span>
+                    </td>
+                    <td className="px-6 py-3.5 text-sm text-gray-600">
+                      {medicine.strength || "—"}
+                    </td>
+                    <td className="px-6 py-3.5 text-sm text-gray-600">
+                      {medicine.dosageForm || "—"}
+                    </td>
+                    <td className="px-6 py-3.5 text-right">
+                      <span
+                        className={`text-sm font-bold ${
+                          isLowStock ? "text-red-600" : "text-gray-900"
+                        }`}
+                      >
+                        {formatNumber(medicine.currentStock)}
+                      </span>
+                    </td>
+                    <td className="px-6 py-3.5 text-center">
+                      {isLowStock ? (
+                        <span className="inline-flex items-center gap-1 px-2 py-1 bg-amber-50 text-amber-700 text-xs font-semibold rounded-lg">
+                          <AlertTriangle className="w-3 h-3" />
+                          Low
+                        </span>
+                      ) : (
+                        <span className="inline-flex px-2 py-1 bg-emerald-50 text-emerald-700 text-xs font-semibold rounded-lg">
+                          In Stock
+                        </span>
                       )}
-                    </div>
-                  </td>
-                  <td className="px-6 py-3.5">
-                    <span
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Mobile Cards */}
+        <div className="md:hidden divide-y divide-gray-100">
+          {medicines.map((medicine) => {
+            const isLowStock =
+              medicine.currentStock <= medicine.lowStockThreshold;
+            const groupName = medicine.group?.name || "Unknown Group";
+            return (
+              <div
+                key={medicine.id}
+                className="p-4 space-y-2 cursor-pointer hover:bg-gray-50/60 transition-colors"
+                onClick={() => openModal("editMedicine", { medicine })}
+              >
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p className="text-sm font-bold text-gray-900">
+                      {medicine.genericName}
+                    </p>
+                    {medicine.brandName && (
+                      <p className="text-xs text-gray-500">
+                        {medicine.brandName}
+                      </p>
+                    )}
+                  </div>
+                  {isLowStock ? (
+                    <span className="inline-flex items-center gap-1 px-2 py-1 bg-amber-50 text-amber-700 text-[10px] font-semibold rounded-lg">
+                      <AlertTriangle className="w-3 h-3" />
+                      Low
+                    </span>
+                  ) : (
+                    <span className="inline-flex px-2 py-1 bg-emerald-50 text-emerald-700 text-[10px] font-semibold rounded-lg">
+                      In Stock
+                    </span>
+                  )}
+                </div>
+                <div className="flex flex-wrap gap-3 text-xs text-gray-600">
+                  <span>
+                    <span className="font-semibold text-gray-500">Group:</span>{" "}
+                    <button
+                      type="button"
                       onClick={(e) => {
                         e.stopPropagation();
                         openModal("editGroup", {
@@ -150,118 +242,51 @@ const MedicineTable: React.FC = () => {
                           groupName,
                         });
                       }}
-                      className="inline-flex px-2 py-1 bg-blue-50 text-blue-700 text-xs font-semibold rounded-lg hover:bg-blue-100 transition-colors cursor-pointer"
+                      className="text-blue-700 hover:text-blue-800 font-semibold cursor-pointer"
                     >
                       {groupName}
+                    </button>
+                  </span>
+                  {medicine.strength && (
+                    <span>
+                      <span className="font-semibold text-gray-500">
+                        Strength:
+                      </span>{" "}
+                      {medicine.strength}
                     </span>
-                  </td>
-                  <td className="px-6 py-3.5 text-sm text-gray-600">
-                    {medicine.strength || "—"}
-                  </td>
-                  <td className="px-6 py-3.5 text-sm text-gray-600">
-                    {medicine.dosageForm || "—"}
-                  </td>
-                  <td className="px-6 py-3.5 text-right">
+                  )}
+                  <span>
+                    <span className="font-semibold text-gray-500">Stock:</span>{" "}
                     <span
-                      className={`text-sm font-bold ${
-                        isLowStock ? "text-red-600" : "text-gray-900"
-                      }`}
+                      className={`font-bold ${isLowStock ? "text-red-600" : ""}`}
                     >
                       {formatNumber(medicine.currentStock)}
                     </span>
-                  </td>
-                  <td className="px-6 py-3.5 text-center">
-                    {isLowStock ? (
-                      <span className="inline-flex items-center gap-1 px-2 py-1 bg-amber-50 text-amber-700 text-xs font-semibold rounded-lg">
-                        <AlertTriangle className="w-3 h-3" />
-                        Low
-                      </span>
-                    ) : (
-                      <span className="inline-flex px-2 py-1 bg-emerald-50 text-emerald-700 text-xs font-semibold rounded-lg">
-                        In Stock
-                      </span>
-                    )}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+                  </span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
       </div>
 
-      {/* Mobile Cards */}
-      <div className="md:hidden divide-y divide-gray-100">
-        {medicines.map((medicine) => {
-          const isLowStock =
-            medicine.currentStock <= medicine.lowStockThreshold;
-          const groupName = medicine.group?.name || "Unknown Group";
-          return (
-            <div
-              key={medicine.id}
-              className="p-4 space-y-2 cursor-pointer hover:bg-gray-50/60 transition-colors"
-              onClick={() => openModal("editMedicine", { medicine })}
-            >
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="text-sm font-bold text-gray-900">
-                    {medicine.genericName}
-                  </p>
-                  {medicine.brandName && (
-                    <p className="text-xs text-gray-500">
-                      {medicine.brandName}
-                    </p>
-                  )}
-                </div>
-                {isLowStock ? (
-                  <span className="inline-flex items-center gap-1 px-2 py-1 bg-amber-50 text-amber-700 text-[10px] font-semibold rounded-lg">
-                    <AlertTriangle className="w-3 h-3" />
-                    Low
-                  </span>
-                ) : (
-                  <span className="inline-flex px-2 py-1 bg-emerald-50 text-emerald-700 text-[10px] font-semibold rounded-lg">
-                    In Stock
-                  </span>
-                )}
-              </div>
-              <div className="flex flex-wrap gap-3 text-xs text-gray-600">
-                <span>
-                  <span className="font-semibold text-gray-500">Group:</span>{" "}
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      openModal("editGroup", {
-                        groupId: medicine.group?.id,
-                        groupName,
-                      });
-                    }}
-                    className="text-blue-700 hover:text-blue-800 font-semibold cursor-pointer"
-                  >
-                    {groupName}
-                  </button>
-                </span>
-                {medicine.strength && (
-                  <span>
-                    <span className="font-semibold text-gray-500">
-                      Strength:
-                    </span>{" "}
-                    {medicine.strength}
-                  </span>
-                )}
-                <span>
-                  <span className="font-semibold text-gray-500">Stock:</span>{" "}
-                  <span
-                    className={`font-bold ${isLowStock ? "text-red-600" : ""}`}
-                  >
-                    {formatNumber(medicine.currentStock)}
-                  </span>
-                </span>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    </div>
+      {totalPages > 1 && (
+        <div className="mt-4 bg-white rounded-2xl border border-gray-100 shadow-sm">
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalResults={total}
+            startIndex={startIndex}
+            endIndex={endIndex}
+            onPageChange={(page) => setFilter("page", page)}
+            onPrev={() => setFilter("page", Math.max(1, currentPage - 1))}
+            onNext={() =>
+              setFilter("page", Math.min(totalPages, currentPage + 1))
+            }
+          />
+        </div>
+      )}
+    </>
   );
 };
 

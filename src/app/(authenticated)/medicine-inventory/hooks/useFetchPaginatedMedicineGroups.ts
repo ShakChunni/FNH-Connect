@@ -1,15 +1,10 @@
-/**
- * Fetch Sales Hook
- * React Query hook for fetching medicine sales with filters
- */
-
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/axios";
-import type { MedicineSale, SaleFilters } from "../types";
+import type { MedicineGroup } from "../types";
 
-interface SalesResponse {
+interface GroupsResponse {
   success: boolean;
-  data: MedicineSale[];
+  data: MedicineGroup[];
   pagination: {
     total: number;
     page: number;
@@ -19,38 +14,30 @@ interface SalesResponse {
   error?: string;
 }
 
-export interface PaginatedSales {
-  data: MedicineSale[];
+export interface GroupFilters {
+  search?: string;
+  activeOnly?: boolean;
+  page?: number;
+  limit?: number;
+}
+
+export interface PaginatedGroups {
+  data: MedicineGroup[];
   total: number;
   totalPages: number;
   currentPage: number;
   limit: number;
 }
 
-export function useFetchSales(filters: SaleFilters = {}) {
+export function useFetchPaginatedMedicineGroups(filters: GroupFilters = {}) {
   return useQuery({
-    queryKey: ["medicine-inventory", "sales", filters],
-    queryFn: async (): Promise<PaginatedSales> => {
+    queryKey: ["medicine-inventory", "groups", "paginated", filters],
+    queryFn: async (): Promise<PaginatedGroups> => {
       const params = new URLSearchParams();
+      params.append("activeOnly", String(filters.activeOnly !== false));
 
       if (filters.search) {
         params.append("search", filters.search);
-      }
-
-      if (filters.patientId) {
-        params.append("patientId", filters.patientId.toString());
-      }
-
-      if (filters.medicineId) {
-        params.append("medicineId", filters.medicineId.toString());
-      }
-
-      if (filters.startDate) {
-        params.append("startDate", filters.startDate);
-      }
-
-      if (filters.endDate) {
-        params.append("endDate", filters.endDate);
       }
 
       if (filters.page) {
@@ -61,16 +48,16 @@ export function useFetchSales(filters: SaleFilters = {}) {
         params.append("limit", filters.limit.toString());
       }
 
-      const response = await api.get<SalesResponse>(
-        `/medicine-inventory/sales?${params.toString()}`,
+      const response = await api.get<GroupsResponse>(
+        `/medicine-inventory/groups?${params.toString()}`,
       );
 
       if (!response.data.success) {
-        throw new Error(response.data.error || "Failed to fetch sales");
+        throw new Error(response.data.error || "Failed to fetch groups");
       }
 
       return {
-        data: response.data.data,
+        data: response.data.data || [],
         total: response.data.pagination.total,
         totalPages: response.data.pagination.totalPages,
         currentPage: response.data.pagination.page,

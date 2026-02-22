@@ -12,6 +12,7 @@ import {
 import { getAuthenticatedUserForAPI } from "@/lib/auth-validation";
 import {
   getMedicineCompanies,
+  getPaginatedMedicineCompanies,
   createMedicineCompany,
 } from "@/services/medicineInventoryService";
 import { z } from "zod";
@@ -20,6 +21,16 @@ const createCompanySchema = z.object({
   name: z.string().min(1, "Company name is required").max(200),
   address: z.string().max(500).optional(),
   phoneNumber: z.string().max(50).optional(),
+});
+
+const companyFiltersSchema = z.object({
+  activeOnly: z
+    .enum(["true", "false"])
+    .optional()
+    .transform((v) => v !== "false"),
+  search: z.string().optional(),
+  page: z.coerce.number().int().min(1).optional(),
+  limit: z.coerce.number().int().min(1).max(20).optional(),
 });
 
 // ═══════════════════════════════════════════════════════════════
@@ -37,10 +48,47 @@ export async function GET(request: NextRequest) {
     }
 
     const { searchParams } = new URL(request.url);
-    const activeOnly = searchParams.get("activeOnly") !== "false";
-    const search = searchParams.get("search") || undefined;
+    const rawFilters = Object.fromEntries(searchParams.entries());
+    const validation = companyFiltersSchema.safeParse(rawFilters);
 
-    const companies = await getMedicineCompanies(activeOnly, search);
+    if (!validation.success) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Invalid query parameters",
+          details: validation.error.flatten().fieldErrors,
+        },
+        { status: 400 },
+      );
+    }
+
+    const filters = validation.data;
+
+    if (filters.page || filters.limit) {
+      const { companies, total, page, limit } =
+        await getPaginatedMedicineCompanies({
+          activeOnly: filters.activeOnly,
+          search: filters.search,
+          page: filters.page,
+          limit: filters.limit,
+        });
+
+      return NextResponse.json({
+        success: true,
+        data: companies,
+        pagination: {
+          total,
+          page,
+          limit,
+          totalPages: Math.ceil(total / limit),
+        },
+      });
+    }
+
+    const companies = await getMedicineCompanies(
+      filters.activeOnly,
+      filters.search,
+    );
 
     return NextResponse.json({
       success: true,

@@ -24,6 +24,7 @@ export interface PaginatedPurchases {
   total: number;
   totalPages: number;
   currentPage: number;
+  limit: number;
 }
 
 export function useFetchPurchases(filters: PurchaseFilters = {}) {
@@ -73,6 +74,7 @@ export function useFetchPurchases(filters: PurchaseFilters = {}) {
         total: response.data.pagination.total,
         totalPages: response.data.pagination.totalPages,
         currentPage: response.data.pagination.page,
+        limit: response.data.pagination.limit,
       };
     },
 

@@ -7,15 +7,21 @@
 
 import React from "react";
 import { ShoppingCart } from "lucide-react";
+import { Pagination } from "@/components/pagination/Pagination";
 import { useFetchSales } from "../../hooks";
 import { useSaleFilterStore } from "../../stores";
 
 const SaleTable: React.FC = () => {
-  const { filters } = useSaleFilterStore();
+  const { filters, setFilter } = useSaleFilterStore();
   const { data, isLoading, isError, error } = useFetchSales(filters);
 
   const sales = data?.data || [];
   const total = data?.total || 0;
+  const totalPages = data?.totalPages || 1;
+  const currentPage = data?.currentPage || filters.page || 1;
+  const limit = data?.limit || filters.limit || 20;
+  const startIndex = total === 0 ? 0 : (currentPage - 1) * limit + 1;
+  const endIndex = Math.min(currentPage * limit, total);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("en-BD", {
@@ -108,136 +114,156 @@ const SaleTable: React.FC = () => {
   }
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-      {/* Table Header */}
-      <div className="px-4 sm:px-6 py-3 bg-gray-50/50 border-b border-gray-100">
-        <p className="text-xs font-bold text-gray-500 uppercase tracking-widest">
-          {formatNumber(total)} sale{total !== 1 ? "s" : ""}
-        </p>
-      </div>
+    <>
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+        {/* Table Header */}
+        <div className="px-4 sm:px-6 py-3 bg-gray-50/50 border-b border-gray-100">
+          <p className="text-xs font-bold text-gray-500 uppercase tracking-widest">
+            {formatNumber(total)} sale{total !== 1 ? "s" : ""}
+          </p>
+        </div>
 
-      {/* Desktop Table */}
-      <div className="hidden md:block overflow-x-auto">
-        <table className="w-full">
-          <thead>
-            <tr className="border-b border-gray-100">
-              <th className="text-left px-6 py-3 text-[10px] font-black uppercase tracking-widest text-gray-500">
-                Patient
-              </th>
-              <th className="text-left px-6 py-3 text-[10px] font-black uppercase tracking-widest text-gray-500">
-                Medicine
-              </th>
-              <th className="text-left px-6 py-3 text-[10px] font-black uppercase tracking-widest text-gray-500">
-                Group
-              </th>
-              <th className="text-left px-6 py-3 text-[10px] font-black uppercase tracking-widest text-gray-500">
-                Company
-              </th>
-              <th className="text-right px-6 py-3 text-[10px] font-black uppercase tracking-widest text-gray-500">
-                Qty
-              </th>
-              <th className="text-right px-6 py-3 text-[10px] font-black uppercase tracking-widest text-gray-500">
-                Price
-              </th>
-              <th className="text-right px-6 py-3 text-[10px] font-black uppercase tracking-widest text-gray-500">
-                Total
-              </th>
-              <th className="text-left px-6 py-3 text-[10px] font-black uppercase tracking-widest text-gray-500">
-                Date
-              </th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-50">
-            {sales.map((sale) => (
-              <tr
-                key={sale.id}
-                className="hover:bg-gray-50/50 transition-colors"
-              >
-                <td className="px-6 py-3.5">
-                  <div>
-                    <p className="text-sm font-bold text-gray-900">
-                      {sale.patient?.fullName || "Unknown Patient"}
+        {/* Desktop Table */}
+        <div className="hidden md:block overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-gray-100">
+                <th className="text-left px-6 py-3 text-[10px] font-black uppercase tracking-widest text-gray-500">
+                  Patient
+                </th>
+                <th className="text-left px-6 py-3 text-[10px] font-black uppercase tracking-widest text-gray-500">
+                  Medicine
+                </th>
+                <th className="text-left px-6 py-3 text-[10px] font-black uppercase tracking-widest text-gray-500">
+                  Group
+                </th>
+                <th className="text-left px-6 py-3 text-[10px] font-black uppercase tracking-widest text-gray-500">
+                  Company
+                </th>
+                <th className="text-right px-6 py-3 text-[10px] font-black uppercase tracking-widest text-gray-500">
+                  Qty
+                </th>
+                <th className="text-right px-6 py-3 text-[10px] font-black uppercase tracking-widest text-gray-500">
+                  Price
+                </th>
+                <th className="text-right px-6 py-3 text-[10px] font-black uppercase tracking-widest text-gray-500">
+                  Total
+                </th>
+                <th className="text-left px-6 py-3 text-[10px] font-black uppercase tracking-widest text-gray-500">
+                  Date
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-50">
+              {sales.map((sale) => (
+                <tr
+                  key={sale.id}
+                  className="hover:bg-gray-50/50 transition-colors"
+                >
+                  <td className="px-6 py-3.5">
+                    <div>
+                      <p className="text-sm font-bold text-gray-900">
+                        {sale.patient?.fullName || "Unknown Patient"}
+                      </p>
+                      {sale.patient.phoneNumber && (
+                        <p className="text-xs text-gray-500">
+                          {sale.patient.phoneNumber}
+                        </p>
+                      )}
+                    </div>
+                  </td>
+                  <td className="px-6 py-3.5">
+                    <p className="text-sm font-medium text-gray-900">
+                      {sale.medicine.genericName}
                     </p>
-                    {sale.patient.phoneNumber && (
+                    {sale.medicine.brandName && (
                       <p className="text-xs text-gray-500">
-                        {sale.patient.phoneNumber}
+                        {sale.medicine.brandName}
                       </p>
                     )}
-                  </div>
-                </td>
-                <td className="px-6 py-3.5">
-                  <p className="text-sm font-medium text-gray-900">
+                  </td>
+                  <td className="px-6 py-3.5">
+                    <span className="inline-flex px-2 py-1 bg-blue-50 text-blue-700 text-xs font-semibold rounded-lg">
+                      {sale.medicine.group?.name || "Unknown Group"}
+                    </span>
+                  </td>
+                  <td className="px-6 py-3.5 text-sm text-gray-700 font-medium">
+                    {sale.purchase.company?.name || "Unknown Company"}
+                  </td>
+                  <td className="px-6 py-3.5 text-right text-sm font-bold text-gray-900">
+                    {formatNumber(sale.quantity)}
+                  </td>
+                  <td className="px-6 py-3.5 text-right text-sm text-gray-700">
+                    {formatCurrency(sale.unitPrice)}
+                  </td>
+                  <td className="px-6 py-3.5 text-right">
+                    <span className="text-sm font-bold text-blue-700">
+                      {formatCurrency(sale.totalAmount)}
+                    </span>
+                  </td>
+                  <td className="px-6 py-3.5 text-sm text-gray-600">
+                    {formatDate(sale.saleDate)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Mobile Cards */}
+        <div className="md:hidden divide-y divide-gray-100">
+          {sales.map((sale) => (
+            <div key={sale.id} className="p-4 space-y-2">
+              <div className="flex items-start justify-between">
+                <div>
+                  <p className="text-sm font-bold text-gray-900">
+                    {sale.patient?.fullName || "Unknown Patient"}
+                  </p>
+                  <p className="text-xs text-gray-500">
                     {sale.medicine.genericName}
                   </p>
-                  {sale.medicine.brandName && (
-                    <p className="text-xs text-gray-500">
-                      {sale.medicine.brandName}
-                    </p>
-                  )}
-                </td>
-                <td className="px-6 py-3.5">
-                  <span className="inline-flex px-2 py-1 bg-blue-50 text-blue-700 text-xs font-semibold rounded-lg">
-                    {sale.medicine.group?.name || "Unknown Group"}
-                  </span>
-                </td>
-                <td className="px-6 py-3.5 text-sm text-gray-700 font-medium">
+                </div>
+                <span className="text-sm font-bold text-blue-700">
+                  {formatCurrency(sale.totalAmount)}
+                </span>
+              </div>
+              <div className="flex flex-wrap gap-3 text-xs text-gray-600">
+                <span>
+                  <span className="font-semibold text-gray-500">Company:</span>{" "}
                   {sale.purchase.company?.name || "Unknown Company"}
-                </td>
-                <td className="px-6 py-3.5 text-right text-sm font-bold text-gray-900">
-                  {formatNumber(sale.quantity)}
-                </td>
-                <td className="px-6 py-3.5 text-right text-sm text-gray-700">
+                </span>
+                <span>
+                  <span className="font-semibold text-gray-500">Qty:</span>{" "}
+                  {formatNumber(sale.quantity)} ×{" "}
                   {formatCurrency(sale.unitPrice)}
-                </td>
-                <td className="px-6 py-3.5 text-right">
-                  <span className="text-sm font-bold text-blue-700">
-                    {formatCurrency(sale.totalAmount)}
-                  </span>
-                </td>
-                <td className="px-6 py-3.5 text-sm text-gray-600">
+                </span>
+                <span>
+                  <span className="font-semibold text-gray-500">Date:</span>{" "}
                   {formatDate(sale.saleDate)}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
 
-      {/* Mobile Cards */}
-      <div className="md:hidden divide-y divide-gray-100">
-        {sales.map((sale) => (
-          <div key={sale.id} className="p-4 space-y-2">
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="text-sm font-bold text-gray-900">
-                  {sale.patient?.fullName || "Unknown Patient"}
-                </p>
-                <p className="text-xs text-gray-500">
-                  {sale.medicine.genericName}
-                </p>
-              </div>
-              <span className="text-sm font-bold text-blue-700">
-                {formatCurrency(sale.totalAmount)}
-              </span>
-            </div>
-            <div className="flex flex-wrap gap-3 text-xs text-gray-600">
-              <span>
-                <span className="font-semibold text-gray-500">Company:</span>{" "}
-                {sale.purchase.company?.name || "Unknown Company"}
-              </span>
-              <span>
-                <span className="font-semibold text-gray-500">Qty:</span>{" "}
-                {formatNumber(sale.quantity)} × {formatCurrency(sale.unitPrice)}
-              </span>
-              <span>
-                <span className="font-semibold text-gray-500">Date:</span>{" "}
-                {formatDate(sale.saleDate)}
-              </span>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
+      {totalPages > 1 && (
+        <div className="mt-4 bg-white rounded-2xl border border-gray-100 shadow-sm">
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalResults={total}
+            startIndex={startIndex}
+            endIndex={endIndex}
+            onPageChange={(page) => setFilter("page", page)}
+            onPrev={() => setFilter("page", Math.max(1, currentPage - 1))}
+            onNext={() =>
+              setFilter("page", Math.min(totalPages, currentPage + 1))
+            }
+          />
+        </div>
+      )}
+    </>
   );
 };
 

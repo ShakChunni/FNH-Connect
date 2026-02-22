@@ -20,7 +20,12 @@ import {
   Building2,
 } from "lucide-react";
 import { useFetchMedicineStats, useFetchMedicineGroups } from "./hooks";
-import { useUIStore, useMedicineFilterStore } from "./stores";
+import {
+  useUIStore,
+  useMedicineFilterStore,
+  usePurchaseFilterStore,
+  useSaleFilterStore,
+} from "./stores";
 import { useDebounce } from "@/hooks/useDebounce";
 import { cn } from "@/lib/utils";
 import { DropdownPortal } from "@/components/ui/DropdownPortal";
@@ -197,6 +202,8 @@ const MedicineInventoryPage = () => {
     modalData,
   } = useUIStore();
   const { filters, setFilter, resetFilters } = useMedicineFilterStore();
+  const { setFilter: setPurchaseFilter } = usePurchaseFilterStore();
+  const { setFilter: setSaleFilter } = useSaleFilterStore();
   const tabsScrollRef = useRef<HTMLDivElement>(null);
   const [showLeftIndicator, setShowLeftIndicator] = useState(false);
   const [showRightIndicator, setShowRightIndicator] = useState(false);
@@ -205,10 +212,25 @@ const MedicineInventoryPage = () => {
   const [searchTerm, setSearchTerm] = useState(filters.search || "");
   const debouncedSearch = useDebounce(searchTerm, 500);
 
-  // Sync debounced search to store
+  // Sync debounced search to active tab store
   useEffect(() => {
-    setFilter("search", debouncedSearch);
-  }, [debouncedSearch, setFilter]);
+    if (activeTab === "medicines") {
+      setFilter("search", debouncedSearch);
+      setFilter("page", 1);
+      return;
+    }
+
+    if (activeTab === "purchases") {
+      setPurchaseFilter("search", debouncedSearch);
+      setPurchaseFilter("page", 1);
+      return;
+    }
+
+    if (activeTab === "sales") {
+      setSaleFilter("search", debouncedSearch);
+      setSaleFilter("page", 1);
+    }
+  }, [activeTab, debouncedSearch, setFilter, setPurchaseFilter, setSaleFilter]);
 
   const { data, isLoading } = useFetchMedicineStats();
 
@@ -488,7 +510,10 @@ const MedicineInventoryPage = () => {
               {activeTab === "medicines" && (
                 <GroupFilterDropdown
                   value={filters.groupId}
-                  onChange={(value) => setFilter("groupId", value)}
+                  onChange={(value) => {
+                    setFilter("groupId", value);
+                    setFilter("page", 1);
+                  }}
                 />
               )}
 
@@ -517,7 +542,9 @@ const MedicineInventoryPage = () => {
                 exit={{ opacity: 0, y: -6 }}
                 transition={{ duration: 0.2, ease: "easeOut" }}
               >
-                {activeTab === "activity" && <ActivityTable />}
+                {activeTab === "activity" && (
+                  <ActivityTable search={searchTerm} />
+                )}
                 {activeTab === "purchases" && <PurchaseTable />}
                 {activeTab === "sales" && <SaleTable />}
                 {activeTab === "medicines" && <MedicineTable />}
