@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { PageHeader } from "@/components/ui/PageHeader";
 import {
   Pill,
@@ -15,6 +16,8 @@ import {
   Settings,
   Layers,
   ChevronDown,
+  ChevronRight,
+  Building2,
 } from "lucide-react";
 import { useFetchMedicineStats, useFetchMedicineGroups } from "./hooks";
 import { useUIStore, useMedicineFilterStore } from "./stores";
@@ -28,9 +31,13 @@ import {
   EditMedicineModal,
   AddCompanyModal,
   AddGroupModal,
+  EditGroupModal,
+  EditCompanyModal,
 } from "./components/modals";
 import {
   MedicineTable,
+  GroupTable,
+  CompanyTable,
   PurchaseTable,
   SaleTable,
   ActivityTable,
@@ -51,7 +58,7 @@ const ManageDropdown: React.FC<{
       <button
         ref={buttonRef}
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-1.5 px-3 py-2.5 bg-gray-50 hover:bg-gray-100 rounded-xl text-xs font-semibold text-gray-700 transition-colors cursor-pointer border border-gray-100"
+        className="flex items-center gap-1.5 px-3 py-2.5 bg-gray-50 hover:bg-gray-100 rounded-xl text-xs font-semibold text-gray-700 transition-colors cursor-pointer border border-gray-100 whitespace-nowrap"
       >
         <Settings className="w-3.5 h-3.5" />
         <span>Manage</span>
@@ -67,7 +74,7 @@ const ManageDropdown: React.FC<{
         isOpen={isOpen}
         onClose={() => setIsOpen(false)}
         buttonRef={buttonRef}
-        className="w-48"
+        className="min-w-max"
       >
         <div className="py-1">
           <button
@@ -75,7 +82,7 @@ const ManageDropdown: React.FC<{
               openModal("addMedicine");
               setIsOpen(false);
             }}
-            className="w-full flex items-center gap-2 px-4 py-2.5 text-xs font-semibold text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer"
+            className="w-full flex items-center gap-2 px-4 py-2.5 text-xs font-semibold text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer whitespace-nowrap"
           >
             <Plus className="w-3.5 h-3.5 text-blue-500" />
             Add Medicine
@@ -85,7 +92,7 @@ const ManageDropdown: React.FC<{
               openModal("addGroup");
               setIsOpen(false);
             }}
-            className="w-full flex items-center gap-2 px-4 py-2.5 text-xs font-semibold text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer"
+            className="w-full flex items-center gap-2 px-4 py-2.5 text-xs font-semibold text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer whitespace-nowrap"
           >
             <Plus className="w-3.5 h-3.5 text-purple-500" />
             Add Group
@@ -95,7 +102,7 @@ const ManageDropdown: React.FC<{
               openModal("addCompany");
               setIsOpen(false);
             }}
-            className="w-full flex items-center gap-2 px-4 py-2.5 text-xs font-semibold text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer"
+            className="w-full flex items-center gap-2 px-4 py-2.5 text-xs font-semibold text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer whitespace-nowrap"
           >
             <Plus className="w-3.5 h-3.5 text-emerald-500" />
             Add Company
@@ -190,6 +197,9 @@ const MedicineInventoryPage = () => {
     modalData,
   } = useUIStore();
   const { filters, setFilter, resetFilters } = useMedicineFilterStore();
+  const tabsScrollRef = useRef<HTMLDivElement>(null);
+  const [showLeftIndicator, setShowLeftIndicator] = useState(false);
+  const [showRightIndicator, setShowRightIndicator] = useState(false);
 
   // Local search state for immediate input feedback
   const [searchTerm, setSearchTerm] = useState(filters.search || "");
@@ -204,6 +214,35 @@ const MedicineInventoryPage = () => {
 
   const stats = data?.stats;
   const lowStockItems = data?.lowStockItems || [];
+
+  useEffect(() => {
+    const element = tabsScrollRef.current;
+    if (!element) return;
+
+    const updateIndicators = () => {
+      const maxScrollLeft = element.scrollWidth - element.clientWidth;
+      setShowLeftIndicator(element.scrollLeft > 8);
+      setShowRightIndicator(maxScrollLeft - element.scrollLeft > 8);
+    };
+
+    updateIndicators();
+    element.addEventListener("scroll", updateIndicators, { passive: true });
+    window.addEventListener("resize", updateIndicators);
+
+    return () => {
+      element.removeEventListener("scroll", updateIndicators);
+      window.removeEventListener("resize", updateIndicators);
+    };
+  }, []);
+
+  const tabConfig = [
+    { id: "activity" as const, label: "Activity", icon: ClipboardList },
+    { id: "purchases" as const, label: "Purchases", icon: TrendingUp },
+    { id: "sales" as const, label: "Sales", icon: ShoppingCart },
+    { id: "medicines" as const, label: "Medicines", icon: Pill },
+    { id: "groups" as const, label: "Groups", icon: Layers },
+    { id: "companies" as const, label: "Companies", icon: Building2 },
+  ];
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("en-BD", {
@@ -390,35 +429,41 @@ const MedicineInventoryPage = () => {
 
           {/* Tabs */}
           <div className="px-1 sm:px-2 lg:px-4">
-            <div className="flex gap-1 p-1 bg-white rounded-xl border border-gray-100 shadow-sm w-fit">
-              {[
-                {
-                  id: "activity" as const,
-                  label: "Activity",
-                  icon: ClipboardList,
-                },
-                { id: "medicines" as const, label: "Medicines", icon: Pill },
-                {
-                  id: "purchases" as const,
-                  label: "Purchases",
-                  icon: TrendingUp,
-                },
-                { id: "sales" as const, label: "Sales", icon: ShoppingCart },
-              ].map((tab) => (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={cn(
-                    "flex items-center gap-2 px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all cursor-pointer",
-                    activeTab === tab.id
-                      ? "bg-fnh-navy text-white shadow-sm"
-                      : "text-gray-600 hover:bg-gray-50",
-                  )}
-                >
-                  <tab.icon className="w-4 h-4" />
-                  <span className="hidden sm:inline">{tab.label}</span>
-                </button>
-              ))}
+            <div className="relative">
+              {showLeftIndicator && (
+                <div className="absolute left-0 top-0 bottom-0 z-10 w-10 bg-gradient-to-r from-fnh-porcelain to-transparent pointer-events-none flex items-center">
+                  <ChevronRight className="w-4 h-4 text-gray-400 rotate-180 ml-1" />
+                </div>
+              )}
+              {showRightIndicator && (
+                <div className="absolute right-0 top-0 bottom-0 z-10 w-12 bg-gradient-to-l from-fnh-porcelain to-transparent pointer-events-none flex items-center justify-end pr-1">
+                  <ChevronRight className="w-4 h-4 text-gray-400" />
+                </div>
+              )}
+
+              <div
+                ref={tabsScrollRef}
+                className="overflow-x-auto scrollbar-hide"
+                style={{ scrollbarWidth: "none" }}
+              >
+                <div className="inline-flex gap-1 p-1 bg-white rounded-xl border border-gray-100 shadow-sm min-w-max">
+                  {tabConfig.map((tab) => (
+                    <button
+                      key={tab.id}
+                      onClick={() => setActiveTab(tab.id)}
+                      className={cn(
+                        "flex items-center gap-2 px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all cursor-pointer whitespace-nowrap",
+                        activeTab === tab.id
+                          ? "bg-fnh-navy text-white shadow-sm"
+                          : "text-gray-600 hover:bg-gray-50",
+                      )}
+                    >
+                      <tab.icon className="w-4 h-4" />
+                      <span>{tab.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
 
@@ -447,26 +492,41 @@ const MedicineInventoryPage = () => {
                 />
               )}
 
-              {(filters.search || filters.groupId || filters.lowStockOnly) && (
-                <button
-                  onClick={() => {
-                    resetFilters();
-                    setSearchTerm("");
-                  }}
-                  className="px-3 py-2 text-[10px] sm:text-xs font-black text-rose-500 uppercase tracking-widest hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
-                >
-                  Clear Filters
-                </button>
-              )}
+              {(activeTab === "medicines" || activeTab === "groups") &&
+                (filters.search || filters.groupId || filters.lowStockOnly) && (
+                  <button
+                    onClick={() => {
+                      resetFilters();
+                      setSearchTerm("");
+                    }}
+                    className="px-3 py-2 text-[10px] sm:text-xs font-black text-rose-500 uppercase tracking-widest hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                  >
+                    Clear Filters
+                  </button>
+                )}
             </div>
           </div>
 
           {/* Content Area - Data Tables */}
           <div className="px-1 sm:px-2 lg:px-4 pb-10">
-            {activeTab === "activity" && <ActivityTable />}
-            {activeTab === "medicines" && <MedicineTable />}
-            {activeTab === "purchases" && <PurchaseTable />}
-            {activeTab === "sales" && <SaleTable />}
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={activeTab}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -6 }}
+                transition={{ duration: 0.2, ease: "easeOut" }}
+              >
+                {activeTab === "activity" && <ActivityTable />}
+                {activeTab === "purchases" && <PurchaseTable />}
+                {activeTab === "sales" && <SaleTable />}
+                {activeTab === "medicines" && <MedicineTable />}
+                {activeTab === "groups" && <GroupTable search={searchTerm} />}
+                {activeTab === "companies" && (
+                  <CompanyTable search={searchTerm} />
+                )}
+              </motion.div>
+            </AnimatePresence>
           </div>
         </div>
       </div>
@@ -497,6 +557,20 @@ const MedicineInventoryPage = () => {
         isOpen={activeModal === "addGroup"}
         onClose={closeModal}
         initialName={(modalData?.name as string) || ""}
+      />
+      <EditGroupModal
+        isOpen={activeModal === "editGroup"}
+        onClose={closeModal}
+        initialGroupId={(modalData?.groupId as number | undefined) ?? null}
+        initialGroupName={(modalData?.groupName as string) || ""}
+      />
+      <EditCompanyModal
+        isOpen={activeModal === "editCompany"}
+        onClose={closeModal}
+        companyId={(modalData?.companyId as number | undefined) ?? null}
+        initialName={(modalData?.name as string) || ""}
+        initialAddress={(modalData?.address as string) || ""}
+        initialPhoneNumber={(modalData?.phoneNumber as string) || ""}
       />
     </div>
   );

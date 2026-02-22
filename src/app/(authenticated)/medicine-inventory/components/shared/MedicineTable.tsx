@@ -142,7 +142,16 @@ const MedicineTable: React.FC = () => {
                     </div>
                   </td>
                   <td className="px-6 py-3.5">
-                    <span className="inline-flex px-2 py-1 bg-blue-50 text-blue-700 text-xs font-semibold rounded-lg">
+                    <span
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        openModal("editGroup", {
+                          groupId: medicine.group?.id,
+                          groupName,
+                        });
+                      }}
+                      className="inline-flex px-2 py-1 bg-blue-50 text-blue-700 text-xs font-semibold rounded-lg hover:bg-blue-100 transition-colors cursor-pointer"
+                    >
                       {groupName}
                     </span>
                   </td>
@@ -217,7 +226,19 @@ const MedicineTable: React.FC = () => {
               <div className="flex flex-wrap gap-3 text-xs text-gray-600">
                 <span>
                   <span className="font-semibold text-gray-500">Group:</span>{" "}
-                  {groupName}
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      openModal("editGroup", {
+                        groupId: medicine.group?.id,
+                        groupName,
+                      });
+                    }}
+                    className="text-blue-700 hover:text-blue-800 font-semibold cursor-pointer"
+                  >
+                    {groupName}
+                  </button>
                 </span>
                 {medicine.strength && (
                   <span>
