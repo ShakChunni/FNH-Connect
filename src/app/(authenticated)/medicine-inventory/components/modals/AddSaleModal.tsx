@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import CustomCalendar from "@/components/form-sections/Fields/CustomCalendar";
+import NumberInput from "@/components/form-sections/Fields/NumberInput";
 import { DropdownPortal } from "@/components/ui/DropdownPortal";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -495,8 +496,7 @@ const AddSaleModal: React.FC<AddSaleModalProps> = ({ isOpen, onClose }) => {
                         <label className="block text-xs font-semibold text-gray-700 mb-2">
                           Quantity <span className="text-red-500">*</span>
                         </label>
-                        <input
-                          type="number"
+                        <NumberInput
                           min="1"
                           max={formData.availableStock}
                           value={formData.quantity || ""}
@@ -521,10 +521,9 @@ const AddSaleModal: React.FC<AddSaleModalProps> = ({ isOpen, onClose }) => {
                       {/* Unit Price (Editable — defaults to medicine default sale price) */}
                       <div>
                         <label className="block text-xs font-semibold text-gray-700 mb-2">
-                          Price (৳) <span className="text-red-500">*</span>
+                          Unit Price (৳) <span className="text-red-500">*</span>
                         </label>
-                        <input
-                          type="number"
+                        <NumberInput
                           min="0"
                           step="0.01"
                           value={formData.unitPrice || ""}

@@ -1,6 +1,6 @@
 /**
- * Add Medicine Modal
- * Full modal for adding a new medicine to the inventory
+ * Edit Medicine Modal
+ * Edit medicine details except stock quantities
  */
 
 "use client";
@@ -23,20 +23,18 @@ import {
 import { ModalHeader } from "@/components/ui/ModalHeader";
 import { ModalFooter } from "@/components/ui/ModalFooter";
 import { useNotification } from "@/hooks/useNotification";
-import { useAddMedicineData, useAddGroupData } from "../../hooks";
-import { useUIStore } from "../../stores";
+import { useUpdateMedicineData } from "../../hooks";
 import { GroupSearch } from "../shared";
-import type { MedicineGroup } from "../../types";
+import type { Medicine, MedicineGroup } from "../../types";
 import { DropdownPortal } from "@/components/ui/DropdownPortal";
 import NumberInput from "@/components/form-sections/Fields/NumberInput";
 
-interface AddMedicineModalProps {
+interface EditMedicineModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSuccess?: (medicine: { id: number; genericName: string }) => void;
+  medicine: Medicine | null;
 }
 
-// Dosage form options
 const DOSAGE_FORMS = [
   "Tablet",
   "Capsule",
@@ -52,15 +50,14 @@ const DOSAGE_FORMS = [
   "Suppository",
 ];
 
-const AddMedicineModal: React.FC<AddMedicineModalProps> = ({
+const EditMedicineModal: React.FC<EditMedicineModalProps> = ({
   isOpen,
   onClose,
-  onSuccess,
+  medicine,
 }) => {
   const popupRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-  // Form state
   const [genericName, setGenericName] = useState("");
   const [brandName, setBrandName] = useState("");
   const [groupId, setGroupId] = useState<number | null>(null);
@@ -70,35 +67,24 @@ const AddMedicineModal: React.FC<AddMedicineModalProps> = ({
   const [defaultSalePrice, setDefaultSalePrice] = useState(0);
   const [lowStockThreshold, setLowStockThreshold] = useState(10);
 
-  // For dosage form dropdown
   const [isDosageOpen, setIsDosageOpen] = useState(false);
   const dosageBtnRef = useRef<HTMLButtonElement>(null);
 
-  // For inline group creation
-  const [isAddingGroup, setIsAddingGroup] = useState(false);
-  const [newGroupName, setNewGroupName] = useState("");
-
-  // UI Store for nested modals
-  const { openModal: openUIModal } = useUIStore();
-
-  // Notification
   const { showNotification } = useNotification();
 
-  // Handle body scroll locking
   useEffect(() => {
     if (isOpen) {
       preserveLockBodyScroll();
-      // Reset form
-      setGenericName("");
-      setBrandName("");
-      setGroupId(null);
-      setGroupName("");
-      setStrength("");
-      setDosageForm("");
-      setDefaultSalePrice(0);
-      setLowStockThreshold(10);
-      setIsAddingGroup(false);
-      setNewGroupName("");
+      if (medicine) {
+        setGenericName(medicine.genericName || "");
+        setBrandName(medicine.brandName || "");
+        setGroupId(medicine.group?.id || null);
+        setGroupName(medicine.group?.name || "");
+        setStrength(medicine.strength || "");
+        setDosageForm(medicine.dosageForm || "");
+        setDefaultSalePrice(medicine.defaultSalePrice || 0);
+        setLowStockThreshold(medicine.lowStockThreshold || 10);
+      }
       setIsDosageOpen(false);
     } else {
       preserveUnlockBodyScroll();
@@ -106,31 +92,20 @@ const AddMedicineModal: React.FC<AddMedicineModalProps> = ({
     return () => {
       preserveUnlockBodyScroll();
     };
-  }, [isOpen]);
+  }, [isOpen, medicine]);
 
-  // Mutation for adding medicine
-  const { addMedicine, isLoading: isSubmitting } = useAddMedicineData({
-    onSuccess: (medicine) => {
-      onSuccess?.({ id: medicine.id, genericName: medicine.genericName });
+  const { updateMedicine, isLoading: isSubmitting } = useUpdateMedicineData({
+    onSuccess: () => {
       onClose();
     },
   });
 
-  // Mutation for adding group inline
-  const { addGroup, isLoading: isAddingGroupLoading } = useAddGroupData({
-    onSuccess: (group) => {
-      setGroupId(group.id);
-      setGroupName(group.name);
-      setIsAddingGroup(false);
-      setNewGroupName("");
-    },
-    showSuccessNotification: true,
-  });
-
-  // Validation
   const { isFormValid, validationErrors } = useMemo(() => {
     const errors: string[] = [];
 
+    if (!medicine?.id) {
+      errors.push("Invalid medicine selected");
+    }
     if (!genericName.trim()) {
       errors.push("Generic name is required");
     }
@@ -148,16 +123,15 @@ const AddMedicineModal: React.FC<AddMedicineModalProps> = ({
       isFormValid: errors.length === 0,
       validationErrors: errors,
     };
-  }, [genericName, groupId, defaultSalePrice, lowStockThreshold]);
+  }, [medicine?.id, genericName, groupId, defaultSalePrice, lowStockThreshold]);
 
-  // Handlers
   const handleClose = useCallback(() => {
     if (isSubmitting) return;
     onClose();
   }, [isSubmitting, onClose]);
 
   const handleSubmit = useCallback(() => {
-    if (isSubmitting) return;
+    if (isSubmitting || !medicine?.id) return;
 
     if (!isFormValid) {
       const errorMessage =
@@ -168,18 +142,25 @@ const AddMedicineModal: React.FC<AddMedicineModalProps> = ({
       return;
     }
 
-    addMedicine({
-      genericName: genericName.trim(),
-      brandName: brandName.trim() || undefined,
-      groupId: groupId!,
-      strength: strength.trim() || undefined,
-      dosageForm: dosageForm || undefined,
-      defaultSalePrice,
-      lowStockThreshold,
+    updateMedicine({
+      id: medicine.id,
+      data: {
+        genericName: genericName.trim(),
+        brandName: brandName.trim() || undefined,
+        groupId: groupId!,
+        strength: strength.trim() || undefined,
+        dosageForm: dosageForm || undefined,
+        defaultSalePrice,
+        lowStockThreshold,
+      },
     });
   }, [
     isSubmitting,
+    medicine?.id,
     isFormValid,
+    validationErrors,
+    showNotification,
+    updateMedicine,
     genericName,
     brandName,
     groupId,
@@ -187,12 +168,8 @@ const AddMedicineModal: React.FC<AddMedicineModalProps> = ({
     dosageForm,
     defaultSalePrice,
     lowStockThreshold,
-    addMedicine,
-    validationErrors,
-    showNotification,
   ]);
 
-  // Keyboard handling
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
@@ -207,7 +184,6 @@ const AddMedicineModal: React.FC<AddMedicineModalProps> = ({
     };
   }, [isOpen, handleClose]);
 
-  // Group selection handler
   const handleGroupChange = useCallback((group: MedicineGroup | null) => {
     if (group) {
       setGroupId(group.id);
@@ -218,24 +194,6 @@ const AddMedicineModal: React.FC<AddMedicineModalProps> = ({
     }
   }, []);
 
-  // Add new group inline
-  const handleAddNewGroup = useCallback((name: string) => {
-    setNewGroupName(name);
-    setIsAddingGroup(true);
-  }, []);
-
-  const handleConfirmAddGroup = useCallback(() => {
-    if (newGroupName.trim()) {
-      addGroup({ name: newGroupName.trim() });
-    }
-  }, [newGroupName, addGroup]);
-
-  const handleCancelAddGroup = useCallback(() => {
-    setIsAddingGroup(false);
-    setNewGroupName("");
-  }, []);
-
-  // Common input class
   const getInputClass = (hasValue: boolean, hasError: boolean = false) => {
     const base =
       "text-gray-700 font-normal rounded-lg h-12 md:h-14 py-2 px-4 w-full focus:border-blue-900 focus:ring-2 focus:ring-blue-950 outline-none shadow-sm hover:shadow-md transition-all duration-300 placeholder:text-gray-400 placeholder:font-light text-xs sm:text-sm cursor-pointer";
@@ -251,7 +209,7 @@ const AddMedicineModal: React.FC<AddMedicineModalProps> = ({
 
   return (
     <AnimatePresence mode="wait">
-      {isOpen && (
+      {isOpen && medicine && (
         <motion.div
           className="fixed inset-0 bg-slate-900/70 flex items-center justify-center z-100000"
           variants={backdropVariants}
@@ -281,8 +239,8 @@ const AddMedicineModal: React.FC<AddMedicineModalProps> = ({
             <ModalHeader
               icon={Pill}
               iconColor="blue"
-              title="Add Medicine"
-              subtitle="Add a new medicine to the inventory"
+              title="Edit Medicine"
+              subtitle="Update medicine details (stock is managed via purchases/sales)"
               onClose={handleClose}
               isDisabled={isSubmitting}
             />
@@ -292,7 +250,6 @@ const AddMedicineModal: React.FC<AddMedicineModalProps> = ({
               className="flex-1 overflow-y-auto p-4 sm:p-6"
             >
               <div className="space-y-6">
-                {/* Medicine Details Section */}
                 <div className="bg-blue-50/50 rounded-2xl p-4 sm:p-5 border border-blue-100">
                   <div className="flex items-center gap-2 mb-4">
                     <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
@@ -304,7 +261,6 @@ const AddMedicineModal: React.FC<AddMedicineModalProps> = ({
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {/* Generic Name */}
                     <div className="md:col-span-2">
                       <label className="block text-xs font-semibold text-gray-700 mb-2">
                         Generic Name <span className="text-red-500">*</span>
@@ -318,7 +274,6 @@ const AddMedicineModal: React.FC<AddMedicineModalProps> = ({
                       />
                     </div>
 
-                    {/* Brand Name */}
                     <div>
                       <label className="block text-xs font-semibold text-gray-700 mb-2">
                         Brand Name
@@ -332,7 +287,6 @@ const AddMedicineModal: React.FC<AddMedicineModalProps> = ({
                       />
                     </div>
 
-                    {/* Strength */}
                     <div>
                       <label className="block text-xs font-semibold text-gray-700 mb-2">
                         Strength
@@ -348,7 +302,6 @@ const AddMedicineModal: React.FC<AddMedicineModalProps> = ({
                   </div>
                 </div>
 
-                {/* Group and Dosage Section */}
                 <div className="bg-purple-50/50 rounded-2xl p-4 sm:p-5 border border-purple-100">
                   <div className="flex items-center gap-2 mb-4">
                     <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
@@ -360,52 +313,18 @@ const AddMedicineModal: React.FC<AddMedicineModalProps> = ({
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {/* Group Search */}
                     <div>
                       <label className="block text-xs font-semibold text-gray-700 mb-2">
                         Group / Category <span className="text-red-500">*</span>
                       </label>
-                      {!isAddingGroup ? (
-                        <GroupSearch
-                          value={groupId}
-                          displayValue={groupName}
-                          onChange={handleGroupChange}
-                          onAddNew={handleAddNewGroup}
-                          placeholder="Search or add group..."
-                        />
-                      ) : (
-                        <div className="space-y-2">
-                          <div className="flex items-center gap-2 p-3 bg-purple-100 rounded-lg border-2 border-purple-300">
-                            <Layers className="w-4 h-4 text-purple-600 shrink-0" />
-                            <span className="text-sm font-medium text-purple-800 flex-1 truncate">
-                              &quot;{newGroupName}&quot;
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <button
-                              type="button"
-                              onClick={handleConfirmAddGroup}
-                              disabled={isAddingGroupLoading}
-                              className="flex-1 px-3 py-2 bg-purple-600 text-white text-xs font-semibold rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50 cursor-pointer"
-                            >
-                              {isAddingGroupLoading
-                                ? "Adding..."
-                                : "Create Group"}
-                            </button>
-                            <button
-                              type="button"
-                              onClick={handleCancelAddGroup}
-                              disabled={isAddingGroupLoading}
-                              className="px-3 py-2 bg-gray-200 text-gray-700 text-xs font-semibold rounded-lg hover:bg-gray-300 transition-colors cursor-pointer"
-                            >
-                              Cancel
-                            </button>
-                          </div>
-                        </div>
-                      )}
+                      <GroupSearch
+                        value={groupId}
+                        displayValue={groupName}
+                        onChange={handleGroupChange}
+                        placeholder="Search group..."
+                      />
                     </div>
 
-                    {/* Dosage Form */}
                     <div>
                       <label className="block text-xs font-semibold text-gray-700 mb-2">
                         Dosage Form
@@ -469,19 +388,17 @@ const AddMedicineModal: React.FC<AddMedicineModalProps> = ({
                   </div>
                 </div>
 
-                {/* Stock Settings Section */}
                 <div className="bg-amber-50/50 rounded-2xl p-4 sm:p-5 border border-amber-100">
                   <div className="flex items-center gap-2 mb-4">
                     <div className="w-8 h-8 bg-amber-100 rounded-lg flex items-center justify-center">
                       <AlertTriangle className="w-4 h-4 text-amber-600" />
                     </div>
                     <h3 className="text-sm font-bold text-amber-900">
-                      Stock Settings
+                      Pricing & Alerts
                     </h3>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {/* Default Sale Price */}
                     <div className="max-w-xs">
                       <label className="block text-xs font-semibold text-gray-700 mb-2">
                         Default Sale Price (৳)
@@ -496,12 +413,8 @@ const AddMedicineModal: React.FC<AddMedicineModalProps> = ({
                         placeholder="e.g., 50"
                         className={getInputClass(defaultSalePrice > 0)}
                       />
-                      <p className="text-xs text-gray-500 mt-1">
-                        Auto-fills sale price in Record Sale (editable there)
-                      </p>
                     </div>
 
-                    {/* Low Stock Threshold */}
                     <div className="max-w-xs">
                       <label className="block text-xs font-semibold text-gray-700 mb-2">
                         Low Stock Alert Threshold
@@ -515,10 +428,6 @@ const AddMedicineModal: React.FC<AddMedicineModalProps> = ({
                         placeholder="Alert when stock falls below this"
                         className={getInputClass(lowStockThreshold > 0)}
                       />
-                      <p className="text-xs text-gray-500 mt-1">
-                        You&apos;ll be alerted when stock falls below this
-                        number
-                      </p>
                     </div>
                   </div>
                 </div>
@@ -531,8 +440,8 @@ const AddMedicineModal: React.FC<AddMedicineModalProps> = ({
               isSubmitting={isSubmitting}
               isDisabled={false}
               cancelText="Cancel"
-              submitText="Add Medicine"
-              loadingText="Adding..."
+              submitText="Save Changes"
+              loadingText="Saving..."
               submitIcon={Save}
               theme="blue"
             />
@@ -543,4 +452,4 @@ const AddMedicineModal: React.FC<AddMedicineModalProps> = ({
   );
 };
 
-export default AddMedicineModal;
+export default EditMedicineModal;

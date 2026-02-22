@@ -390,6 +390,78 @@ export async function createMedicine(data: {
   });
 }
 
+export async function updateMedicine(
+  medicineId: number,
+  data: {
+    genericName: string;
+    brandName?: string;
+    groupId: number;
+    strength?: string;
+    dosageForm?: string;
+    defaultSalePrice?: number;
+    lowStockThreshold?: number;
+  },
+) {
+  const existingMedicine = await prisma.medicine.findUnique({
+    where: { id: medicineId },
+  });
+
+  if (!existingMedicine || !existingMedicine.isActive) {
+    throw new Error("Invalid or inactive medicine");
+  }
+
+  const group = await prisma.medicineGroup.findUnique({
+    where: { id: data.groupId },
+  });
+
+  if (!group || !group.isActive) {
+    throw new Error("Invalid group ID");
+  }
+
+  const duplicate = await prisma.medicine.findFirst({
+    where: {
+      id: { not: medicineId },
+      genericName: data.genericName,
+      groupId: data.groupId,
+    },
+  });
+
+  if (duplicate) {
+    throw new Error("A medicine with this name already exists in this group");
+  }
+
+  return prisma.medicine.update({
+    where: { id: medicineId },
+    data: {
+      genericName: data.genericName,
+      brandName: data.brandName || null,
+      groupId: data.groupId,
+      strength: data.strength || null,
+      dosageForm: data.dosageForm || null,
+      defaultSalePrice: data.defaultSalePrice || 0,
+      lowStockThreshold: data.lowStockThreshold ?? 10,
+    },
+    select: {
+      id: true,
+      genericName: true,
+      brandName: true,
+      strength: true,
+      dosageForm: true,
+      defaultSalePrice: true,
+      currentStock: true,
+      lowStockThreshold: true,
+      isActive: true,
+      createdAt: true,
+      group: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
+    },
+  });
+}
+
 // ═══════════════════════════════════════════════════════════════
 // PURCHASES
 // ═══════════════════════════════════════════════════════════════

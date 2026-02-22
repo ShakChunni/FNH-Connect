@@ -8,10 +8,11 @@
 import React from "react";
 import { Pill, AlertTriangle } from "lucide-react";
 import { useFetchMedicines } from "../../hooks";
-import { useMedicineFilterStore } from "../../stores";
+import { useMedicineFilterStore, useUIStore } from "../../stores";
 
 const MedicineTable: React.FC = () => {
   const { filters } = useMedicineFilterStore();
+  const { openModal } = useUIStore();
   const { data, isLoading, isError, error } = useFetchMedicines(filters);
 
   const medicines = data?.data || [];
@@ -125,7 +126,8 @@ const MedicineTable: React.FC = () => {
               return (
                 <tr
                   key={medicine.id}
-                  className="hover:bg-gray-50/50 transition-colors"
+                  className="hover:bg-gray-50/50 transition-colors cursor-pointer"
+                  onClick={() => openModal("editMedicine", { medicine })}
                 >
                   <td className="px-6 py-3.5">
                     <div>
@@ -185,7 +187,11 @@ const MedicineTable: React.FC = () => {
             medicine.currentStock <= medicine.lowStockThreshold;
           const groupName = medicine.group?.name || "Unknown Group";
           return (
-            <div key={medicine.id} className="p-4 space-y-2">
+            <div
+              key={medicine.id}
+              className="p-4 space-y-2 cursor-pointer hover:bg-gray-50/60 transition-colors"
+              onClick={() => openModal("editMedicine", { medicine })}
+            >
               <div className="flex items-start justify-between">
                 <div>
                   <p className="text-sm font-bold text-gray-900">
