@@ -194,6 +194,43 @@ export async function createMedicineGroup(name: string) {
   });
 }
 
+export async function updateMedicineGroup(groupId: number, name: string) {
+  const group = await prisma.medicineGroup.findUnique({
+    where: { id: groupId },
+  });
+
+  if (!group || !group.isActive) {
+    throw new Error("Invalid or inactive group");
+  }
+
+  const duplicate = await prisma.medicineGroup.findFirst({
+    where: {
+      id: { not: groupId },
+      name,
+    },
+  });
+
+  if (duplicate) {
+    throw new Error("A group with this name already exists");
+  }
+
+  return prisma.medicineGroup.update({
+    where: { id: groupId },
+    data: { name },
+    select: {
+      id: true,
+      name: true,
+      isActive: true,
+      createdAt: true,
+      _count: {
+        select: {
+          medicines: true,
+        },
+      },
+    },
+  });
+}
+
 // ═══════════════════════════════════════════════════════════════
 // MEDICINE COMPANIES (SUPPLIERS)
 // ═══════════════════════════════════════════════════════════════
@@ -258,6 +295,56 @@ export async function createMedicineCompany(data: {
       phoneNumber: true,
       isActive: true,
       createdAt: true,
+    },
+  });
+}
+
+export async function updateMedicineCompany(
+  companyId: number,
+  data: {
+    name: string;
+    address?: string;
+    phoneNumber?: string;
+  },
+) {
+  const company = await prisma.medicineCompany.findUnique({
+    where: { id: companyId },
+  });
+
+  if (!company || !company.isActive) {
+    throw new Error("Invalid or inactive company");
+  }
+
+  const duplicate = await prisma.medicineCompany.findFirst({
+    where: {
+      id: { not: companyId },
+      name: data.name,
+    },
+  });
+
+  if (duplicate) {
+    throw new Error("A company with this name already exists");
+  }
+
+  return prisma.medicineCompany.update({
+    where: { id: companyId },
+    data: {
+      name: data.name,
+      address: data.address || null,
+      phoneNumber: data.phoneNumber || null,
+    },
+    select: {
+      id: true,
+      name: true,
+      address: true,
+      phoneNumber: true,
+      isActive: true,
+      createdAt: true,
+      _count: {
+        select: {
+          purchases: true,
+        },
+      },
     },
   });
 }

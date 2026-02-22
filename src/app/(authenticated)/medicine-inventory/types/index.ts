@@ -20,6 +20,12 @@ export const createGroupSchema = z.object({
 
 export type CreateGroupInput = z.infer<typeof createGroupSchema>;
 
+export const updateGroupSchema = z.object({
+  name: z.string().min(1, "Group name is required").max(100),
+});
+
+export type UpdateGroupInput = z.infer<typeof updateGroupSchema>;
+
 // ============================================
 // Medicine Company Types
 // ============================================
@@ -271,9 +277,17 @@ export type ModalType =
   | "addMedicine"
   | "editMedicine"
   | "addGroup"
+  | "editGroup"
   | "addCompany"
+  | "editCompany"
   | "addPurchase"
   | "addSale"
   | null;
 
-export type TabType = "activity" | "medicines" | "purchases" | "sales";
+export type TabType =
+  | "activity"
+  | "purchases"
+  | "sales"
+  | "medicines"
+  | "groups"
+  | "companies";

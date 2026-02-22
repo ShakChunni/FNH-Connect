@@ -18,3 +18,5 @@ export { useAddSaleData } from "./useAddSaleData";
 export { useAddCompanyData } from "./useAddCompanyData";
 export { useAddGroupData } from "./useAddGroupData";
 export { useUpdateMedicineData } from "./useUpdateMedicineData";
+export { useUpdateGroupData } from "./useUpdateGroupData";
+export { useUpdateCompanyData } from "./useUpdateCompanyData";
