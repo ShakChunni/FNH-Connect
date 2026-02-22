@@ -45,6 +45,28 @@ export interface SaleFilters {
   limit?: number;
 }
 
+export interface GroupFilters {
+  activeOnly?: boolean;
+  search?: string;
+  page?: number;
+  limit?: number;
+}
+
+export interface CompanyFilters {
+  activeOnly?: boolean;
+  search?: string;
+  page?: number;
+  limit?: number;
+}
+
+export interface InventoryActivityFilters {
+  search?: string;
+  startDate?: string;
+  endDate?: string;
+  page?: number;
+  limit?: number;
+}
+
 // ═══════════════════════════════════════════════════════════════
 // STATS & DASHBOARD
 // ═══════════════════════════════════════════════════════════════
@@ -355,7 +377,7 @@ export async function updateMedicineCompany(
 
 export async function getMedicines(filters: MedicineFilters) {
   const page = filters.page || 1;
-  const limit = filters.limit || 50;
+  const limit = filters.limit || 20;
   const skip = (page - 1) * limit;
 
   const where: Prisma.MedicineWhereInput = {
@@ -555,7 +577,7 @@ export async function updateMedicine(
 
 export async function getPurchases(filters: PurchaseFilters) {
   const page = filters.page || 1;
-  const limit = filters.limit || 50;
+  const limit = filters.limit || 20;
   const skip = (page - 1) * limit;
 
   const where: Prisma.MedicinePurchaseWhereInput = {
@@ -790,7 +812,7 @@ export async function getOldestPurchaseForMedicine(medicineId: number) {
 
 export async function getSales(filters: SaleFilters) {
   const page = filters.page || 1;
-  const limit = filters.limit || 50;
+  const limit = filters.limit || 20;
   const skip = (page - 1) * limit;
 
   const where: Prisma.MedicineSaleWhereInput = {
@@ -1062,6 +1084,266 @@ export async function createSale(
     // The primary sale captures the main transaction details
     return primarySale;
   });
+}
+
+// ═══════════════════════════════════════════════════════════════
+// PAGINATED GROUPS & COMPANIES
+// ═══════════════════════════════════════════════════════════════
+
+export async function getPaginatedMedicineGroups(filters: GroupFilters) {
+  const page = filters.page || 1;
+  const limit = filters.limit || 20;
+  const skip = (page - 1) * limit;
+
+  const where: Prisma.MedicineGroupWhereInput = {
+    ...(filters.activeOnly !== false ? { isActive: true } : {}),
+    ...(filters.search
+      ? {
+          name: {
+            contains: filters.search,
+            mode: "insensitive",
+          },
+        }
+      : {}),
+  };
+
+  const [groups, total] = await Promise.all([
+    prisma.medicineGroup.findMany({
+      where,
+      select: {
+        id: true,
+        name: true,
+        isActive: true,
+        createdAt: true,
+        _count: {
+          select: {
+            medicines: true,
+          },
+        },
+      },
+      orderBy: { name: "asc" },
+      skip,
+      take: limit,
+    }),
+    prisma.medicineGroup.count({ where }),
+  ]);
+
+  return { groups, total, page, limit };
+}
+
+export async function getPaginatedMedicineCompanies(filters: CompanyFilters) {
+  const page = filters.page || 1;
+  const limit = filters.limit || 20;
+  const skip = (page - 1) * limit;
+
+  const where: Prisma.MedicineCompanyWhereInput = {
+    ...(filters.activeOnly !== false ? { isActive: true } : {}),
+    ...(filters.search
+      ? {
+          OR: [
+            {
+              name: {
+                contains: filters.search,
+                mode: "insensitive",
+              },
+            },
+            {
+              address: {
+                contains: filters.search,
+                mode: "insensitive",
+              },
+            },
+            {
+              phoneNumber: {
+                contains: filters.search,
+                mode: "insensitive",
+              },
+            },
+          ],
+        }
+      : {}),
+  };
+
+  const [companies, total] = await Promise.all([
+    prisma.medicineCompany.findMany({
+      where,
+      select: {
+        id: true,
+        name: true,
+        address: true,
+        phoneNumber: true,
+        isActive: true,
+        createdAt: true,
+        _count: {
+          select: {
+            purchases: true,
+          },
+        },
+      },
+      orderBy: { name: "asc" },
+      skip,
+      take: limit,
+    }),
+    prisma.medicineCompany.count({ where }),
+  ]);
+
+  return { companies, total, page, limit };
+}
+
+// ═══════════════════════════════════════════════════════════════
+// INVENTORY ACTIVITY (PURCHASES + SALES)
+// ═══════════════════════════════════════════════════════════════
+
+export async function getInventoryActivity(filters: InventoryActivityFilters) {
+  const page = filters.page || 1;
+  const limit = filters.limit || 20;
+  const skip = (page - 1) * limit;
+
+  const searchTerm = filters.search?.trim();
+  const startDate = filters.startDate ? new Date(filters.startDate) : undefined;
+  const endDate = filters.endDate ? new Date(filters.endDate) : undefined;
+
+  const purchaseConditions: Prisma.Sql[] = [Prisma.sql`1 = 1`];
+  if (searchTerm) {
+    const likeSearch = `%${searchTerm}%`;
+    purchaseConditions.push(
+      Prisma.sql`(
+        mp."invoiceNumber" ILIKE ${likeSearch}
+        OR m."genericName" ILIKE ${likeSearch}
+        OR mc."name" ILIKE ${likeSearch}
+      )`,
+    );
+  }
+  if (startDate) {
+    purchaseConditions.push(Prisma.sql`mp."purchaseDate" >= ${startDate}`);
+  }
+  if (endDate) {
+    purchaseConditions.push(Prisma.sql`mp."purchaseDate" <= ${endDate}`);
+  }
+
+  const saleConditions: Prisma.Sql[] = [Prisma.sql`1 = 1`];
+  if (searchTerm) {
+    const likeSearch = `%${searchTerm}%`;
+    saleConditions.push(
+      Prisma.sql`(
+        m."genericName" ILIKE ${likeSearch}
+        OR p."fullName" ILIKE ${likeSearch}
+        OR mc."name" ILIKE ${likeSearch}
+      )`,
+    );
+  }
+  if (startDate) {
+    saleConditions.push(Prisma.sql`ms."saleDate" >= ${startDate}`);
+  }
+  if (endDate) {
+    saleConditions.push(Prisma.sql`ms."saleDate" <= ${endDate}`);
+  }
+
+  const purchaseWhereSql = Prisma.join(purchaseConditions, " AND ");
+  const saleWhereSql = Prisma.join(saleConditions, " AND ");
+
+  const [countRows, rows] = await Promise.all([
+    prisma.$queryRaw<Array<{ total: bigint | number }>>`
+      SELECT COUNT(*)::bigint AS total
+      FROM (
+        SELECT mp.id
+        FROM "MedicinePurchase" mp
+        JOIN "Medicine" m ON m.id = mp."medicineId"
+        JOIN "MedicineCompany" mc ON mc.id = mp."companyId"
+        WHERE ${purchaseWhereSql}
+
+        UNION ALL
+
+        SELECT ms.id
+        FROM "MedicineSale" ms
+        JOIN "Medicine" m ON m.id = ms."medicineId"
+        JOIN "Patient" p ON p.id = ms."patientId"
+        JOIN "MedicinePurchase" mp2 ON mp2.id = ms."purchaseId"
+        JOIN "MedicineCompany" mc ON mc.id = mp2."companyId"
+        WHERE ${saleWhereSql}
+      ) AS activity
+    `,
+    prisma.$queryRaw<
+      Array<{
+        id: string;
+        type: "purchase" | "sale";
+        date: Date;
+        medicineName: string;
+        medicineBrand: string | null;
+        groupName: string;
+        quantity: number;
+        unitPrice: number | Prisma.Decimal;
+        totalAmount: number | Prisma.Decimal;
+        companyName: string | null;
+        invoiceNumber: string | null;
+        patientName: string | null;
+        patientPhone: string | null;
+      }>
+    >`
+      SELECT *
+      FROM (
+        SELECT
+          CONCAT('purchase-', mp.id::text) AS id,
+          'purchase'::text AS type,
+          mp."purchaseDate" AS date,
+          m."genericName" AS "medicineName",
+          m."brandName" AS "medicineBrand",
+          COALESCE(mg."name", 'Unknown Group') AS "groupName",
+          mp."quantity" AS quantity,
+          mp."unitPrice" AS "unitPrice",
+          mp."totalAmount" AS "totalAmount",
+          mc."name" AS "companyName",
+          mp."invoiceNumber" AS "invoiceNumber",
+          NULL::text AS "patientName",
+          NULL::text AS "patientPhone"
+        FROM "MedicinePurchase" mp
+        JOIN "Medicine" m ON m.id = mp."medicineId"
+        LEFT JOIN "MedicineGroup" mg ON mg.id = m."groupId"
+        JOIN "MedicineCompany" mc ON mc.id = mp."companyId"
+        WHERE ${purchaseWhereSql}
+
+        UNION ALL
+
+        SELECT
+          CONCAT('sale-', ms.id::text) AS id,
+          'sale'::text AS type,
+          ms."saleDate" AS date,
+          m."genericName" AS "medicineName",
+          m."brandName" AS "medicineBrand",
+          COALESCE(mg."name", 'Unknown Group') AS "groupName",
+          ms."quantity" AS quantity,
+          ms."unitPrice" AS "unitPrice",
+          ms."totalAmount" AS "totalAmount",
+          mc."name" AS "companyName",
+          NULL::text AS "invoiceNumber",
+          p."fullName" AS "patientName",
+          p."phoneNumber" AS "patientPhone"
+        FROM "MedicineSale" ms
+        JOIN "Medicine" m ON m.id = ms."medicineId"
+        LEFT JOIN "MedicineGroup" mg ON mg.id = m."groupId"
+        JOIN "Patient" p ON p.id = ms."patientId"
+        JOIN "MedicinePurchase" mp2 ON mp2.id = ms."purchaseId"
+        JOIN "MedicineCompany" mc ON mc.id = mp2."companyId"
+        WHERE ${saleWhereSql}
+      ) AS activity
+      ORDER BY date DESC
+      LIMIT ${limit}
+      OFFSET ${skip}
+    `,
+  ]);
+
+  const total = Number(countRows[0]?.total ?? 0);
+
+  return {
+    records: rows.map((record) => ({
+      ...record,
+      unitPrice: Number(record.unitPrice),
+      totalAmount: Number(record.totalAmount),
+    })),
+    total,
+    page,
+    limit,
+  };
 }
 
 // ═══════════════════════════════════════════════════════════════

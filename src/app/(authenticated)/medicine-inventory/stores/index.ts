@@ -80,6 +80,8 @@ const defaultMedicineFilters: MedicineFilters = {
   search: undefined,
   groupId: undefined,
   lowStockOnly: false,
+  page: 1,
+  limit: 20,
 };
 
 export const useMedicineFilterStore = create<MedicineFilterState>((set) => ({
@@ -110,6 +112,8 @@ const defaultPurchaseFilters: PurchaseFilters = {
   medicineId: undefined,
   startDate: undefined,
   endDate: undefined,
+  page: 1,
+  limit: 20,
 };
 
 export const usePurchaseFilterStore = create<PurchaseFilterState>((set) => ({
@@ -140,6 +144,8 @@ const defaultSaleFilters: SaleFilters = {
   medicineId: undefined,
   startDate: undefined,
   endDate: undefined,
+  page: 1,
+  limit: 20,
 };
 
 export const useSaleFilterStore = create<SaleFilterState>((set) => ({

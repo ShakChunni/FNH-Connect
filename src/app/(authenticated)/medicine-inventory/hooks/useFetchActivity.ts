@@ -1,15 +1,25 @@
-/**
- * Fetch Sales Hook
- * React Query hook for fetching medicine sales with filters
- */
-
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/axios";
-import type { MedicineSale, SaleFilters } from "../types";
 
-interface SalesResponse {
+export interface ActivityRecord {
+  id: string;
+  type: "purchase" | "sale";
+  date: string;
+  medicineName: string;
+  medicineBrand?: string | null;
+  groupName: string;
+  quantity: number;
+  unitPrice: number;
+  totalAmount: number;
+  companyName?: string | null;
+  invoiceNumber?: string | null;
+  patientName?: string | null;
+  patientPhone?: string | null;
+}
+
+interface ActivityResponse {
   success: boolean;
-  data: MedicineSale[];
+  data: ActivityRecord[];
   pagination: {
     total: number;
     page: number;
@@ -19,30 +29,30 @@ interface SalesResponse {
   error?: string;
 }
 
-export interface PaginatedSales {
-  data: MedicineSale[];
+export interface ActivityFilters {
+  search?: string;
+  startDate?: string;
+  endDate?: string;
+  page?: number;
+  limit?: number;
+}
+
+export interface PaginatedActivity {
+  data: ActivityRecord[];
   total: number;
   totalPages: number;
   currentPage: number;
   limit: number;
 }
 
-export function useFetchSales(filters: SaleFilters = {}) {
+export function useFetchActivity(filters: ActivityFilters = {}) {
   return useQuery({
-    queryKey: ["medicine-inventory", "sales", filters],
-    queryFn: async (): Promise<PaginatedSales> => {
+    queryKey: ["medicine-inventory", "activity", filters],
+    queryFn: async (): Promise<PaginatedActivity> => {
       const params = new URLSearchParams();
 
       if (filters.search) {
         params.append("search", filters.search);
-      }
-
-      if (filters.patientId) {
-        params.append("patientId", filters.patientId.toString());
-      }
-
-      if (filters.medicineId) {
-        params.append("medicineId", filters.medicineId.toString());
       }
 
       if (filters.startDate) {
@@ -61,12 +71,12 @@ export function useFetchSales(filters: SaleFilters = {}) {
         params.append("limit", filters.limit.toString());
       }
 
-      const response = await api.get<SalesResponse>(
-        `/medicine-inventory/sales?${params.toString()}`,
+      const response = await api.get<ActivityResponse>(
+        `/medicine-inventory/activity?${params.toString()}`,
       );
 
       if (!response.data.success) {
-        throw new Error(response.data.error || "Failed to fetch sales");
+        throw new Error(response.data.error || "Failed to fetch activity");
       }
 
       return {
