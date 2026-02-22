@@ -100,11 +100,20 @@ const ActivityTable: React.FC = () => {
     }).format(amount);
   };
 
-  const formatDate = (dateStr: string) => {
+  const formatDatePart = (dateStr: string) => {
     return new Intl.DateTimeFormat("en-GB", {
       day: "2-digit",
       month: "short",
       year: "numeric",
+      timeZone: "Asia/Dhaka",
+    }).format(new Date(dateStr));
+  };
+
+  const formatTimePart = (dateStr: string) => {
+    return new Intl.DateTimeFormat("en-GB", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
       timeZone: "Asia/Dhaka",
     }).format(new Date(dateStr));
   };
@@ -182,7 +191,7 @@ const ActivityTable: React.FC = () => {
           <thead>
             <tr className="border-b border-gray-100">
               <th className="text-left px-6 py-3 text-[10px] font-black uppercase tracking-widest text-gray-500">
-                Date
+                Date & Time (BDT)
               </th>
               <th className="text-left px-6 py-3 text-[10px] font-black uppercase tracking-widest text-gray-500">
                 Type
@@ -210,8 +219,15 @@ const ActivityTable: React.FC = () => {
                 key={record.id}
                 className="hover:bg-gray-50/50 transition-colors"
               >
-                <td className="px-6 py-3.5 text-sm text-gray-600">
-                  {formatDate(record.date)}
+                <td className="px-6 py-3.5">
+                  <div className="flex flex-col">
+                    <span className="text-sm text-gray-700">
+                      {formatDatePart(record.date)}
+                    </span>
+                    <span className="text-xs text-gray-500">
+                      {formatTimePart(record.date)}
+                    </span>
+                  </div>
                 </td>
                 <td className="px-6 py-3.5">
                   {record.type === "purchase" ? (
@@ -301,8 +317,9 @@ const ActivityTable: React.FC = () => {
                     Sale
                   </span>
                 )}
-                <span className="text-xs text-gray-500">
-                  {formatDate(record.date)}
+                <span className="text-xs text-gray-500 flex flex-col leading-tight">
+                  <span>{formatDatePart(record.date)}</span>
+                  <span>{formatTimePart(record.date)} BDT</span>
                 </span>
               </div>
               <span
