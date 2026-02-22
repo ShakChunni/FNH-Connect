@@ -49,7 +49,7 @@ function Calendar({
       showOutsideDays={showOutsideDays}
       className={cn(
         "bg-background group/calendar p-2 sm:p-2 max-h-[500px] [--cell-size:--spacing(9)] in-data-[slot=card-content]:bg-transparent in-data-[slot=popover-content]:bg-transparent",
-        className
+        className,
       )}
       captionLayout={captionLayout}
       formatters={formatters}
@@ -57,7 +57,7 @@ function Calendar({
         root: cn("w-fit", defaultClassNames.root),
         months: cn(
           "flex gap-4 flex-col md:flex-row relative",
-          defaultClassNames.months
+          defaultClassNames.months,
         ),
         month: cn("flex flex-col w-full gap-2", defaultClassNames.month),
         month_caption: cn("hidden", defaultClassNames.month_caption),
@@ -68,41 +68,41 @@ function Calendar({
         weekdays: cn("flex gap-1.5", defaultClassNames.weekdays),
         weekday: cn(
           "text-muted-foreground rounded-md flex-1 font-normal text-xs select-none",
-          defaultClassNames.weekday
+          defaultClassNames.weekday,
         ),
         week: cn("flex w-full gap-1.5 mt-1", defaultClassNames.week),
         week_number_header: cn(
           "select-none w-(--cell-size)",
-          defaultClassNames.week_number_header
+          defaultClassNames.week_number_header,
         ),
         week_number: cn(
           "text-xs select-none text-muted-foreground",
-          defaultClassNames.week_number
+          defaultClassNames.week_number,
         ),
         day: cn(
           "relative w-full h-full p-0 text-center [&:last-child[data-selected=true]_button]:rounded-r-md group/day aspect-square select-none",
           props.showWeekNumber
             ? "[&:nth-child(2)[data-selected=true]_button]:rounded-l-md"
             : "[&:first-child[data-selected=true]_button]:rounded-l-md",
-          defaultClassNames.day
+          defaultClassNames.day,
         ),
         range_start: cn(
           "rounded-l-md bg-accent",
-          defaultClassNames.range_start
+          defaultClassNames.range_start,
         ),
         range_middle: cn("rounded-none", defaultClassNames.range_middle),
         range_end: cn("rounded-r-md bg-accent", defaultClassNames.range_end),
         today: cn(
           "bg-accent text-accent-foreground rounded-md data-[selected=true]:rounded-none",
-          defaultClassNames.today
+          defaultClassNames.today,
         ),
         outside: cn(
           "text-muted-foreground aria-selected:text-muted-foreground",
-          defaultClassNames.outside
+          defaultClassNames.outside,
         ),
         disabled: cn(
           "text-muted-foreground opacity-50",
-          defaultClassNames.disabled
+          defaultClassNames.disabled,
         ),
         hidden: cn("invisible", defaultClassNames.hidden),
         ...classNames,
@@ -164,9 +164,9 @@ function CalendarDayButton({
       data-range-end={modifiers.range_end}
       data-range-middle={modifiers.range_middle}
       className={cn(
-        "data-[selected-single=true]:bg-slate-900 data-[selected-single=true]:text-white data-[range-middle=true]:bg-yellow-100 data-[range-middle=true]:text-slate-900 data-[range-start=true]:bg-slate-900 data-[range-start=true]:text-white data-[range-end=true]:bg-slate-900 data-[range-end=true]:text-white group-data-[focused=true]/day:border-ring group-data-[focused=true]/day:ring-ring/50 hover:bg-fnh-navy hover:text-white flex aspect-square size-auto w-full min-w-(--cell-size) flex-col gap-1 leading-none text-[0.7rem] font-bold group-data-[focused=true]/day:relative group-data-[focused=true]/day:z-10 group-data-[focused=true]/day:ring-[3px] data-[range-end=true]:rounded-md data-[range-end=true]:rounded-r-md data-[range-middle=true]:rounded-none data-[range-start=true]:rounded-md data-[range-start=true]:rounded-l-md [&>span]:text-[0.7rem] [&>span]:opacity-70 transition-colors duration-200",
+        "data-[selected-single=true]:bg-slate-900 data-[selected-single=true]:text-white data-[range-middle=true]:bg-yellow-100 data-[range-middle=true]:text-slate-900 data-[range-start=true]:bg-slate-900 data-[range-start=true]:text-white data-[range-end=true]:bg-slate-900 data-[range-end=true]:text-white group-data-[focused=true]/day:border-ring group-data-[focused=true]/day:ring-ring/50 hover:bg-fnh-navy! hover:text-white! flex aspect-square size-auto w-full min-w-(--cell-size) flex-col gap-1 leading-none text-[0.7rem] font-bold group-data-[focused=true]/day:relative group-data-[focused=true]/day:z-10 group-data-[focused=true]/day:ring-[3px] data-[range-end=true]:rounded-md data-[range-end=true]:rounded-r-md data-[range-middle=true]:rounded-none data-[range-start=true]:rounded-md data-[range-start=true]:rounded-l-md [&>span]:text-[0.7rem] [&>span]:opacity-70 transition-colors duration-200",
         defaultClassNames.day,
-        className
+        className,
       )}
       {...props}
     />
@@ -270,7 +270,7 @@ export function CalendarWithMonthYearPicker({
             layout
             className={cn(
               "w-full p-4 sm:p-6 bg-white rounded-xl border border-gray-100 shadow-sm",
-              className
+              className,
             )}
           >
             <div className="flex items-center justify-between mb-6">
@@ -278,7 +278,7 @@ export function CalendarWithMonthYearPicker({
                 variant="ghost"
                 size="sm"
                 onClick={() => setView("years")}
-                className="text-xs font-bold text-slate-900 hover:bg-gray-100 px-3 py-2 rounded-lg transition-colors"
+                className="text-xs font-bold text-slate-900 hover:bg-gray-100! hover:text-slate-900! px-3 py-2 rounded-lg transition-colors"
               >
                 {currentYear}
               </Button>
@@ -294,10 +294,10 @@ export function CalendarWithMonthYearPicker({
                   size="sm"
                   onClick={() => handleMonthSelect(index)}
                   className={cn(
-                    "text-xs font-bold px-4 py-3 rounded-xl transition-all duration-200",
+                    "text-xs font-bold px-4 py-3 rounded-xl transition-all duration-200 hover:text-slate-900!",
                     currentMonth === index
-                      ? "bg-yellow-300 text-slate-900 shadow-xs"
-                      : "bg-gray-50 text-slate-900 hover:bg-gray-100"
+                      ? "bg-yellow-300 text-slate-900 shadow-xs hover:bg-yellow-400!"
+                      : "bg-gray-50 text-slate-900 hover:bg-gray-100!",
                   )}
                 >
                   {month.slice(0, 3)}
@@ -317,7 +317,7 @@ export function CalendarWithMonthYearPicker({
             layout
             className={cn(
               "w-full p-4 sm:p-6 bg-white rounded-xl border border-gray-100 shadow-sm",
-              className
+              className,
             )}
           >
             <div className="flex items-center justify-between mb-6">
@@ -325,7 +325,7 @@ export function CalendarWithMonthYearPicker({
                 variant="ghost"
                 size="sm"
                 onClick={handlePrevYearRange}
-                className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                className="p-2 rounded-lg hover:bg-gray-100! hover:text-slate-900! transition-colors"
               >
                 <ChevronLeftIcon className="h-4 w-4 text-slate-900" />
               </Button>
@@ -336,7 +336,7 @@ export function CalendarWithMonthYearPicker({
                 variant="ghost"
                 size="sm"
                 onClick={handleNextYearRange}
-                className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                className="p-2 rounded-lg hover:bg-gray-100! hover:text-slate-900! transition-colors"
               >
                 <ChevronRightIcon className="h-4 w-4 text-slate-900" />
               </Button>
@@ -349,10 +349,10 @@ export function CalendarWithMonthYearPicker({
                   size="sm"
                   onClick={() => handleYearSelect(year)}
                   className={cn(
-                    "text-xs font-bold px-4 py-3 rounded-xl transition-all duration-200",
+                    "text-xs font-bold px-4 py-3 rounded-xl transition-all duration-200 hover:text-slate-900!",
                     currentYear === year
-                      ? "bg-yellow-300 text-slate-900 shadow-xs"
-                      : "bg-gray-50 text-slate-900 hover:bg-gray-100"
+                      ? "bg-yellow-300 text-slate-900 shadow-xs hover:bg-yellow-400!"
+                      : "bg-gray-50 text-slate-900 hover:bg-gray-100!",
                   )}
                 >
                   {year}
@@ -364,7 +364,7 @@ export function CalendarWithMonthYearPicker({
                 variant="ghost"
                 size="sm"
                 onClick={() => setView("months")}
-                className="text-xs font-bold text-gray-400 hover:text-slate-900 transition-colors"
+                className="text-xs font-bold text-gray-400 hover:text-slate-900! hover:bg-transparent! transition-colors"
               >
                 Back to Months
               </Button>
@@ -382,7 +382,7 @@ export function CalendarWithMonthYearPicker({
             layout
             className={cn(
               "w-full bg-white rounded-xl border border-gray-100 overflow-hidden shadow-sm",
-              className
+              className,
             )}
           >
             <div className="flex items-center justify-between px-4 sm:px-6 py-4 bg-gradient-to-r from-gray-50 to-white border-b border-gray-100">
@@ -390,7 +390,7 @@ export function CalendarWithMonthYearPicker({
                 variant="ghost"
                 size="sm"
                 onClick={() => setView("months")}
-                className="text-xs font-black text-slate-900 hover:bg-gray-100 px-4 py-2 rounded-lg transition-all duration-200"
+                className="text-xs font-black text-slate-900 hover:bg-gray-100! hover:text-slate-900! px-4 py-2 rounded-lg transition-all duration-200"
               >
                 {MONTHS[currentMonth]} {currentYear}
               </Button>
@@ -403,7 +403,7 @@ export function CalendarWithMonthYearPicker({
                     newDate.setMonth(currentMonth - 1);
                     setDisplayDate(newDate);
                   }}
-                  className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                  className="p-2 rounded-lg hover:bg-gray-100! hover:text-slate-900! transition-colors"
                 >
                   <ChevronLeftIcon className="h-4 w-4 text-slate-900" />
                 </Button>
@@ -415,7 +415,7 @@ export function CalendarWithMonthYearPicker({
                     newDate.setMonth(currentMonth + 1);
                     setDisplayDate(newDate);
                   }}
-                  className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                  className="p-2 rounded-lg hover:bg-gray-100! hover:text-slate-900! transition-colors"
                 >
                   <ChevronRightIcon className="h-4 w-4 text-slate-900" />
                 </Button>
@@ -448,10 +448,10 @@ export function CalendarWithMonthYearPicker({
                       },
                     }
                   : selectedRange?.from
-                  ? {
-                      range_start: selectedRange.from,
-                    }
-                  : undefined
+                    ? {
+                        range_start: selectedRange.from,
+                      }
+                    : undefined
               }
               modifiersStyles={
                 selectedRange?.from && selectedRange?.to
@@ -472,14 +472,14 @@ export function CalendarWithMonthYearPicker({
                       },
                     }
                   : selectedRange?.from
-                  ? {
-                      range_start: {
-                        backgroundColor: "#fbbf24",
-                        color: "#0f172a",
-                        fontWeight: "700",
-                      },
-                    }
-                  : undefined
+                    ? {
+                        range_start: {
+                          backgroundColor: "#fbbf24",
+                          color: "#0f172a",
+                          fontWeight: "700",
+                        },
+                      }
+                    : undefined
               }
               className="border-0 shadow-none"
             />
