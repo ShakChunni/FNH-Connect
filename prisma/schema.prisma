@@ -7,7 +7,6 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// Core Models
 model Patient {
   id          Int       @id @default(autoincrement())
   firstName   String
@@ -629,12 +628,13 @@ model MedicineCompany {
 
 // Master list of medicines with stock tracking
 model Medicine {
-  id          Int     @id @default(autoincrement())
-  genericName String // "Cefixime", "Paracetamol", etc.
-  brandName   String? // Optional brand name
-  groupId     Int
-  strength    String? // "200mg", "500mg", etc.
-  dosageForm  String? // "Tablet", "Capsule", "Syrup", etc.
+  id               Int     @id @default(autoincrement())
+  genericName      String // "Cefixime", "Paracetamol", etc.
+  brandName        String? // Optional brand name
+  groupId          Int
+  strength         String? // "200mg", "500mg", etc.
+  dosageForm       String? // "Tablet", "Capsule", "Syrup", etc.
+  defaultSalePrice Decimal @default(0) // Default selling price used in sales form
 
   // Stock tracking
   currentStock      Int @default(0) // Total available units

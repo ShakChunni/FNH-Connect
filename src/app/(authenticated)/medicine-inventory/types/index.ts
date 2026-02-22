@@ -54,6 +54,7 @@ export interface Medicine {
   brandName?: string | null;
   strength?: string | null;
   dosageForm?: string | null;
+  defaultSalePrice: number;
   currentStock: number;
   lowStockThreshold: number;
   isActive: boolean;
@@ -70,6 +71,10 @@ export const createMedicineSchema = z.object({
   groupId: z.number().int().positive("Group is required"),
   strength: z.string().max(50).optional(),
   dosageForm: z.string().max(50).optional(),
+  defaultSalePrice: z
+    .number()
+    .min(0, "Default sale price cannot be negative")
+    .default(0),
   lowStockThreshold: z.number().int().min(0).default(10),
 });
 

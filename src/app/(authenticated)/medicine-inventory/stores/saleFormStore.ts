@@ -20,7 +20,7 @@ export interface SaleFormData {
   // Sale details - quantity is user input, rest auto-calculated
   quantity: number;
 
-  // Auto-populated from oldest purchase (FIFO)
+  // Auto-populated fields
   companyName: string;
   unitPrice: number;
   totalAmount: number;
@@ -34,7 +34,7 @@ interface SaleFormState {
   setFormData: (data: Partial<SaleFormData>) => void;
   resetForm: () => void;
 
-  // Set medicine with FIFO data
+  // Set medicine selection and initial pricing
   setMedicineWithFIFO: (data: {
     medicineId: number;
     medicineName: string;

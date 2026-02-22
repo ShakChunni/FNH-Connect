@@ -66,6 +66,7 @@ const AddMedicineModal: React.FC<AddMedicineModalProps> = ({
   const [groupName, setGroupName] = useState("");
   const [strength, setStrength] = useState("");
   const [dosageForm, setDosageForm] = useState("");
+  const [defaultSalePrice, setDefaultSalePrice] = useState(0);
   const [lowStockThreshold, setLowStockThreshold] = useState(10);
 
   // For dosage form dropdown
@@ -93,6 +94,7 @@ const AddMedicineModal: React.FC<AddMedicineModalProps> = ({
       setGroupName("");
       setStrength("");
       setDosageForm("");
+      setDefaultSalePrice(0);
       setLowStockThreshold(10);
       setIsAddingGroup(false);
       setNewGroupName("");
@@ -134,6 +136,9 @@ const AddMedicineModal: React.FC<AddMedicineModalProps> = ({
     if (!groupId) {
       errors.push("Group is required");
     }
+    if (defaultSalePrice < 0) {
+      errors.push("Default sale price cannot be negative");
+    }
     if (lowStockThreshold < 0) {
       errors.push("Low stock threshold must be positive");
     }
@@ -142,7 +147,7 @@ const AddMedicineModal: React.FC<AddMedicineModalProps> = ({
       isFormValid: errors.length === 0,
       validationErrors: errors,
     };
-  }, [genericName, groupId, lowStockThreshold]);
+  }, [genericName, groupId, defaultSalePrice, lowStockThreshold]);
 
   // Handlers
   const handleClose = useCallback(() => {
@@ -168,6 +173,7 @@ const AddMedicineModal: React.FC<AddMedicineModalProps> = ({
       groupId: groupId!,
       strength: strength.trim() || undefined,
       dosageForm: dosageForm || undefined,
+      defaultSalePrice,
       lowStockThreshold,
     });
   }, [
@@ -178,6 +184,7 @@ const AddMedicineModal: React.FC<AddMedicineModalProps> = ({
     groupId,
     strength,
     dosageForm,
+    defaultSalePrice,
     lowStockThreshold,
     addMedicine,
     validationErrors,
@@ -472,7 +479,28 @@ const AddMedicineModal: React.FC<AddMedicineModalProps> = ({
                     </h3>
                   </div>
 
-                  <div className="grid grid-cols-1 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {/* Default Sale Price */}
+                    <div className="max-w-xs">
+                      <label className="block text-xs font-semibold text-gray-700 mb-2">
+                        Default Sale Price (৳)
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={defaultSalePrice || ""}
+                        onChange={(e) =>
+                          setDefaultSalePrice(parseFloat(e.target.value) || 0)
+                        }
+                        placeholder="e.g., 50"
+                        className={getInputClass(defaultSalePrice > 0)}
+                      />
+                      <p className="text-xs text-gray-500 mt-1">
+                        Auto-fills sale price in Record Sale (editable there)
+                      </p>
+                    </div>
+
                     {/* Low Stock Threshold */}
                     <div className="max-w-xs">
                       <label className="block text-xs font-semibold text-gray-700 mb-2">
