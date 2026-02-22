@@ -23,6 +23,7 @@ const createMedicineSchema = z.object({
   groupId: z.number().int().positive("Group is required"),
   strength: z.string().max(50).optional(),
   dosageForm: z.string().max(50).optional(),
+  defaultSalePrice: z.number().min(0).default(0),
   lowStockThreshold: z.number().int().min(0).default(10),
 });
 

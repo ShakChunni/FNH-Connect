@@ -57,7 +57,6 @@ interface AddSaleModalProps {
 interface FIFOData {
   purchaseId: number;
   companyName: string;
-  unitPrice: number;
   availableQty: number;
   batchNumber?: string;
 }
@@ -92,7 +91,6 @@ function useFetchMedicineFIFO(medicineId: number | null) {
       return {
         purchaseId: purchase.id,
         companyName: purchase.company.name,
-        unitPrice: purchase.unitPrice,
         availableQty: purchase.remainingQty,
         batchNumber: purchase.batchNumber,
       };
@@ -130,7 +128,6 @@ const AddSaleModal: React.FC<AddSaleModalProps> = ({ isOpen, onClose }) => {
     if (fifoData && formData.medicineId) {
       setFormData({
         companyName: fifoData.companyName,
-        unitPrice: fifoData.unitPrice,
         availableStock: fifoData.availableQty,
       });
     }
@@ -275,7 +272,7 @@ const AddSaleModal: React.FC<AddSaleModalProps> = ({ isOpen, onClose }) => {
           medicineGroupName: medicine.group?.name || "Unknown Group",
           availableStock: medicine.currentStock,
           companyName: "", // Will be populated by FIFO query
-          unitPrice: 0, // Will be populated by FIFO query
+          unitPrice: medicine.defaultSalePrice || 0, // Default from medicine; editable by user
         });
       } else {
         setFormData({
@@ -521,7 +518,7 @@ const AddSaleModal: React.FC<AddSaleModalProps> = ({ isOpen, onClose }) => {
                         )}
                       </div>
 
-                      {/* Unit Price (Editable — defaults to FIFO price) */}
+                      {/* Unit Price (Editable — defaults to medicine default sale price) */}
                       <div>
                         <label className="block text-xs font-semibold text-gray-700 mb-2">
                           Price (৳) <span className="text-red-500">*</span>

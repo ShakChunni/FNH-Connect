@@ -293,6 +293,7 @@ export async function getMedicines(filters: MedicineFilters) {
         brandName: true,
         strength: true,
         dosageForm: true,
+        defaultSalePrice: true,
         currentStock: true,
         lowStockThreshold: true,
         isActive: true,
@@ -333,6 +334,7 @@ export async function createMedicine(data: {
   groupId: number;
   strength?: string;
   dosageForm?: string;
+  defaultSalePrice?: number;
   lowStockThreshold?: number;
 }) {
   // Verify group exists
@@ -363,6 +365,7 @@ export async function createMedicine(data: {
       groupId: data.groupId,
       strength: data.strength,
       dosageForm: data.dosageForm,
+      defaultSalePrice: data.defaultSalePrice || 0,
       lowStockThreshold: data.lowStockThreshold || 10,
       currentStock: 0,
     },
@@ -372,6 +375,7 @@ export async function createMedicine(data: {
       brandName: true,
       strength: true,
       dosageForm: true,
+      defaultSalePrice: true,
       currentStock: true,
       lowStockThreshold: true,
       isActive: true,
@@ -911,6 +915,7 @@ export function transformMedicineForResponse(medicine: {
   brandName?: string | null;
   strength?: string | null;
   dosageForm?: string | null;
+  defaultSalePrice: Prisma.Decimal;
   currentStock: number;
   lowStockThreshold: number;
   isActive: boolean;
@@ -926,6 +931,7 @@ export function transformMedicineForResponse(medicine: {
     brandName: medicine.brandName,
     strength: medicine.strength,
     dosageForm: medicine.dosageForm,
+    defaultSalePrice: Number(medicine.defaultSalePrice),
     currentStock: medicine.currentStock,
     lowStockThreshold: medicine.lowStockThreshold,
     isActive: medicine.isActive,
