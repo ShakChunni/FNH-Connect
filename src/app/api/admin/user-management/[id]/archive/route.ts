@@ -119,9 +119,23 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 
       // If archiving (deactivating), invalidate all sessions for this user
       if (!isActive) {
-        await tx.session.deleteMany({
+        const userSessions = await tx.session.findMany({
           where: { userId },
+          select: { id: true },
         });
+
+        if (userSessions.length > 0) {
+          const sessionIds = userSessions.map((s) => s.id);
+
+          await tx.activityLog.updateMany({
+            where: { sessionId: { in: sessionIds } },
+            data: { sessionId: null },
+          });
+
+          await tx.session.deleteMany({
+            where: { id: { in: sessionIds } },
+          });
+        }
       }
 
       // Log activity

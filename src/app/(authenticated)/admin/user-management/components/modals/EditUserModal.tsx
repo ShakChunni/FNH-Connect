@@ -131,11 +131,9 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
   };
 
   const roleLabel = SYSTEM_ROLES.find((r) => r.value === role)?.label || role;
-  if (!user) return null;
-
   return (
     <AnimatePresence mode="wait">
-      {isOpen && (
+      {isOpen && user && (
         <motion.div
           className="fixed inset-0 bg-slate-900/70 flex items-center justify-center z-100000"
           variants={backdropVariants}

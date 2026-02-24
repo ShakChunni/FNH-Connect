@@ -65,11 +65,9 @@ const ArchiveUserModal: React.FC<ArchiveUserModalProps> = ({
     return () => document.removeEventListener("keydown", h);
   }, [isOpen, handleClose]);
 
-  if (!user) return null;
-
   return (
     <AnimatePresence mode="wait">
-      {isOpen && (
+      {isOpen && user && (
         <motion.div
           className="fixed inset-0 bg-slate-900/70 flex items-center justify-center z-100000"
           variants={backdropVariants}
