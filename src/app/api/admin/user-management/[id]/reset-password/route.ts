@@ -127,7 +127,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
           entityType: "User",
           entityId: userId,
           ipAddress: authUser.sessionDeviceInfo.ipAddress,
-          sessionId: authUser.sessionId,
+          sessionId: userId === authUser.id ? null : authUser.sessionId,
           deviceFingerprint: authUser.sessionDeviceInfo.deviceFingerprint,
           readableFingerprint: authUser.sessionDeviceInfo.readableFingerprint,
           deviceType: authUser.sessionDeviceInfo.deviceType,
