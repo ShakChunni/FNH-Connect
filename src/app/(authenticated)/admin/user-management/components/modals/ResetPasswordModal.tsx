@@ -102,8 +102,6 @@ const ResetPasswordModal: React.FC<ResetPasswordModalProps> = ({
     return () => document.removeEventListener("keydown", h);
   }, [isOpen, handleClose]);
 
-  if (!user) return null;
-
   const inputCls = (v: boolean) => {
     const b =
       "text-gray-700 font-normal rounded-lg h-12 md:h-14 py-2 px-4 w-full focus:border-blue-900 focus:ring-2 focus:ring-blue-950 outline-none shadow-sm transition-all duration-300 text-xs sm:text-sm";
@@ -115,7 +113,7 @@ const ResetPasswordModal: React.FC<ResetPasswordModalProps> = ({
   if (showSuccess) {
     return (
       <AnimatePresence mode="wait">
-        {isOpen && (
+        {isOpen && user && (
           <motion.div
             className="fixed inset-0 bg-slate-900/70 flex items-center justify-center z-100000"
             variants={backdropVariants}
@@ -178,7 +176,7 @@ const ResetPasswordModal: React.FC<ResetPasswordModalProps> = ({
 
   return (
     <AnimatePresence mode="wait">
-      {isOpen && (
+      {isOpen && user && (
         <motion.div
           className="fixed inset-0 bg-slate-900/70 flex items-center justify-center z-100000"
           variants={backdropVariants}

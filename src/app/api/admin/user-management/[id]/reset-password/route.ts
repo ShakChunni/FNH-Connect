@@ -98,9 +98,25 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       });
 
       // Invalidate all existing sessions — forces re-login with new password
-      await tx.session.deleteMany({
+      const userSessions = await tx.session.findMany({
         where: { userId },
+        select: { id: true },
       });
+
+      if (userSessions.length > 0) {
+        const sessionIds = userSessions.map((s) => s.id);
+
+        // First, disconnect these sessions from any existing activity logs to prevent foreign key errors
+        await tx.activityLog.updateMany({
+          where: { sessionId: { in: sessionIds } },
+          data: { sessionId: null },
+        });
+
+        // Now it's safe to delete the sessions
+        await tx.session.deleteMany({
+          where: { id: { in: sessionIds } },
+        });
+      }
 
       // Log activity
       await tx.activityLog.create({
