@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Edit2, ArrowLeftRight, Printer } from "lucide-react";
+import { Edit2, Printer, CheckCircle, XCircle } from "lucide-react";
 import { PathologyPatientData } from "../../../types";
 import { TableHeader } from "../utils";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
@@ -68,7 +68,7 @@ const TableRow: React.FC<TableRowProps> = ({
         onSuccess: () => {
           setShowStatusConfirm(false);
         },
-      }
+      },
     );
   };
 
@@ -172,12 +172,16 @@ const TableRow: React.FC<TableRowProps> = ({
               disabled={isUpdating}
               className={`p-1.5 rounded-lg transition-all cursor-pointer disabled:opacity-50 shadow-sm hover:shadow-md active:scale-95 ${
                 row.isCompleted
-                  ? "bg-purple-100 text-purple-700 hover:bg-purple-200"
-                  : "bg-blue-100 text-blue-700 hover:bg-blue-200"
+                  ? "bg-amber-100 text-amber-700 hover:bg-amber-200" // Revert to pending
+                  : "bg-green-100 text-green-700 hover:bg-green-200" // Mark as complete
               }`}
               title={row.isCompleted ? "Mark as Pending" : "Mark as Completed"}
             >
-              <ArrowLeftRight size={16} />
+              {row.isCompleted ? (
+                <XCircle size={16} />
+              ) : (
+                <CheckCircle size={16} />
+              )}
             </button>
           </div>
         );
