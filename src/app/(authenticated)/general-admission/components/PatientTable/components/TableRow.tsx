@@ -11,6 +11,7 @@ import {
   generateAdmissionInvoice,
 } from "../../../utils/generateReceipt";
 import { useAuth } from "@/app/AuthContext";
+import { useNotification } from "@/hooks/useNotification";
 import StatusDropdown from "./StatusDropdown";
 
 interface TableRowProps {
@@ -33,6 +34,7 @@ const TableRow: React.FC<TableRowProps> = ({
   isStatusUpdating = false,
 }) => {
   const { user } = useAuth();
+  const { showNotification } = useNotification();
 
   const FIRST_COL_WIDTH = "w-[60px] min-w-[60px]";
   const SECOND_COL_WIDTH = "w-[100px] min-w-[100px]";
@@ -164,9 +166,10 @@ const TableRow: React.FC<TableRowProps> = ({
 
             {/* Receipt Button */}
             <button
-              onClick={() =>
-                generateAdmissionReceipt(row, user?.fullName || "Staff")
-              }
+              onClick={() => {
+                generateAdmissionReceipt(row, user?.fullName || "Staff");
+                showNotification("Generating Admission Form...", "success");
+              }}
               className="p-1.5 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-all cursor-pointer shadow-sm hover:shadow-md active:scale-95"
               title="Print Admission Receipt"
             >
@@ -175,9 +178,10 @@ const TableRow: React.FC<TableRowProps> = ({
 
             {/* Full Invoice Button */}
             <button
-              onClick={() =>
-                generateAdmissionInvoice(row, user?.fullName || "Staff")
-              }
+              onClick={() => {
+                generateAdmissionInvoice(row, user?.fullName || "Staff");
+                showNotification("Generating Patient Invoice...", "success");
+              }}
               className="p-1.5 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 transition-all cursor-pointer shadow-sm hover:shadow-md active:scale-95"
               title="Print Full Invoice"
             >

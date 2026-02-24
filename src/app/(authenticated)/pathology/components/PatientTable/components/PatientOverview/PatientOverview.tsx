@@ -11,6 +11,7 @@ import { ClinicalRemarks } from "./components/ClinicalRemarks";
 import { usePathologyActions } from "../../../../stores";
 import { generatePathologyReceipt } from "../../../../utils/generateReceipt";
 import { useAuth } from "@/app/AuthContext";
+import { useNotification } from "@/hooks/useNotification";
 
 interface PatientOverviewProps {
   isOpen: boolean;
@@ -25,6 +26,7 @@ const PatientOverview: React.FC<PatientOverviewProps> = ({
 }) => {
   const { openEditModal } = usePathologyActions();
   const { user } = useAuth();
+  const { showNotification } = useNotification();
 
   if (!patient && !isOpen) return null;
   if (!patient) return null;
@@ -62,6 +64,7 @@ const PatientOverview: React.FC<PatientOverviewProps> = ({
 
   const handlePrint = () => {
     generatePathologyReceipt(patient, user?.fullName || "Staff");
+    showNotification("Generating receipt document...", "success");
   };
 
   return (

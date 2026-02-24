@@ -16,6 +16,7 @@ import {
   generateAdmissionInvoice,
 } from "../../../../utils/generateReceipt";
 import { useAuth } from "@/app/AuthContext";
+import { useNotification } from "@/hooks/useNotification";
 
 interface AdmissionOverviewProps {
   isOpen: boolean;
@@ -31,6 +32,7 @@ const AdmissionOverview: React.FC<AdmissionOverviewProps> = ({
   onEdit,
 }) => {
   const { user } = useAuth();
+  const { showNotification } = useNotification();
 
   if (!patient && !isOpen) return null;
   if (!patient) return null;
@@ -68,14 +70,16 @@ const AdmissionOverview: React.FC<AdmissionOverviewProps> = ({
 
   const handlePrintReceipt = () => {
     generateAdmissionReceipt(patient, user?.fullName || "Staff");
+    showNotification("Generating Admission Form...", "success");
   };
 
   const handlePrintInvoice = () => {
     generateAdmissionInvoice(patient, user?.fullName || "Staff");
+    showNotification("Generating Patient Invoice...", "success");
   };
 
   const statusOption = ADMISSION_STATUS_OPTIONS.find(
-    (o) => o.value === patient.status
+    (o) => o.value === patient.status,
   );
 
   const getStatusBgColor = (color: string) => {
@@ -135,7 +139,7 @@ const AdmissionOverview: React.FC<AdmissionOverviewProps> = ({
           </div>
           <div
             className={`flex items-center gap-1 px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-md text-[9px] sm:text-[10px] font-bold uppercase border ${getStatusBgColor(
-              statusOption?.color || "blue"
+              statusOption?.color || "blue",
             )}`}
           >
             {statusOption?.label || patient.status}

@@ -6,6 +6,7 @@ import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { useUpdatePathologyStatus } from "../../../hooks";
 import { generatePathologyReceipt } from "../../../utils/generateReceipt";
 import { useAuth } from "@/app/AuthContext";
+import { useNotification } from "@/hooks/useNotification";
 
 interface TableRowProps {
   row: PathologyPatientData;
@@ -24,9 +25,9 @@ const TableRow: React.FC<TableRowProps> = ({
 }) => {
   const [showStatusConfirm, setShowStatusConfirm] = useState(false);
 
-  // Use the hook directly instead of props
   const { updateStatus, isUpdating } = useUpdatePathologyStatus();
   const { user } = useAuth();
+  const { showNotification } = useNotification();
 
   const FIRST_COL_WIDTH = "w-[60px] min-w-[60px]";
   const SECOND_COL_WIDTH = "w-[100px] min-w-[100px]";
@@ -157,9 +158,10 @@ const TableRow: React.FC<TableRowProps> = ({
 
             {/* Receipt Button */}
             <button
-              onClick={() =>
-                generatePathologyReceipt(row, user?.fullName || "Staff")
-              }
+              onClick={() => {
+                generatePathologyReceipt(row, user?.fullName || "Staff");
+                showNotification("Generating receipt document...", "success");
+              }}
               className="p-1.5 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition-all cursor-pointer shadow-sm hover:shadow-md active:scale-95"
               title="Download Receipt"
             >
