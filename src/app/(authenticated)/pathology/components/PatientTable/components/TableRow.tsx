@@ -172,15 +172,15 @@ const TableRow: React.FC<TableRowProps> = ({
               disabled={isUpdating}
               className={`p-1.5 rounded-lg transition-all cursor-pointer disabled:opacity-50 shadow-sm hover:shadow-md active:scale-95 ${
                 row.isCompleted
-                  ? "bg-amber-100 text-amber-700 hover:bg-amber-200" // Revert to pending
-                  : "bg-green-100 text-green-700 hover:bg-green-200" // Mark as complete
+                  ? "bg-green-100 text-green-700 hover:bg-green-200" // Currently completed
+                  : "bg-amber-100 text-amber-700 hover:bg-amber-200" // Currently pending
               }`}
               title={row.isCompleted ? "Mark as Pending" : "Mark as Completed"}
             >
               {row.isCompleted ? (
-                <XCircle size={16} />
-              ) : (
                 <CheckCircle size={16} />
+              ) : (
+                <XCircle size={16} />
               )}
             </button>
           </div>
