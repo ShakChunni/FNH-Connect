@@ -14,6 +14,10 @@ export interface PatientData {
   phoneNumber: string | null;
   email: string | null;
   bloodGroup: string | null;
+  createdBy: number;
+  createdByName: string | null;
+  lastEditedByName: string | null;
+  lastEditedAt: Date | string | null;
   createdAt?: Date;
   updatedAt?: Date;
 }

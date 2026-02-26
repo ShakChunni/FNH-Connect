@@ -28,6 +28,9 @@ export async function GET(request: NextRequest) {
     const recentPatientsLimit = parseInt(
       searchParams.get("recentLimit") || "5",
     );
+    const now = new Date();
+    const last30Days = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    const last7Days = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
 
     // 3. Get today's date range in Bangladesh time (UTC+6)
     // The server runs in UTC, so we need to calculate Bangladesh "today" properly
@@ -67,6 +70,11 @@ export async function GET(request: NextRequest) {
 
       // Cash session for current user
       activeShift,
+
+      // Patient creation stats by staff
+      patientCreatedAllTime,
+      patientCreatedLast30Days,
+      patientCreatedLast7Days,
     ] = await Promise.all([
       // Stats: General active patients
       prisma.admission.count({
@@ -150,7 +158,86 @@ export async function GET(request: NextRequest) {
           cashMovements: { select: { amount: true, movementType: true } },
         },
       }),
+
+      prisma.patient.groupBy({
+        by: ["createdBy"],
+        _count: {
+          _all: true,
+        },
+      }),
+
+      prisma.patient.groupBy({
+        by: ["createdBy"],
+        where: {
+          createdAt: {
+            gte: last30Days,
+          },
+        },
+        _count: {
+          _all: true,
+        },
+      }),
+
+      prisma.patient.groupBy({
+        by: ["createdBy"],
+        where: {
+          createdAt: {
+            gte: last7Days,
+          },
+        },
+        _count: {
+          _all: true,
+        },
+      }),
     ]);
+
+    const staffIds = Array.from(
+      new Set([
+        ...patientCreatedAllTime.map((item) => item.createdBy),
+        ...patientCreatedLast30Days.map((item) => item.createdBy),
+        ...patientCreatedLast7Days.map((item) => item.createdBy),
+      ]),
+    );
+
+    const staffList = staffIds.length
+      ? await prisma.staff.findMany({
+          where: {
+            id: {
+              in: staffIds,
+            },
+          },
+          select: {
+            id: true,
+            fullName: true,
+          },
+        })
+      : [];
+
+    const staffNameMap = new Map(
+      staffList.map((staff) => [staff.id, staff.fullName]),
+    );
+    const allTimeMap = new Map(
+      patientCreatedAllTime.map((item) => [item.createdBy, item._count._all]),
+    );
+    const last30DaysMap = new Map(
+      patientCreatedLast30Days.map((item) => [
+        item.createdBy,
+        item._count._all,
+      ]),
+    );
+    const last7DaysMap = new Map(
+      patientCreatedLast7Days.map((item) => [item.createdBy, item._count._all]),
+    );
+
+    const patientCreationStats = staffIds
+      .map((staffId) => ({
+        staffId,
+        staffName: staffNameMap.get(staffId) || `Staff #${staffId}`,
+        allTime: allTimeMap.get(staffId) || 0,
+        last30Days: last30DaysMap.get(staffId) || 0,
+        last7Days: last7DaysMap.get(staffId) || 0,
+      }))
+      .sort((a, b) => b.allTime - a.allTime);
 
     // 5. Calculate stats
     const totalActivePatients = generalActivePatients;
@@ -239,6 +326,7 @@ export async function GET(request: NextRequest) {
         },
         recentPatients,
         cashSession,
+        patientCreationStats,
       },
     });
   } catch (error) {

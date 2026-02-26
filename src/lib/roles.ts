@@ -36,14 +36,18 @@ export enum HospitalRole {
 }
 
 // Routes that receptionists can access
-// Note: patient-records is admin-only
+// Data-level filtering for patient-records is enforced in API routes:
+// - receptionist: non-infertility patients only
+// - receptionist-infertility: infertility patients only
 export const RECEPTIONIST_ALLOWED_ROUTES = [
   "/dashboard",
   "/general-admission",
   "/pathology",
+  "/patient-records",
   "/api/dashboard",
   "/api/general-admission",
   "/api/pathology",
+  "/api/patient-records",
   "/api/auth", // Auth routes are always allowed
   "/api/staff", // Staff/doctors list for dropdowns
   "/api/hospitals", // Hospitals list for dropdowns

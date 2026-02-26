@@ -190,6 +190,10 @@ export interface PathologyPatient {
   } | null;
   createdAt: string;
   updatedAt: string;
+  createdBy: number;
+  lastModifiedBy: number;
+  createdByName?: string | null;
+  lastModifiedByName?: string | null;
 }
 
 // Filter options
@@ -305,6 +309,10 @@ export interface PathologyPatientData {
   doneBy: string | null; // Name of staff who performed test
   createdAt: string;
   updatedAt: string;
+  createdBy: number;
+  lastModifiedBy: number;
+  createdByName?: string | null;
+  lastModifiedByName?: string | null;
 }
 
 export interface TableHeader {

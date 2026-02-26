@@ -2,12 +2,13 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { User, Phone, MapPin, Save } from "lucide-react";
+import { User, MapPin, Save } from "lucide-react";
 import { ModalHeader, ModalFooter } from "@/components/ui";
 
 // Existing field components from infertility
 import GenderDropdown from "@/components/form-sections/Fields/GenderDropdown";
 import DobDropdown from "@/components/form-sections/Fields/DobDropdown";
+import ContactPhoneInput from "@/components/form-sections/Fields/ContactPhoneInput";
 
 import type { PatientData } from "../types";
 import { useUpdatePatient } from "../hooks";
@@ -37,6 +38,7 @@ export const EditPatientModal: React.FC<EditPatientModalProps> = ({
     phoneNumber: "",
     address: "",
   });
+  const [isPhoneValid, setIsPhoneValid] = useState(true);
 
   // Populate form when patient data changes
   useEffect(() => {
@@ -71,9 +73,18 @@ export const EditPatientModal: React.FC<EditPatientModalProps> = ({
     setFormData((prev) => ({ ...prev, dateOfBirth: date }));
   }, []);
 
+  const handlePhoneChange = useCallback((value: string) => {
+    setFormData((prev) => ({ ...prev, phoneNumber: value }));
+  }, []);
+
   const handleSubmit = useCallback(async () => {
     if (!formData.firstName.trim()) {
       showNotification("First name is required", "error");
+      return;
+    }
+
+    if (formData.phoneNumber.trim() && !isPhoneValid) {
+      showNotification("Invalid phone number", "error");
       return;
     }
 
@@ -97,7 +108,14 @@ export const EditPatientModal: React.FC<EditPatientModalProps> = ({
       console.error("[EditPatientModal] Error:", error);
       showNotification("Failed to update patient", "error");
     }
-  }, [formData, patientData.id, updatePatient, showNotification, onClose]);
+  }, [
+    formData,
+    isPhoneValid,
+    patientData.id,
+    updatePatient,
+    showNotification,
+    onClose,
+  ]);
 
   return (
     <AnimatePresence>
@@ -208,17 +226,12 @@ export const EditPatientModal: React.FC<EditPatientModalProps> = ({
                   <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5">
                     Phone Number
                   </label>
-                  <div className="relative">
-                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                    <input
-                      type="tel"
-                      name="phoneNumber"
-                      value={formData.phoneNumber}
-                      onChange={handleInputChange}
-                      className="w-full pl-10 pr-4 py-2 h-12 md:h-14 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-950 focus:ring-2 focus:ring-blue-950 transition-all text-xs sm:text-sm cursor-text"
-                      placeholder="01XXXXXXXXX"
-                    />
-                  </div>
+                  <ContactPhoneInput
+                    value={formData.phoneNumber}
+                    onChange={handlePhoneChange}
+                    onValidationChange={setIsPhoneValid}
+                    defaultCountry="BD"
+                  />
                 </div>
 
                 {/* Address */}

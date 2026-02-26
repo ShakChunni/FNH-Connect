@@ -423,18 +423,20 @@ export async function middleware(request: NextRequest) {
 
     if (isReceptionist || isReceptionistInfertility) {
       // Define allowed routes for base receptionists
-      // They can access: dashboard, general-admission, pathology
-      // Note: patient-records is admin-only
+      // They can access: dashboard, general-admission, pathology, patient-records
+      // Data-level patient-record restrictions are enforced in patient-records APIs
       const baseReceptionistPaths = [
         // Page routes
         "/dashboard",
         "/general-admission",
         "/pathology",
+        "/patient-records",
         "/login",
         // API routes for pages
         "/api/dashboard",
         "/api/general-admission",
         "/api/pathology",
+        "/api/patient-records",
         // Supporting API routes
         "/api/auth",
         "/api/staff",

@@ -6,3 +6,4 @@ export { CashFlowTracker } from "./CashFlowTracker";
 export { WelcomeHeader } from "./WelcomeHeader";
 export { SessionCashTracker } from "./SessionCashTracker";
 export { RecentShifts } from "./RecentShifts";
+export { PatientCreationStats } from "./PatientCreationStats";

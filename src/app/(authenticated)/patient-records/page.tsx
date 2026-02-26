@@ -57,6 +57,9 @@ const PatientRecordsPage = React.memo(() => {
       dateOfBirth: p.dateOfBirth ? new Date(p.dateOfBirth) : null,
       guardianDOB: p.guardianDOB ? new Date(p.guardianDOB) : null,
       guardianGender: p.guardianGender || null,
+      createdByName: p.createdByName || null,
+      lastEditedByName: p.lastEditedByName || null,
+      lastEditedAt: p.lastEditedAt ? new Date(p.lastEditedAt) : null,
       createdAt: p.createdAt ? new Date(p.createdAt) : undefined,
       updatedAt: p.updatedAt ? new Date(p.updatedAt) : undefined,
     }));

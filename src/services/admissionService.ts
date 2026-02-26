@@ -159,7 +159,32 @@ export async function getAdmissions(filters: AdmissionFilters) {
     prisma.admission.count({ where }),
   ]);
 
-  return { admissions, total };
+  const staffIds = Array.from(
+    new Set(
+      admissions
+        .flatMap((admission) => [admission.createdBy, admission.lastModifiedBy])
+        .filter(Boolean),
+    ),
+  );
+
+  const staffList = staffIds.length
+    ? await prisma.staff.findMany({
+        where: { id: { in: staffIds } },
+        select: { id: true, fullName: true },
+      })
+    : [];
+
+  const staffNameMap = new Map(
+    staffList.map((staff) => [staff.id, staff.fullName]),
+  );
+
+  const enrichedAdmissions = admissions.map((admission) => ({
+    ...admission,
+    createdByName: staffNameMap.get(admission.createdBy) || null,
+    lastModifiedByName: staffNameMap.get(admission.lastModifiedBy) || null,
+  }));
+
+  return { admissions: enrichedAdmissions, total };
 }
 
 export async function getAdmissionById(id: number) {
@@ -974,5 +999,7 @@ export function transformAdmissionForResponse(admission: any) {
     updatedAt: admission.updatedAt.toISOString(),
     createdBy: admission.createdBy,
     lastModifiedBy: admission.lastModifiedBy,
+    createdByName: admission.createdByName || null,
+    lastModifiedByName: admission.lastModifiedByName || null,
   };
 }
