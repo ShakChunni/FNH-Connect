@@ -58,6 +58,22 @@ const mockData: DashboardData = {
     },
   ],
   cashSession: null,
+  patientCreationStats: [
+    {
+      staffId: 1,
+      staffName: "Reception Staff A",
+      allTime: 132,
+      last30Days: 24,
+      last7Days: 6,
+    },
+    {
+      staffId: 2,
+      staffName: "Reception Staff B",
+      allTime: 118,
+      last30Days: 21,
+      last7Days: 5,
+    },
+  ],
 };
 
 // ============================================
@@ -97,6 +113,7 @@ export function useDashboardData() {
     stats: query.data?.stats ?? null,
     recentPatients: query.data?.recentPatients ?? [],
     cashSession: query.data?.cashSession ?? null,
+    patientCreationStats: query.data?.patientCreationStats ?? [],
     isLoading: query.isLoading,
     isError: query.isError,
     refetch: query.refetch,

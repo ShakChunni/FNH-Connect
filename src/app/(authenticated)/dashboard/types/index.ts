@@ -15,6 +15,14 @@ export interface DashboardStats {
   pathologyDoneAllTime: number;
 }
 
+export interface PatientCreationStat {
+  staffId: number;
+  staffName: string;
+  allTime: number;
+  last30Days: number;
+  last7Days: number;
+}
+
 export interface RecentPatient {
   id: number;
   patientId: number;
@@ -47,6 +55,7 @@ export interface DashboardData {
   stats: DashboardStats;
   recentPatients: RecentPatient[];
   cashSession: CashFlowSession | null;
+  patientCreationStats: PatientCreationStat[];
 }
 
 // ============================================
@@ -95,6 +104,15 @@ export const DashboardDataResponseSchema = z.object({
         isActive: z.boolean(),
       })
       .nullable(),
+    patientCreationStats: z.array(
+      z.object({
+        staffId: z.number(),
+        staffName: z.string(),
+        allTime: z.number(),
+        last30Days: z.number(),
+        last7Days: z.number(),
+      }),
+    ),
   }),
   error: z.string().optional(),
 });

@@ -174,6 +174,8 @@ export interface AdmissionPatientData {
   updatedAt: string;
   createdBy: number;
   lastModifiedBy: number;
+  createdByName?: string | null;
+  lastModifiedByName?: string | null;
 }
 
 export interface AdmissionFilters {

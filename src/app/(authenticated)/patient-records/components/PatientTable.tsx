@@ -2,9 +2,7 @@
 
 import React, { useState, useMemo } from "react";
 import { Phone, MapPin, Calendar, Edit3, Users, Search } from "lucide-react";
-import { usePagination } from "@/hooks/usePagination";
 import { useHorizontalDragScroll } from "@/hooks/useHorizontalDragScroll";
-import { Pagination } from "@/components/pagination/Pagination";
 import type { PatientData } from "../types";
 import PatientOverview from "./PatientOverview/PatientOverview";
 
@@ -17,8 +15,6 @@ interface PatientTableProps {
 
 type SortKey = "fullName" | "phoneNumber" | "gender" | "createdAt" | "id";
 type SortOrder = "asc" | "desc";
-
-const PAGE_SIZE = 15;
 
 const formatDate = (date: Date | string | null): string => {
   if (!date) return "—";
@@ -118,7 +114,7 @@ export const PatientTable: React.FC<PatientTableProps> = ({
   const [sortKey, setSortKey] = useState<SortKey | null>(null);
   const [sortOrder, setSortOrder] = useState<SortOrder>("asc");
   const [selectedPatient, setSelectedPatient] = useState<PatientData | null>(
-    null
+    null,
   );
   const [isOverviewOpen, setIsOverviewOpen] = useState(false);
 
@@ -171,23 +167,7 @@ export const PatientTable: React.FC<PatientTableProps> = ({
     });
   }, [tableData, sortKey, sortOrder]);
 
-  const {
-    currentPage,
-    totalPages,
-    paginationMeta,
-    goToPage,
-    goToPrev,
-    goToNext,
-  } = usePagination({
-    totalResults: sortedData.length,
-    pageSize: PAGE_SIZE,
-    initialPage: 1,
-  });
-
-  const paginatedData = sortedData.slice(
-    (currentPage - 1) * PAGE_SIZE,
-    currentPage * PAGE_SIZE
-  );
+  const paginatedData = sortedData;
 
   const handlePatientClick = (patient: PatientData) => {
     setSelectedPatient(patient);
@@ -285,7 +265,7 @@ export const PatientTable: React.FC<PatientTableProps> = ({
                 <th
                   className={`${getHeaderClasses(
                     3,
-                    "phoneNumber"
+                    "phoneNumber",
                   )} hidden sm:table-cell min-w-[150px]`}
                   onClick={() => handleSort("phoneNumber")}
                 >
@@ -301,7 +281,7 @@ export const PatientTable: React.FC<PatientTableProps> = ({
                 <th
                   className={`${getHeaderClasses(
                     4,
-                    "gender"
+                    "gender",
                   )} hidden md:table-cell min-w-[120px]`}
                   onClick={() => handleSort("gender")}
                 >
@@ -316,14 +296,14 @@ export const PatientTable: React.FC<PatientTableProps> = ({
                 </th>
                 <th
                   className={`${getHeaderClasses(
-                    5
+                    5,
                   )} hidden lg:table-cell min-w-[200px]`}
                 >
                   Address
                 </th>
                 <th
                   className={`${getHeaderClasses(
-                    6
+                    6,
                   )} hidden lg:table-cell min-w-[150px]`}
                 >
                   DOB
@@ -341,9 +321,7 @@ export const PatientTable: React.FC<PatientTableProps> = ({
                   onClick={() => handlePatientClick(patient)}
                 >
                   <td className={getCellClasses(0)}>
-                    {startIndex
-                      ? startIndex + index
-                      : (currentPage - 1) * PAGE_SIZE + index + 1}
+                    {startIndex ? startIndex + index : index + 1}
                   </td>
                   <td className={getCellClasses(1)}>
                     #{patient.id.toString().padStart(4, "0")}
@@ -420,21 +398,6 @@ export const PatientTable: React.FC<PatientTableProps> = ({
           </table>
         </div>
       </div>
-
-      {totalPages > 1 && (
-        <div className="mt-4">
-          <Pagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            totalResults={sortedData.length}
-            startIndex={paginationMeta.startIndex}
-            endIndex={paginationMeta.endIndex}
-            onPageChange={goToPage}
-            onPrev={goToPrev}
-            onNext={goToNext}
-          />
-        </div>
-      )}
 
       <PatientOverview
         isOpen={isOverviewOpen}

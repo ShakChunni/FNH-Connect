@@ -19,11 +19,11 @@ import {
 } from "@/lib/roles";
 
 // Receptionist allowed routes for sidebar filtering
-// Note: patient-records is admin-only
 const RECEPTIONIST_SIDEBAR_ROUTES = [
   "/dashboard",
   "/general-admission",
   "/pathology",
+  "/patient-records",
 ];
 
 // Receptionist-infertility allowed routes (includes infertility)
@@ -108,7 +108,7 @@ export function getNavigationItems(userRole?: string): NavigationItem[] {
   if (isReceptionistInfertilityRole(userRole)) {
     return navigationItems.filter(
       (item) =>
-        !item.adminOnly &&
+        (item.href === "/patient-records" || !item.adminOnly) &&
         RECEPTIONIST_INFERTILITY_SIDEBAR_ROUTES.includes(item.href),
     );
   }
@@ -117,7 +117,8 @@ export function getNavigationItems(userRole?: string): NavigationItem[] {
   if (isReceptionistRole(userRole)) {
     return navigationItems.filter(
       (item) =>
-        !item.adminOnly && RECEPTIONIST_SIDEBAR_ROUTES.includes(item.href),
+        (item.href === "/patient-records" || !item.adminOnly) &&
+        RECEPTIONIST_SIDEBAR_ROUTES.includes(item.href),
     );
   }
 

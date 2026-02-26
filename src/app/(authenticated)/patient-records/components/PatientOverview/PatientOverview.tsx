@@ -3,13 +3,13 @@ import React from "react";
 import {
   User,
   Activity,
-  X,
   Edit,
   Phone,
   Mail,
   MapPin,
   Calendar,
   Droplets,
+  UserRoundCog,
 } from "lucide-react";
 import { PatientData } from "../../types";
 import { ModalHeader } from "@/components/ui/ModalHeader";
@@ -50,7 +50,7 @@ const InfoRow = ({
     <div
       className={cn(
         "flex flex-col gap-1 p-2 sm:p-3 rounded-lg sm:rounded-xl border border-transparent transition-all hover:border-slate-200 hover:bg-white hover:shadow-sm",
-        variantStyles[variant]
+        variantStyles[variant],
       )}
     >
       <div className="flex items-center gap-1.5 sm:gap-2">
@@ -83,6 +83,19 @@ const PatientOverview: React.FC<PatientOverviewProps> = ({
       day: "2-digit",
       month: "short",
       year: "numeric",
+    });
+  };
+
+  const formatDateTimeBDT = (date: Date | string | null | undefined) => {
+    if (!date) return "—";
+    return new Date(date).toLocaleString("en-BD", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+      timeZone: "Asia/Dhaka",
     });
   };
 
@@ -122,7 +135,7 @@ const PatientOverview: React.FC<PatientOverviewProps> = ({
               "px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-md text-[9px] sm:text-[10px] font-bold uppercase border",
               isFemale
                 ? "bg-pink-50 text-pink-600 border-pink-100"
-                : "bg-blue-50 text-blue-600 border-blue-100"
+                : "bg-blue-50 text-blue-600 border-blue-100",
             )}
           >
             {patient.gender}
@@ -142,7 +155,7 @@ const PatientOverview: React.FC<PatientOverviewProps> = ({
                     "w-14 h-14 sm:w-16 sm:h-16 lg:w-20 lg:h-20 rounded-xl sm:rounded-2xl flex items-center justify-center shrink-0",
                     isFemale
                       ? "bg-pink-50 text-pink-500"
-                      : "bg-blue-50 text-blue-500"
+                      : "bg-blue-50 text-blue-500",
                   )}
                 >
                   <User className="w-7 h-7 sm:w-8 sm:h-8 lg:w-10 lg:h-10" />
@@ -187,13 +200,13 @@ const PatientOverview: React.FC<PatientOverviewProps> = ({
           </div>
 
           {/* Additional Details - Stack on mobile */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 items-stretch">
             {/* Address Section */}
             <div className="space-y-2 sm:space-y-3">
               <h3 className="text-[10px] sm:text-xs font-black text-slate-400 uppercase tracking-widest px-1">
                 Residential Details
               </h3>
-              <div className="bg-white rounded-xl sm:rounded-2xl p-3 sm:p-4 shadow-sm border border-slate-200/50 min-h-[80px] sm:min-h-[100px]">
+              <div className="bg-white rounded-xl sm:rounded-2xl p-3 sm:p-4 shadow-sm border border-slate-200/50 min-h-[100px] sm:min-h-[130px] h-full">
                 <div className="flex items-start gap-2 sm:gap-3">
                   <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-emerald-50 flex items-center justify-center shrink-0">
                     <MapPin className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-500" />
@@ -215,7 +228,7 @@ const PatientOverview: React.FC<PatientOverviewProps> = ({
               <h3 className="text-[10px] sm:text-xs font-black text-slate-400 uppercase tracking-widest px-1">
                 Guardian Information
               </h3>
-              <div className="bg-white rounded-xl sm:rounded-2xl p-3 sm:p-4 shadow-sm border border-slate-200/50">
+              <div className="bg-white rounded-xl sm:rounded-2xl p-3 sm:p-4 shadow-sm border border-slate-200/50 min-h-[100px] sm:min-h-[130px] h-full">
                 <div className="space-y-2 sm:space-y-3">
                   <div className="flex items-center gap-2 sm:gap-3 p-1.5 sm:p-2 bg-slate-50 rounded-lg sm:rounded-xl">
                     <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-indigo-50 flex items-center justify-center shrink-0">
@@ -255,6 +268,43 @@ const PatientOverview: React.FC<PatientOverviewProps> = ({
               </div>
             </div>
           </div>
+
+          <div className="bg-white rounded-xl sm:rounded-2xl p-3 sm:p-4 shadow-sm border border-slate-200/50">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-8 h-8 rounded-lg bg-indigo-50 flex items-center justify-center">
+                <UserRoundCog className="w-4 h-4 text-indigo-600" />
+              </div>
+              <h3 className="text-xs sm:text-sm font-bold text-slate-800">
+                Record Activity
+              </h3>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-2 sm:gap-3">
+              <div className="rounded-lg bg-slate-50 border border-slate-100 p-2.5">
+                <p className="text-[10px] uppercase tracking-wider text-slate-500 font-bold">
+                  Added By
+                </p>
+                <p className="text-xs sm:text-sm font-semibold text-slate-800 mt-0.5 break-words">
+                  {patient.createdByName || "Unknown"}
+                </p>
+              </div>
+              <div className="rounded-lg bg-slate-50 border border-slate-100 p-2.5">
+                <p className="text-[10px] uppercase tracking-wider text-slate-500 font-bold">
+                  Last Edited By
+                </p>
+                <p className="text-xs sm:text-sm font-semibold text-slate-800 mt-0.5 break-words">
+                  {patient.lastEditedByName || "—"}
+                </p>
+              </div>
+              <div className="rounded-lg bg-slate-50 border border-slate-100 p-2.5">
+                <p className="text-[10px] uppercase tracking-wider text-slate-500 font-bold">
+                  Last Edited At (BDT)
+                </p>
+                <p className="text-xs sm:text-sm font-semibold text-slate-800 mt-0.5 break-words">
+                  {formatDateTimeBDT(patient.lastEditedAt || patient.updatedAt)}
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -263,7 +313,7 @@ const PatientOverview: React.FC<PatientOverviewProps> = ({
         <div className="flex items-center gap-1.5 sm:gap-2 text-slate-400 order-2 sm:order-1">
           <Activity className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
           <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-widest">
-            Registered: {formatDate(patient.createdAt || "")}
+            Registered: {formatDateTimeBDT(patient.createdAt)}
           </span>
         </div>
         <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto order-1 sm:order-2">

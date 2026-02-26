@@ -8,6 +8,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getAuthenticatedUserForAPI } from "@/lib/auth-validation";
+import { isReceptionistRole, isReceptionistInfertilityRole } from "@/lib/roles";
 import {
   validateCSRFToken,
   addCSRFTokenToResponse,
@@ -17,13 +18,33 @@ interface RouteParams {
   params: Promise<{ id: string }>;
 }
 
+function getPatientAccessWhereByRole(userRole: string) {
+  if (isReceptionistInfertilityRole(userRole)) {
+    return {
+      infertilityRecords: {
+        some: {},
+      },
+    };
+  }
+
+  if (isReceptionistRole(userRole)) {
+    return {
+      infertilityRecords: {
+        none: {},
+      },
+    };
+  }
+
+  return {};
+}
+
 export async function PATCH(request: NextRequest, { params }: RouteParams) {
   try {
     // 1. Validate CSRF token
     if (!validateCSRFToken(request)) {
       return NextResponse.json(
         { success: false, error: "Invalid CSRF token" },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -32,7 +53,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     if (!user) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -43,19 +64,22 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     if (isNaN(patientId)) {
       return NextResponse.json(
         { success: false, error: "Invalid patient ID" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
-    // 4. Check if patient exists
-    const existingPatient = await prisma.patient.findUnique({
-      where: { id: patientId },
+    // 4. Check if patient exists and is accessible for this role
+    const existingPatient = await prisma.patient.findFirst({
+      where: {
+        id: patientId,
+        ...getPatientAccessWhereByRole(user.role),
+      },
     });
 
     if (!existingPatient) {
       return NextResponse.json(
-        { success: false, error: "Patient not found" },
-        { status: 404 }
+        { success: false, error: "Patient not found or access denied" },
+        { status: 404 },
       );
     }
 
@@ -150,7 +174,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     console.error("[Patient Update API] Error:", error);
     return NextResponse.json(
       { success: false, error: "Failed to update patient" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -162,7 +186,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     if (!user) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -173,32 +197,67 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     if (isNaN(patientId)) {
       return NextResponse.json(
         { success: false, error: "Invalid patient ID" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
-    // 3. Fetch patient
-    const patient = await prisma.patient.findUnique({
-      where: { id: patientId },
+    // 3. Fetch patient with role-based access filtering
+    const patient = await prisma.patient.findFirst({
+      where: {
+        id: patientId,
+        ...getPatientAccessWhereByRole(user.role),
+      },
     });
 
     if (!patient) {
       return NextResponse.json(
-        { success: false, error: "Patient not found" },
-        { status: 404 }
+        { success: false, error: "Patient not found or access denied" },
+        { status: 404 },
       );
     }
+
+    const [creator, latestUpdateLog] = await Promise.all([
+      patient.createdBy
+        ? prisma.staff.findUnique({
+            where: { id: patient.createdBy },
+            select: { fullName: true },
+          })
+        : null,
+      prisma.activityLog.findFirst({
+        where: {
+          entityType: "Patient",
+          action: "UPDATE",
+          entityId: patientId,
+        },
+        orderBy: { timestamp: "desc" },
+        select: {
+          timestamp: true,
+          user: {
+            select: {
+              staff: {
+                select: { fullName: true },
+              },
+            },
+          },
+        },
+      }),
+    ]);
 
     // 4. Return response
     return NextResponse.json({
       success: true,
-      data: patient,
+      data: {
+        ...patient,
+        createdByName: creator?.fullName || null,
+        lastEditedByName: latestUpdateLog?.user?.staff?.fullName || null,
+        lastEditedAt: latestUpdateLog?.timestamp || null,
+      },
     });
   } catch (error) {
     console.error("[Patient Get API] Error:", error);
     return NextResponse.json(
       { success: false, error: "Failed to fetch patient" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

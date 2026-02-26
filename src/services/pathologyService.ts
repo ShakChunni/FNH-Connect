@@ -220,8 +220,33 @@ export async function getPathologyPatients(filters: PathologyFilters) {
     take: limit,
   });
 
+  const staffIds = Array.from(
+    new Set(
+      data
+        .flatMap((row) => [row.createdBy, row.lastModifiedBy])
+        .filter(Boolean),
+    ),
+  );
+
+  const staffList = staffIds.length
+    ? await prisma.staff.findMany({
+        where: { id: { in: staffIds } },
+        select: { id: true, fullName: true },
+      })
+    : [];
+
+  const staffNameMap = new Map(
+    staffList.map((staff) => [staff.id, staff.fullName]),
+  );
+
+  const enrichedData = data.map((row) => ({
+    ...row,
+    createdByName: staffNameMap.get(row.createdBy) || null,
+    lastModifiedByName: staffNameMap.get(row.lastModifiedBy) || null,
+  }));
+
   return {
-    data,
+    data: enrichedData,
     pagination: {
       total,
       page,

@@ -61,6 +61,10 @@ export function transformPathologyPatient(
     doneBy: patient.doneBy?.fullName || null,
     createdAt: patient.createdAt,
     updatedAt: patient.updatedAt,
+    createdBy: patient.createdBy,
+    lastModifiedBy: patient.lastModifiedBy,
+    createdByName: patient.createdByName || null,
+    lastModifiedByName: patient.lastModifiedByName || null,
   };
 }
 

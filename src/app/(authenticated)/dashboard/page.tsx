@@ -8,13 +8,15 @@ import {
   RecentPatients,
   SessionCashTracker,
   RecentShifts,
+  PatientCreationStats,
 } from "./components";
 import { useDashboardData } from "./hooks";
 import { useAuth } from "@/app/AuthContext";
 import { isAdminRole, isSystemAdminRole } from "@/lib/roles";
 
 const Dashboard = React.memo(() => {
-  const { stats, recentPatients, cashSession, isLoading } = useDashboardData();
+  const { stats, recentPatients, patientCreationStats, isLoading } =
+    useDashboardData();
   const { user } = useAuth();
 
   // Check if user is a normal admin (not system-admin)
@@ -39,6 +41,14 @@ const Dashboard = React.memo(() => {
           {/* Quick Actions Bar */}
           <section>
             <QuickActions isLoading={isLoading} />
+          </section>
+
+          {/* Patient creation by staff */}
+          <section>
+            <PatientCreationStats
+              data={patientCreationStats}
+              isLoading={isLoading}
+            />
           </section>
 
           {/* Bottom Section: Recent Patients & Cash Flow / Recent Shifts */}
