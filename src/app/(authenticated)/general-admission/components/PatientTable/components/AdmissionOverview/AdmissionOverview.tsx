@@ -1,14 +1,6 @@
 "use client";
 import React from "react";
-import {
-  Edit,
-  Activity,
-  Clock,
-  Printer,
-  FileText,
-  X,
-  UserRoundCog,
-} from "lucide-react";
+import { Edit, Activity, Clock, Printer, FileText, X } from "lucide-react";
 import {
   AdmissionPatientData,
   ADMISSION_STATUS_OPTIONS,
@@ -75,6 +67,18 @@ const AdmissionOverview: React.FC<AdmissionOverviewProps> = ({
       day: "2-digit",
       month: "short",
       year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+      timeZone: "Asia/Dhaka",
+    });
+  };
+
+  const formatCompactMetadataDateTime = (dateStr: string) => {
+    const date = new Date(dateStr);
+    return date.toLocaleString("en-BD", {
+      day: "2-digit",
+      month: "short",
       hour: "2-digit",
       minute: "2-digit",
       hour12: true,
@@ -165,6 +169,28 @@ const AdmissionOverview: React.FC<AdmissionOverviewProps> = ({
           >
             {statusOption?.label || patient.status}
           </div>
+          <div className="hidden lg:flex items-center gap-1 sm:gap-1.5 px-1.5 sm:px-2 py-0.5 sm:py-1 bg-emerald-50 border border-emerald-100 rounded-md min-w-0">
+            <span className="text-[8px] sm:text-[9px] font-bold text-emerald-500 uppercase shrink-0">
+              Added
+            </span>
+            <span className="text-[10px] sm:text-[11px] font-semibold text-emerald-700 truncate max-w-[170px]">
+              {patient.createdByName || "Unknown"}
+            </span>
+            <span className="text-[9px] sm:text-[10px] text-emerald-600 truncate max-w-[140px]">
+              • {formatCompactMetadataDateTime(patient.createdAt)}
+            </span>
+          </div>
+          <div className="hidden lg:flex items-center gap-1 sm:gap-1.5 px-1.5 sm:px-2 py-0.5 sm:py-1 bg-indigo-50 border border-indigo-100 rounded-md min-w-0">
+            <span className="text-[8px] sm:text-[9px] font-bold text-indigo-500 uppercase shrink-0">
+              Edited
+            </span>
+            <span className="text-[10px] sm:text-[11px] font-semibold text-indigo-700 truncate max-w-[170px]">
+              {patient.lastModifiedByName || "Unknown"}
+            </span>
+            <span className="text-[9px] sm:text-[10px] text-indigo-600 truncate max-w-[140px]">
+              • {formatCompactMetadataDateTime(patient.updatedAt)}
+            </span>
+          </div>
         </div>
       </ModalHeader>
 
@@ -185,42 +211,6 @@ const AdmissionOverview: React.FC<AdmissionOverviewProps> = ({
             {/* Right Column: Admission Details */}
             <div className="lg:col-span-4 space-y-6 lg:space-y-8">
               <AdmissionDetails patient={patient} />
-              <div className="bg-white border border-slate-200/70 rounded-2xl p-4 sm:p-5 shadow-sm">
-                <div className="flex items-center gap-2 mb-3">
-                  <div className="w-8 h-8 rounded-lg bg-indigo-50 flex items-center justify-center">
-                    <UserRoundCog className="w-4 h-4 text-indigo-600" />
-                  </div>
-                  <h4 className="text-sm font-bold text-slate-800">
-                    Record Activity
-                  </h4>
-                </div>
-                <div className="space-y-2.5">
-                  <div className="rounded-lg bg-slate-50 border border-slate-100 p-2.5">
-                    <p className="text-[10px] uppercase tracking-wider text-slate-500 font-bold">
-                      Added By
-                    </p>
-                    <p className="text-sm font-semibold text-slate-800 mt-0.5 break-words">
-                      {patient.createdByName || "Unknown"}
-                    </p>
-                  </div>
-                  <div className="rounded-lg bg-slate-50 border border-slate-100 p-2.5">
-                    <p className="text-[10px] uppercase tracking-wider text-slate-500 font-bold">
-                      Last Edited By
-                    </p>
-                    <p className="text-sm font-semibold text-slate-800 mt-0.5 break-words">
-                      {patient.lastModifiedByName || "Unknown"}
-                    </p>
-                  </div>
-                  <div className="rounded-lg bg-slate-50 border border-slate-100 p-2.5">
-                    <p className="text-[10px] uppercase tracking-wider text-slate-500 font-bold">
-                      Last Edited At (BDT)
-                    </p>
-                    <p className="text-sm font-semibold text-slate-800 mt-0.5 break-words">
-                      {formatMetadataDateTime(patient.updatedAt)}
-                    </p>
-                  </div>
-                </div>
-              </div>
             </div>
           </div>
         </div>

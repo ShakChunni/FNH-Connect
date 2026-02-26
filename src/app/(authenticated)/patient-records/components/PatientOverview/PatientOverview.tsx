@@ -99,6 +99,18 @@ const PatientOverview: React.FC<PatientOverviewProps> = ({
     });
   };
 
+  const formatDateTimeCompactBDT = (date: Date | string | null | undefined) => {
+    if (!date) return "—";
+    return new Date(date).toLocaleString("en-BD", {
+      day: "2-digit",
+      month: "short",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+      timeZone: "Asia/Dhaka",
+    });
+  };
+
   const handleEdit = () => {
     onClose();
     setTimeout(() => {
@@ -139,6 +151,31 @@ const PatientOverview: React.FC<PatientOverviewProps> = ({
             )}
           >
             {patient.gender}
+          </div>
+          <div className="hidden lg:flex items-center gap-1 sm:gap-1.5 px-1.5 sm:px-2 py-0.5 sm:py-1 bg-emerald-50 border border-emerald-100 rounded-md min-w-0">
+            <span className="text-[8px] sm:text-[9px] font-bold text-emerald-500 uppercase shrink-0">
+              Added
+            </span>
+            <span className="text-[10px] sm:text-[11px] font-semibold text-emerald-700 truncate max-w-[180px]">
+              {patient.createdByName || "Unknown"}
+            </span>
+            <span className="text-[9px] sm:text-[10px] text-emerald-600 truncate max-w-[150px]">
+              • {formatDateTimeCompactBDT(patient.createdAt)}
+            </span>
+          </div>
+          <div className="hidden lg:flex items-center gap-1 sm:gap-1.5 px-1.5 sm:px-2 py-0.5 sm:py-1 bg-indigo-50 border border-indigo-100 rounded-md min-w-0">
+            <span className="text-[8px] sm:text-[9px] font-bold text-indigo-500 uppercase shrink-0">
+              Edited
+            </span>
+            <span className="text-[10px] sm:text-[11px] font-semibold text-indigo-700 truncate max-w-[180px]">
+              {patient.lastEditedByName || "—"}
+            </span>
+            <span className="text-[9px] sm:text-[10px] text-indigo-600 truncate max-w-[150px]">
+              •{" "}
+              {formatDateTimeCompactBDT(
+                patient.lastEditedAt || patient.updatedAt,
+              )}
+            </span>
           </div>
         </div>
       </ModalHeader>
@@ -265,43 +302,6 @@ const PatientOverview: React.FC<PatientOverviewProps> = ({
                     </div>
                   )}
                 </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-xl sm:rounded-2xl p-3 sm:p-4 shadow-sm border border-slate-200/50">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="w-8 h-8 rounded-lg bg-indigo-50 flex items-center justify-center">
-                <UserRoundCog className="w-4 h-4 text-indigo-600" />
-              </div>
-              <h3 className="text-xs sm:text-sm font-bold text-slate-800">
-                Record Activity
-              </h3>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-2 sm:gap-3">
-              <div className="rounded-lg bg-slate-50 border border-slate-100 p-2.5">
-                <p className="text-[10px] uppercase tracking-wider text-slate-500 font-bold">
-                  Added By
-                </p>
-                <p className="text-xs sm:text-sm font-semibold text-slate-800 mt-0.5 break-words">
-                  {patient.createdByName || "Unknown"}
-                </p>
-              </div>
-              <div className="rounded-lg bg-slate-50 border border-slate-100 p-2.5">
-                <p className="text-[10px] uppercase tracking-wider text-slate-500 font-bold">
-                  Last Edited By
-                </p>
-                <p className="text-xs sm:text-sm font-semibold text-slate-800 mt-0.5 break-words">
-                  {patient.lastEditedByName || "—"}
-                </p>
-              </div>
-              <div className="rounded-lg bg-slate-50 border border-slate-100 p-2.5">
-                <p className="text-[10px] uppercase tracking-wider text-slate-500 font-bold">
-                  Last Edited At (BDT)
-                </p>
-                <p className="text-xs sm:text-sm font-semibold text-slate-800 mt-0.5 break-words">
-                  {formatDateTimeBDT(patient.lastEditedAt || patient.updatedAt)}
-                </p>
               </div>
             </div>
           </div>
