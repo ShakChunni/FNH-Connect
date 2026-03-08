@@ -9,6 +9,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getAuthenticatedUserForAPI } from "@/lib/auth-validation";
 import { isReceptionistRole, isReceptionistInfertilityRole } from "@/lib/roles";
+import { serializeDateOfBirth } from "@/lib/dateOfBirth";
 
 function getPatientAccessWhereByRole(userRole: string) {
   if (isReceptionistInfertilityRole(userRole)) {
@@ -168,6 +169,8 @@ export async function GET(request: NextRequest) {
 
       return {
         ...patient,
+        dateOfBirth: serializeDateOfBirth(patient.dateOfBirth),
+        guardianDOB: serializeDateOfBirth(patient.guardianDOB),
         createdByName: creatorNameMap.get(patient.createdBy) || null,
         lastEditedByName: latestUpdate?.lastEditedByName || null,
         lastEditedAt: latestUpdate?.lastEditedAt || null,

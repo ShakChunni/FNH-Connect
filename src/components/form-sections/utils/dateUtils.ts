@@ -3,47 +3,23 @@
  * Centralized functions for calculating age from DOB across the application
  */
 
-import type { AgeInfo } from "../../../app/(authenticated)/infertility/types";
+import type { AgeInfo } from "@/lib/dateOfBirth";
+import {
+  calculateAgeInfoFromDateOfBirth,
+  formatDateOfBirth,
+  getAgeInYearsFromDateOfBirth,
+  parseDateOfBirth,
+  serializeDateOfBirth,
+} from "@/lib/dateOfBirth";
 
 /**
  * Calculate age in years, months, and days from a date of birth
  * Returns null if DOB is invalid or not provided
  */
 export function calculateAgeInfo(
-  dateOfBirth: Date | string | null | undefined
+  dateOfBirth: Date | string | null | undefined,
 ): AgeInfo | null {
-  if (!dateOfBirth) {
-    return null;
-  }
-
-  try {
-    const dob =
-      dateOfBirth instanceof Date ? dateOfBirth : new Date(dateOfBirth);
-
-    if (isNaN(dob.getTime())) {
-      return null;
-    }
-
-    const today = new Date();
-    let years = today.getFullYear() - dob.getFullYear();
-    let months = today.getMonth() - dob.getMonth();
-    let days = today.getDate() - dob.getDate();
-
-    if (days < 0) {
-      months--;
-      const prevMonthDate = new Date(today.getFullYear(), today.getMonth(), 0);
-      days += prevMonthDate.getDate();
-    }
-
-    if (months < 0) {
-      years--;
-      months += 12;
-    }
-
-    return { years, months, days };
-  } catch {
-    return null;
-  }
+  return calculateAgeInfoFromDateOfBirth(dateOfBirth);
 }
 
 /**
@@ -51,10 +27,9 @@ export function calculateAgeInfo(
  * This is useful for display purposes where we just need a single age number
  */
 export function getAgeInYears(
-  dateOfBirth: Date | string | null | undefined
+  dateOfBirth: Date | string | null | undefined,
 ): number | null {
-  const ageInfo = calculateAgeInfo(dateOfBirth);
-  return ageInfo ? ageInfo.years : null;
+  return getAgeInYearsFromDateOfBirth(dateOfBirth);
 }
 
 /**
@@ -107,19 +82,9 @@ export function formatDate(date: Date | string | null | undefined): string {
  * Format a date for input fields (ISO 8601 format: YYYY-MM-DD)
  */
 export function formatDateForInput(
-  date: Date | string | null | undefined
+  date: Date | string | null | undefined,
 ): string {
-  if (!date) {
-    return "";
-  }
-
-  try {
-    const d = date instanceof Date ? date : new Date(date);
-    if (isNaN(d.getTime())) {
-      return "";
-    }
-    return d.toISOString().split("T")[0];
-  } catch {
-    return "";
-  }
+  return serializeDateOfBirth(date) || "";
 }
+
+export { parseDateOfBirth, serializeDateOfBirth, formatDateOfBirth };

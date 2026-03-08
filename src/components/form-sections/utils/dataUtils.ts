@@ -2,18 +2,13 @@ import {
   InfertilityPatient,
   InfertilityPatientData,
 } from "../../../app/(authenticated)/infertility/types";
+import {
+  getAgeInYearsFromDateOfBirth,
+  serializeDateOfBirth,
+} from "@/lib/dateOfBirth";
 
 const calculateAge = (dateOfBirth: Date | string | null): number | null => {
-  if (!dateOfBirth) return null;
-  const dob =
-    typeof dateOfBirth === "string" ? new Date(dateOfBirth) : dateOfBirth;
-  const today = new Date();
-  let age = today.getFullYear() - dob.getFullYear();
-  const monthDiff = today.getMonth() - dob.getMonth();
-  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())) {
-    age--;
-  }
-  return age;
+  return getAgeInYearsFromDateOfBirth(dateOfBirth);
 };
 
 export const normalizePatientData = (
@@ -35,20 +30,12 @@ export const normalizePatientData = (
     patientFullName: row.patient.fullName,
     patientGender: row.patient.gender,
     patientAge: calculateAge(row.patient.dateOfBirth),
-    patientDOB: row.patient.dateOfBirth
-      ? row.patient.dateOfBirth instanceof Date
-        ? row.patient.dateOfBirth.toISOString()
-        : row.patient.dateOfBirth
-      : null,
+    patientDOB: serializeDateOfBirth(row.patient.dateOfBirth),
     husbandName: row.patient.guardianName,
     husbandAge: row.patient.guardianDOB
       ? calculateAge(row.patient.guardianDOB)
       : null,
-    husbandDOB: row.patient.guardianDOB
-      ? row.patient.guardianDOB instanceof Date
-        ? row.patient.guardianDOB.toISOString()
-        : row.patient.guardianDOB
-      : null,
+    husbandDOB: serializeDateOfBirth(row.patient.guardianDOB),
     husbandPhone: row.patient.guardianPhone,
     husbandEmail: row.patient.guardianEmail,
     husbandAddress: row.patient.guardianAddress,

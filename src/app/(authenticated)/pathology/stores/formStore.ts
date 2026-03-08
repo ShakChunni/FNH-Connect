@@ -14,6 +14,7 @@ import type {
   ValidationStatus,
   PathologyPatientData,
 } from "../types";
+import { parseDateOfBirth } from "@/lib/dateOfBirth";
 
 // ═══════════════════════════════════════════════════════════════
 // TYPE DEFINITIONS
@@ -32,28 +33,28 @@ interface FormActions {
   setHospitalData: (data: HospitalData) => void;
   updateHospitalField: (
     field: keyof HospitalData,
-    value: string | number | null
+    value: string | number | null,
   ) => void;
 
   // Patient actions
   setPatientData: (data: PatientData) => void;
   updatePatientField: (
     field: keyof PatientData,
-    value: string | number | Date | null
+    value: string | number | Date | null,
   ) => void;
 
   // Guardian actions
   setGuardianData: (data: GuardianInfo) => void;
   updateGuardianField: (
     field: keyof GuardianInfo,
-    value: string | number | Date | null
+    value: string | number | Date | null,
   ) => void;
 
   // Pathology info actions
   setPathologyInfo: (data: PathologyInfo) => void;
   updatePathologyInfo: (
     field: keyof PathologyInfo,
-    value: string | number | boolean | string[] | Date | null
+    value: string | number | boolean | string[] | Date | null,
   ) => void;
 
   // Validation actions
@@ -179,13 +180,6 @@ export const usePathologyFormStore = create<FormState & FormActions>()(
       resetForm: () => set(initialFormState),
 
       initializeFormForEdit: (patient) => {
-        // Helper to parse date strings
-        const parseDate = (dateStr: string | null): Date | null => {
-          if (!dateStr) return null;
-          const date = new Date(dateStr);
-          return isNaN(date.getTime()) ? null : date;
-        };
-
         // Parse test results JSON to extract selected tests
         let selectedTests: string[] = [];
         try {
@@ -213,7 +207,7 @@ export const usePathologyFormStore = create<FormState & FormActions>()(
             fullName: patient.patientFullName,
             gender: patient.patientGender,
             age: patient.patientAge,
-            dateOfBirth: parseDate(patient.patientDOB),
+            dateOfBirth: parseDateOfBirth(patient.patientDOB),
             guardianName: patient.guardianName || "",
             address: patient.address || "",
             phoneNumber: patient.mobileNumber || "",
@@ -223,7 +217,7 @@ export const usePathologyFormStore = create<FormState & FormActions>()(
           guardianData: {
             name: patient.guardianName || "",
             age: patient.guardianAge,
-            dateOfBirth: parseDate(patient.guardianDOB),
+            dateOfBirth: parseDateOfBirth(patient.guardianDOB),
             gender: patient.guardianGender || "",
           },
           pathologyInfo: {
@@ -318,8 +312,8 @@ export const usePathologyFormStore = create<FormState & FormActions>()(
           };
         }),
     }),
-    { name: "pathology-form-store" }
-  )
+    { name: "pathology-form-store" },
+  ),
 );
 
 // ═══════════════════════════════════════════════════════════════
@@ -360,5 +354,5 @@ export const useFormActions = () =>
       setTestCharge: state.setTestCharge,
       setDiscount: state.setDiscount,
       setPaidAmount: state.setPaidAmount,
-    }))
+    })),
   );

@@ -12,13 +12,17 @@ import { User, PlusCircle, Loader2, X } from "lucide-react";
 import { useAdmissionPatientData, useAdmissionActions } from "../../../stores";
 import { useFetchPatients } from "../../../hooks";
 import type { Patient } from "../../../types";
+import {
+  getAgeInYearsFromDateOfBirth,
+  parseDateOfBirth,
+} from "@/lib/dateOfBirth";
 
 const AdmissionPatientSearch: React.FC = () => {
   const patientData = useAdmissionPatientData();
   const { setPatientData } = useAdmissionActions();
 
   const [searchQuery, setSearchQueryState] = useState(
-    patientData.fullName || ""
+    patientData.fullName || "",
   );
   const setSearchQuery = useCallback((query: string) => {
     setSearchQueryState(query);
@@ -36,7 +40,7 @@ const AdmissionPatientSearch: React.FC = () => {
 
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [patientStatus, setPatientStatus] = useState<"" | "existing" | "new">(
-    ""
+    "",
   );
 
   useEffect(() => {
@@ -63,7 +67,7 @@ const AdmissionPatientSearch: React.FC = () => {
     return (
       value: string,
       isValid: boolean = true,
-      disabled: boolean = false
+      disabled: boolean = false,
     ) => {
       let style = disabled
         ? `bg-gray-200 border-2 border-gray-300 cursor-not-allowed ${baseStyle}`
@@ -129,12 +133,7 @@ const AdmissionPatientSearch: React.FC = () => {
 
   const handleSelectPatient = useCallback(
     (patient: Patient) => {
-      const age = patient.dateOfBirth
-        ? Math.floor(
-            (Date.now() - new Date(patient.dateOfBirth).getTime()) /
-              (365.25 * 24 * 60 * 60 * 1000)
-          )
-        : null;
+      const age = getAgeInYearsFromDateOfBirth(patient.dateOfBirth);
 
       setPatientData({
         id: patient.id,
@@ -143,7 +142,7 @@ const AdmissionPatientSearch: React.FC = () => {
         fullName: patient.fullName,
         gender: patient.gender,
         age,
-        dateOfBirth: patient.dateOfBirth ? new Date(patient.dateOfBirth) : null,
+        dateOfBirth: parseDateOfBirth(patient.dateOfBirth),
         address: patient.address || "",
         phoneNumber: patient.phoneNumber || "",
         email: patient.email || "",
@@ -155,7 +154,7 @@ const AdmissionPatientSearch: React.FC = () => {
       setIsDropdownOpen(false);
       setPatientStatus("existing");
     },
-    [setPatientData, setSearchQuery]
+    [setPatientData, setSearchQuery],
   );
 
   const handleAddNew = useCallback(() => {
@@ -264,7 +263,7 @@ const AdmissionPatientSearch: React.FC = () => {
               {!loading &&
                 searchQuery.length >= 1 &&
                 !patients.some(
-                  (p) => p.fullName.toLowerCase() === searchQuery.toLowerCase()
+                  (p) => p.fullName.toLowerCase() === searchQuery.toLowerCase(),
                 ) && (
                   <div
                     onMouseDown={(e) => {
@@ -293,7 +292,7 @@ const AdmissionPatientSearch: React.FC = () => {
       searchQuery,
       handleSelectPatient,
       handleAddNew,
-    ]
+    ],
   );
 
   return (

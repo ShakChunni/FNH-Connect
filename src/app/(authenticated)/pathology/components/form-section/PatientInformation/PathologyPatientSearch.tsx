@@ -18,6 +18,7 @@ import {
   usePathologyHospitalData,
   usePathologyActions,
 } from "../../../stores";
+import { parseDateOfBirth } from "@/lib/dateOfBirth";
 
 const PathologyPatientSearch: React.FC = () => {
   const patientData = usePathologyPatientData();
@@ -26,7 +27,7 @@ const PathologyPatientSearch: React.FC = () => {
   const { setPatientData, setGuardianData } = usePathologyActions();
 
   const [searchQuery, setSearchQueryState] = useState(
-    patientData.fullName || ""
+    patientData.fullName || "",
   );
   const setSearchQuery = useCallback((query: string) => {
     setSearchQueryState(query);
@@ -74,7 +75,7 @@ const PathologyPatientSearch: React.FC = () => {
     return (
       value: string,
       isValid: boolean = true,
-      disabled: boolean = false
+      disabled: boolean = false,
     ) => {
       let style = disabled
         ? `bg-gray-200 border-2 border-gray-300 cursor-not-allowed ${baseStyle}`
@@ -135,10 +136,8 @@ const PathologyPatientSearch: React.FC = () => {
   };
 
   const handleSelectPatient = (patient: PathologyPatientBasic) => {
-    const dob = patient.dateOfBirth ? new Date(patient.dateOfBirth) : null;
-    const guardianDOB = patient.guardianDOB
-      ? new Date(patient.guardianDOB)
-      : null;
+    const dob = parseDateOfBirth(patient.dateOfBirth);
+    const guardianDOB = parseDateOfBirth(patient.guardianDOB);
 
     // Set patient data with all available info
     setPatientData({
@@ -298,7 +297,7 @@ const PathologyPatientSearch: React.FC = () => {
                 !patients.some(
                   (p) =>
                     p.patientFullName.toLowerCase() ===
-                    searchQuery.toLowerCase()
+                    searchQuery.toLowerCase(),
                 ) && (
                   <div
                     onMouseDown={(e) => {
@@ -325,7 +324,7 @@ const PathologyPatientSearch: React.FC = () => {
       loading,
       patients,
       searchQuery,
-    ]
+    ],
   );
 
   return (

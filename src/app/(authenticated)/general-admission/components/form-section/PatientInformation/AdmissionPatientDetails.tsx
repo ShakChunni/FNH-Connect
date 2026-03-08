@@ -2,6 +2,7 @@ import React, { useMemo } from "react";
 import { User } from "lucide-react";
 import { useAdmissionPatientData, useAdmissionActions } from "../../../stores";
 import NumberInput from "@/components/form-sections/Fields/NumberInput";
+import { parseDateOfBirth, serializeDateOfBirth } from "@/lib/dateOfBirth";
 
 const GENDER_OPTIONS = ["Male", "Female", "Other"];
 const BLOOD_GROUP_OPTIONS = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
@@ -26,7 +27,7 @@ const AdmissionPatientDetails: React.FC = () => {
 
   const handlePatientDataChange = (
     field: keyof typeof patientData,
-    value: string | number | Date | null
+    value: string | number | Date | null,
   ) => {
     const updates: Partial<typeof patientData> = { [field]: value };
 
@@ -43,7 +44,7 @@ const AdmissionPatientDetails: React.FC = () => {
     if (field === "dateOfBirth" && value) {
       const dob = new Date(value as string);
       const age = Math.floor(
-        (Date.now() - dob.getTime()) / (365.25 * 24 * 60 * 60 * 1000)
+        (Date.now() - dob.getTime()) / (365.25 * 24 * 60 * 60 * 1000),
       );
       updates.age = age;
     }
@@ -144,19 +145,13 @@ const AdmissionPatientDetails: React.FC = () => {
             <input
               type="date"
               className={inputClassName(
-                patientData.dateOfBirth?.toString() || ""
+                patientData.dateOfBirth?.toString() || "",
               )}
-              value={
-                patientData.dateOfBirth
-                  ? new Date(patientData.dateOfBirth)
-                      .toISOString()
-                      .split("T")[0]
-                  : ""
-              }
+              value={serializeDateOfBirth(patientData.dateOfBirth) || ""}
               onChange={(e) =>
                 handlePatientDataChange(
                   "dateOfBirth",
-                  e.target.value ? new Date(e.target.value) : null
+                  parseDateOfBirth(e.target.value),
                 )
               }
             />
@@ -167,7 +162,7 @@ const AdmissionPatientDetails: React.FC = () => {
             </label>
             <NumberInput
               className={`${inputClassName(
-                patientData.age
+                patientData.age,
               )} bg-gray-100 cursor-not-allowed`}
               value={patientData.age ?? ""}
               readOnly

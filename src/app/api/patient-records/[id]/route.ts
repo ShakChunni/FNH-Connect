@@ -13,6 +13,7 @@ import {
   validateCSRFToken,
   addCSRFTokenToResponse,
 } from "@/lib/csrfProtection";
+import { parseDateOfBirth, serializeDateOfBirth } from "@/lib/dateOfBirth";
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -108,7 +109,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       updateData.gender = gender;
     }
     if (dateOfBirth !== undefined) {
-      updateData.dateOfBirth = dateOfBirth ? new Date(dateOfBirth) : null;
+      updateData.dateOfBirth = parseDateOfBirth(dateOfBirth);
     }
     if (guardianName !== undefined) {
       updateData.guardianName = guardianName || null;
@@ -165,7 +166,11 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     // 8. Return response
     const response = NextResponse.json({
       success: true,
-      data: updatedPatient,
+      data: {
+        ...updatedPatient,
+        dateOfBirth: serializeDateOfBirth(updatedPatient.dateOfBirth),
+        guardianDOB: serializeDateOfBirth(updatedPatient.guardianDOB),
+      },
       message: "Patient updated successfully",
     });
 

@@ -8,6 +8,11 @@ import React, {
 import Flatpickr from "react-flatpickr";
 import { X } from "lucide-react";
 import "flatpickr/dist/flatpickr.min.css";
+import {
+  calculateAgeInfoFromDateOfBirth,
+  composeDateOfBirthFromAge,
+  parseDateOfBirth,
+} from "@/lib/dateOfBirth";
 
 interface AgeObject {
   years: number;
@@ -22,28 +27,10 @@ interface DobDropdownProps {
   style?: React.CSSProperties;
 }
 
-const daysInMonth = (year: number, month: number) =>
-  new Date(year, month + 1, 0).getDate();
-
 const calculateAge = (dob: Date): AgeObject => {
-  const now = new Date();
-  let years = now.getFullYear() - dob.getFullYear();
-  let months = now.getMonth() - dob.getMonth();
-  let days = now.getDate() - dob.getDate();
-
-  if (days < 0) {
-    const prevMonth = (now.getMonth() - 1 + 12) % 12;
-    const prevMonthYear =
-      prevMonth === 11 ? now.getFullYear() - 1 : now.getFullYear();
-    days += daysInMonth(prevMonthYear, prevMonth);
-    months--;
-  }
-  if (months < 0) {
-    months += 12;
-    years--;
-  }
-
-  return { years, months, days };
+  return (
+    calculateAgeInfoFromDateOfBirth(dob) ?? { years: 0, months: 0, days: 0 }
+  );
 };
 
 const clampNumberInput = (v: number) =>
@@ -56,22 +43,26 @@ const DobDropdown: React.FC<DobDropdownProps> = ({
   style,
 }) => {
   const flatpickrRef = useRef<any>(null);
-  const [selectedDate, setSelectedDate] = useState<Date | null>(value);
+  const [selectedDate, setSelectedDate] = useState<Date | null>(() =>
+    parseDateOfBirth(value),
+  );
   const [years, setYears] = useState<number | "">(() =>
-    value ? calculateAge(value).years : ""
+    value ? calculateAge(value).years : "",
   );
   const [months, setMonths] = useState<number | "">(() =>
-    value ? calculateAge(value).months : ""
+    value ? calculateAge(value).months : "",
   );
   const [days, setDays] = useState<number | "">(() =>
-    value ? calculateAge(value).days : ""
+    value ? calculateAge(value).days : "",
   );
 
   // sync from parent value
   useEffect(() => {
-    setSelectedDate(value);
-    if (value) {
-      const a = calculateAge(value);
+    const normalizedValue = parseDateOfBirth(value);
+
+    setSelectedDate(normalizedValue);
+    if (normalizedValue) {
+      const a = calculateAge(normalizedValue);
       setYears(a.years);
       setMonths(a.months);
       setDays(a.days);
@@ -105,12 +96,14 @@ const DobDropdown: React.FC<DobDropdownProps> = ({
         }
       },
     }),
-    [selectedDate]
+    [selectedDate],
   );
 
   const handleDateChange = useCallback(
     (dates: Date[]) => {
-      const date = dates && dates[0] ? dates[0] : null;
+      const rawDate = dates && dates[0] ? dates[0] : null;
+      const date = parseDateOfBirth(rawDate);
+
       setSelectedDate(date);
       if (date) {
         const age = calculateAge(date);
@@ -125,7 +118,7 @@ const DobDropdown: React.FC<DobDropdownProps> = ({
         onChange(null);
       }
     },
-    [onChange]
+    [onChange],
   );
 
   const composeDateFromAge = useCallback(
@@ -145,16 +138,12 @@ const DobDropdown: React.FC<DobDropdownProps> = ({
       const monthsNum = clampNumberInput(Number(m || 0));
       const daysNum = clampNumberInput(Number(d || 0));
 
-      const now = new Date();
-      // start with today then subtract
-      const composed = new Date(now.getTime());
-      composed.setFullYear(composed.getFullYear() - yearsNum);
-      // subtract months
-      composed.setMonth(composed.getMonth() - monthsNum);
-      // subtract days
-      composed.setDate(composed.getDate() - daysNum);
+      const composed = composeDateOfBirthFromAge({
+        years: yearsNum,
+        months: monthsNum,
+        days: daysNum,
+      });
 
-      // normalize and compute accurate age
       const age = calculateAge(composed);
       setSelectedDate(composed);
       setYears(age.years);
@@ -162,7 +151,7 @@ const DobDropdown: React.FC<DobDropdownProps> = ({
       setDays(age.days);
       onChange(composed, age);
     },
-    [onChange]
+    [onChange],
   );
 
   const handleYearsChange = useCallback(
@@ -174,7 +163,7 @@ const DobDropdown: React.FC<DobDropdownProps> = ({
       setYears(val);
       composeDateFromAge(val, months, days);
     },
-    [composeDateFromAge, months, days]
+    [composeDateFromAge, months, days],
   );
 
   const handleMonthsChange = useCallback(
@@ -189,7 +178,7 @@ const DobDropdown: React.FC<DobDropdownProps> = ({
       setMonths(val);
       composeDateFromAge(years, val, days);
     },
-    [composeDateFromAge, years, days]
+    [composeDateFromAge, years, days],
   );
 
   const handleDaysChange = useCallback(
@@ -203,7 +192,7 @@ const DobDropdown: React.FC<DobDropdownProps> = ({
       setDays(val);
       composeDateFromAge(years, months, val);
     },
-    [composeDateFromAge, years, months]
+    [composeDateFromAge, years, months],
   );
 
   const clearAll = useCallback(() => {

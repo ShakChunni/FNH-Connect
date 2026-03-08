@@ -4,6 +4,7 @@
  */
 
 import { z } from "zod";
+import { parseDateOfBirth } from "@/lib/dateOfBirth";
 
 // ═══════════════════════════════════════════════════════════════
 // UTILITY SCHEMAS
@@ -12,12 +13,7 @@ import { z } from "zod";
 // Date preprocessing - handles string dates from JSON payloads
 const datePreprocess = z.preprocess((arg) => {
   if (arg === null || arg === undefined || arg === "") return null;
-  if (arg instanceof Date) return arg;
-  if (typeof arg === "string") {
-    const parsed = new Date(arg);
-    return isNaN(parsed.getTime()) ? null : parsed;
-  }
-  return null;
+  return parseDateOfBirth(arg as Date | string | null | undefined);
 }, z.date().nullable().optional());
 
 // ═══════════════════════════════════════════════════════════════

@@ -1,3 +1,4 @@
+import { parseDateOfBirth } from "@/lib/dateOfBirth";
 import React, {
   useState,
   useEffect,
@@ -26,7 +27,7 @@ const PatientSearch: React.FC = () => {
   const { setPatientData, setSpouseData } = useInfertilityActions();
 
   const [searchQuery, setSearchQueryState] = useState(
-    patientData.fullName || ""
+    patientData.fullName || "",
   );
   const setSearchQuery = useCallback((query: string) => {
     setSearchQueryState(query);
@@ -84,7 +85,7 @@ const PatientSearch: React.FC = () => {
     return (
       value: string,
       isValid: boolean = true,
-      disabled: boolean = false
+      disabled: boolean = false,
     ) => {
       // ... (reuse style logic)
       let style = disabled
@@ -140,9 +141,7 @@ const PatientSearch: React.FC = () => {
   const handleSelectPatient = (patient: InfertilityPatientBasic) => {
     // Standardized date parsing
     const parseDate = (d: any) => {
-      if (!d) return null;
-      const parsed = new Date(d);
-      return isNaN(parsed.getTime()) ? null : parsed;
+      return parseDateOfBirth(d);
     };
 
     const dob = parseDate(patient.dateOfBirth);
@@ -309,7 +308,7 @@ const PatientSearch: React.FC = () => {
                 !patients.some(
                   (p) =>
                     p.patientFullName.toLowerCase() ===
-                    searchQuery.toLowerCase()
+                    searchQuery.toLowerCase(),
                 ) && (
                   <div
                     onMouseDown={(e) => {
@@ -336,7 +335,7 @@ const PatientSearch: React.FC = () => {
       loading,
       patients,
       searchQuery,
-    ]
+    ],
   );
 
   return (

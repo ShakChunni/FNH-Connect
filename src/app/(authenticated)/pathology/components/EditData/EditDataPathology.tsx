@@ -27,6 +27,7 @@ import { useFetchDoctors } from "../../hooks";
 import { transformPathologyDataForEdit } from "../../utils/formTransformers";
 import { PathologyPatientData } from "../../types";
 import { useNotification } from "@/hooks/useNotification";
+import { serializeDateOfBirth } from "@/lib/dateOfBirth";
 
 interface EditDataProps {
   isOpen: boolean;
@@ -78,7 +79,7 @@ const EditDataPathology: React.FC<EditDataProps> = ({
   const { activeSection, scrollToSection } = usePathologyScrollSpy(
     SECTION_IDS,
     scrollContainerRef,
-    isOpen
+    isOpen,
   );
 
   // Mutation Hook with auto-print on success
@@ -86,7 +87,7 @@ const EditDataPathology: React.FC<EditDataProps> = ({
     onSuccess: () => {
       // Get doctor name from the doctors list
       const selectedDoctor = doctors.find(
-        (d) => d.id === pathologyInfo.orderedById
+        (d) => d.id === pathologyInfo.orderedById,
       );
       const doctorName = selectedDoctor
         ? selectedDoctor.role.toLowerCase() === "self"
@@ -104,7 +105,7 @@ const EditDataPathology: React.FC<EditDataProps> = ({
         }`.trim(),
         patientGender: patientData.gender,
         patientAge: patientData.age,
-        patientDOB: patientData.dateOfBirth?.toISOString() || null,
+        patientDOB: serializeDateOfBirth(patientData.dateOfBirth),
         mobileNumber: patientData.phoneNumber,
         guardianName: guardianData.name,
         hospitalName: "FNH Hospital", // Hardcoded - only one hospital
@@ -130,10 +131,10 @@ const EditDataPathology: React.FC<EditDataProps> = ({
           setTimeout(() => {
             generatePathologyReceipt(
               receiptData as any,
-              user?.fullName || "Staff"
+              user?.fullName || "Staff",
             );
           }, 300);
-        }
+        },
       );
 
       onClose();
@@ -203,7 +204,7 @@ const EditDataPathology: React.FC<EditDataProps> = ({
       initialPatientData.id,
       patientData,
       guardianData,
-      pathologyInfo
+      pathologyInfo,
     );
 
     editPatient(payload);
@@ -298,7 +299,7 @@ const EditDataPathology: React.FC<EditDataProps> = ({
                       onClick={() => scrollToSection(section.id)}
                       className={`flex items-center gap-1 sm:gap-2 px-2 sm:px-3 md:px-4 py-2 sm:py-2.5 md:py-3 rounded-lg sm:rounded-xl text-xs sm:text-sm font-semibold transition-all duration-300 shadow-sm cursor-pointer ${getTabColors(
                         section.color,
-                        isActive
+                        isActive,
                       )} ${
                         isActive ? "transform scale-110" : "hover:shadow-md"
                       }`}

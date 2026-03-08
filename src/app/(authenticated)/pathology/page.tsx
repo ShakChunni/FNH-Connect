@@ -23,6 +23,7 @@ import {
   usePathologyFilterValues,
   usePathologyFilterStore,
 } from "./stores";
+import { serializeDateOfBirth } from "@/lib/dateOfBirth";
 
 const PathologyManagement = React.memo(() => {
   // Ref for scrolling table container on pagination
@@ -97,14 +98,10 @@ const PathologyManagement = React.memo(() => {
       patientLastName: patient.patient.lastName,
       patientGender: patient.patient.gender,
       patientAge: patient.patient.age,
-      patientDOB: patient.patient.dateOfBirth
-        ? new Date(patient.patient.dateOfBirth).toISOString()
-        : null,
+      patientDOB: serializeDateOfBirth(patient.patient.dateOfBirth),
       guardianName: patient.patient.guardianName,
       guardianAge: null,
-      guardianDOB: patient.patient.guardianDOB
-        ? new Date(patient.patient.guardianDOB).toISOString()
-        : null,
+      guardianDOB: serializeDateOfBirth(patient.patient.guardianDOB),
       guardianGender: patient.patient.guardianGender || "",
       mobileNumber: patient.patient.phoneNumber,
       email: patient.patient.email,
