@@ -14,6 +14,7 @@ import type {
   ValidationStatus,
   InfertilityPatientData,
 } from "../types";
+import { parseDateOfBirth } from "@/lib/dateOfBirth";
 
 // ═══════════════════════════════════════════════════════════════
 // TYPE DEFINITIONS
@@ -32,28 +33,28 @@ interface FormActions {
   setHospitalData: (data: HospitalData) => void;
   updateHospitalField: (
     field: keyof HospitalData,
-    value: string | number | null
+    value: string | number | null,
   ) => void;
 
   // Patient actions
   setPatientData: (data: PatientData) => void;
   updatePatientField: (
     field: keyof PatientData,
-    value: string | number | Date | null
+    value: string | number | Date | null,
   ) => void;
 
   // Spouse actions
   setSpouseData: (data: SpouseInfo) => void;
   updateSpouseField: (
     field: keyof SpouseInfo,
-    value: string | number | Date | null
+    value: string | number | Date | null,
   ) => void;
 
   // Medical info actions
   setMedicalInfo: (data: InfertilityMedicalData) => void;
   updateMedicalInfo: (
     field: keyof InfertilityMedicalData,
-    value: string | number | Date | null
+    value: string | number | Date | null,
   ) => void;
 
   // Validation actions
@@ -188,13 +189,6 @@ export const useInfertilityFormStore = create<FormState & FormActions>()(
       resetForm: () => set(initialFormState),
 
       initializeFormForEdit: (patient) => {
-        // Helper to parse date strings
-        const parseDate = (dateStr: string | null): Date | null => {
-          if (!dateStr) return null;
-          const date = new Date(dateStr);
-          return isNaN(date.getTime()) ? null : date;
-        };
-
         set({
           // Always use Feroza Nursing Home as the hospital
           hospitalData: { ...FNH_HOSPITAL_DATA },
@@ -205,7 +199,7 @@ export const useInfertilityFormStore = create<FormState & FormActions>()(
             fullName: patient.patientFullName,
             gender: patient.patientGender,
             age: patient.patientAge,
-            dateOfBirth: parseDate(patient.patientDOB),
+            dateOfBirth: parseDateOfBirth(patient.patientDOB),
             guardianName: patient.husbandName || "",
             address: patient.address || "",
             phoneNumber: patient.mobileNumber || "",
@@ -216,7 +210,7 @@ export const useInfertilityFormStore = create<FormState & FormActions>()(
           spouseData: {
             name: patient.husbandName || "",
             age: patient.husbandAge,
-            dateOfBirth: parseDate(patient.husbandDOB),
+            dateOfBirth: parseDateOfBirth(patient.husbandDOB),
             gender: patient.spouseGender || "Male",
             occupation: patient.husbandOccupation || "",
             phoneNumber: patient.husbandPhone || "",
@@ -244,7 +238,9 @@ export const useInfertilityFormStore = create<FormState & FormActions>()(
             chiefComplaint: patient.chiefComplaint || "",
             treatmentPlan: patient.treatmentPlan || "",
             medications: patient.medications || "",
-            nextAppointment: parseDate(patient.nextAppointment),
+            nextAppointment: patient.nextAppointment
+              ? new Date(patient.nextAppointment)
+              : null,
             status: patient.status || "Active",
             notes: patient.notes || "",
           },
@@ -255,8 +251,8 @@ export const useInfertilityFormStore = create<FormState & FormActions>()(
         });
       },
     }),
-    { name: "infertility-form-store" }
-  )
+    { name: "infertility-form-store" },
+  ),
 );
 
 // ═══════════════════════════════════════════════════════════════
@@ -294,5 +290,5 @@ export const useFormActions = () =>
       updateValidation: state.updateValidation,
       resetForm: state.resetForm,
       initializeFormForEdit: state.initializeFormForEdit,
-    }))
+    })),
   );

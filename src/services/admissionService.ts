@@ -10,6 +10,10 @@ import {
   formatRegistrationNumber,
   getTwoDigitYear,
 } from "@/lib/registrationNumber";
+import {
+  getAgeInYearsFromDateOfBirth,
+  serializeDateOfBirth,
+} from "@/lib/dateOfBirth";
 import { SessionDeviceInfo } from "@/types/auth";
 import { shiftService } from "@/services/shiftService";
 
@@ -939,13 +943,8 @@ export function transformAdmissionForResponse(admission: any) {
     patientFirstName: admission.patient.firstName,
     patientLastName: admission.patient.lastName || null,
     patientFullName: admission.patient.fullName,
-    patientDateOfBirth: admission.patient.dateOfBirth?.toISOString() || null,
-    patientAge: admission.patient.dateOfBirth
-      ? Math.floor(
-          (Date.now() - new Date(admission.patient.dateOfBirth).getTime()) /
-            (365.25 * 24 * 60 * 60 * 1000),
-        )
-      : null,
+    patientDateOfBirth: serializeDateOfBirth(admission.patient.dateOfBirth),
+    patientAge: getAgeInYearsFromDateOfBirth(admission.patient.dateOfBirth),
     patientGender: admission.patient.gender,
     patientPhone: admission.patient.phoneNumber || "",
     patientEmail: admission.patient.email || "",

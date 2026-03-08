@@ -14,18 +14,17 @@ import {
   UpdateAdmissionPayload,
   AdmissionPatientData,
 } from "../types";
+import {
+  getAgeInYears,
+  serializeDateOfBirth,
+} from "@/components/form-sections/utils/dateUtils";
 
 /**
  * Serialize date to YYYY-MM-DD format (local date without timezone conversion)
  * This prevents the UTC conversion issue where dates shift back a day/year
  */
 function serializeDate(date: Date | null): string | null {
-  if (!date) return null;
-  // Use local date components to avoid timezone conversion
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
+  return serializeDateOfBirth(date);
 }
 
 /**
@@ -35,7 +34,7 @@ export function transformFormToCreatePayload(
   hospitalData: HospitalData,
   patientData: PatientData,
   departmentData: DepartmentData,
-  doctorData: DoctorData
+  doctorData: DoctorData,
 ): CreateAdmissionPayload {
   return {
     hospital: {
@@ -74,7 +73,7 @@ export function transformFormToCreatePayload(
 export function transformFormToUpdatePayload(
   admissionId: number,
   admissionInfo: AdmissionInfo,
-  financialData: FinancialData
+  financialData: FinancialData,
 ): UpdateAdmissionPayload {
   return {
     id: admissionId,
@@ -135,12 +134,7 @@ export function formatCurrency(amount: number): string {
  * Calculate age from date of birth
  */
 export function calculateAge(dateOfBirth: Date | string | null): number | null {
-  if (!dateOfBirth) return null;
-  const dob = new Date(dateOfBirth);
-  const age = Math.floor(
-    (Date.now() - dob.getTime()) / (365.25 * 24 * 60 * 60 * 1000)
-  );
-  return age >= 0 ? age : null;
+  return getAgeInYears(dateOfBirth);
 }
 
 /**
@@ -155,7 +149,7 @@ export function calculateFinancialTotals(
   otherCharges: number,
   discountType: "percentage" | "value" | null,
   discountValue: number | null,
-  paidAmount: number
+  paidAmount: number,
 ): {
   totalAmount: number;
   discountAmount: number;
@@ -204,7 +198,7 @@ export function validateAddAdmissionForm(
   patientData: PatientData,
   departmentData: DepartmentData,
   doctorData: DoctorData,
-  validationStatus: { phone: boolean; email: boolean }
+  validationStatus: { phone: boolean; email: boolean },
 ): { isValid: boolean; errors: string[] } {
   const errors: string[] = [];
 

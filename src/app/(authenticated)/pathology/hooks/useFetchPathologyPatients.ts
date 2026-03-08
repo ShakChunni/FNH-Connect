@@ -2,20 +2,13 @@ import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/axios";
 import { useDebounce } from "@/hooks/useDebounce";
 
+import {
+  getAgeInYearsFromDateOfBirth,
+  parseDateOfBirth,
+} from "@/lib/dateOfBirth";
 // Helper to calculate age from DOB
 const getAgeFromDOB = (dob: string | null): number | null => {
-  if (!dob) return null;
-  const birthDate = new Date(dob);
-  const today = new Date();
-  let age = today.getFullYear() - birthDate.getFullYear();
-  const monthDiff = today.getMonth() - birthDate.getMonth();
-  if (
-    monthDiff < 0 ||
-    (monthDiff === 0 && today.getDate() < birthDate.getDate())
-  ) {
-    age--;
-  }
-  return age;
+  return getAgeInYearsFromDateOfBirth(dob);
 };
 
 // Basic patient type for pathology search results
@@ -26,12 +19,12 @@ export interface PathologyPatientBasic {
   patientFullName: string;
   patientAge: number | null;
   patientGender: string;
-  dateOfBirth: string | null;
+  dateOfBirth: Date | string | null;
   mobileNumber: string | null;
   email: string | null;
   address: string | null;
   guardianName: string | null;
-  guardianDOB: string | null;
+  guardianDOB: Date | string | null;
   guardianGender: string | null;
   bloodGroup: string | null;
 }
@@ -88,12 +81,12 @@ export function useFetchPathologyPatients(searchQuery: string) {
         patientFullName: patient.fullName,
         patientAge: getAgeFromDOB(patient.dateOfBirth),
         patientGender: patient.gender || "",
-        dateOfBirth: patient.dateOfBirth,
+        dateOfBirth: parseDateOfBirth(patient.dateOfBirth),
         mobileNumber: patient.phoneNumber,
         email: patient.email,
         address: patient.address,
         guardianName: patient.guardianName,
-        guardianDOB: patient.guardianDOB,
+        guardianDOB: parseDateOfBirth(patient.guardianDOB),
         guardianGender: patient.guardianGender,
         bloodGroup: patient.bloodGroup,
       }));

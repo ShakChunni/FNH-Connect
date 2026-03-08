@@ -4,6 +4,7 @@
  */
 
 import { PathologyPatient, PathologyPatientData } from "../types";
+import { serializeDateOfBirth } from "@/lib/dateOfBirth";
 
 /**
  * Transform PathologyPatient (API response) to PathologyPatientData (UI format)
@@ -21,14 +22,10 @@ export function transformPathologyPatient(
     patientLastName: patient.patient.lastName,
     patientGender: patient.patient.gender,
     patientAge: patient.patient.age,
-    patientDOB: patient.patient.dateOfBirth
-      ? new Date(patient.patient.dateOfBirth).toISOString()
-      : null,
+    patientDOB: serializeDateOfBirth(patient.patient.dateOfBirth),
     guardianName: patient.patient.guardianName,
     guardianAge: null,
-    guardianDOB: patient.patient.guardianDOB
-      ? new Date(patient.patient.guardianDOB).toISOString()
-      : null,
+    guardianDOB: serializeDateOfBirth(patient.patient.guardianDOB),
     guardianGender: patient.patient.guardianGender || "",
     mobileNumber: patient.patient.phoneNumber,
     email: patient.patient.email,

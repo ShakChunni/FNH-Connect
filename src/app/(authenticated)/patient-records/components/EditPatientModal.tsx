@@ -13,6 +13,7 @@ import ContactPhoneInput from "@/components/form-sections/Fields/ContactPhoneInp
 import type { PatientData } from "../types";
 import { useUpdatePatient } from "../hooks";
 import { useNotificationContext } from "@/app/NotificationProvider";
+import { parseDateOfBirth, serializeDateOfBirth } from "@/lib/dateOfBirth";
 
 interface EditPatientModalProps {
   isOpen: boolean;
@@ -47,9 +48,7 @@ export const EditPatientModal: React.FC<EditPatientModalProps> = ({
         firstName: patientData.firstName || "",
         lastName: patientData.lastName || "",
         gender: patientData.gender || "Female",
-        dateOfBirth: patientData.dateOfBirth
-          ? new Date(patientData.dateOfBirth)
-          : null,
+        dateOfBirth: parseDateOfBirth(patientData.dateOfBirth),
         guardianName: patientData.guardianName || "",
         phoneNumber: patientData.phoneNumber || "",
         address: patientData.address || "",
@@ -95,7 +94,7 @@ export const EditPatientModal: React.FC<EditPatientModalProps> = ({
           firstName: formData.firstName,
           lastName: formData.lastName, // Allow empty string to clear lastName
           gender: formData.gender,
-          dateOfBirth: formData.dateOfBirth?.toISOString() || null,
+          dateOfBirth: serializeDateOfBirth(formData.dateOfBirth),
           guardianName: formData.guardianName || undefined,
           phoneNumber: formData.phoneNumber || undefined,
           address: formData.address || undefined,

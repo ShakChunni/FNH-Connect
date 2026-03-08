@@ -4,6 +4,7 @@
  */
 
 import { z } from "zod";
+import { parseDateOfBirth } from "@/lib/dateOfBirth";
 
 // ═══════════════════════════════════════════════════════════════
 // GET Query Schemas
@@ -43,17 +44,10 @@ export const patientSchema = z.object({
   fullName: z.string(),
   gender: z.string().min(1, "Gender is required"),
   age: z.number().nullable(),
-  dateOfBirth: z.preprocess(
-    (val) => {
-      if (val === null || val === undefined || val === "") return null;
-      if (val instanceof Date) return val.toISOString();
-      return String(val);
-    },
-    z
-      .string()
-      .nullable()
-      .transform((val) => (val ? new Date(val) : null))
-  ),
+  dateOfBirth: z.preprocess((val) => {
+    if (val === null || val === undefined || val === "") return null;
+    return parseDateOfBirth(val as Date | string | null | undefined);
+  }, z.date().nullable()),
   address: z.string(),
   phoneNumber: z.string(),
   email: z.string(),
@@ -105,17 +99,10 @@ export const updateAdmissionSchema = z.object({
   paidAmount: z.number().optional(),
   isDischarged: z.boolean().optional(),
   dateDischarged: z
-    .preprocess(
-      (val) => {
-        if (val === null || val === undefined || val === "") return null;
-        if (val instanceof Date) return val.toISOString();
-        return String(val);
-      },
-      z
-        .string()
-        .nullable()
-        .transform((val) => (val ? new Date(val) : null))
-    )
+    .preprocess((val) => {
+      if (val === null || val === undefined || val === "") return null;
+      return val instanceof Date ? val : new Date(String(val));
+    }, z.date().nullable())
     .optional(),
 });
 

@@ -4,6 +4,7 @@ import {
   SpouseInfo,
   InfertilityMedicalData,
 } from "../types";
+import { serializeDateOfBirth } from "@/lib/dateOfBirth";
 
 // Flexible payload type that covers both Add and Edit needs
 // We make 'id' optional because it's only needed for Edit (top-level) or Update (nested)
@@ -70,7 +71,7 @@ export const transformInfertilityDataForApi = (
   hospitalData: HospitalData,
   patientData: PatientData,
   spouseData: SpouseInfo,
-  medicalInfo: InfertilityMedicalData
+  medicalInfo: InfertilityMedicalData,
 ): InfertilityApiPayload => {
   return {
     id:
@@ -99,7 +100,7 @@ export const transformInfertilityDataForApi = (
       fullName: patientData.fullName,
       gender: patientData.gender || "Female",
       age: patientData.age,
-      dateOfBirth: patientData.dateOfBirth,
+      dateOfBirth: serializeDateOfBirth(patientData.dateOfBirth) as any,
       guardianName: spouseData.name || "", // Often spouse name is used as guardian for infertility cases
       address: patientData.address || "",
       phoneNumber: patientData.phoneNumber || "",
@@ -110,7 +111,7 @@ export const transformInfertilityDataForApi = (
     spouseInfo: {
       name: spouseData.name || "",
       age: spouseData.age,
-      dateOfBirth: spouseData.dateOfBirth,
+      dateOfBirth: serializeDateOfBirth(spouseData.dateOfBirth) as any,
       gender: spouseData.gender || "Male",
       occupation: spouseData.occupation || "",
       phoneNumber: spouseData.phoneNumber || "",

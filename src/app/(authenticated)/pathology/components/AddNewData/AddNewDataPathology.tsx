@@ -27,6 +27,7 @@ import { usePathologyScrollSpy } from "../../hooks/usePathologyScrollSpy";
 import { useFetchDoctors } from "../../hooks";
 import { transformPathologyDataForApi } from "../../utils/formTransformers";
 import { useNotification } from "@/hooks/useNotification";
+import { serializeDateOfBirth } from "@/lib/dateOfBirth";
 
 interface AddNewDataProps {
   isOpen: boolean;
@@ -57,7 +58,7 @@ const AddNewDataPathology: React.FC<AddNewDataProps> = ({
   const { activeSection, scrollToSection } = usePathologyScrollSpy(
     SECTION_IDS,
     scrollContainerRef,
-    isOpen
+    isOpen,
   );
 
   // Handle body scroll locking
@@ -79,7 +80,7 @@ const AddNewDataPathology: React.FC<AddNewDataProps> = ({
       if (response.data) {
         // Get doctor name from the doctors list
         const selectedDoctor = doctors.find(
-          (d) => d.id === pathologyInfo.orderedById
+          (d) => d.id === pathologyInfo.orderedById,
         );
         const doctorName = selectedDoctor
           ? selectedDoctor.role.toLowerCase() === "self"
@@ -97,7 +98,7 @@ const AddNewDataPathology: React.FC<AddNewDataProps> = ({
           }`.trim(),
           patientGender: patientData.gender,
           patientAge: patientData.age,
-          patientDOB: patientData.dateOfBirth?.toISOString() || null,
+          patientDOB: serializeDateOfBirth(patientData.dateOfBirth),
           address: patientData.address,
           mobileNumber: patientData.phoneNumber,
           guardianName: guardianData.name,
@@ -124,10 +125,10 @@ const AddNewDataPathology: React.FC<AddNewDataProps> = ({
             setTimeout(() => {
               generatePathologyReceipt(
                 receiptData as any,
-                user?.fullName || "Staff"
+                user?.fullName || "Staff",
               );
             }, 300);
-          }
+          },
         );
       }
       onClose();
@@ -204,7 +205,7 @@ const AddNewDataPathology: React.FC<AddNewDataProps> = ({
     const payload = transformPathologyDataForApi(
       patientData,
       guardianData,
-      pathologyInfo
+      pathologyInfo,
     );
 
     addPatient(payload);
@@ -296,7 +297,7 @@ const AddNewDataPathology: React.FC<AddNewDataProps> = ({
                       onClick={() => scrollToSection(section.id)}
                       className={`flex items-center gap-1 sm:gap-2 px-2 sm:px-3 md:px-4 py-2 sm:py-2.5 md:py-3 rounded-lg sm:rounded-xl text-xs sm:text-sm font-semibold transition-all duration-300 shadow-sm cursor-pointer ${getTabColors(
                         section.color,
-                        isActive
+                        isActive,
                       )} ${
                         isActive ? "transform scale-110" : "hover:shadow-md"
                       }`}

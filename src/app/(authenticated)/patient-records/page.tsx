@@ -21,6 +21,7 @@ import {
   usePagination,
   useFilters,
 } from "./stores";
+import { parseDateOfBirth } from "@/lib/dateOfBirth";
 
 const PatientRecordsPage = React.memo(() => {
   // Zustand store selectors
@@ -54,8 +55,8 @@ const PatientRecordsPage = React.memo(() => {
     if (!result?.data) return [];
     return result.data.map((p) => ({
       ...p,
-      dateOfBirth: p.dateOfBirth ? new Date(p.dateOfBirth) : null,
-      guardianDOB: p.guardianDOB ? new Date(p.guardianDOB) : null,
+      dateOfBirth: parseDateOfBirth(p.dateOfBirth),
+      guardianDOB: parseDateOfBirth(p.guardianDOB),
       guardianGender: p.guardianGender || null,
       createdByName: p.createdByName || null,
       lastEditedByName: p.lastEditedByName || null,

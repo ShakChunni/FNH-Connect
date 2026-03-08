@@ -15,6 +15,7 @@ import {
   ValidationStatus,
   AdmissionPatientData,
 } from "../types";
+import { parseDateOfBirth } from "@/lib/dateOfBirth";
 
 // ═══════════════════════════════════════════════════════════════
 // State Interfaces
@@ -284,12 +285,6 @@ export const useAdmissionFormStore = create<FormStore>((set, get) => ({
   },
 
   initializeFormForEdit: (admission) => {
-    const parseDate = (dateStr: string | null): Date | null => {
-      if (!dateStr) return null;
-      const date = new Date(dateStr);
-      return isNaN(date.getTime()) ? null : date;
-    };
-
     set({
       hospitalData: {
         id: admission.hospitalId,
@@ -307,7 +302,7 @@ export const useAdmissionFormStore = create<FormStore>((set, get) => ({
         fullName: admission.patientFullName || "",
         gender: admission.patientGender || "",
         age: admission.patientAge,
-        dateOfBirth: parseDate(admission.patientDateOfBirth || null),
+        dateOfBirth: parseDateOfBirth(admission.patientDateOfBirth || null),
         address: admission.patientAddress || "",
         phoneNumber: admission.patientPhone || "",
         email: admission.patientEmail || "",
