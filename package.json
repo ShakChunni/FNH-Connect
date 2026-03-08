@@ -17,6 +17,7 @@
     "db:seed": "tsx scripts/seed.ts",
     "db:studio": "prisma studio",
     "db:fix-payments": "tsx scripts/fix-payment-allocations.ts",
+    "db:fix-patient-dobs": "tsx scripts/fix-patient-dobs.ts --apply",
     "db:cleanup-test": "tsx scripts/cleanup-test-data.ts",
     "db:fix-cash-tracking": "tsx scripts/fix-cash-tracking-data.ts",
     "seed:test-user": "tsx scripts/seed-test-user.ts",
