@@ -466,6 +466,7 @@ export async function createAdmission(
 export async function updateAdmission(
   id: number,
   updateData: {
+    doctorId?: number;
     status?: string;
     seatNumber?: string;
     ward?: string;
@@ -609,6 +610,7 @@ export async function updateAdmission(
     const updatedAdmission = await tx.admission.update({
       where: { id },
       data: {
+        doctorId: updateData.doctorId ?? existingAdmission.doctorId,
         status: updateData.status ?? existingAdmission.status,
         seatNumber: updateData.seatNumber ?? existingAdmission.seatNumber,
         ward: updateData.ward ?? existingAdmission.ward,

@@ -19,6 +19,7 @@ import {
 } from "../form-section";
 import {
   useAdmissionPatientData,
+  useAdmissionDoctorData,
   useAdmissionInfo,
   useAdmissionFinancialData,
   useAdmissionActions,
@@ -26,6 +27,7 @@ import {
 import { useAdmissionScrollSpy } from "../../hooks";
 import { useEditAdmissionData } from "../../hooks/useEditAdmissionData";
 import { useNotification } from "@/hooks/useNotification";
+import { isAdminRole, isReceptionistRole } from "@/lib/roles";
 import { AdmissionPatientData } from "../../types";
 
 interface EditDataProps {
@@ -65,10 +67,14 @@ const EditDataAdmission: React.FC<EditDataProps> = ({
 
   // Store access (removed hospital)
   const patientData = useAdmissionPatientData();
+  const doctorData = useAdmissionDoctorData();
   const admissionInfo = useAdmissionInfo();
   const financialData = useAdmissionFinancialData();
   const { initializeFormForEdit, resetForm, afterEditModalClosed } =
     useAdmissionActions();
+  const canEditDoctorReassignment = Boolean(
+    user?.role && (isAdminRole(user.role) || isReceptionistRole(user.role))
+  );
 
   // Initialize form
   useEffect(() => {
@@ -111,7 +117,7 @@ const EditDataAdmission: React.FC<EditDataProps> = ({
         patientPhone: patientData.phoneNumber,
         patientAddress: patientData.address,
         departmentName: initialPatientData.departmentName,
-        doctorName: initialPatientData.doctorName,
+        doctorName: doctorData.fullName || initialPatientData.doctorName,
         hospitalName: "FNH Hospital", // Hardcoded - only one hospital
         seatNumber: admissionInfo.seatNumber,
         ward: admissionInfo.ward,
@@ -201,6 +207,11 @@ const EditDataAdmission: React.FC<EditDataProps> = ({
       return;
     }
 
+    if (canEditDoctorReassignment && !doctorData.id) {
+      showNotification("Please select a doctor", "error");
+      return;
+    }
+
     editAdmission({
       id: initialPatientData.id,
       status: admissionInfo.status,
@@ -225,6 +236,9 @@ const EditDataAdmission: React.FC<EditDataProps> = ({
       paidAmount: financialData.paidAmount,
       chiefComplaint: admissionInfo.chiefComplaint,
       isDischarged: admissionInfo.status === "Discharged",
+      ...(canEditDoctorReassignment && doctorData.id
+        ? { doctorId: doctorData.id }
+        : {}),
     });
   }, [
     isFormValid,
@@ -233,6 +247,9 @@ const EditDataAdmission: React.FC<EditDataProps> = ({
     financialData,
     editAdmission,
     initialPatientData.id,
+    canEditDoctorReassignment,
+    doctorData.id,
+    doctorData.fullName,
     showNotification,
     validationErrors,
   ]);
@@ -344,7 +361,11 @@ const EditDataAdmission: React.FC<EditDataProps> = ({
                   <AdmissionPatientInformation />
                 </div>
                 <div id="department">
-                  <DepartmentSelection readonly allowEditComplaint />
+                  <DepartmentSelection
+                    readonly
+                    allowEditComplaint
+                    allowDoctorEdit={canEditDoctorReassignment}
+                  />
                 </div>
                 <div id="status">
                   <AdmissionStatusSection />

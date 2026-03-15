@@ -68,6 +68,7 @@ export const createAdmissionSchema = z.object({
 
 export const updateAdmissionSchema = z.object({
   id: z.number(),
+  doctorId: z.number().min(1, "Doctor is required").optional(),
   status: z
     .enum([
       "Admitted",
