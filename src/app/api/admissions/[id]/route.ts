@@ -138,6 +138,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     const updatedAdmission = await updateAdmission(
       admissionId,
       {
+        doctorId: validated.doctorId,
         status: validated.status,
         seatNumber: validated.seatNumber,
         ward: validated.ward,

@@ -14,12 +14,14 @@ import type { Department, Doctor } from "../../../types";
 interface DepartmentSelectionProps {
   readonly?: boolean;
   allowEditComplaint?: boolean;
+  allowDoctorEdit?: boolean;
   hideWardRoom?: boolean;
 }
 
 const DepartmentSelection: React.FC<DepartmentSelectionProps> = ({
   readonly = false,
   allowEditComplaint = false,
+  allowDoctorEdit = false,
   hideWardRoom = false,
 }) => {
   const departmentData = useAdmissionDepartmentData();
@@ -113,8 +115,11 @@ const DepartmentSelection: React.FC<DepartmentSelectionProps> = ({
           <DoctorDropdown
             value={doctorData.id}
             onSelect={handleDoctorChange}
-            disabled={readonly}
-            inputClassName={inputClassName(doctorData.id, readonly)}
+            disabled={readonly && !allowDoctorEdit}
+            inputClassName={inputClassName(
+              doctorData.id,
+              readonly && !allowDoctorEdit
+            )}
           />
         </div>
 

@@ -239,6 +239,7 @@ export interface CreateAdmissionPayload {
 
 export interface UpdateAdmissionPayload {
   id: number;
+  doctorId?: number;
   status?: AdmissionStatus;
   seatNumber?: string;
   ward?: string;
