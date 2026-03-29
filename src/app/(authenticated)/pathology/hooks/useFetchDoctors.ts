@@ -10,7 +10,8 @@ interface Doctor {
 
 export function useFetchDoctors() {
   return useQuery({
-    queryKey: ["doctors", "all"],
+    // Reuse the same query key as other modules so doctors cache is shared app-wide.
+    queryKey: ["doctors"],
     queryFn: async (): Promise<Doctor[]> => {
       const response = await api.get<{
         success: boolean;

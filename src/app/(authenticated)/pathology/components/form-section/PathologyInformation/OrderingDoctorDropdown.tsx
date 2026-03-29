@@ -49,8 +49,8 @@ const DoctorItem = memo(
           disabled
             ? "cursor-not-allowed text-gray-400"
             : isSelected
-            ? "bg-green-100 border-l-4 border-green-600"
-            : "hover:bg-blue-900 hover:text-white"
+              ? "bg-green-100 border-l-4 border-green-600"
+              : "hover:bg-blue-900 hover:text-white"
         }`}
       >
         {isSelf ? (
@@ -74,7 +74,7 @@ const DoctorItem = memo(
   (prevProps, nextProps) =>
     prevProps.doctor.id === nextProps.doctor.id &&
     prevProps.isSelected === nextProps.isSelected &&
-    prevProps.disabled === nextProps.disabled
+    prevProps.disabled === nextProps.disabled,
 );
 DoctorItem.displayName = "DoctorItem";
 
@@ -94,10 +94,10 @@ const OrderingDoctorDropdown: React.FC<OrderingDoctorDropdownProps> = ({
   const toggleDropdown = useCallback(
     (e: React.MouseEvent) => {
       e.stopPropagation();
-      if (disabled || isLoading) return;
+      if (disabled) return;
       setIsOpen((prev) => !prev);
     },
-    [disabled, isLoading]
+    [disabled],
   );
 
   // Simple close - same pattern as PathologyTestsDropdown
@@ -112,14 +112,14 @@ const OrderingDoctorDropdown: React.FC<OrderingDoctorDropdownProps> = ({
       onSelect(doctorId);
       closeDropdown();
     },
-    [onSelect, disabled, closeDropdown]
+    [onSelect, disabled, closeDropdown],
   );
 
   // Focus search input when dropdown opens
   useEffect(() => {
     if (isOpen) {
       const searchInput = document.querySelector(
-        ".doctor-search-input"
+        ".doctor-search-input",
       ) as HTMLInputElement;
       if (searchInput) {
         setTimeout(() => {
@@ -135,7 +135,7 @@ const OrderingDoctorDropdown: React.FC<OrderingDoctorDropdownProps> = ({
   const { selfEntry, doctors } = useMemo(() => {
     const self = allStaff.find((staff) => staff.role.toLowerCase() === "self");
     const doctorList = allStaff.filter(
-      (staff) => staff.role.toLowerCase() !== "self"
+      (staff) => staff.role.toLowerCase() !== "self",
     );
     return { selfEntry: self, doctors: doctorList };
   }, [allStaff]);
@@ -158,7 +158,7 @@ const OrderingDoctorDropdown: React.FC<OrderingDoctorDropdownProps> = ({
       (doctor) =>
         doctor.fullName.toLowerCase().includes(lowerSearch) ||
         (doctor.specialization &&
-          doctor.specialization.toLowerCase().includes(lowerSearch))
+          doctor.specialization.toLowerCase().includes(lowerSearch)),
     );
   }, [doctors, searchTerm]);
 
@@ -167,7 +167,7 @@ const OrderingDoctorDropdown: React.FC<OrderingDoctorDropdownProps> = ({
       e.stopPropagation();
       setSearchTerm(e.target.value);
     },
-    []
+    [],
   );
 
   return (
@@ -176,7 +176,7 @@ const OrderingDoctorDropdown: React.FC<OrderingDoctorDropdownProps> = ({
       <button
         ref={buttonRef}
         onClick={toggleDropdown}
-        disabled={disabled || isLoading}
+        disabled={disabled}
         type="button"
         className={`${inputClassName} flex justify-between items-center pr-3 cursor-pointer`}
       >
@@ -219,7 +219,7 @@ const OrderingDoctorDropdown: React.FC<OrderingDoctorDropdownProps> = ({
       >
         <div className="bg-white border border-gray-200 rounded-lg shadow-xl overflow-hidden w-full min-w-[280px]">
           {/* Search Input - always show for doctors */}
-          {doctors.length > 5 && (
+          {!isLoading && doctors.length > 5 && (
             <div className="sticky top-0 bg-gray-50 z-10 p-3 border-b border-gray-200">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
@@ -250,54 +250,65 @@ const OrderingDoctorDropdown: React.FC<OrderingDoctorDropdownProps> = ({
                   : "280px",
             }}
           >
-            {/* Self Option - only show if Self entry exists and matches search */}
-            {selfEntry &&
-              (!searchTerm || "self".includes(searchTerm.toLowerCase())) && (
-                <>
+            {isLoading ? (
+              <div className="p-8 text-center text-sm text-gray-500">
+                Loading doctors...
+              </div>
+            ) : (
+              <>
+                {/* Self Option - only show if Self entry exists and matches search */}
+                {selfEntry &&
+                  (!searchTerm ||
+                    "self".includes(searchTerm.toLowerCase())) && (
+                    <>
+                      <DoctorItem
+                        doctor={selfEntry}
+                        isSelected={value === selfEntry.id}
+                        onSelect={handleSelect}
+                        disabled={disabled}
+                        isSelf={true}
+                      />
+                      {/* Divider */}
+                      {filteredDoctors.length > 0 && (
+                        <div className="border-t border-gray-200 my-1"></div>
+                      )}
+                    </>
+                  )}
+
+                {/* Doctor Options */}
+                {filteredDoctors.map((doctor) => (
                   <DoctorItem
-                    doctor={selfEntry}
-                    isSelected={value === selfEntry.id}
+                    key={doctor.id}
+                    doctor={doctor}
+                    isSelected={value === doctor.id}
                     onSelect={handleSelect}
                     disabled={disabled}
-                    isSelf={true}
+                    isSelf={false}
                   />
-                  {/* Divider */}
-                  {filteredDoctors.length > 0 && (
-                    <div className="border-t border-gray-200 my-1"></div>
-                  )}
-                </>
-              )}
+                ))}
 
-            {/* Doctor Options */}
-            {filteredDoctors.map((doctor) => (
-              <DoctorItem
-                key={doctor.id}
-                doctor={doctor}
-                isSelected={value === doctor.id}
-                onSelect={handleSelect}
-                disabled={disabled}
-                isSelf={false}
-              />
-            ))}
-
-            {/* No Results */}
-            {filteredDoctors.length === 0 && searchTerm && (
-              <div className="p-8 text-center">
-                <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gray-100 mb-3">
-                  <Search className="w-6 h-6 text-gray-400" />
-                </div>
-                <p className="text-sm text-gray-500 mb-2">No doctors found</p>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setSearchTerm("");
-                  }}
-                  type="button"
-                  className="text-blue-600 hover:text-blue-700 text-sm font-medium hover:underline transition-colors"
-                >
-                  Clear search
-                </button>
-              </div>
+                {/* No Results */}
+                {filteredDoctors.length === 0 && searchTerm && (
+                  <div className="p-8 text-center">
+                    <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gray-100 mb-3">
+                      <Search className="w-6 h-6 text-gray-400" />
+                    </div>
+                    <p className="text-sm text-gray-500 mb-2">
+                      No doctors found
+                    </p>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSearchTerm("");
+                      }}
+                      type="button"
+                      className="text-blue-600 hover:text-blue-700 text-sm font-medium hover:underline transition-colors"
+                    >
+                      Clear search
+                    </button>
+                  </div>
+                )}
+              </>
             )}
           </div>
         </div>
