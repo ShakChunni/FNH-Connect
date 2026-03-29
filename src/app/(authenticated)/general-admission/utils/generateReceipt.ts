@@ -82,7 +82,7 @@ const drawStatusStamp = (doc: jsPDF, isPaid: boolean) => {
  */
 export const generateAdmissionReceipt = async (
   data: AdmissionPatientData,
-  printedBy: string = "Staff"
+  printedBy: string = "Staff",
 ) => {
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.width;
@@ -123,7 +123,7 @@ export const generateAdmissionReceipt = async (
     `${COMPANY_INFO.phone}  |  ${COMPANY_INFO.email}`,
     pageWidth / 2,
     currentY,
-    { align: "center" }
+    { align: "center" },
   );
   currentY += 6;
 
@@ -157,7 +157,7 @@ export const generateAdmissionReceipt = async (
       year: "numeric",
       hour: "2-digit",
       minute: "2-digit",
-    }
+    },
   );
 
   doc.setFont("helvetica", "normal");
@@ -194,7 +194,7 @@ export const generateAdmissionReceipt = async (
   // Split Complaint
   const splitComplaint = doc.splitTextToSize(
     complaint,
-    contentWidth - 38 - boxPadding * 2
+    contentWidth - 38 - boxPadding * 2,
   );
 
   // Rows:
@@ -235,7 +235,7 @@ export const generateAdmissionReceipt = async (
       ? patientName.substring(0, 26) + "..."
       : patientName,
     col1ValueX,
-    pY
+    pY,
   );
 
   doc.setFont("helvetica", "bold");
@@ -275,7 +275,7 @@ export const generateAdmissionReceipt = async (
       ? guardianDisplay.substring(0, 22) + "..."
       : guardianDisplay,
     col1ValueX,
-    pY
+    pY,
   );
 
   doc.setFont("helvetica", "bold");
@@ -388,13 +388,13 @@ export const generateAdmissionReceipt = async (
     "NB: This is a computer generated receipt.",
     pageWidth / 2,
     pageHeight - 10,
-    { align: "center" }
+    { align: "center" },
   );
   doc.text(
     "Thank you for choosing Feroza Nursing Home",
     pageWidth / 2,
     pageHeight - 6,
-    { align: "center" }
+    { align: "center" },
   );
 
   // Auto Print & Preview
@@ -410,7 +410,7 @@ export const generateAdmissionReceipt = async (
  */
 export const generateAdmissionInvoice = async (
   data: AdmissionPatientData,
-  printedBy: string = "Staff"
+  printedBy: string = "Staff",
 ) => {
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.width;
@@ -502,7 +502,7 @@ export const generateAdmissionInvoice = async (
         currentY,
         {
           align: "center",
-        }
+        },
       );
       currentY += 5;
 
@@ -536,7 +536,7 @@ export const generateAdmissionInvoice = async (
           year: "numeric",
           hour: "2-digit",
           minute: "2-digit",
-        }
+        },
       );
       doc.text(`Date: ${admissionDate}`, pageWidth - margin, currentY, {
         align: "right",
@@ -569,7 +569,7 @@ export const generateAdmissionInvoice = async (
       // For Complaint
       const splitComplaintInv = doc.splitTextToSize(
         complaintInv,
-        contentWidth - 38 - boxPadding * 2
+        contentWidth - 38 - boxPadding * 2,
       );
 
       // Rows:
@@ -596,7 +596,7 @@ export const generateAdmissionInvoice = async (
         dynamicBoxHeightInv,
         2,
         2,
-        "F"
+        "F",
       );
       doc.setDrawColor(COLORS.border);
       doc.setLineWidth(0.3);
@@ -607,7 +607,7 @@ export const generateAdmissionInvoice = async (
         dynamicBoxHeightInv,
         2,
         2,
-        "S"
+        "S",
       );
 
       let pY = currentY + boxPadding + 3;
@@ -623,7 +623,7 @@ export const generateAdmissionInvoice = async (
           ? patientNameInv.substring(0, 26) + "..."
           : patientNameInv,
         col1ValueX,
-        pY
+        pY,
       );
       doc.setTextColor(COLORS.lightText);
       doc.text("Mobile:", col2LabelX, pY);
@@ -658,7 +658,7 @@ export const generateAdmissionInvoice = async (
           ? guardianDisplayInv.substring(0, 22) + "..."
           : guardianDisplayInv,
         col1ValueX,
-        pY
+        pY,
       );
       doc.setFont("helvetica", "bold");
       doc.setTextColor(COLORS.lightText);
@@ -741,7 +741,7 @@ export const generateAdmissionInvoice = async (
         } of ${totalPages}`,
         pageWidth / 2,
         currentY + 12,
-        { align: "center" }
+        { align: "center" },
       );
       currentY += 20;
     }
@@ -804,7 +804,7 @@ export const generateAdmissionInvoice = async (
           }`,
           tLabelX,
           tY,
-          { align: "right" }
+          { align: "right" },
         );
         doc.setTextColor(COLORS.primary);
         doc.text(`- ${data.discountAmount.toLocaleString()}`, tValX, tY, {
@@ -841,6 +841,8 @@ export const generateAdmissionInvoice = async (
 
       if (data.dueAmount > 0) {
         // Show Due Amount only when there is actual due
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(12);
         doc.setTextColor(COLORS.lightText);
         doc.text("Due Amount:", tLabelX, tY, { align: "right" });
         doc.setTextColor(220, 38, 38);
@@ -849,6 +851,8 @@ export const generateAdmissionInvoice = async (
         });
       } else {
         // Just show PAID when fully paid (no label)
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(11);
         doc.setTextColor(22, 128, 61);
         doc.text("PAID", tValX, tY, { align: "right" });
       }
@@ -899,13 +903,13 @@ export const generateAdmissionInvoice = async (
       "NB: This is a computer generated invoice.",
       pageWidth / 2,
       pageHeight - 10,
-      { align: "center" }
+      { align: "center" },
     );
     doc.text(
       "Thank you for choosing Feroza Nursing Home",
       pageWidth / 2,
       pageHeight - 6,
-      { align: "center" }
+      { align: "center" },
     );
 
     // Status Stamp (Circle)

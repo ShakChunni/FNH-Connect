@@ -74,7 +74,7 @@ const drawStatusStamp = (doc: jsPDF, isPaid: boolean) => {
 
 export const generatePathologyReceipt = async (
   data: PathologyPatientData,
-  printedBy: string = "Staff"
+  printedBy: string = "Staff",
 ) => {
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.width;
@@ -155,7 +155,7 @@ export const generatePathologyReceipt = async (
         currentY,
         {
           align: "center",
-        }
+        },
       );
       currentY += 6;
 
@@ -259,7 +259,7 @@ export const generatePathologyReceipt = async (
         dynamicBoxHeight,
         2,
         2,
-        "F"
+        "F",
       );
       doc.setDrawColor(COLORS.border);
       doc.setLineWidth(0.3);
@@ -270,7 +270,7 @@ export const generatePathologyReceipt = async (
         dynamicBoxHeight,
         2,
         2,
-        "S"
+        "S",
       );
 
       let pY = currentY + boxPadding + 3;
@@ -286,7 +286,7 @@ export const generatePathologyReceipt = async (
           ? patientName.substring(0, 26) + "..."
           : patientName,
         col1ValueX,
-        pY
+        pY,
       );
 
       doc.setFont("helvetica", "bold");
@@ -354,7 +354,7 @@ export const generatePathologyReceipt = async (
         } of ${totalPages}`,
         pageWidth / 2,
         currentY + 12,
-        { align: "center" }
+        { align: "center" },
       );
       currentY += 20;
     }
@@ -445,6 +445,8 @@ export const generatePathologyReceipt = async (
 
       if (data.dueAmount > 0) {
         // Show Due Amount only when there is actual due
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(12);
         doc.setTextColor(COLORS.lightText);
         doc.text("Due Amount:", tLabelX, tY, { align: "right" });
         doc.setTextColor(220, 38, 38);
@@ -453,6 +455,8 @@ export const generatePathologyReceipt = async (
         });
       } else {
         // Just show PAID when fully paid (no label)
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(11);
         doc.setTextColor(22, 128, 61);
         doc.text("PAID", tValX, tY, { align: "right" });
       }
@@ -503,13 +507,13 @@ export const generatePathologyReceipt = async (
       "NB: This is a computer generated receipt.",
       pageWidth / 2,
       pageHeight - 10,
-      { align: "center" }
+      { align: "center" },
     );
     doc.text(
       "Thank you for choosing Feroza Nursing Home",
       pageWidth / 2,
       pageHeight - 6,
-      { align: "center" }
+      { align: "center" },
     );
 
     // Status Stamp (Circle)
