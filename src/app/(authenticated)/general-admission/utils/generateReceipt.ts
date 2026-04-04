@@ -840,7 +840,39 @@ export const generateAdmissionInvoice = async (
       doc.setFontSize(11);
 
       if (data.dueAmount > 0) {
-        // Show Due Amount only when there is actual due
+        // === LEFT-SIDE DUE STAMP/SEAL ===
+        // Circular rubber-stamp style seal on the left-center bottom area
+        const stampRadius = 18;
+        const stampCenterX = margin + stampRadius + 8;
+        const stampCenterY = finalY + stampRadius + 2;
+
+        doc.saveGraphicsState();
+        doc.setGState(new (doc as any).GState({ opacity: 0.85 }));
+
+        // Outer circle border
+        doc.setDrawColor(200, 30, 30);
+        doc.setLineWidth(1.8);
+        doc.circle(stampCenterX, stampCenterY, stampRadius, "S");
+
+        // Inner circle border (double-ring seal effect)
+        doc.setLineWidth(0.6);
+        doc.circle(stampCenterX, stampCenterY, stampRadius - 3, "S");
+
+        // "DUE" text — large, bold, centered
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(24);
+        doc.setTextColor(200, 30, 30);
+        doc.text("DUE", stampCenterX, stampCenterY + 3, { align: "center" });
+
+        // Small decorative lines above and below text
+        const lineHalfW = 10;
+        doc.setLineWidth(0.5);
+        doc.line(stampCenterX - lineHalfW, stampCenterY - 7, stampCenterX + lineHalfW, stampCenterY - 7);
+        doc.line(stampCenterX - lineHalfW, stampCenterY + 7, stampCenterX + lineHalfW, stampCenterY + 7);
+
+        doc.restoreGraphicsState();
+
+        // Right-side due label + value
         doc.setFont("helvetica", "bold");
         doc.setFontSize(12);
         doc.setTextColor(COLORS.lightText);
@@ -912,7 +944,7 @@ export const generateAdmissionInvoice = async (
       { align: "center" },
     );
 
-    // Status Stamp (Circle)
+    // Status Stamp
     drawStatusStamp(doc, isPaid);
   }
 
