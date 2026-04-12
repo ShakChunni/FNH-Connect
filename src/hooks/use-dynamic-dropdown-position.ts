@@ -1,4 +1,4 @@
-import { RefObject, useEffect, useState, useRef } from "react";
+import { RefObject, useEffect, useLayoutEffect, useState, useRef } from "react";
 
 /**
  * Hook for dynamically positioning dropdown portals relative to their trigger button.
@@ -18,10 +18,18 @@ export const useDynamicDropdownPosition = (
   onClose: () => void,
   matchButtonWidth: boolean = true,
 ) => {
-  const [positionStyle, setPositionStyle] = useState<React.CSSProperties>({
-    // Start with opacity 0 to prevent flicker
+  const HIDDEN_POSITION_STYLE: React.CSSProperties = {
+    position: "absolute",
+    top: "-9999px",
+    left: "-9999px",
     opacity: 0,
-  });
+    visibility: "hidden",
+    pointerEvents: "none",
+  };
+
+  const [positionStyle, setPositionStyle] = useState<React.CSSProperties>(
+    HIDDEN_POSITION_STYLE,
+  );
   const [animationDirection, setAnimationDirection] = useState<"up" | "down">(
     "down",
   );
@@ -33,10 +41,10 @@ export const useDynamicDropdownPosition = (
     onCloseRef.current = onClose;
   }, [onClose]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!isOpen) {
       // Reset to initial state when closed to avoid showing old position on reopen
-      setPositionStyle({ opacity: 0 });
+      setPositionStyle(HIDDEN_POSITION_STYLE);
       return;
     }
 
@@ -100,6 +108,8 @@ export const useDynamicDropdownPosition = (
         // overrides this inline value when needed.
         zIndex: 110000,
         opacity: 1,
+        visibility: "visible",
+        pointerEvents: "auto",
       });
     };
 
@@ -107,6 +117,14 @@ export const useDynamicDropdownPosition = (
     if (dropdownRef.current) {
       observer.observe(dropdownRef.current);
     }
+    if (buttonRef.current) {
+      observer.observe(buttonRef.current);
+    }
+
+    // Position immediately on open and once more on the next frame
+    // to avoid first-frame misplacement when content size is still settling.
+    updatePosition();
+    const rafId = window.requestAnimationFrame(updatePosition);
 
     const handleScroll = (event: Event) => {
       // Debounce: ignore scroll events that fire immediately after opening
@@ -139,6 +157,10 @@ export const useDynamicDropdownPosition = (
       if (dropdownRef.current) {
         observer.unobserve(dropdownRef.current);
       }
+      if (buttonRef.current) {
+        observer.unobserve(buttonRef.current);
+      }
+      window.cancelAnimationFrame(rafId);
       window.removeEventListener("resize", updatePosition);
       window.removeEventListener("scroll", handleScroll, true);
     };
