@@ -72,8 +72,8 @@ export interface Medicine {
 }
 
 export const createMedicineSchema = z.object({
+  brandName: z.string().min(1, "Medicine name is required").max(200),
   genericName: z.string().min(1, "Generic name is required").max(200),
-  brandName: z.string().max(200).optional(),
   groupId: z.number().int().positive("Group is required"),
   strength: z.string().max(50).optional(),
   dosageForm: z.string().max(50).optional(),
@@ -87,8 +87,8 @@ export const createMedicineSchema = z.object({
 export type CreateMedicineInput = z.infer<typeof createMedicineSchema>;
 
 export const updateMedicineSchema = z.object({
+  brandName: z.string().min(1, "Medicine name is required").max(200),
   genericName: z.string().min(1, "Generic name is required").max(200),
-  brandName: z.string().max(200).optional(),
   groupId: z.number().int().positive("Group is required"),
   strength: z.string().max(50).optional(),
   dosageForm: z.string().max(50).optional(),

@@ -106,6 +106,9 @@ const EditMedicineModal: React.FC<EditMedicineModalProps> = ({
     if (!medicine?.id) {
       errors.push("Invalid medicine selected");
     }
+    if (!brandName.trim()) {
+      errors.push("Medicine name is required");
+    }
     if (!genericName.trim()) {
       errors.push("Generic name is required");
     }
@@ -123,7 +126,14 @@ const EditMedicineModal: React.FC<EditMedicineModalProps> = ({
       isFormValid: errors.length === 0,
       validationErrors: errors,
     };
-  }, [medicine?.id, genericName, groupId, defaultSalePrice, lowStockThreshold]);
+  }, [
+    medicine?.id,
+    brandName,
+    genericName,
+    groupId,
+    defaultSalePrice,
+    lowStockThreshold,
+  ]);
 
   const handleClose = useCallback(() => {
     if (isSubmitting) return;
@@ -146,7 +156,7 @@ const EditMedicineModal: React.FC<EditMedicineModalProps> = ({
       id: medicine.id,
       data: {
         genericName: genericName.trim(),
-        brandName: brandName.trim() || undefined,
+        brandName: brandName.trim(),
         groupId: groupId!,
         strength: strength.trim() || undefined,
         dosageForm: dosageForm || undefined,
@@ -263,27 +273,27 @@ const EditMedicineModal: React.FC<EditMedicineModalProps> = ({
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="md:col-span-2">
                       <label className="block text-xs font-semibold text-gray-700 mb-2">
+                        Medicine Name <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={brandName}
+                        onChange={(e) => setBrandName(e.target.value)}
+                        placeholder="e.g., Napa, Cef-3"
+                        className={getInputClass(!!brandName)}
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-700 mb-2">
                         Generic Name <span className="text-red-500">*</span>
                       </label>
                       <input
                         type="text"
                         value={genericName}
                         onChange={(e) => setGenericName(e.target.value)}
-                        placeholder="e.g., Cefixime, Paracetamol"
+                        placeholder="e.g., Paracetamol, Cefixime"
                         className={getInputClass(!!genericName)}
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-semibold text-gray-700 mb-2">
-                        Brand Name
-                      </label>
-                      <input
-                        type="text"
-                        value={brandName}
-                        onChange={(e) => setBrandName(e.target.value)}
-                        placeholder="Optional brand name"
-                        className={getInputClass(!!brandName)}
                       />
                     </div>
 

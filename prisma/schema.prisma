@@ -630,7 +630,7 @@ model MedicineCompany {
 model Medicine {
   id               Int     @id @default(autoincrement())
   genericName      String // "Cefixime", "Paracetamol", etc.
-  brandName        String? // Optional brand name
+  brandName        String? // Medicine/trade name (primary display + search)
   groupId          Int
   strength         String? // "200mg", "500mg", etc.
   dosageForm       String? // "Tablet", "Capsule", "Syrup", etc.
@@ -649,8 +649,9 @@ model Medicine {
   purchases MedicinePurchase[]
   sales     MedicineSale[]
 
-  @@unique([genericName, groupId])
+  @@unique([brandName, groupId])
   @@index([groupId])
+  @@index([brandName])
   @@index([genericName])
   @@index([currentStock])
 }

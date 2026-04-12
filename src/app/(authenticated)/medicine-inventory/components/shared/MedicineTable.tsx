@@ -10,6 +10,10 @@ import { Pill, AlertTriangle } from "lucide-react";
 import { Pagination } from "@/components/pagination/Pagination";
 import { useFetchMedicines } from "../../hooks";
 import { useMedicineFilterStore, useUIStore } from "../../stores";
+import {
+  getMedicineDisplayName,
+  getMedicineGenericSubtitle,
+} from "../../utils/medicineDisplay";
 
 const MedicineTable: React.FC = () => {
   const { filters, setFilter } = useMedicineFilterStore();
@@ -106,7 +110,7 @@ const MedicineTable: React.FC = () => {
             <thead>
               <tr className="border-b border-gray-100">
                 <th className="text-left px-6 py-3 text-[10px] font-black uppercase tracking-widest text-gray-500">
-                  Generic Name
+                  Medicine Name
                 </th>
                 <th className="text-left px-6 py-3 text-[10px] font-black uppercase tracking-widest text-gray-500">
                   Group
@@ -139,11 +143,11 @@ const MedicineTable: React.FC = () => {
                     <td className="px-6 py-3.5">
                       <div>
                         <p className="text-sm font-bold text-gray-900">
-                          {medicine.genericName}
+                          {getMedicineDisplayName(medicine)}
                         </p>
-                        {medicine.brandName && (
+                        {getMedicineGenericSubtitle(medicine) && (
                           <p className="text-xs text-gray-500">
-                            {medicine.brandName}
+                            Generic: {getMedicineGenericSubtitle(medicine)}
                           </p>
                         )}
                       </div>
@@ -211,11 +215,11 @@ const MedicineTable: React.FC = () => {
                 <div className="flex items-start justify-between">
                   <div>
                     <p className="text-sm font-bold text-gray-900">
-                      {medicine.genericName}
+                      {getMedicineDisplayName(medicine)}
                     </p>
-                    {medicine.brandName && (
+                    {getMedicineGenericSubtitle(medicine) && (
                       <p className="text-xs text-gray-500">
-                        {medicine.brandName}
+                        Generic: {getMedicineGenericSubtitle(medicine)}
                       </p>
                     )}
                   </div>

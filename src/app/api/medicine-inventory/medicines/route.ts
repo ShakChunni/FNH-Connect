@@ -18,8 +18,8 @@ import {
 import { z } from "zod";
 
 const createMedicineSchema = z.object({
+  brandName: z.string().min(1, "Medicine name is required").max(200),
   genericName: z.string().min(1, "Generic name is required").max(200),
-  brandName: z.string().max(200).optional(),
   groupId: z.number().int().positive("Group is required"),
   strength: z.string().max(50).optional(),
   dosageForm: z.string().max(50).optional(),
@@ -150,7 +150,12 @@ export async function POST(request: NextRequest) {
     console.error("POST /api/medicine-inventory/medicines error:", error);
 
     if (error instanceof Error) {
-      const knownErrors = ["already exists", "Invalid group"];
+      const knownErrors = [
+        "already exists",
+        "Invalid group",
+        "Medicine name is required",
+        "Generic name is required",
+      ];
       if (knownErrors.some((msg) => error.message.includes(msg))) {
         return NextResponse.json(
           { success: false, error: error.message },

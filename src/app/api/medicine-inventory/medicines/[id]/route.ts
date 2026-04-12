@@ -20,8 +20,8 @@ interface RouteParams {
 }
 
 const updateMedicineSchema = z.object({
+  brandName: z.string().min(1, "Medicine name is required").max(200),
   genericName: z.string().min(1, "Generic name is required").max(200),
-  brandName: z.string().max(200).optional(),
   groupId: z.number().int().positive("Group is required"),
   strength: z.string().max(50).optional(),
   dosageForm: z.string().max(50).optional(),
@@ -91,6 +91,8 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
         "already exists",
         "Invalid group",
         "Invalid or inactive medicine",
+        "Medicine name is required",
+        "Generic name is required",
       ];
       if (knownErrors.some((msg) => error.message.includes(msg))) {
         return NextResponse.json(

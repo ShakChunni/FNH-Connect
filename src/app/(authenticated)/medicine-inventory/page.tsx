@@ -48,6 +48,7 @@ import {
   SaleTable,
   ActivityTable,
 } from "./components/shared";
+import { getMedicineDisplayName } from "./utils/medicineDisplay";
 
 // Manage Dropdown — clean way to access Add Medicine/Group/Company
 const ManageDropdown: React.FC<{
@@ -393,7 +394,7 @@ const MedicineInventoryPage = () => {
                           key={item.id}
                           className="inline-flex items-center gap-1 px-2 py-1 bg-white rounded-lg text-xs font-semibold text-amber-800 border border-amber-200"
                         >
-                          <span>{item.genericName}</span>
+                          <span>{getMedicineDisplayName(item)}</span>
                           <span className="text-amber-500">
                             ({item.currentStock} left)
                           </span>
@@ -564,7 +565,14 @@ const MedicineInventoryPage = () => {
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <input
                   type="text"
-                  placeholder={`Search ${activeTab === "activity" ? "medicines" : activeTab}...`}
+                  placeholder={
+                    activeTab === "medicines" ||
+                    activeTab === "purchases" ||
+                    activeTab === "sales" ||
+                    activeTab === "activity"
+                      ? "Search medicine name, generic, or company..."
+                      : `Search ${activeTab}...`
+                  }
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="w-full pl-10 pr-4 py-2.5 bg-gray-50/50 border border-gray-100 rounded-xl text-xs sm:text-sm font-bold focus:outline-none focus:ring-2 focus:ring-fnh-blue/20 transition-all"

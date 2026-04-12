@@ -48,6 +48,7 @@ import { PatientSearch, MedicineSearch } from "../shared";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/axios";
 import type { Medicine } from "../../types";
+import { getMedicineDisplayName } from "../../utils/medicineDisplay";
 
 interface AddSaleModalProps {
   isOpen: boolean;
@@ -300,7 +301,7 @@ const AddSaleModal: React.FC<AddSaleModalProps> = ({ isOpen, onClose }) => {
       if (medicine) {
         setMedicineWithFIFO({
           medicineId: medicine.id,
-          medicineName: medicine.genericName,
+          medicineName: getMedicineDisplayName(medicine),
           medicineGroupName: medicine.group?.name || "Unknown Group",
           availableStock: medicine.currentStock,
           companyName: "", // Will be populated by FIFO query
@@ -430,14 +431,13 @@ const AddSaleModal: React.FC<AddSaleModalProps> = ({ isOpen, onClose }) => {
                     {/* Medicine Search */}
                     <div className="md:col-span-2">
                       <label className="block text-xs font-semibold text-gray-700 mb-2">
-                        Medicine (Generic Name){" "}
-                        <span className="text-red-500">*</span>
+                        Medicine Name <span className="text-red-500">*</span>
                       </label>
                       <MedicineSearch
                         value={formData.medicineId}
                         displayValue={formData.medicineName}
                         onChange={handleMedicineChange}
-                        placeholder="Search medicine (only in-stock items)..."
+                        placeholder="Search medicine name (only in-stock items)..."
                         showStock={true}
                         stockFilter="inStock"
                       />

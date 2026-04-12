@@ -10,6 +10,10 @@ import { TrendingUp } from "lucide-react";
 import { Pagination } from "@/components/pagination/Pagination";
 import { useFetchPurchases } from "../../hooks";
 import { usePurchaseFilterStore } from "../../stores";
+import {
+  getMedicineDisplayName,
+  getMedicineGenericSubtitle,
+} from "../../utils/medicineDisplay";
 
 const PurchaseTable: React.FC = () => {
   const { filters, setFilter } = usePurchaseFilterStore();
@@ -169,11 +173,11 @@ const PurchaseTable: React.FC = () => {
                   </td>
                   <td className="px-6 py-3.5">
                     <p className="text-sm font-medium text-gray-900">
-                      {purchase.medicine.genericName}
+                      {getMedicineDisplayName(purchase.medicine)}
                     </p>
-                    {purchase.medicine.brandName && (
+                    {getMedicineGenericSubtitle(purchase.medicine) && (
                       <p className="text-xs text-gray-500">
-                        {purchase.medicine.brandName}
+                        Generic: {getMedicineGenericSubtitle(purchase.medicine)}
                       </p>
                     )}
                   </td>
@@ -209,8 +213,13 @@ const PurchaseTable: React.FC = () => {
               <div className="flex items-start justify-between">
                 <div>
                   <p className="text-sm font-bold text-gray-900">
-                    {purchase.medicine.genericName}
+                    {getMedicineDisplayName(purchase.medicine)}
                   </p>
+                  {getMedicineGenericSubtitle(purchase.medicine) && (
+                    <p className="text-xs text-gray-500">
+                      Generic: {getMedicineGenericSubtitle(purchase.medicine)}
+                    </p>
+                  )}
                   <p className="text-xs text-gray-500">
                     Invoice: {purchase.invoiceNumber}
                   </p>

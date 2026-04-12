@@ -27,6 +27,10 @@ import {
 import { DropdownPortal } from "@/components/ui/DropdownPortal";
 import { useFetchMedicines, useFetchMedicineGroups } from "../../hooks";
 import type { Medicine } from "../../types";
+import {
+  getMedicineDisplayName,
+  getMedicineGenericSubtitle,
+} from "../../utils/medicineDisplay";
 
 interface MedicineSearchProps {
   value: number | null;
@@ -108,8 +112,8 @@ export const MedicineSearch: React.FC<MedicineSearchProps> = ({
       const query = searchQuery.toLowerCase().trim();
       result = result.filter(
         (m) =>
+          getMedicineDisplayName(m).toLowerCase().includes(query) ||
           m.genericName.toLowerCase().includes(query) ||
-          (m.brandName && m.brandName.toLowerCase().includes(query)) ||
           (m.group?.name || "").toLowerCase().includes(query),
       );
     }
@@ -134,7 +138,7 @@ export const MedicineSearch: React.FC<MedicineSearchProps> = ({
 
   const handleSelectMedicine = (medicine: Medicine) => {
     onChange(medicine);
-    setSearchQuery(medicine.genericName);
+    setSearchQuery(getMedicineDisplayName(medicine));
     setIsOpen(false);
   };
 
@@ -394,7 +398,7 @@ export const MedicineSearch: React.FC<MedicineSearchProps> = ({
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-2">
                             <p className="text-sm font-semibold text-gray-900 truncate">
-                              {medicine.genericName}
+                              {getMedicineDisplayName(medicine)}
                             </p>
                             {medicine.strength && (
                               <span className="text-xs text-gray-500">
@@ -402,6 +406,11 @@ export const MedicineSearch: React.FC<MedicineSearchProps> = ({
                               </span>
                             )}
                           </div>
+                          {getMedicineGenericSubtitle(medicine) && (
+                            <p className="text-xs text-gray-500 mt-0.5">
+                              Generic: {getMedicineGenericSubtitle(medicine)}
+                            </p>
+                          )}
                           <div className="flex items-center gap-2 mt-0.5">
                             <span className="text-xs text-gray-500">
                               {medicine.group?.name || "Unknown Group"}

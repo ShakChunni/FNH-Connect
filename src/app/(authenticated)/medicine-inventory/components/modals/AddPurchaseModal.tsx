@@ -42,6 +42,7 @@ import {
 import { useUIStore } from "../../stores";
 import { CompanySearch, MedicineSearch } from "../shared";
 import type { MedicineCompany, Medicine } from "../../types";
+import { getMedicineDisplayName } from "../../utils/medicineDisplay";
 import CustomCalendar from "@/components/form-sections/Fields/CustomCalendar";
 import { DropdownPortal } from "@/components/ui/DropdownPortal";
 
@@ -210,7 +211,7 @@ const AddPurchaseModal: React.FC<AddPurchaseModalProps> = ({
       if (medicine) {
         setFormData({
           medicineId: medicine.id,
-          medicineName: medicine.genericName,
+          medicineName: getMedicineDisplayName(medicine),
           medicineGroupName: medicine.group?.name || "Unknown Group",
         });
       } else {
@@ -368,15 +369,14 @@ const AddPurchaseModal: React.FC<AddPurchaseModalProps> = ({
                     {/* Medicine Search */}
                     <div className="md:col-span-2">
                       <label className="block text-xs font-semibold text-gray-700 mb-2">
-                        Medicine (Generic Name){" "}
-                        <span className="text-red-500">*</span>
+                        Medicine Name <span className="text-red-500">*</span>
                       </label>
                       <MedicineSearch
                         value={formData.medicineId}
                         displayValue={formData.medicineName}
                         onChange={handleMedicineChange}
                         onAddNew={handleAddNewMedicine}
-                        placeholder="Search medicine by name..."
+                        placeholder="Search medicine name..."
                         showStock={true}
                       />
                     </div>

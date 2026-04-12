@@ -73,6 +73,27 @@ export interface InventoryActivityFilters {
   limit?: number;
 }
 
+const normalizeText = (value?: string | null) => value?.trim() || "";
+
+const getMedicineDisplayName = (medicine: {
+  genericName: string;
+  brandName?: string | null;
+}) => normalizeText(medicine.brandName) || medicine.genericName;
+
+const getMedicineDisplayLabel = (medicine: {
+  genericName: string;
+  brandName?: string | null;
+}) => {
+  const medicineName = getMedicineDisplayName(medicine);
+  const genericName = medicine.genericName.trim();
+
+  if (medicineName.toLowerCase() === genericName.toLowerCase()) {
+    return medicineName;
+  }
+
+  return `${medicineName} (${genericName})`;
+};
+
 // ═══════════════════════════════════════════════════════════════
 // STATS & DASHBOARD
 // ═══════════════════════════════════════════════════════════════
@@ -443,8 +464,8 @@ export async function getMedicines(filters: MedicineFilters) {
     ...(filters.search
       ? {
           OR: [
-            { genericName: { contains: filters.search, mode: "insensitive" } },
             { brandName: { contains: filters.search, mode: "insensitive" } },
+            { genericName: { contains: filters.search, mode: "insensitive" } },
           ],
         }
       : {}),
@@ -480,7 +501,7 @@ export async function getMedicines(filters: MedicineFilters) {
           },
         },
       },
-      orderBy: [{ genericName: "asc" }],
+      orderBy: [{ brandName: "asc" }, { genericName: "asc" }],
       skip,
       take: limit,
     }),
@@ -505,13 +526,24 @@ export async function getMedicines(filters: MedicineFilters) {
 
 export async function createMedicine(data: {
   genericName: string;
-  brandName?: string;
+  brandName: string;
   groupId: number;
   strength?: string;
   dosageForm?: string;
   defaultSalePrice?: number;
   lowStockThreshold?: number;
 }) {
+  const normalizedMedicineName = normalizeText(data.brandName);
+  const normalizedGenericName = normalizeText(data.genericName);
+
+  if (!normalizedMedicineName) {
+    throw new Error("Medicine name is required");
+  }
+
+  if (!normalizedGenericName) {
+    throw new Error("Generic name is required");
+  }
+
   // Verify group exists
   const group = await prisma.medicineGroup.findUnique({
     where: { id: data.groupId },
@@ -524,22 +556,27 @@ export async function createMedicine(data: {
   // Check for duplicate
   const existing = await prisma.medicine.findFirst({
     where: {
-      genericName: data.genericName,
+      brandName: {
+        equals: normalizedMedicineName,
+        mode: "insensitive",
+      },
       groupId: data.groupId,
     },
   });
 
   if (existing) {
-    throw new Error("A medicine with this name already exists in this group");
+    throw new Error(
+      "A medicine with this medicine name already exists in this group",
+    );
   }
 
   return prisma.medicine.create({
     data: {
-      genericName: data.genericName,
-      brandName: data.brandName,
+      genericName: normalizedGenericName,
+      brandName: normalizedMedicineName,
       groupId: data.groupId,
-      strength: data.strength,
-      dosageForm: data.dosageForm,
+      strength: normalizeText(data.strength) || null,
+      dosageForm: normalizeText(data.dosageForm) || null,
       defaultSalePrice: data.defaultSalePrice || 0,
       lowStockThreshold: data.lowStockThreshold || 10,
       currentStock: 0,
@@ -569,7 +606,7 @@ export async function updateMedicine(
   medicineId: number,
   data: {
     genericName: string;
-    brandName?: string;
+    brandName: string;
     groupId: number;
     strength?: string;
     dosageForm?: string;
@@ -577,6 +614,17 @@ export async function updateMedicine(
     lowStockThreshold?: number;
   },
 ) {
+  const normalizedMedicineName = normalizeText(data.brandName);
+  const normalizedGenericName = normalizeText(data.genericName);
+
+  if (!normalizedMedicineName) {
+    throw new Error("Medicine name is required");
+  }
+
+  if (!normalizedGenericName) {
+    throw new Error("Generic name is required");
+  }
+
   const existingMedicine = await prisma.medicine.findUnique({
     where: { id: medicineId },
   });
@@ -596,23 +644,28 @@ export async function updateMedicine(
   const duplicate = await prisma.medicine.findFirst({
     where: {
       id: { not: medicineId },
-      genericName: data.genericName,
+      brandName: {
+        equals: normalizedMedicineName,
+        mode: "insensitive",
+      },
       groupId: data.groupId,
     },
   });
 
   if (duplicate) {
-    throw new Error("A medicine with this name already exists in this group");
+    throw new Error(
+      "A medicine with this medicine name already exists in this group",
+    );
   }
 
   return prisma.medicine.update({
     where: { id: medicineId },
     data: {
-      genericName: data.genericName,
-      brandName: data.brandName || null,
+      genericName: normalizedGenericName,
+      brandName: normalizedMedicineName,
       groupId: data.groupId,
-      strength: data.strength || null,
-      dosageForm: data.dosageForm || null,
+      strength: normalizeText(data.strength) || null,
+      dosageForm: normalizeText(data.dosageForm) || null,
       defaultSalePrice: data.defaultSalePrice || 0,
       lowStockThreshold: data.lowStockThreshold ?? 10,
     },
@@ -652,6 +705,11 @@ export async function getPurchases(filters: PurchaseFilters) {
           OR: [
             {
               invoiceNumber: { contains: filters.search, mode: "insensitive" },
+            },
+            {
+              medicine: {
+                brandName: { contains: filters.search, mode: "insensitive" },
+              },
             },
             {
               medicine: {
@@ -831,7 +889,7 @@ export async function createPurchase(
       data: {
         userId,
         action: "CREATE",
-        description: `Purchased ${data.quantity} units of ${medicine.genericName} from ${company.name}. Invoice: ${data.invoiceNumber}`,
+        description: `Purchased ${data.quantity} units of ${getMedicineDisplayLabel(medicine)} from ${company.name}. Invoice: ${data.invoiceNumber}`,
         entityType: "MedicinePurchase",
         entityId: purchase.id,
         timestamp: new Date(),
@@ -916,6 +974,11 @@ export async function getSales(filters: SaleFilters) {
     ...(filters.search
       ? {
           OR: [
+            {
+              medicine: {
+                brandName: { contains: filters.search, mode: "insensitive" },
+              },
+            },
             {
               medicine: {
                 genericName: { contains: filters.search, mode: "insensitive" },
@@ -1190,7 +1253,7 @@ export async function createSale(
       data: {
         userId,
         action: "CREATE",
-        description: `Sold ${data.quantity} units of ${medicine.genericName} to ${patient.fullName}. Amount: BDT ${overallTotalAmount}${saleRecords.length > 1 ? ` (across ${saleRecords.length} batches)` : ""}`,
+        description: `Sold ${data.quantity} units of ${getMedicineDisplayLabel(medicine)} to ${patient.fullName}. Amount: BDT ${overallTotalAmount}${saleRecords.length > 1 ? ` (across ${saleRecords.length} batches)` : ""}`,
         entityType: "MedicineSale",
         entityId: primarySale.id,
         timestamp: new Date(),
@@ -1351,6 +1414,7 @@ export async function getInventoryActivity(filters: InventoryActivityFilters) {
     purchaseConditions.push(
       Prisma.sql`(
         mp."invoiceNumber" ILIKE ${likeSearch}
+        OR m."brandName" ILIKE ${likeSearch}
         OR m."genericName" ILIKE ${likeSearch}
         OR mc."name" ILIKE ${likeSearch}
       )`,
@@ -1368,6 +1432,8 @@ export async function getInventoryActivity(filters: InventoryActivityFilters) {
     const likeSearch = `%${searchTerm}%`;
     saleConditions.push(
       Prisma.sql`(
+        m."brandName" ILIKE ${likeSearch}
+        OR
         m."genericName" ILIKE ${likeSearch}
         OR p."fullName" ILIKE ${likeSearch}
         OR mc."name" ILIKE ${likeSearch}
@@ -1428,8 +1494,8 @@ export async function getInventoryActivity(filters: InventoryActivityFilters) {
           CONCAT('purchase-', mp.id::text) AS id,
           'purchase'::text AS type,
           mp."purchaseDate" AS date,
-          m."genericName" AS "medicineName",
-          m."brandName" AS "medicineBrand",
+          COALESCE(NULLIF(m."brandName", ''), m."genericName") AS "medicineName",
+          m."genericName" AS "medicineBrand",
           COALESCE(mg."name", 'Unknown Group') AS "groupName",
           mp."quantity" AS quantity,
           mp."unitPrice" AS "unitPrice",
@@ -1450,8 +1516,8 @@ export async function getInventoryActivity(filters: InventoryActivityFilters) {
           CONCAT('sale-', ms.id::text) AS id,
           'sale'::text AS type,
           ms."saleDate" AS date,
-          m."genericName" AS "medicineName",
-          m."brandName" AS "medicineBrand",
+          COALESCE(NULLIF(m."brandName", ''), m."genericName") AS "medicineName",
+          m."genericName" AS "medicineBrand",
           COALESCE(mg."name", 'Unknown Group') AS "groupName",
           ms."quantity" AS quantity,
           ms."unitPrice" AS "unitPrice",
@@ -1510,6 +1576,7 @@ export function transformMedicineForResponse(medicine: {
 }) {
   return {
     id: medicine.id,
+    medicineName: getMedicineDisplayName(medicine),
     genericName: medicine.genericName,
     brandName: medicine.brandName,
     strength: medicine.strength,

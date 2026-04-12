@@ -73,6 +73,16 @@ const ActivityTable: React.FC<ActivityTableProps> = ({
     return new Intl.NumberFormat("en-BD").format(num);
   };
 
+  const getGenericSubtitle = (
+    medicineName: string,
+    genericName?: string | null,
+  ) => {
+    if (!genericName) return null;
+    return medicineName.toLowerCase() === genericName.toLowerCase()
+      ? null
+      : genericName;
+  };
+
   if (isLoading) {
     return (
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
@@ -197,9 +207,16 @@ const ActivityTable: React.FC<ActivityTableProps> = ({
                     <p className="text-sm font-bold text-gray-900">
                       {record.medicineName}
                     </p>
-                    {record.medicineBrand && (
+                    {getGenericSubtitle(
+                      record.medicineName,
+                      record.medicineBrand,
+                    ) && (
                       <p className="text-xs text-gray-500">
-                        {record.medicineBrand}
+                        Generic:{" "}
+                        {getGenericSubtitle(
+                          record.medicineName,
+                          record.medicineBrand,
+                        )}
                       </p>
                     )}
                   </td>
@@ -286,6 +303,12 @@ const ActivityTable: React.FC<ActivityTableProps> = ({
               <p className="text-sm font-bold text-gray-900">
                 {record.medicineName}
               </p>
+              {getGenericSubtitle(record.medicineName, record.medicineBrand) && (
+                <p className="text-xs text-gray-500">
+                  Generic:{" "}
+                  {getGenericSubtitle(record.medicineName, record.medicineBrand)}
+                </p>
+              )}
               <div className="flex flex-wrap gap-3 text-xs text-gray-600">
                 <span>
                   <span className="font-semibold text-gray-500">

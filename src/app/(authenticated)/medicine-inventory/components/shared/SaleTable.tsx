@@ -10,6 +10,10 @@ import { ShoppingCart } from "lucide-react";
 import { Pagination } from "@/components/pagination/Pagination";
 import { useFetchSales } from "../../hooks";
 import { useSaleFilterStore } from "../../stores";
+import {
+  getMedicineDisplayName,
+  getMedicineGenericSubtitle,
+} from "../../utils/medicineDisplay";
 
 const SaleTable: React.FC = () => {
   const { filters, setFilter } = useSaleFilterStore();
@@ -174,11 +178,11 @@ const SaleTable: React.FC = () => {
                   </td>
                   <td className="px-6 py-3.5">
                     <p className="text-sm font-medium text-gray-900">
-                      {sale.medicine.genericName}
+                      {getMedicineDisplayName(sale.medicine)}
                     </p>
-                    {sale.medicine.brandName && (
+                    {getMedicineGenericSubtitle(sale.medicine) && (
                       <p className="text-xs text-gray-500">
-                        {sale.medicine.brandName}
+                        Generic: {getMedicineGenericSubtitle(sale.medicine)}
                       </p>
                     )}
                   </td>
@@ -220,8 +224,13 @@ const SaleTable: React.FC = () => {
                     {sale.patient?.fullName || "Unknown Patient"}
                   </p>
                   <p className="text-xs text-gray-500">
-                    {sale.medicine.genericName}
+                    {getMedicineDisplayName(sale.medicine)}
                   </p>
+                  {getMedicineGenericSubtitle(sale.medicine) && (
+                    <p className="text-xs text-gray-500">
+                      Generic: {getMedicineGenericSubtitle(sale.medicine)}
+                    </p>
+                  )}
                 </div>
                 <span className="text-sm font-bold text-blue-700">
                   {formatCurrency(sale.totalAmount)}
