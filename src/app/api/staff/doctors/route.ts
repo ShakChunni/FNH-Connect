@@ -3,7 +3,7 @@ import { getAuthenticatedUserForAPI } from "@/lib/auth-validation";
 import { prisma } from "@/lib/prisma";
 
 // ═══════════════════════════════════════════════════════════════
-// GET /api/staff/doctors - Get all active doctors
+// GET /api/staff/doctors - Get active doctors + self-referred option
 // ═══════════════════════════════════════════════════════════════
 
 // Helper function to determine doctor rank from their name prefix
@@ -45,11 +45,14 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Fetch only active staff members with Doctor role
+    // Fetch active doctors plus optional "Self" staff entry
     const doctors = await prisma.staff.findMany({
       where: {
         isActive: true,
-        role: { equals: "Doctor", mode: "insensitive" },
+        OR: [
+          { role: { equals: "Doctor", mode: "insensitive" } },
+          { role: { equals: "Self", mode: "insensitive" } },
+        ],
       },
       select: {
         id: true,
@@ -59,8 +62,15 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    // Sort by rank (Prof > Associate > Asst > Dr), then alphabetically
+    // Sort by role first (Self, then doctors by rank), then alphabetically
     const sortedDoctors = doctors.sort((a, b) => {
+      const roleA = a.role.toLowerCase();
+      const roleB = b.role.toLowerCase();
+
+      const isSelfA = roleA === "self";
+      const isSelfB = roleB === "self";
+      if (isSelfA !== isSelfB) return isSelfA ? -1 : 1;
+
       // Sort by rank
       const rankA = getDoctorRankOrder(a.fullName);
       const rankB = getDoctorRankOrder(b.fullName);

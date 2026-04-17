@@ -325,7 +325,7 @@ export const PATHOLOGY_TESTS: PathologyTestItem[] = [
     code: "FT4",
     name: "Free Thyroxine (FT4)",
     category: "Thyroid Function",
-    price: 1000,
+    price: 1200,
   },
   {
     code: "T3-T4-TSH",
