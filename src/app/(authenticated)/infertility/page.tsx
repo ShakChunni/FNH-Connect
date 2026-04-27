@@ -47,10 +47,9 @@ const InfertilityManagement = React.memo(() => {
 
   // Investigation Store selectors
   const investigationFilters = useInfertilityTestFilterValues();
-  const investigationActions = useInfertilityTestFilterStore((state) => ({
-    setPage: state.setPage,
-    setLimit: state.setLimit,
-  }));
+  const setInvestigationPage = useInfertilityTestFilterStore(
+    (state) => state.setPage
+  );
 
   // Patient Filters for hook
   const patientHookFilters: InfertilityFilters = useMemo(
@@ -94,10 +93,10 @@ const InfertilityManagement = React.memo(() => {
       if (activeTab === "patients") {
         patientFilterActions.setPage(page);
       } else {
-        investigationActions.setPage(page);
+        setInvestigationPage(page);
       }
     },
-    [activeTab, patientFilterActions, investigationActions]
+    [activeTab, patientFilterActions, setInvestigationPage]
   );
 
   // Normalize patient data
