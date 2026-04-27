@@ -37,6 +37,7 @@ model Patient {
   pathologyTests     PathologyTest[]
   account            PatientAccount? // Central account for all charges/payments
   infertilityRecords InfertilityPatient[] // Infertility department records
+  infertilityTests   InfertilityTest[]
   hospital           Hospital?            @relation(fields: [hospitalId], references: [id])
   hospitalId         Int?
   medicineSales      MedicineSale[] // Medicine sales to this patient
@@ -83,6 +84,8 @@ model Staff {
   // Infertility relations
   infertilityCreated  InfertilityPatient[] @relation("InfertilityCreatedBy")
   infertilityModified InfertilityPatient[] @relation("InfertilityModifiedBy")
+  infertilityTestOrdered  InfertilityTest[] @relation("InfertilityTestOrderedBy")
+  infertilityTestDone     InfertilityTest[] @relation("InfertilityTestDoneBy")
 
   // Login credentials
   user User?
@@ -171,8 +174,9 @@ model Admission {
   patient        Patient         @relation(fields: [patientId], references: [id])
   department     Department      @relation(fields: [departmentId], references: [id])
   doctor         Staff           @relation("AdmittingDoctor", fields: [doctorId], references: [id])
-  pathologyTests PathologyTest[]
-  serviceCharges ServiceCharge[] // Link to new payment system
+  pathologyTests    PathologyTest[]
+  infertilityTests  InfertilityTest[]
+  serviceCharges    ServiceCharge[] // Link to new payment system
 
   @@index([patientId])
   @@index([departmentId])
@@ -526,12 +530,63 @@ model InfertilityPatient {
   hospital        Hospital @relation(fields: [hospitalId], references: [id])
   createdByStaff  Staff    @relation("InfertilityCreatedBy", fields: [createdBy], references: [id])
   modifiedByStaff Staff?   @relation("InfertilityModifiedBy", fields: [lastModifiedBy], references: [id])
+  tests           InfertilityTest[]
 
   @@unique([patientId, hospitalId]) // One infertility record per patient per hospital
   @@index([patientId])
   @@index([hospitalId])
   @@index([createdAt])
   @@index([status])
+}
+
+model InfertilityTest {
+  id                  Int       @id @default(autoincrement())
+  infertilityPatientId Int      // Links to InfertilityPatient
+  patientId           Int       // Links to Patient (denormalized for queries)
+  testNumber          String    @unique // Format: INFT-YY-XXXXX
+  
+  // Optional admission link — fees only apply when admitted
+  admissionId         Int?
+
+  // Doctor references
+  orderedById         Int       // Doctor who ordered
+  doneById            Int?      // Staff who performed
+
+  // Test info
+  testDate            DateTime  @default(now())
+  reportDate          DateTime?
+  testCategory        String    // Same categories as pathology
+  testResults         Json?     // { tests: ["CBC", "RBS", ...] }
+  remarks             String?
+  isCompleted         Boolean   @default(false)
+
+  // Financial — independent from pathology
+  testCharge          Decimal   @default(0)
+  discountType        String?   // "percentage" or "value"
+  discountValue       Decimal?
+  discountAmount      Decimal?
+  grandTotal          Decimal   @default(0)
+  paidAmount          Decimal   @default(0)
+  dueAmount           Decimal   @default(0)
+
+  // Tracking
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+  createdBy           Int
+  lastModifiedBy      Int
+
+  // Relations
+  infertilityPatient  InfertilityPatient @relation(fields: [infertilityPatientId], references: [id])
+  patient             Patient            @relation(fields: [patientId], references: [id])
+  admission           Admission?         @relation(fields: [admissionId], references: [id])
+  orderedBy           Staff              @relation("InfertilityTestOrderedBy", fields: [orderedById], references: [id])
+  doneBy              Staff?             @relation("InfertilityTestDoneBy", fields: [doneById], references: [id])
+
+  @@index([infertilityPatientId])
+  @@index([patientId])
+  @@index([orderedById])
+  @@index([testDate])
+  @@index([isCompleted])
 }
 
 // Security & Monitoring Models

@@ -1,159 +1,128 @@
 "use client";
 
-import React, { useState, useCallback } from "react";
-import { Search } from "lucide-react";
+import React, { useState, useCallback, useMemo } from "react";
+import { Search, X, Loader2 } from "lucide-react";
 import { useDebounce } from "@/hooks/useDebounce";
 import { useInfertilityFilterStore } from "../stores/filterStore";
-import { ReportTriggerButton, DateRangePill } from "./filter";
+import { useInfertilityTestFilterStore } from "../stores/testFilterStore";
+import { ReportTriggerButton, DateRangePill, FilterTriggerButton } from "./filter";
 
 interface InfertilitySearchProps {
   disabled?: boolean;
   recordCount?: number;
+  activeTab: "patients" | "investigations";
 }
 
 /**
  * Infertility Search Component
- * Search bar with date range pill and report pill buttons
- * Mobile-optimized for screens < sm
+ * Adaptive search bar that switches between Patient and Investigation stores
  */
 export const InfertilitySearch: React.FC<InfertilitySearchProps> = ({
   disabled = false,
   recordCount = 0,
+  activeTab,
 }) => {
   const [searchValue, setSearchValue] = useState("");
   const [isFocused, setIsFocused] = useState(false);
 
-  // Get filter state from store
-  const search = useInfertilityFilterStore((state) => state.search);
-  const setSearch = useInfertilityFilterStore((state) => state.setSearch);
+  // Patient Store
+  const patientSearch = useInfertilityFilterStore((state) => state.search);
+  const setPatientSearch = useInfertilityFilterStore((state) => state.setSearch);
+
+  // Investigation Store
+  const investigationSearch = useInfertilityTestFilterStore((state) => state.filters.search);
+  const setInvestigationSearch = useInfertilityTestFilterStore((state) => state.setSearch);
+
+  // Determine current search value from stores
+  const currentStoreSearch = activeTab === "patients" ? patientSearch : investigationSearch;
 
   // Debounce search value
-  const debouncedSearch = useDebounce(searchValue, 300);
+  const debouncedSearch = useDebounce(searchValue, 400);
 
-  // Effect to sync debounced search with store
+  // Sync debounced search to the active store
   React.useEffect(() => {
-    setSearch(debouncedSearch);
-  }, [debouncedSearch, setSearch]);
+    if (activeTab === "patients") {
+      setPatientSearch(debouncedSearch);
+    } else {
+      setInvestigationSearch(debouncedSearch);
+    }
+  }, [debouncedSearch, activeTab, setPatientSearch, setInvestigationSearch]);
 
-  // Sync local state when store's search is cleared externally
+  // Sync local input with store if changed externally (like on reset)
   React.useEffect(() => {
-    if (search === "" && searchValue !== "") {
+    if (currentStoreSearch === "" && searchValue !== "") {
       setSearchValue("");
     }
-  }, [search]);
+  }, [currentStoreSearch]);
 
-  const handleSearchChange = useCallback((value: string) => {
-    setSearchValue(value);
-  }, []);
+  const handleClear = () => {
+    setSearchValue("");
+    if (activeTab === "patients") setPatientSearch("");
+    else setInvestigationSearch("");
+  };
 
   return (
-    <div
-      className="w-full max-w-4xl mx-auto"
-      style={{ pointerEvents: disabled ? "none" : "auto" }}
-    >
-      {/* Mobile Layout: Stacked */}
-      <div className="flex flex-col gap-3 sm:hidden">
-        {/* Search Bar - Full Width on Mobile */}
-        <div
+    <div className="w-full max-w-5xl mx-auto space-y-4">
+      <div className="flex flex-col sm:flex-row items-center gap-3">
+        {/* Search Input Container */}
+        <div 
           className={`
-            flex items-center w-full
-            bg-white border rounded-full 
-            h-11
-            transition-all duration-300 ease-out
-            ${
-              isFocused
-                ? "border-fnh-blue shadow-[0_0_0_3px_rgba(59,130,246,0.12),0_0_16px_rgba(59,130,246,0.08)] ring-1 ring-fnh-blue/20"
-                : "border-gray-200 shadow-sm hover:shadow-md hover:border-gray-300"
+            relative flex-1 w-full h-14 bg-white border rounded-2xl
+            transition-all duration-300 ease-out shadow-sm
+            ${isFocused 
+              ? "border-fnh-blue ring-4 ring-fnh-blue/5 shadow-md" 
+              : "border-slate-200 hover:border-slate-300"
             }
+            ${disabled ? "opacity-60 pointer-events-none" : ""}
           `}
         >
-          <div className="flex-1 min-w-0 h-full">
-            <div className="relative flex items-center h-full">
-              <Search
-                className={`absolute left-3 w-4 h-4 pointer-events-none transition-colors duration-200 ${
-                  isFocused ? "text-fnh-blue" : "text-gray-400"
-                }`}
-              />
-              <input
-                type="text"
-                value={searchValue}
-                onChange={(e) => handleSearchChange(e.target.value)}
-                onFocus={() => setIsFocused(true)}
-                onBlur={() => setIsFocused(false)}
-                placeholder="Search patient, phone..."
-                className="w-full h-full pl-10 pr-4 bg-transparent border-0 
-                  focus:ring-0 focus:outline-none 
-                  text-gray-700 text-xs 
-                  placeholder:text-gray-400 placeholder:text-xs
-                  rounded-full"
-              />
-            </div>
+          <div className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400">
+            <Search className={`w-5 h-5 transition-colors ${isFocused ? "text-fnh-blue" : ""}`} />
           </div>
+          
+          <input
+            type="text"
+            value={searchValue}
+            onChange={(e) => setSearchValue(e.target.value)}
+            onFocus={() => setIsFocused(true)}
+            onBlur={() => setIsFocused(false)}
+            placeholder={
+              activeTab === "patients" 
+                ? "Search patients by name, phone or email..." 
+                : "Search investigations by test number, patient or phone..."
+            }
+            className="w-full h-full pl-14 pr-12 bg-transparent border-0 focus:ring-0 text-slate-700 font-medium placeholder:text-slate-400 placeholder:font-normal"
+            disabled={disabled}
+          />
+
+          {searchValue && (
+            <button
+              onClick={handleClear}
+              className="absolute right-4 top-1/2 -translate-y-1/2 p-1.5 rounded-full hover:bg-slate-100 text-slate-400 transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
         </div>
 
-        {/* Date & Report Buttons - 50/50 on Mobile */}
-        <div className="flex gap-2 w-full">
-          <div className="flex-1 h-11">
+        {/* Buttons Group */}
+        <div className="flex items-center gap-2 h-14 w-full sm:w-auto">
+          {activeTab === "investigations" && (
+            <div className="h-full">
+              <FilterTriggerButton disabled={disabled} />
+            </div>
+          )}
+          
+          <div className="h-full">
             <DateRangePill disabled={disabled} />
           </div>
-          <div className="flex-1 h-11">
-            <ReportTriggerButton
-              disabled={disabled}
-              recordCount={recordCount}
+
+          <div className="h-full">
+            <ReportTriggerButton 
+              disabled={disabled} 
+              recordCount={recordCount} 
             />
           </div>
-        </div>
-      </div>
-
-      {/* Desktop Layout: Inline */}
-      <div className="hidden sm:flex items-center gap-3">
-        {/* Main Search Bar Container */}
-        <div
-          className={`
-            flex items-center flex-1 min-w-0
-            bg-white border rounded-full 
-            h-14
-            transition-all duration-300 ease-out
-            ${
-              isFocused
-                ? "border-fnh-blue shadow-[0_0_0_3px_rgba(59,130,246,0.12),0_0_16px_rgba(59,130,246,0.08)] ring-1 ring-fnh-blue/20"
-                : "border-gray-200 shadow-sm hover:shadow-md hover:border-gray-300"
-            }
-          `}
-        >
-          {/* Search Input */}
-          <div className="flex-1 min-w-0 h-full">
-            <div className="relative flex items-center h-full">
-              <Search
-                className={`absolute left-5 w-5 h-5 pointer-events-none transition-colors duration-200 ${
-                  isFocused ? "text-fnh-blue" : "text-gray-400"
-                }`}
-              />
-              <input
-                type="text"
-                value={searchValue}
-                onChange={(e) => handleSearchChange(e.target.value)}
-                onFocus={() => setIsFocused(true)}
-                onBlur={() => setIsFocused(false)}
-                placeholder="Search by patient name, phone number, or hospital..."
-                className="w-full h-full pl-14 pr-6 bg-transparent border-0 
-                  focus:ring-0 focus:outline-none 
-                  text-gray-700 text-base 
-                  placeholder:text-gray-400 placeholder:text-sm
-                  rounded-full"
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Date Range Pill */}
-        <div className="shrink-0 h-14 flex items-center">
-          <DateRangePill disabled={disabled} />
-        </div>
-
-        {/* Report Trigger Button */}
-        <div className="shrink-0 h-14 flex items-center">
-          <ReportTriggerButton disabled={disabled} recordCount={recordCount} />
         </div>
       </div>
     </div>

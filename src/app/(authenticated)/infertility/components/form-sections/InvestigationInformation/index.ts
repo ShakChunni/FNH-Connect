@@ -1,0 +1,1 @@
+export { default as InvestigationInformation } from "./InvestigationInformation";

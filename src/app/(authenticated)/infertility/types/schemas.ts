@@ -143,3 +143,31 @@ export const createHospitalSchema = z.object({
 });
 
 export type CreateHospitalInput = z.infer<typeof createHospitalSchema>;
+
+export const infertilityTestFiltersSchema = z.object({
+  search: z.string().optional(),
+  startDate: z.string().optional(),
+  endDate: z.string().optional(),
+  status: z.enum(["Completed", "Pending", "All"]).optional(),
+  orderedById: z.coerce.number().optional(),
+  doneById: z.coerce.number().optional(),
+  testNames: z.array(z.string()).optional(),
+  page: z.coerce.number().min(1).default(1),
+  limit: z.coerce.number().min(1).max(100).default(15),
+});
+
+export const createInfertilityTestSchema = z.object({
+  infertilityPatientId: z.number(),
+  selectedTests: z.array(z.string()).min(1),
+  testCharge: z.number().min(0),
+  discountType: z.enum(["percentage", "value"]).nullable().optional(),
+  discountValue: z.number().nullable().optional(),
+  discountAmount: z.number().default(0),
+  grandTotal: z.number().min(0),
+  paidAmount: z.number().min(0),
+  dueAmount: z.number().min(0),
+  orderedById: z.number(),
+  doneById: z.number().nullable().optional(),
+  remarks: z.string().optional(),
+  testDate: z.string().optional(),
+});

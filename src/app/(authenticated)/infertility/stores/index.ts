@@ -38,6 +38,17 @@ export {
   useFilterValues,
 } from "./filterStore";
 
+export {
+  useInfertilityTestFilterStore,
+  useInfertilityTestFilterValues,
+} from "./testFilterStore";
+
+export {
+  useInfertilityTestFormStore,
+  useInfertilityTestInfo,
+  useFormActions as useInfertilityTestFormActions
+} from "./testFormStore";
+
 // ═══════════════════════════════════════════════════════════════
 // BACKWARD COMPATIBILITY EXPORTS
 // These maintain the old API while using the new refactored stores
@@ -158,3 +169,4 @@ export const useInfertilityActions = () => {
     [formActions, uiActions, filterActions]
   );
 };
+

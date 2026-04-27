@@ -10,6 +10,7 @@ import {
   getTwoDigitYear,
 } from "@/lib/registrationNumber";
 import { SessionDeviceInfo } from "@/types/auth";
+import { shiftService } from "./shiftService";
 
 // ═══════════════════════════════════════════════════════════════
 // TYPES
@@ -622,4 +623,450 @@ export async function deleteInfertilityPatient(
       },
     });
   });
+}
+
+
+// ═══════════════════════════════════════════════════════════════
+// INFERTILITY TEST SERVICES
+// ═══════════════════════════════════════════════════════════════
+
+export interface InfertilityTestFilters {
+  search?: string;
+  startDate?: string;
+  endDate?: string;
+  status?: "Completed" | "Pending" | "All";
+  orderedById?: number;
+  doneById?: number;
+  testNames?: string[];
+  infertilityPatientId?: number;
+  page?: number;
+  limit?: number;
+}
+
+export interface InfertilityTestData {
+  infertilityPatientId: number;
+  selectedTests: string[];
+  testCharge: number;
+  discountType?: "percentage" | "value" | null;
+  discountValue?: number | null;
+  discountAmount?: number;
+  grandTotal: number;
+  paidAmount: number;
+  dueAmount: number;
+  orderedById: number;
+  doneById?: number | null;
+  remarks?: string;
+  testDate?: string;
+  isCompleted?: boolean;
+}
+
+export async function getInfertilityTests(filters: InfertilityTestFilters) {
+  const where: Prisma.InfertilityTestWhereInput = {};
+
+  if (filters.infertilityPatientId) {
+    where.infertilityPatientId = filters.infertilityPatientId;
+  }
+
+  // Search filter
+  if (filters.search) {
+    if (!where.AND) where.AND = [];
+    (where.AND as Prisma.InfertilityTestWhereInput[]).push({
+      OR: [
+        {
+          patient: {
+            OR: [
+              { fullName: { contains: filters.search, mode: "insensitive" } },
+              { phoneNumber: { contains: filters.search } },
+            ],
+          },
+        },
+        { testNumber: { contains: filters.search } },
+      ],
+    });
+  }
+
+  // Test names filter (JSON check)
+  if (filters.testNames && filters.testNames.length > 0) {
+    if (!where.AND) where.AND = [];
+    (where.AND as Prisma.InfertilityTestWhereInput[]).push({
+      OR: filters.testNames.map((name) => ({
+        testResults: {
+          path: ["tests"],
+          array_contains: [name],
+        },
+      })),
+    });
+  }
+
+  // Date range filter
+  if (filters.startDate || filters.endDate) {
+    where.testDate = {};
+    if (filters.startDate) {
+      where.testDate.gte = new Date(filters.startDate);
+    }
+    if (filters.endDate) {
+      where.testDate.lte = new Date(filters.endDate);
+    }
+  }
+
+  // Completion status filter
+  if (filters.status && filters.status !== "All") {
+    where.isCompleted = filters.status === "Completed";
+  }
+
+  // Doctor/Staff filters
+  if (filters.orderedById) {
+    where.orderedById = filters.orderedById;
+  }
+  if (filters.doneById) {
+    where.doneById = filters.doneById;
+  }
+
+  // Pagination defaults
+  const page = filters.page ?? 1;
+  const limit = filters.limit ?? 15;
+  const skip = (page - 1) * limit;
+
+  // Execute count and data queries in parallel
+  const [total, data] = await Promise.all([
+    prisma.infertilityTest.count({ where }),
+    prisma.infertilityTest.findMany({
+      where,
+      include: {
+        patient: {
+          select: {
+            id: true,
+            fullName: true,
+            gender: true,
+            dateOfBirth: true,
+            phoneNumber: true,
+          },
+        },
+        infertilityPatient: {
+          select: {
+            id: true,
+            caseNumber: true,
+          },
+        },
+        orderedBy: {
+          select: {
+            id: true,
+            fullName: true,
+          },
+        },
+        doneBy: {
+          select: {
+            id: true,
+            fullName: true,
+          },
+        },
+      },
+      orderBy: {
+        testDate: "desc",
+      },
+      skip,
+      take: limit,
+    }),
+  ]);
+
+  const totalPages = Math.ceil(total / limit);
+
+  return {
+    data,
+    pagination: {
+      total,
+      page,
+      limit,
+      totalPages,
+    },
+  };
+}
+
+export async function getInfertilityTestById(id: number) {
+  return await prisma.infertilityTest.findUnique({
+    where: { id },
+    include: {
+      patient: {
+        select: {
+          id: true,
+          fullName: true,
+          gender: true,
+          dateOfBirth: true,
+          phoneNumber: true,
+        },
+      },
+      infertilityPatient: {
+        select: {
+          id: true,
+          caseNumber: true,
+        },
+      },
+      orderedBy: {
+        select: {
+          id: true,
+          fullName: true,
+        },
+      },
+      doneBy: {
+        select: {
+          id: true,
+          fullName: true,
+        },
+      },
+    },
+  });
+}
+
+export async function createInfertilityTest(
+  testData: InfertilityTestData,
+  staffId: number,
+  userId: number,
+  shiftId: number | null,
+  activityLogContext?: ActivityLogContext,
+) {
+  return await prisma.$transaction(async (tx) => {
+    // 1. Verify infertility patient exists
+    const infertilityPatient = await tx.infertilityPatient.findUnique({
+      where: { id: testData.infertilityPatientId },
+      include: { patient: true },
+    });
+
+    if (!infertilityPatient) {
+      throw new Error("Infertility patient record not found");
+    }
+
+    // 2. Generate test number: INFT-YY-XXXXX
+    const currentYear = getTwoDigitYear();
+    const yearStart = new Date(new Date().getFullYear(), 0, 1);
+    const yearEnd = new Date(new Date().getFullYear() + 1, 0, 1);
+
+    const countThisYear = await tx.infertilityTest.count({
+      where: {
+        testDate: {
+          gte: yearStart,
+          lt: yearEnd,
+        },
+      },
+    });
+
+    const testNumber = formatRegistrationNumber(
+      "INFT",
+      currentYear,
+      countThisYear + 1,
+    );
+
+    // Get Infertility Department ID (fallback to 1 if not explicitly created yet, or find by name)
+    let department = await tx.department.findFirst({
+      where: { OR: [{ name: "Infertility" }, { name: "Gynecology" }] },
+    });
+    if (!department) {
+      department = await tx.department.findFirst({
+        where: { name: "Pathology" },
+      }); // fallback
+    }
+
+    // 3. Create InfertilityTest record
+    const infertilityTest = await tx.infertilityTest.create({
+      data: {
+        infertilityPatientId: infertilityPatient.id,
+        patientId: infertilityPatient.patientId,
+        testNumber,
+        testDate: testData.testDate ? new Date(testData.testDate) : new Date(),
+        testCategory: "Multiple Tests",
+        testResults: {
+          tests: testData.selectedTests,
+        },
+        remarks: testData.remarks,
+        isCompleted: testData.isCompleted || false,
+        testCharge: testData.testCharge,
+        discountType: testData.discountType,
+        discountValue: testData.discountValue,
+        discountAmount: testData.discountAmount,
+        grandTotal: testData.grandTotal,
+        paidAmount: testData.paidAmount,
+        dueAmount: testData.dueAmount,
+        orderedById: testData.orderedById,
+        doneById: testData.doneById,
+        createdBy: staffId,
+        lastModifiedBy: staffId,
+      },
+    });
+
+    // 4. Update or create central patient account
+    let patientAccount = await tx.patientAccount.findUnique({
+      where: { patientId: infertilityPatient.patientId },
+    });
+
+    if (!patientAccount) {
+      patientAccount = await tx.patientAccount.create({
+        data: {
+          patientId: infertilityPatient.patientId,
+          totalCharges: testData.grandTotal,
+          totalPaid: testData.paidAmount,
+          totalDue: testData.dueAmount,
+        },
+      });
+    } else {
+      patientAccount = await tx.patientAccount.update({
+        where: { id: patientAccount.id },
+        data: {
+          totalCharges: { increment: testData.grandTotal },
+          totalPaid: { increment: testData.paidAmount },
+          totalDue: { increment: testData.dueAmount },
+        },
+      });
+    }
+
+    // 5. Create ServiceCharge with serviceType "INFERTILITY_TEST"
+    const serviceCharge = await tx.serviceCharge.create({
+      data: {
+        patientAccountId: patientAccount.id,
+        serviceType: "INFERTILITY_TEST",
+        serviceName: `Infertility Investigation - ${testNumber}`,
+        departmentId: department ? department.id : 1, // Fallback
+        originalAmount: testData.testCharge,
+        discountAmount: testData.discountAmount || 0,
+        finalAmount: testData.grandTotal,
+        createdBy: staffId,
+      },
+    });
+
+    // 6. Handle payments and shadow cash
+    if (testData.paidAmount > 0) {
+      const activeShift = shiftId
+        ? { id: shiftId }
+        : await shiftService.ensureActiveShift(staffId, tx);
+
+      const paymentCount = await tx.payment.count();
+      const receiptNumber = `RCP-${Date.now()}-${paymentCount + 1}`;
+
+      const payment = await tx.payment.create({
+        data: {
+          patientAccountId: patientAccount.id,
+          amount: testData.paidAmount,
+          paymentMethod: "Cash",
+          collectedById: staffId,
+          shiftId: activeShift.id,
+          receiptNumber,
+          notes: `Payment for infertility test ${testNumber}`,
+        },
+      });
+
+      await tx.paymentAllocation.create({
+        data: {
+          paymentId: payment.id,
+          serviceChargeId: serviceCharge.id,
+          allocatedAmount: testData.paidAmount,
+        },
+      });
+
+      await tx.cashMovement.create({
+        data: {
+          shiftId: activeShift.id,
+          amount: testData.paidAmount,
+          movementType: "COLLECTION",
+          description: `Infertility test payment - ${testNumber}`,
+          paymentId: payment.id,
+        },
+      });
+
+      await tx.shift.update({
+        where: { id: activeShift.id },
+        data: {
+          systemCash: { increment: testData.paidAmount },
+          totalCollected: { increment: testData.paidAmount },
+        },
+      });
+    }
+
+    // 7. Log activity
+    await tx.activityLog.create({
+      data: {
+        userId,
+        action: "CREATE",
+        description: `Created infertility test ${testNumber} for ${infertilityPatient.patient.fullName}`,
+        entityType: "InfertilityTest",
+        entityId: infertilityTest.id,
+        timestamp: new Date(),
+        sessionId: activityLogContext?.sessionId,
+        ipAddress: activityLogContext?.deviceInfo?.ipAddress,
+        deviceFingerprint: activityLogContext?.deviceInfo?.deviceFingerprint,
+        readableFingerprint: activityLogContext?.deviceInfo?.readableFingerprint,
+        deviceType: activityLogContext?.deviceInfo?.deviceType,
+        browserName: activityLogContext?.deviceInfo?.browserName,
+        browserVersion: activityLogContext?.deviceInfo?.browserVersion,
+        osType: activityLogContext?.deviceInfo?.osType,
+      },
+    });
+
+    return {
+      infertilityTest: {
+        id: infertilityTest.id,
+        testNumber: infertilityTest.testNumber,
+      },
+      displayId: testNumber,
+    };
+  });
+}
+
+export async function updateInfertilityTest(
+  id: number,
+  testData: Partial<InfertilityTestData>,
+  staffId: number,
+  userId: number,
+  activityLogContext?: ActivityLogContext,
+) {
+  return await prisma.$transaction(async (tx) => {
+    const existingTest = await tx.infertilityTest.findUnique({
+      where: { id },
+      include: { patient: true },
+    });
+
+    if (!existingTest) {
+      throw new Error("Infertility test not found");
+    }
+
+    const dataToUpdate: any = {
+      lastModifiedBy: staffId,
+    };
+
+    if (testData.selectedTests) {
+      dataToUpdate.testResults = { tests: testData.selectedTests };
+    }
+    if (testData.remarks !== undefined) dataToUpdate.remarks = testData.remarks;
+    if (testData.isCompleted !== undefined) dataToUpdate.isCompleted = testData.isCompleted;
+    if (testData.orderedById !== undefined) dataToUpdate.orderedById = testData.orderedById;
+    if (testData.doneById !== undefined) dataToUpdate.doneById = testData.doneById;
+    
+    // For simplicity, we assume financial updates (changing tests after payment) are handled
+    // through a separate process or this just updates the test details.
+    
+    const updatedTest = await tx.infertilityTest.update({
+      where: { id },
+      data: dataToUpdate,
+    });
+
+    await tx.activityLog.create({
+      data: {
+        userId,
+        action: "UPDATE",
+        description: `Updated infertility test ${existingTest.testNumber}`,
+        entityType: "InfertilityTest",
+        entityId: id,
+        timestamp: new Date(),
+        sessionId: activityLogContext?.sessionId,
+        ipAddress: activityLogContext?.deviceInfo?.ipAddress,
+      },
+    });
+
+    return updatedTest;
+  });
+}
+
+export async function getInfertilityTestsForReport(
+  filters: Omit<InfertilityTestFilters, "page" | "limit">
+) {
+  // Same as getInfertilityTests but without pagination
+  const result = await getInfertilityTests({ ...filters, page: 1, limit: 10000 });
+  return result.data;
 }

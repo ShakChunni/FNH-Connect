@@ -44,21 +44,17 @@ export const RECEPTIONIST_ALLOWED_ROUTES = [
   "/general-admission",
   "/pathology",
   "/patient-records",
+  "/infertility",
   "/api/dashboard",
   "/api/general-admission",
   "/api/pathology",
   "/api/patient-records",
+  "/api/infertility",
+  "/api/admin/infertility-cash-tracking",
   "/api/auth", // Auth routes are always allowed
   "/api/staff", // Staff/doctors list for dropdowns
   "/api/hospitals", // Hospitals list for dropdowns
   "/api/patients", // Patient data
-];
-
-// Routes that receptionist-infertility can access (receptionist + infertility)
-export const RECEPTIONIST_INFERTILITY_ALLOWED_ROUTES = [
-  ...RECEPTIONIST_ALLOWED_ROUTES,
-  "/infertility",
-  "/api/infertility",
 ];
 
 // Routes that medicine-pharmacist can access
@@ -201,11 +197,7 @@ export function canReceptionistAccessPath(
   pathname: string,
   role: string,
 ): boolean {
-  const allowedRoutes = isReceptionistInfertilityRole(role)
-    ? RECEPTIONIST_INFERTILITY_ALLOWED_ROUTES
-    : RECEPTIONIST_ALLOWED_ROUTES;
-
-  return allowedRoutes.some(
+  return RECEPTIONIST_ALLOWED_ROUTES.some(
     (route) => pathname === route || pathname.startsWith(route + "/"),
   );
 }

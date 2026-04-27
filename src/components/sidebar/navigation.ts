@@ -14,7 +14,6 @@ import { NavigationItem } from "./types";
 import {
   isAdminRole,
   isReceptionistRole,
-  isReceptionistInfertilityRole,
   isPharmacistRole,
 } from "@/lib/roles";
 
@@ -24,11 +23,6 @@ const RECEPTIONIST_SIDEBAR_ROUTES = [
   "/general-admission",
   "/pathology",
   "/patient-records",
-];
-
-// Receptionist-infertility allowed routes (includes infertility)
-const RECEPTIONIST_INFERTILITY_SIDEBAR_ROUTES = [
-  ...RECEPTIONIST_SIDEBAR_ROUTES,
   "/infertility",
 ];
 
@@ -75,6 +69,12 @@ export const navigationItems: NavigationItem[] = [
     adminOnly: true,
   },
   {
+    label: "Infertility Cash",
+    href: "/admin/infertility-cash-tracking",
+    icon: Wallet,
+    adminOnly: true,
+  },
+  {
     label: "Admin Dashboard",
     href: "/admin-dashboard",
     icon: Shield,
@@ -104,16 +104,7 @@ export function getNavigationItems(userRole?: string): NavigationItem[] {
     return navigationItems.filter((item) => !item.adminOnly);
   }
 
-  // Check if user is a receptionist-infertility - limited navigation + infertility
-  if (isReceptionistInfertilityRole(userRole)) {
-    return navigationItems.filter(
-      (item) =>
-        (item.href === "/patient-records" || !item.adminOnly) &&
-        RECEPTIONIST_INFERTILITY_SIDEBAR_ROUTES.includes(item.href),
-    );
-  }
-
-  // Check if user is a regular receptionist - limited navigation
+  // Check if user is a receptionist (regular or infertility)
   if (isReceptionistRole(userRole)) {
     return navigationItems.filter(
       (item) =>

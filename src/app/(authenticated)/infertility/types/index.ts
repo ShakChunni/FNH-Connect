@@ -360,3 +360,88 @@ export interface ModalFormState extends FormDataState {
   isDropdownOpen: boolean;
   activeSection: string;
 }
+
+// ═══════════════════════════════════════════════════════════════
+// INFERTILITY TEST TYPES
+// ═══════════════════════════════════════════════════════════════
+
+export interface InfertilityTestInfo {
+  selectedTests: string[];
+  testCharge: number;
+  discountType: "percentage" | "value" | null;
+  discountValue: number | null;
+  discountAmount: number | null;
+  grandTotal: number;
+  paidAmount: number;
+  dueAmount: number;
+  testDate: string;
+  testCategory: string;
+  remarks: string;
+  isCompleted: boolean;
+  orderedById: number | null;
+  doneById: number | null;
+}
+
+export interface InfertilityTestData {
+  id: number;
+  bloodGroup?: string | null;
+  email?: string | null;
+  address?: string | null;
+  guardianName?: string | null;
+  hospitalName?: string | null;
+  hospitalType?: string | null;
+  hospitalAddress?: string | null;
+  hospitalPhone?: string | null;
+  hospitalWebsite?: string | null;
+  hospitalEmail?: string | null;
+  patientFirstName?: string | null;
+  patientLastName?: string | null;
+  guardianAge?: number | null;
+  guardianDOB?: string | null;
+  guardianGender?: string | null;
+  createdByName?: string | null;
+  lastModifiedByName?: string | null;
+  infertilityPatientId: number;
+  patientId: number;
+  testNumber: string;
+  patientFullName: string;
+  patientGender: string;
+  patientAge: number | null;
+  patientDOB: string | null;
+  mobileNumber: string | null;
+  caseNumber: string;
+  testDate: string;
+  reportDate: string | null;
+  testCategory: string;
+  testResults: any;
+  remarks: string | null;
+  isCompleted: boolean;
+  testCharge: number;
+  discountType: string | null;
+  discountValue: number | null;
+  discountAmount: number | null;
+  grandTotal: number;
+  paidAmount: number;
+  dueAmount: number;
+  orderedById: number;
+  orderedBy: string | null;
+  doneById: number | null;
+  doneBy: string | null;
+  createdAt: string;
+  updatedAt: string;
+  createdBy: number;
+  lastModifiedBy: number;
+}
+
+export interface InfertilityTestFilters {
+  search?: string;
+  startDate?: string;
+  endDate?: string;
+  status?: "Completed" | "Pending" | "All";
+  orderedById?: number;
+  doneById?: number;
+  testNames?: string[];
+  page?: number;
+  limit?: number;
+}
+

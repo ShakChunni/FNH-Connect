@@ -24,13 +24,20 @@ import { useInfertilityBMI } from "../../hooks/useInfertilityBMI";
 import { useInfertilityScrollSpy } from "../../hooks/useInfertilityScrollSpy";
 import { transformInfertilityDataForApi } from "../../utils/formTransformers";
 
+import { useInfertilityTestFormStore } from "../../stores/testFormStore";
+import { useAddInfertilityTest } from "../../hooks/useAddInfertilityTest";
+import { InvestigationInformation } from "../form-sections/InvestigationInformation";
+import { Beaker } from "lucide-react";
+import { useInfertilityTestInfo } from "../../stores";
+
+
 interface AddNewDataProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
 // Hospital is auto-filled as Feroza Nursing Home, only patient and medical sections are user-editable
-const SECTION_IDS = ["patient", "medical"];
+const SECTION_IDS = ["patient", "medical", "investigation"];
 
 const AddNewDataInfertility: React.FC<AddNewDataProps> = ({
   isOpen,
@@ -46,6 +53,11 @@ const AddNewDataInfertility: React.FC<AddNewDataProps> = ({
   const validationStatus = useInfertilityValidationStatus();
   const { resetFormState } = useInfertilityActions();
 
+  const testInfo = useInfertilityTestInfo();
+  const { resetForm: resetTestForm } = useInfertilityTestFormStore();
+  const { addTest } = useAddInfertilityTest();
+
+
   // Custom Hooks
   useInfertilityBMI(); // Logic encapsulated
   const { activeSection, scrollToSection } = useInfertilityScrollSpy(
@@ -55,9 +67,26 @@ const AddNewDataInfertility: React.FC<AddNewDataProps> = ({
 
   // Mutation Hook
   const { addPatient, isLoading: isSubmitting } = useAddInfertilityData({
-    onSuccess: () => {
+    onSuccess: (res: any) => {
+      // If tests are selected, submit them using the new patient's ID
+      if (testInfo.selectedTests && testInfo.selectedTests.length > 0 && res?.data?.infertilityRecord?.id) {
+        addTest({
+          infertilityPatientId: res.data.infertilityRecord.id,
+          selectedTests: testInfo.selectedTests,
+          testCharge: testInfo.testCharge,
+          discountType: testInfo.discountType,
+          discountValue: testInfo.discountValue,
+          discountAmount: testInfo.discountAmount || 0,
+          grandTotal: testInfo.grandTotal,
+          paidAmount: testInfo.paidAmount,
+          dueAmount: testInfo.dueAmount,
+          orderedById: testInfo.orderedById || 0,
+          remarks: testInfo.remarks,
+        });
+      }
       onClose();
       resetFormState();
+      resetTestForm();
     },
   });
 
@@ -127,6 +156,12 @@ const AddNewDataInfertility: React.FC<AddNewDataProps> = ({
       label: "Medical Information",
       icon: Stethoscope,
       color: "purple",
+    },
+    {
+      id: "investigation",
+      label: "Investigations",
+      icon: Beaker,
+      color: "teal",
     },
   ];
 
@@ -202,6 +237,9 @@ const AddNewDataInfertility: React.FC<AddNewDataProps> = ({
                 </div>
                 <div id="medical">
                   <MedicalInformation />
+                </div>
+                <div id="investigation">
+                  <InvestigationInformation />
                 </div>
               </div>
             </div>

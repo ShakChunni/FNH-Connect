@@ -64,9 +64,14 @@ export async function GET(request: NextRequest) {
       pathologyCompletedToday,
       pathologyCompletedAllTime,
 
+      // Infertility counts
+      infertilityCompletedToday,
+      infertilityCompletedAllTime,
+
       // Recent data from all sources
       recentAdmissions,
       recentPathology,
+      recentInfertility,
 
       // Cash session for current user
       activeShift,
@@ -114,6 +119,19 @@ export async function GET(request: NextRequest) {
         where: { isCompleted: true },
       }),
 
+      // Stats: Infertility completed today
+      prisma.infertilityTest.count({
+        where: {
+          isCompleted: true,
+          testDate: { gte: startOfDay, lt: endOfDay },
+        },
+      }),
+
+      // Stats: Infertility completed all time
+      prisma.infertilityTest.count({
+        where: { isCompleted: true },
+      }),
+
       // Recent: Admissions
       prisma.admission.findMany({
         take: recentPatientsLimit,
@@ -134,6 +152,20 @@ export async function GET(request: NextRequest) {
 
       // Recent: Pathology
       prisma.pathologyTest.findMany({
+        take: recentPatientsLimit,
+        orderBy: { testDate: "desc" },
+        select: {
+          id: true,
+          patientId: true,
+          testDate: true,
+          isCompleted: true,
+          testCategory: true,
+          patient: { select: { fullName: true, phoneNumber: true } },
+        },
+      }),
+
+      // Recent: Infertility
+      prisma.infertilityTest.findMany({
         take: recentPatientsLimit,
         orderBy: { testDate: "desc" },
         select: {
@@ -277,6 +309,17 @@ export async function GET(request: NextRequest) {
         status: t.isCompleted ? ("discharged" as const) : ("pending" as const),
         roomNumber: undefined,
       })),
+      ...recentInfertility.map((t) => ({
+        id: t.id + 40000,
+        patientId: t.patientId,
+        name: t.patient.fullName,
+        phoneNumber: t.patient.phoneNumber,
+        admissionDate: t.testDate.toISOString(),
+        department: "Infertility",
+        departmentType: "infertility" as const,
+        status: t.isCompleted ? ("discharged" as const) : ("pending" as const),
+        roomNumber: undefined,
+      })),
     ]
       .sort(
         (a, b) =>
@@ -323,6 +366,8 @@ export async function GET(request: NextRequest) {
           occupancyRate: Math.min(occupancyRate, 100),
           pathologyDoneToday: pathologyCompletedToday,
           pathologyDoneAllTime: pathologyCompletedAllTime,
+          infertilityDoneToday: infertilityCompletedToday,
+          infertilityDoneAllTime: infertilityCompletedAllTime,
         },
         recentPatients,
         cashSession,
