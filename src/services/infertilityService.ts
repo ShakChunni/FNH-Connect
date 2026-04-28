@@ -625,6 +625,60 @@ export async function deleteInfertilityPatient(
   });
 }
 
+export async function updateInfertilityPatientStatus(
+  id: number,
+  status: string,
+  staffId: number,
+  userId: number,
+  activityLogContext?: ActivityLogContext,
+) {
+  return await prisma.$transaction(async (tx) => {
+    const existingRecord = await tx.infertilityPatient.findUnique({
+      where: { id },
+      include: { patient: true },
+    });
+
+    if (!existingRecord) {
+      throw new Error("Infertility patient record not found");
+    }
+
+    const updatedRecord = await tx.infertilityPatient.update({
+      where: { id },
+      data: {
+        status,
+        lastModifiedBy: staffId,
+      },
+      select: {
+        id: true,
+        caseNumber: true,
+        status: true,
+      },
+    });
+
+    await tx.activityLog.create({
+      data: {
+        userId,
+        action: "UPDATE",
+        description: `Updated infertility patient ${existingRecord.caseNumber} (${existingRecord.patient.fullName}) status from "${existingRecord.status || "Unknown"}" to "${status}"`,
+        entityType: "InfertilityPatient",
+        entityId: id,
+        timestamp: new Date(),
+        sessionId: activityLogContext?.sessionId,
+        ipAddress: activityLogContext?.deviceInfo?.ipAddress,
+        deviceFingerprint: activityLogContext?.deviceInfo?.deviceFingerprint,
+        readableFingerprint:
+          activityLogContext?.deviceInfo?.readableFingerprint,
+        deviceType: activityLogContext?.deviceInfo?.deviceType,
+        browserName: activityLogContext?.deviceInfo?.browserName,
+        browserVersion: activityLogContext?.deviceInfo?.browserVersion,
+        osType: activityLogContext?.deviceInfo?.osType,
+      },
+    });
+
+    return updatedRecord;
+  });
+}
+
 
 // ═══════════════════════════════════════════════════════════════
 // INFERTILITY TEST SERVICES

@@ -47,7 +47,8 @@ export function useAddInfertilityTest(
       return response.data;
     },
     onSuccess: (response, variables, context) => {
-      queryClient.invalidateQueries({ queryKey: ["infertilityTests"] });
+      queryClient.invalidateQueries({ queryKey: ["infertilityTestPatients"] });
+      queryClient.invalidateQueries({ queryKey: ["infertilityPatients"] });
       showNotification("Infertility test added successfully", "success");
       if (options?.onSuccess) {
         options.onSuccess(response, variables, context as any, mutation as any);
@@ -61,5 +62,10 @@ export function useAddInfertilityTest(
     },
   });
 
-  return { addTest: mutation.mutate, isLoading: mutation.isPending };
+  return {
+    addTest: mutation.mutate,
+    addTestAsync: mutation.mutateAsync,
+    isLoading: mutation.isPending,
+    ...mutation,
+  };
 }

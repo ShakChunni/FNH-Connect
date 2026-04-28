@@ -1,5 +1,5 @@
 import React from "react";
-import { Edit2, Printer } from "lucide-react";
+import { Edit2, Printer, Beaker, UserCheck } from "lucide-react";
 import { InfertilityPatientData } from "../../../types";
 import { TableHeader, formatDate } from "../utils";
 import { generateInfertilityReport } from "../../../utils/generateReport";
@@ -10,6 +10,9 @@ interface TableRowProps {
   index: number;
   headers: TableHeader[];
   onEdit?: (patient: InfertilityPatientData) => void;
+  onOrderInvestigation?: (patient: InfertilityPatientData) => void;
+  onSetAdmitted?: (patient: InfertilityPatientData) => void;
+  isStatusUpdating?: boolean;
   onClick?: () => void;
 }
 
@@ -19,6 +22,9 @@ const getStatusColor = (status: string | null) => {
   const s = status.toLowerCase();
   if (s === "active" || s === "ongoing")
     return "bg-emerald-100 text-emerald-700";
+  if (s === "admitted") return "bg-indigo-100 text-indigo-700";
+  if (s === "investigation ordered") return "bg-cyan-100 text-cyan-700";
+  if (s === "follow-up") return "bg-violet-100 text-violet-700";
   if (s === "completed" || s === "success") return "bg-blue-100 text-blue-700";
   if (s === "pending") return "bg-amber-100 text-amber-700";
   if (s === "cancelled" || s === "inactive") return "bg-red-100 text-red-700";
@@ -30,6 +36,9 @@ const TableRow: React.FC<TableRowProps> = ({
   index,
   headers,
   onEdit,
+  onOrderInvestigation,
+  onSetAdmitted,
+  isStatusUpdating = false,
   onClick,
 }) => {
   const { user } = useAuth();
@@ -63,7 +72,9 @@ const TableRow: React.FC<TableRowProps> = ({
       case "id":
         return <span className="font-semibold text-fnh-navy">{index}</span>;
 
-      case "actions":
+      case "actions": {
+        const isAlreadyAdmitted = row.status?.toLowerCase() === "admitted";
+
         return (
           <div className="flex items-center gap-1.5">
             <button
@@ -83,8 +94,36 @@ const TableRow: React.FC<TableRowProps> = ({
             >
               <Printer size={16} />
             </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onOrderInvestigation?.(row);
+              }}
+              className="p-1.5 bg-teal-100 text-teal-700 rounded-lg hover:bg-teal-200 transition-all cursor-pointer shadow-sm hover:shadow-md active:scale-95"
+              title="Order Investigation"
+            >
+              <Beaker size={16} />
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                if (!isAlreadyAdmitted) {
+                  onSetAdmitted?.(row);
+                }
+              }}
+              disabled={isAlreadyAdmitted || isStatusUpdating}
+              className={`p-1.5 rounded-lg transition-all shadow-sm hover:shadow-md active:scale-95 ${
+                isAlreadyAdmitted
+                  ? "bg-indigo-100 text-indigo-700 cursor-not-allowed"
+                  : "bg-purple-100 text-purple-700 hover:bg-purple-200 cursor-pointer"
+              } ${isStatusUpdating ? "opacity-60" : ""}`}
+              title={isAlreadyAdmitted ? "Already Admitted" : "Mark as Admitted"}
+            >
+              <UserCheck size={16} />
+            </button>
           </div>
         );
+      }
 
       case "patientFullName":
         return (

@@ -12,6 +12,9 @@ interface PatientTableProps {
   tableData: InfertilityPatientData[];
   customOptions?: any;
   onEdit?: (patient: InfertilityPatientData) => void;
+  onOrderInvestigation?: (patient: InfertilityPatientData) => void;
+  onSetAdmitted?: (patient: InfertilityPatientData) => void;
+  isStatusUpdating?: boolean;
   isLoading?: boolean;
   startIndex?: number; // For server-side pagination row numbering
 }
@@ -20,6 +23,9 @@ const PatientTable: React.FC<PatientTableProps> = ({
   tableData = [],
   customOptions,
   onEdit,
+  onOrderInvestigation,
+  onSetAdmitted,
+  isStatusUpdating = false,
   isLoading = false,
   startIndex,
 }) => {
@@ -263,6 +269,9 @@ const PatientTable: React.FC<PatientTableProps> = ({
                     }
                     headers={headers}
                     onEdit={onEdit}
+                    onOrderInvestigation={onOrderInvestigation}
+                    onSetAdmitted={onSetAdmitted}
+                    isStatusUpdating={isStatusUpdating}
                     onClick={() => handleRowClick(row)}
                   />
                 ))}
@@ -276,6 +285,9 @@ const PatientTable: React.FC<PatientTableProps> = ({
         isOpen={isOverviewOpen}
         onClose={() => setIsOverviewOpen(false)}
         patient={selectedPatient}
+        onOrderInvestigation={onOrderInvestigation}
+        onSetAdmitted={onSetAdmitted}
+        isStatusUpdating={isStatusUpdating}
       />
 
       {/* Pagination - Separate from table */}

@@ -10,4 +10,4 @@ export { useAddInfertilityTest } from "./useAddInfertilityTest";
 export { useEditInfertilityTest } from "./useEditInfertilityTest";
 export { useFetchInfertilityTestReport } from "./useFetchInfertilityTestReport";
 export { useFetchDoctors } from "./useFetchDoctors";
-
+export { useUpdateInfertilityPatientStatus } from "./useUpdateInfertilityPatientStatus";

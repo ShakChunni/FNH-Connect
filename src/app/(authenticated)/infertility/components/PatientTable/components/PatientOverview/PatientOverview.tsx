@@ -1,6 +1,15 @@
 "use client";
 import React from "react";
-import { Edit, Stethoscope, Clock, FileText, Printer, X } from "lucide-react";
+import {
+  Edit,
+  Stethoscope,
+  Clock,
+  FileText,
+  Printer,
+  Beaker,
+  UserCheck,
+  X,
+} from "lucide-react";
 import { InfertilityPatientData } from "../../../../types";
 import { ModalHeader } from "@/components/ui/ModalHeader";
 import { ModalShell } from "@/components/ui/ModalShell";
@@ -16,12 +25,18 @@ interface PatientOverviewProps {
   isOpen: boolean;
   onClose: () => void;
   patient: InfertilityPatientData | null;
+  onOrderInvestigation?: (patient: InfertilityPatientData) => void;
+  onSetAdmitted?: (patient: InfertilityPatientData) => void;
+  isStatusUpdating?: boolean;
 }
 
 const PatientOverview: React.FC<PatientOverviewProps> = ({
   isOpen,
   onClose,
   patient,
+  onOrderInvestigation,
+  onSetAdmitted,
+  isStatusUpdating = false,
 }) => {
   const { openEditModal } = useInfertilityActions();
   const { user } = useAuth();
@@ -64,6 +79,19 @@ const PatientOverview: React.FC<PatientOverviewProps> = ({
   const handlePrint = () => {
     generateInfertilityReport(patient, user?.fullName || "Staff");
   };
+
+  const handleOrderInvestigation = () => {
+    onClose();
+    setTimeout(() => {
+      onOrderInvestigation?.(patient);
+    }, 100);
+  };
+
+  const handleSetAdmitted = () => {
+    onSetAdmitted?.(patient);
+  };
+
+  const isAlreadyAdmitted = patient.status?.toLowerCase() === "admitted";
 
   return (
     <ModalShell
@@ -196,15 +224,40 @@ const PatientOverview: React.FC<PatientOverviewProps> = ({
       {/* Custom Footer with Print Button */}
       <div className="border-t border-gray-200 bg-gray-50 px-3 sm:px-4 md:px-6 py-2 sm:py-3 rounded-b-3xl">
         <div className="flex items-center justify-between gap-2">
-          {/* Left Side - Print Button */}
-          <button
-            type="button"
-            onClick={handlePrint}
-            className="inline-flex items-center justify-center gap-2 p-2 sm:px-4 sm:py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors duration-200 text-xs sm:text-sm font-medium cursor-pointer shadow-sm"
-          >
-            <Printer className="w-4 h-4" />
-            <span className="hidden sm:inline">Print Report</span>
-          </button>
+          {/* Left Side - Print + Workflow Actions */}
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={handlePrint}
+              className="inline-flex items-center justify-center gap-2 p-2 sm:px-4 sm:py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors duration-200 text-xs sm:text-sm font-medium cursor-pointer shadow-sm"
+            >
+              <Printer className="w-4 h-4" />
+              <span className="hidden sm:inline">Print Report</span>
+            </button>
+            <button
+              type="button"
+              onClick={handleOrderInvestigation}
+              className="inline-flex items-center justify-center gap-2 p-2 sm:px-4 sm:py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-lg transition-colors duration-200 text-xs sm:text-sm font-medium cursor-pointer"
+            >
+              <Beaker className="w-4 h-4" />
+              <span className="hidden sm:inline">Order Investigation</span>
+            </button>
+            <button
+              type="button"
+              onClick={handleSetAdmitted}
+              disabled={isAlreadyAdmitted || isStatusUpdating}
+              className={`inline-flex items-center justify-center gap-2 p-2 sm:px-4 sm:py-2 rounded-lg transition-colors duration-200 text-xs sm:text-sm font-medium ${
+                isAlreadyAdmitted
+                  ? "bg-indigo-100 text-indigo-700 cursor-not-allowed"
+                  : "bg-purple-600 hover:bg-purple-700 text-white cursor-pointer"
+              } ${isStatusUpdating ? "opacity-60" : ""}`}
+            >
+              <UserCheck className="w-4 h-4" />
+              <span className="hidden sm:inline">
+                {isAlreadyAdmitted ? "Admitted" : "Mark Admitted"}
+              </span>
+            </button>
+          </div>
 
           {/* Right Side - Close & Edit */}
           <div className="flex items-center gap-2">

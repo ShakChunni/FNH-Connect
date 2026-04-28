@@ -9,6 +9,7 @@ import { Pagination } from "@/components/pagination/Pagination";
 import AddNewDataInfertility from "./components/AddNewData/AddNewDataInfertility";
 import EditDataInfertility from "./components/EditData/EditDataInfertility";
 import { EditInvestigationModal } from "./components/EditData/EditInvestigationModal";
+import OrderInvestigationModal from "./components/OrderInvestigationModal";
 import PatientTable from "./components/PatientTable/PatientTable";
 import { NewPatientButton } from "./components/NewPatientButton";
 import InfertilitySearch from "./components/InfertilitySearch";
@@ -19,7 +20,10 @@ import { useFetchInfertilityTests } from "./hooks/useFetchInfertilityTests";
 
 // Types and Hooks
 import { InfertilityPatientData, InfertilityTestData } from "./types";
-import { useFetchInfertilityData } from "./hooks";
+import {
+  useFetchInfertilityData,
+  useUpdateInfertilityPatientStatus,
+} from "./hooks";
 import type { InfertilityFilters, InfertilityTestFilters } from "./types";
 import { normalizePatientData } from "../../../components/form-sections/utils/dataUtils";
 import {
@@ -36,6 +40,10 @@ const InfertilityManagement = React.memo(() => {
   const [activeTab, setActiveTab] = useState<"patients" | "investigations">("patients");
   const [selectedInvestigation, setSelectedInvestigation] = useState<InfertilityTestData | null>(null);
   const [isEditInvestigationOpen, setIsEditInvestigationOpen] = useState(false);
+  const [selectedPatientForInvestigation, setSelectedPatientForInvestigation] =
+    useState<InfertilityPatientData | null>(null);
+  const [isOrderInvestigationOpen, setIsOrderInvestigationOpen] =
+    useState(false);
   const tableContainerRef = useRef<HTMLDivElement>(null);
 
   // Patient Store selectors
@@ -82,6 +90,8 @@ const InfertilityManagement = React.memo(() => {
   // Fetching data
   const { data: patientResult, isLoading: isPatientsLoading } = useFetchInfertilityData(patientHookFilters);
   const { data: testsResult, isLoading: isTestsLoading } = useFetchInfertilityTests(investigationHookFilters);
+  const { updateStatus: updatePatientStatus, isUpdating: isUpdatingPatientStatus } =
+    useUpdateInfertilityPatientStatus();
 
   const totalRecords = activeTab === "patients" ? (patientResult?.total || 0) : (testsResult?.total || 0);
   const totalPages = activeTab === "patients" ? (patientResult?.totalPages || 0) : (testsResult?.totalPages || 0);
@@ -117,6 +127,31 @@ const InfertilityManagement = React.memo(() => {
   const handleEditInvestigation = useCallback((test: InfertilityTestData) => {
     setSelectedInvestigation(test);
     setIsEditInvestigationOpen(true);
+  }, []);
+
+  const handleOrderInvestigation = useCallback(
+    (patient: InfertilityPatientData) => {
+      setSelectedPatientForInvestigation(patient);
+      setIsOrderInvestigationOpen(true);
+    },
+    []
+  );
+
+  const handleSetAdmitted = useCallback(
+    (patient: InfertilityPatientData) => {
+      if (patient.status?.toLowerCase() === "admitted") return;
+
+      updatePatientStatus({
+        id: patient.id,
+        status: "Admitted",
+      });
+    },
+    [updatePatientStatus]
+  );
+
+  const handleCloseOrderInvestigation = useCallback(() => {
+    setIsOrderInvestigationOpen(false);
+    setSelectedPatientForInvestigation(null);
   }, []);
 
   return (
@@ -183,6 +218,9 @@ const InfertilityManagement = React.memo(() => {
                   tableData={normalizedPatientData}
                   isLoading={isPatientsLoading}
                   onEdit={actions.openEditModal}
+                  onOrderInvestigation={handleOrderInvestigation}
+                  onSetAdmitted={handleSetAdmitted}
+                  isStatusUpdating={isUpdatingPatientStatus}
                   startIndex={startIndex}
                 />
               ) : (
@@ -218,6 +256,12 @@ const InfertilityManagement = React.memo(() => {
 
       {/* Floating Export Bar */}
       {activeTab === "investigations" && <ExportActionBar recordCount={totalRecords} />}
+
+      <OrderInvestigationModal
+        isOpen={isOrderInvestigationOpen}
+        onClose={handleCloseOrderInvestigation}
+        patient={selectedPatientForInvestigation}
+      />
 
       {/* Portals */}
       {(modals.isAddOpen || modals.isAddClosing) &&
