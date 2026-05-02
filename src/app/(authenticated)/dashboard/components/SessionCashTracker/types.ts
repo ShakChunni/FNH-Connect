@@ -89,10 +89,26 @@ export interface PaymentDetail {
   departmentName: string;
 }
 
+/** Refund transaction for detailed report */
+export interface RefundDetail {
+  paymentId?: number; // Linked payment if available
+  registrationId: string; // Patient registration ID
+  refundDate: string;
+  amount: number;
+  patientId?: number;
+  patientName: string;
+  patientPhone?: string;
+  serviceName: string;
+  serviceType: string;
+  departmentName: string;
+  description?: string; // Reason / notes for refund
+}
+
 /** Shift with detailed payment info */
 export interface ShiftDetailedSummary extends ShiftSummary {
   shiftDate: string; // Formatted date for display
   payments: PaymentDetail[];
+  refunds: RefundDetail[];
 }
 
 /** Detailed report data with patient-level information */

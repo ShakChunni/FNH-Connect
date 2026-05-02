@@ -6,7 +6,7 @@
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { format } from "date-fns";
-import type { DetailedCashReportData, PaymentDetail } from "./types";
+import type { DetailedCashReportData } from "./types";
 
 // FNH Brand Colors
 const COLORS = {
@@ -338,19 +338,65 @@ export const generateDetailedCashReport = async (
       );
       currentY += 6; // More spacing before table
 
-      // Payment details table (skip the crowded summary line)
-      if (shift.payments && shift.payments.length > 0) {
-        const paymentRows = shift.payments.map((payment: PaymentDetail) => [
-          payment.registrationId,
-          formatDateTime(payment.paymentDate),
-          payment.patientName.length > 22
-            ? payment.patientName.substring(0, 20) + "..."
-            : payment.patientName,
-          payment.serviceName.length > 18
-            ? payment.serviceName.substring(0, 16) + "..."
-            : payment.serviceName,
-          payment.departmentName,
-          formatCurrency(payment.amount),
+      // Combine payments and refunds into a single sorted list
+      interface TransactionRow {
+        type: "payment" | "refund";
+        regId: string;
+        dateTime: string;
+        patient: string;
+        service: string;
+        dept: string;
+        amount: number;
+        amountDisplay: string;
+      }
+
+      const allTransactions: TransactionRow[] = [];
+
+      // Add payments
+      for (const payment of shift.payments) {
+        allTransactions.push({
+          type: "payment",
+          regId: payment.registrationId,
+          dateTime: formatDateTime(payment.paymentDate),
+          patient: payment.patientName,
+          service: payment.serviceName,
+          dept: payment.departmentName,
+          amount: payment.amount,
+          amountDisplay: formatCurrency(payment.amount),
+        });
+      }
+
+      // Add refunds (highlighted in red)
+      for (const refund of shift.refunds || []) {
+        allTransactions.push({
+          type: "refund",
+          regId: refund.registrationId,
+          dateTime: formatDateTime(refund.refundDate),
+          patient: refund.patientName,
+          service: refund.serviceName,
+          dept: refund.departmentName,
+          amount: refund.amount,
+          amountDisplay: `-${formatCurrency(refund.amount)}`,
+        });
+      }
+
+      // Sort by date (newest first)
+      allTransactions.sort(
+        (a, b) => new Date(b.dateTime).getTime() - new Date(a.dateTime).getTime(),
+      );
+
+      if (allTransactions.length > 0) {
+        const transactionRows = allTransactions.map((tx) => [
+          tx.regId,
+          tx.dateTime,
+          tx.patient.length > 22
+            ? tx.patient.substring(0, 20) + "..."
+            : tx.patient,
+          tx.service.length > 18
+            ? tx.service.substring(0, 16) + "..."
+            : tx.service,
+          tx.dept,
+          tx.amountDisplay,
         ]);
 
         autoTable(doc, {
@@ -358,7 +404,7 @@ export const generateDetailedCashReport = async (
           head: [
             ["Reg ID", "Date/Time", "Patient", "Service", "Dept", "Amount"],
           ],
-          body: paymentRows,
+          body: transactionRows,
           theme: "plain",
           headStyles: {
             fillColor: [30, 41, 59], // Slate 800
@@ -384,6 +430,20 @@ export const generateDetailedCashReport = async (
             fillColor: [248, 250, 252],
           },
           margin: { left: margin, right: margin },
+          didParseCell: (cellData) => {
+            if (cellData.section === "body") {
+              const rowIndex = cellData.row.index;
+              const tx = allTransactions[rowIndex];
+              if (tx?.type === "refund") {
+                // Highlight refund rows in red
+                cellData.cell.styles.textColor = COLORS.danger;
+                cellData.cell.styles.fontStyle = "bold";
+                if (cellData.column.index === 5) {
+                  cellData.cell.styles.fontStyle = "bold";
+                }
+              }
+            }
+          },
           didDrawPage: () => {
             // Redraw watermark on each new page
             drawLogoWatermark(doc);

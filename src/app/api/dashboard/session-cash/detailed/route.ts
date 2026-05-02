@@ -26,6 +26,20 @@ interface PaymentDetail {
   departmentName: string;
 }
 
+interface RefundDetail {
+  paymentId?: number; // Linked payment if available
+  registrationId: string;
+  refundDate: string;
+  amount: number;
+  patientId?: number;
+  patientName: string;
+  patientPhone?: string;
+  serviceName: string;
+  serviceType: string;
+  departmentName: string;
+  description?: string;
+}
+
 interface DepartmentBreakdown {
   departmentId: number;
   departmentName: string;
@@ -44,6 +58,7 @@ interface ShiftDetailedSummary {
   transactionCount: number;
   departmentBreakdown: DepartmentBreakdown[];
   payments: PaymentDetail[];
+  refunds: RefundDetail[];
 }
 
 /**
@@ -232,6 +247,7 @@ export async function GET(request: NextRequest) {
           orderBy: { paymentDate: "desc" },
         },
         // Also fetch cash movements (date-filtered) to accurately calculate refunds
+        // Include payment details for patient info
         cashMovements: {
           where: {
             timestamp: {
@@ -241,8 +257,35 @@ export async function GET(request: NextRequest) {
             movementType: "REFUND",
           },
           select: {
+            id: true,
             amount: true,
             movementType: true,
+            description: true,
+            timestamp: true,
+            payment: {
+              select: {
+                id: true,
+                paymentDate: true,
+                patientAccount: {
+                  select: {
+                    patient: {
+                      select: { id: true, fullName: true, phoneNumber: true },
+                    },
+                  },
+                },
+                paymentAllocations: {
+                  include: {
+                    serviceCharge: {
+                      include: {
+                        department: { select: { id: true, name: true } },
+                        admission: { select: { admissionNumber: true } },
+                        pathologyTest: { select: { testNumber: true } },
+                      },
+                    },
+                  },
+                },
+              },
+            },
           },
         },
       },
@@ -379,15 +422,66 @@ export async function GET(request: NextRequest) {
         }
       }
 
-      // Calculate refunds from date-filtered cash movements instead of shift.totalRefunded
-      // This ensures refund numbers are consistent with the date range filter
-      const shiftRefunded = shift.cashMovements.reduce(
-        (
-          sum: number,
-          cm: { amount: { toNumber: () => number }; movementType: string },
-        ) => sum + cm.amount.toNumber(),
-        0,
-      );
+      // Calculate refunds and build refund details with patient info
+      const shiftRefunds: RefundDetail[] = [];
+      let shiftRefunded = 0;
+
+      for (const cm of shift.cashMovements) {
+        const refundAmount = cm.amount.toNumber();
+        shiftRefunded += refundAmount;
+
+        // Build patient info from linked payment (if available)
+        let patientId: number | undefined;
+        let patientName = "Unknown";
+        let patientPhone: string | undefined;
+        let registrationId = "N/A";
+        let serviceName = "Refund";
+        let serviceType = "REFUND";
+        let departmentName = "N/A";
+
+        if (cm.payment) {
+          patientId = cm.payment.patientAccount.patient.id;
+          patientName = cm.payment.patientAccount.patient.fullName;
+          patientPhone =
+            cm.payment.patientAccount.patient.phoneNumber || undefined;
+
+          // Derive registration ID from the payment's allocations
+          if (cm.payment.paymentAllocations.length > 0) {
+            const alloc = cm.payment.paymentAllocations[0];
+            if (alloc.serviceCharge.pathologyTest?.testNumber) {
+              registrationId = alloc.serviceCharge.pathologyTest.testNumber;
+            } else if (alloc.serviceCharge.admission?.admissionNumber) {
+              registrationId = alloc.serviceCharge.admission.admissionNumber;
+            } else {
+              const deptCode = getDepartmentCode(
+                alloc.serviceCharge.department.name,
+              );
+              const year = getTwoDigitYear(new Date(cm.payment.paymentDate));
+              registrationId = `${deptCode}-${year}-${String(patientId).padStart(5, "0")}`;
+            }
+            serviceName = alloc.serviceCharge.serviceName;
+            serviceType = alloc.serviceCharge.serviceType;
+            departmentName = alloc.serviceCharge.department.name;
+          } else {
+            const year = getTwoDigitYear(new Date(cm.payment.paymentDate));
+            registrationId = `GEN-${year}-${String(patientId).padStart(5, "0")}`;
+          }
+        }
+
+        shiftRefunds.push({
+          paymentId: cm.payment?.id,
+          registrationId,
+          refundDate: cm.timestamp.toISOString(),
+          amount: refundAmount,
+          patientId,
+          patientName,
+          patientPhone,
+          serviceName,
+          serviceType,
+          departmentName,
+          description: cm.description || undefined,
+        });
+      }
 
       // Build department breakdown
       const shiftDepartmentBreakdown: DepartmentBreakdown[] = [];
@@ -426,6 +520,7 @@ export async function GET(request: NextRequest) {
         transactionCount: shiftTransactionCount,
         departmentBreakdown: shiftDepartmentBreakdown,
         payments: shiftPayments,
+        refunds: shiftRefunds,
       });
 
       overallTotalCollected += shiftCollected;
