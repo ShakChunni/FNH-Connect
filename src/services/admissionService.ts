@@ -740,12 +740,30 @@ export async function updateAdmission(
         // Refund
         const refundAmount = Math.abs(paidAmountDiff);
 
+        // Find the original payment to link the refund cash movement
+        let originalPaymentId: number | undefined;
+        if (existingServiceCharge) {
+          const originalPayment = await tx.payment.findFirst({
+            where: {
+              paymentAllocations: {
+                some: {
+                  serviceChargeId: existingServiceCharge.id,
+                },
+              },
+            },
+            orderBy: { paymentDate: "desc" },
+            select: { id: true },
+          });
+          originalPaymentId = originalPayment?.id;
+        }
+
         await tx.cashMovement.create({
           data: {
             shiftId: activeShift.id,
             amount: new Prisma.Decimal(refundAmount),
             movementType: "REFUND",
             description: `Refund for ${existingAdmission.admissionNumber}`,
+            ...(originalPaymentId && { paymentId: originalPaymentId }),
           },
         });
 

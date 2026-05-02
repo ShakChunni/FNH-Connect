@@ -701,6 +701,23 @@ export async function updatePathologyPatient(
         // REFUND / CORRECTION (Negative diff)
         const refundAmount = Math.abs(paidAmountDiff);
 
+        // Find the original payment to link the refund cash movement
+        let originalPaymentId: number | undefined;
+        if (existingServiceCharge) {
+          const originalPayment = await tx.payment.findFirst({
+            where: {
+              paymentAllocations: {
+                some: {
+                  serviceChargeId: existingServiceCharge.id,
+                },
+              },
+            },
+            orderBy: { paymentDate: "desc" },
+            select: { id: true },
+          });
+          originalPaymentId = originalPayment?.id;
+        }
+
         // Track cash movement (Refund)
         await tx.cashMovement.create({
           data: {
@@ -708,6 +725,7 @@ export async function updatePathologyPatient(
             amount: new Prisma.Decimal(refundAmount),
             movementType: "REFUND",
             description: `Refund/Correction for ${existingRecord.testNumber}`,
+            ...(originalPaymentId && { paymentId: originalPaymentId }),
           },
         });
 
