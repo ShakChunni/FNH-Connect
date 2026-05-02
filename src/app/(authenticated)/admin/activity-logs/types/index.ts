@@ -51,6 +51,16 @@ export interface SessionInfo {
   readableFingerprint: string | null;
 }
 
+// Related cash movement for audit trail
+export interface RelatedCashMovement {
+  id: number;
+  amount: number;
+  movementType: string;
+  description: string | null;
+  timestamp: string;
+  shiftId: number;
+}
+
 // Full activity log detail
 export interface ActivityLogDetail extends Omit<ActivityLogEntry, "user"> {
   user: ActivityLogUser & {
@@ -62,6 +72,7 @@ export interface ActivityLogDetail extends Omit<ActivityLogEntry, "user"> {
       | null;
   };
   session: SessionInfo | null;
+  relatedCashMovements: RelatedCashMovement[];
 }
 
 // Pagination metadata

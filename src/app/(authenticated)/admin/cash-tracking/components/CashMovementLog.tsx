@@ -74,7 +74,9 @@ const CashMovementLog: React.FC<CashMovementLogProps> = ({ movements }) => {
               movement.movementType === "COLLECTION" ||
               movement.movementType === "PAYMENT_RECEIVED";
             const isRefund = movement.movementType === "REFUND";
-            const patient = movement.payment?.patientAccount.patient;
+            const patient =
+              movement.payment?.patientAccount.patient ??
+              movement._refundSource?.patient;
 
             return (
               <motion.div
@@ -150,14 +152,14 @@ const CashMovementLog: React.FC<CashMovementLogProps> = ({ movements }) => {
                               {patient.fullName}
                             </p>
                           </div>
-                          {movement.payment?.receiptNumber && (
+                          {(movement.payment?.receiptNumber || movement._refundSource?.registrationId) && (
                             <div className="flex items-center gap-1.5 opacity-60 shrink-0">
                               <Receipt
                                 size={10}
                                 className="text-fnh-navy sm:w-3"
                               />
                               <p className="text-[9px] sm:text-[10px] font-bold text-gray-500">
-                                #{movement.payment.receiptNumber}
+                                #{movement.payment?.receiptNumber || movement._refundSource?.registrationId}
                               </p>
                             </div>
                           )}

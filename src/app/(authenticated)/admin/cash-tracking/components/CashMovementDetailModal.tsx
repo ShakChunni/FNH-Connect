@@ -77,29 +77,51 @@ const CashMovementDetailModal: React.FC<CashMovementDetailModalProps> = ({
       movement.movementType === "PAYMENT_RECEIVED"
     : false;
   const isRefund = movement ? movement.movementType === "REFUND" : false;
-  const patient = movement?.payment?.patientAccount.patient;
+  const patient =
+    movement?.payment?.patientAccount.patient ??
+    movement?._refundSource?.patient;
   const paymentAllocations = movement?.payment?.paymentAllocations || [];
 
   // Extract department and doctor from allocations
-  const departments = [
-    ...new Set(paymentAllocations.map((a) => a.serviceCharge.department.name)),
-  ];
-  const doctors = [
-    ...new Set(
-      paymentAllocations
-        .map(
-          (a) =>
-            a.serviceCharge.admission?.doctor?.fullName ||
-            a.serviceCharge.pathologyTest?.orderedBy?.fullName
-        )
-        .filter(Boolean)
-    ),
-  ];
-  const services = paymentAllocations.map((a) => ({
-    name: a.serviceCharge.serviceName,
-    type: a.serviceCharge.serviceType,
-    amount: a.allocatedAmount,
-  }));
+  const departments = paymentAllocations.length
+    ? [
+        ...new Set(
+          paymentAllocations.map((a) => a.serviceCharge.department.name),
+        ),
+      ]
+    : movement?._refundSource
+      ? [movement._refundSource.department.name]
+      : [];
+
+  const doctors = paymentAllocations.length
+    ? [
+        ...new Set(
+          paymentAllocations
+            .map(
+              (a) =>
+                a.serviceCharge.admission?.doctor?.fullName ||
+                a.serviceCharge.pathologyTest?.orderedBy?.fullName,
+            )
+            .filter(Boolean),
+        ),
+      ]
+    : [];
+
+  const services = paymentAllocations.length
+    ? paymentAllocations.map((a) => ({
+        name: a.serviceCharge.serviceName,
+        type: a.serviceCharge.serviceType,
+        amount: a.allocatedAmount,
+      }))
+    : movement?._refundSource
+      ? [
+          {
+            name: movement._refundSource.serviceName,
+            type: movement._refundSource.serviceType,
+            amount: movement.amount,
+          },
+        ]
+      : [];
 
   // Determine icon color based on type
   const iconColor = isCollection ? "green" : isRefund ? "red" : "blue";
@@ -391,6 +413,31 @@ const CashMovementDetailModal: React.FC<CashMovementDetailModalProps> = ({
                         </p>
                         <p className="text-lg font-black text-gray-900 font-mono">
                           #{movement.payment.receiptNumber}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Historical Refund Reference */}
+                {!movement.payment && movement._refundSource && (
+                  <div className="p-4 bg-gradient-to-br from-amber-50 to-orange-50 rounded-2xl border border-amber-100">
+                    <div className="flex items-center gap-2 mb-3">
+                      <Receipt size={16} className="text-amber-600" />
+                      <p className="text-[9px] font-black text-amber-600 uppercase tracking-widest">
+                        Reference ID
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center shrink-0">
+                        <Hash size={18} className="text-amber-600" />
+                      </div>
+                      <div>
+                        <p className="text-[9px] font-bold text-gray-400 uppercase tracking-wider">
+                          Registration Number
+                        </p>
+                        <p className="text-lg font-black text-gray-900 font-mono">
+                          #{movement._refundSource.registrationId}
                         </p>
                       </div>
                     </div>

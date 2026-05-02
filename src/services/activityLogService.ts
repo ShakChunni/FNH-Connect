@@ -170,7 +170,89 @@ export async function getActivityLogDetails(id: number) {
     },
   });
 
-  return log;
+  if (!log) return null;
+
+  // ── Enrich with related cash movements for refund auditing ──
+  let relatedCashMovements: Array<{
+    id: number;
+    amount: number;
+    movementType: string;
+    description: string | null;
+    timestamp: Date;
+    shiftId: number;
+  }> = [];
+
+  if (
+    log.entityType === "Admission" ||
+    log.entityType === "PathologyTest" ||
+    log.entityType === "InfertilityTest"
+  ) {
+    // Look up the entity to get its registration number
+    let registrationNumber: string | null = null;
+
+    if (log.entityType === "Admission" && log.entityId) {
+      const admission = await prisma.admission.findUnique({
+        where: { id: log.entityId },
+        select: { admissionNumber: true },
+      });
+      registrationNumber = admission?.admissionNumber || null;
+    } else if (log.entityType === "PathologyTest" && log.entityId) {
+      const test = await prisma.pathologyTest.findUnique({
+        where: { id: log.entityId },
+        select: { testNumber: true },
+      });
+      registrationNumber = test?.testNumber || null;
+    } else if (log.entityType === "InfertilityTest" && log.entityId) {
+      const test = await prisma.infertilityTest.findUnique({
+        where: { id: log.entityId },
+        select: { testNumber: true },
+      });
+      registrationNumber = test?.testNumber || null;
+    }
+
+    if (registrationNumber) {
+      // Search cash movements referencing this registration number
+      // within a window around the log timestamp (±2 hours)
+      const windowStart = new Date(log.timestamp.getTime() - 2 * 60 * 60 * 1000);
+      const windowEnd = new Date(log.timestamp.getTime() + 2 * 60 * 60 * 1000);
+
+      const movements = await prisma.cashMovement.findMany({
+        where: {
+          description: {
+            contains: registrationNumber,
+            mode: "insensitive",
+          },
+          timestamp: {
+            gte: windowStart,
+            lte: windowEnd,
+          },
+        },
+        select: {
+          id: true,
+          amount: true,
+          movementType: true,
+          description: true,
+          timestamp: true,
+          shiftId: true,
+        },
+        orderBy: { timestamp: "desc" },
+      });
+
+      relatedCashMovements = movements.map((m) => ({
+        id: m.id,
+        amount: m.amount.toNumber(),
+        movementType: m.movementType,
+        description: m.description,
+        timestamp: m.timestamp,
+        shiftId: m.shiftId,
+      }));
+    }
+  }
+
+  return {
+    ...log,
+    relatedCashMovements,
+  };
 }
 
 /**

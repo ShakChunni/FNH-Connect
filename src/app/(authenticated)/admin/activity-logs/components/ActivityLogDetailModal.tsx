@@ -18,6 +18,10 @@ import {
   AlertTriangle,
   FileText,
   Hash,
+  TrendingUp,
+  TrendingDown,
+  Receipt,
+  Wallet,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -314,6 +318,88 @@ const ActivityLogDetailModal: React.FC<ActivityLogDetailModalProps> = ({
                       {formatDate(log.session.createdAt)}
                     </p>
                   </div>
+                </div>
+              </div>
+            )}
+
+            {/* Related Cash Movements */}
+            {log.relatedCashMovements && log.relatedCashMovements.length > 0 && (
+              <div className="bg-white rounded-2xl border border-gray-100 p-5 sm:p-6 shadow-sm">
+                <h5 className="text-[11px] sm:text-xs font-black text-gray-900 mb-5 flex items-center gap-2 uppercase tracking-wider">
+                  <Wallet className="w-4 h-4 text-emerald-600" />
+                  Related Cash Movements
+                </h5>
+                <div className="space-y-3">
+                  {log.relatedCashMovements.map((cm) => {
+                    const isCollection =
+                      cm.movementType === "COLLECTION" ||
+                      cm.movementType === "PAYMENT_RECEIVED";
+                    const isRefund = cm.movementType === "REFUND";
+                    return (
+                      <div
+                        key={cm.id}
+                        className={cn(
+                          "flex items-center justify-between p-3 rounded-xl border",
+                          isCollection
+                            ? "bg-emerald-50/50 border-emerald-100"
+                            : isRefund
+                              ? "bg-rose-50/50 border-rose-100"
+                              : "bg-blue-50/50 border-blue-100"
+                        )}
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div
+                            className={cn(
+                              "w-8 h-8 rounded-lg flex items-center justify-center shrink-0",
+                              isCollection
+                                ? "bg-emerald-100 text-emerald-600"
+                                : isRefund
+                                  ? "bg-rose-100 text-rose-600"
+                                  : "bg-blue-100 text-blue-600"
+                            )}
+                          >
+                            {isCollection ? (
+                              <TrendingUp size={14} />
+                            ) : isRefund ? (
+                              <TrendingDown size={14} />
+                            ) : (
+                              <Receipt size={14} />
+                            )}
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-xs font-bold text-gray-800 truncate">
+                              {cm.description || cm.movementType}
+                            </p>
+                            <p className="text-[9px] text-gray-400 uppercase tracking-wider">
+                              {cm.movementType} · Shift #{cm.shiftId}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="text-right shrink-0 ml-3">
+                          <p
+                            className={cn(
+                              "text-sm font-black font-mono",
+                              isCollection
+                                ? "text-emerald-600"
+                                : isRefund
+                                  ? "text-rose-600"
+                                  : "text-gray-700"
+                            )}
+                          >
+                            {isCollection ? "+" : isRefund ? "-" : ""}
+                            {new Intl.NumberFormat("en-BD", {
+                              style: "currency",
+                              currency: "BDT",
+                              minimumFractionDigits: 0,
+                            }).format(cm.amount)}
+                          </p>
+                          <p className="text-[9px] text-gray-400">
+                            {formatDate(cm.timestamp)}
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             )}

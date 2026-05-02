@@ -74,6 +74,21 @@ export interface CashMovementDetail {
       };
     }>;
   };
+  /** Populated server-side for historical refunds that lack a payment link */
+  _refundSource?: {
+    patient: {
+      id: number;
+      fullName: string;
+      phoneNumber: string | null;
+    };
+    department: {
+      id: number;
+      name: string;
+    };
+    serviceName: string;
+    serviceType: string;
+    registrationId: string;
+  };
 }
 
 export interface DetailedShift extends AdminShift {

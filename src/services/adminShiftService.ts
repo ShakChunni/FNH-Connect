@@ -10,6 +10,16 @@ interface ShiftFilters {
   excludeSystemAdmin?: boolean;
 }
 
+/**
+ * Extracts a registration reference (e.g. GYNE-25-00001, PATH-25-00001)
+ * from a refund cash movement description.
+ */
+function extractRefundReference(description?: string | null): string | null {
+  if (!description) return null;
+  const match = description.match(/for\s+([A-Z]+-\d{2}-\d{5})/i);
+  return match ? match[1].toUpperCase() : null;
+}
+
 export async function getAdminShifts(filters: ShiftFilters) {
   const where: any = {};
 
@@ -161,6 +171,80 @@ export async function getShiftDetails(id: number) {
       },
     },
   });
+
+  if (!shift) return null;
+
+  // ── Post-process: resolve historical refunds without a linked payment ──
+  const unresolvedRefs = new Set<string>();
+  for (const movement of shift.cashMovements) {
+    if (movement.movementType === "REFUND" && !movement.payment) {
+      const ref = extractRefundReference(movement.description);
+      if (ref) unresolvedRefs.add(ref);
+    }
+  }
+
+  const refs = Array.from(unresolvedRefs);
+  if (refs.length > 0) {
+    const [admissions, pathologyTests] = await Promise.all([
+      prisma.admission.findMany({
+        where: { admissionNumber: { in: refs } },
+        select: {
+          admissionNumber: true,
+          department: { select: { id: true, name: true } },
+          patient: {
+            select: { id: true, fullName: true, phoneNumber: true },
+          },
+        },
+      }),
+      prisma.pathologyTest.findMany({
+        where: { testNumber: { in: refs } },
+        select: {
+          testNumber: true,
+          testCategory: true,
+          department: { select: { id: true, name: true } },
+          patient: {
+            select: { id: true, fullName: true, phoneNumber: true },
+          },
+        },
+      }),
+    ]);
+
+    const admissionMap = new Map(
+      admissions.map((a) => [a.admissionNumber.toUpperCase(), a]),
+    );
+    const pathologyMap = new Map(
+      pathologyTests.map((t) => [t.testNumber.toUpperCase(), t]),
+    );
+
+    for (const movement of shift.cashMovements) {
+      if (movement.movementType !== "REFUND" || movement.payment) continue;
+      const ref = extractRefundReference(movement.description);
+      if (!ref) continue;
+
+      const admission = admissionMap.get(ref);
+      if (admission) {
+        (movement as any)._refundSource = {
+          patient: admission.patient,
+          department: admission.department,
+          serviceName: "Admission",
+          serviceType: "ADMISSION",
+          registrationId: admission.admissionNumber,
+        };
+        continue;
+      }
+
+      const pathology = pathologyMap.get(ref);
+      if (pathology) {
+        (movement as any)._refundSource = {
+          patient: pathology.patient,
+          department: pathology.department,
+          serviceName: pathology.testCategory || "Pathology Test",
+          serviceType: "PATHOLOGY_TEST",
+          registrationId: pathology.testNumber,
+        };
+      }
+    }
+  }
 
   return shift;
 }
