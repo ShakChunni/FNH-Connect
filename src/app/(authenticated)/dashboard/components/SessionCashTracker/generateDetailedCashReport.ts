@@ -52,6 +52,15 @@ const formatDateTime = (dateString: string): string => {
   return format(new Date(dateString), "MMM dd, hh:mm a");
 };
 
+const safeText = (value: string | null | undefined, fallback = "N/A"): string => {
+  if (!value) {
+    return fallback;
+  }
+
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : fallback;
+};
+
 /**
  * Draw a subtle logo watermark
  */
@@ -342,6 +351,7 @@ export const generateDetailedCashReport = async (
       interface TransactionRow {
         type: "payment" | "refund";
         regId: string;
+        timestamp: number;
         dateTime: string;
         patient: string;
         service: string;
@@ -356,11 +366,12 @@ export const generateDetailedCashReport = async (
       for (const payment of shift.payments) {
         allTransactions.push({
           type: "payment",
-          regId: payment.registrationId,
+          regId: safeText(payment.registrationId),
+          timestamp: new Date(payment.paymentDate).getTime(),
           dateTime: formatDateTime(payment.paymentDate),
-          patient: payment.patientName,
-          service: payment.serviceName,
-          dept: payment.departmentName,
+          patient: safeText(payment.patientName, "Unknown"),
+          service: safeText(payment.serviceName, "Payment"),
+          dept: safeText(payment.departmentName),
           amount: payment.amount,
           amountDisplay: formatCurrency(payment.amount),
         });
@@ -370,20 +381,19 @@ export const generateDetailedCashReport = async (
       for (const refund of shift.refunds || []) {
         allTransactions.push({
           type: "refund",
-          regId: refund.registrationId,
+          regId: safeText(refund.registrationId),
+          timestamp: new Date(refund.refundDate).getTime(),
           dateTime: formatDateTime(refund.refundDate),
-          patient: refund.patientName,
-          service: refund.serviceName,
-          dept: refund.departmentName,
+          patient: safeText(refund.patientName, "Unknown"),
+          service: safeText(refund.serviceName, "Refund"),
+          dept: safeText(refund.departmentName),
           amount: refund.amount,
           amountDisplay: `-${formatCurrency(refund.amount)}`,
         });
       }
 
       // Sort by date (newest first)
-      allTransactions.sort(
-        (a, b) => new Date(b.dateTime).getTime() - new Date(a.dateTime).getTime(),
-      );
+      allTransactions.sort((a, b) => b.timestamp - a.timestamp);
 
       if (allTransactions.length > 0) {
         const transactionRows = allTransactions.map((tx) => [

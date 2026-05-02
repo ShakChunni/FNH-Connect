@@ -173,6 +173,12 @@ export async function GET(request: NextRequest) {
     const departmentId = searchParams.get("departmentId");
     const customStartDate = searchParams.get("startDate") || undefined;
     const customEndDate = searchParams.get("endDate") || undefined;
+    const parsedDepartmentId =
+      departmentId && departmentId !== "all" ? parseInt(departmentId, 10) : null;
+    const selectedDepartmentId =
+      parsedDepartmentId !== null && Number.isNaN(parsedDepartmentId)
+        ? null
+        : parsedDepartmentId;
 
     // 3. Calculate date range based on preset (in Bangladesh Time / UTC+6)
     const { startDate, endDate, periodLabel } = getBangladeshDateRange(
@@ -185,6 +191,7 @@ export async function GET(request: NextRequest) {
     //    - Shifts that started during the date range
     //    - OR active shifts (regardless of when they started)
     //    - OR shifts that have payments made during the date range
+    //    - OR shifts that have refunds made during the date range
     const shifts = await prisma.shift.findMany({
       where: {
         staffId: user.staffId,
@@ -205,6 +212,18 @@ export async function GET(request: NextRequest) {
             payments: {
               some: {
                 paymentDate: {
+                  gte: startDate,
+                  lte: endDate,
+                },
+              },
+            },
+          },
+          // Shifts that have refunds made during the date range
+          {
+            cashMovements: {
+              some: {
+                movementType: "REFUND",
+                timestamp: {
                   gte: startDate,
                   lte: endDate,
                 },
@@ -300,10 +319,8 @@ export async function GET(request: NextRequest) {
           const allocatedAmount = allocation.allocatedAmount.toNumber();
 
           // Department filter
-          if (departmentId && departmentId !== "all") {
-            if (deptId !== parseInt(departmentId)) {
-              continue;
-            }
+          if (selectedDepartmentId !== null && deptId !== selectedDepartmentId) {
+            continue;
           }
 
           shiftCollected += allocatedAmount;
@@ -361,9 +378,8 @@ export async function GET(request: NextRequest) {
         (a, b) => b.totalCollected - a.totalCollected,
       );
 
-      // Skip shifts that have no payments within the date range
-      // This prevents active shifts from appearing when they have no relevant transactions
-      if (shift.payments.length === 0) {
+      // Include refund-only shifts so cancellation/refund activity is not hidden.
+      if (shiftTransactionCount === 0 && shiftRefunded === 0) {
         continue;
       }
 
@@ -409,7 +425,7 @@ export async function GET(request: NextRequest) {
         periodLabel,
         startDate: startDate.toISOString(),
         endDate: endDate.toISOString(),
-        shiftsCount: shifts.length,
+        shiftsCount: shiftSummaries.length,
         departments,
       },
     });

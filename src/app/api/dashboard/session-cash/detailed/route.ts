@@ -61,6 +61,19 @@ interface ShiftDetailedSummary {
   refunds: RefundDetail[];
 }
 
+function extractRefundReference(description?: string | null): string | null {
+  if (!description) {
+    return null;
+  }
+
+  const match = description.match(/for\s+([A-Z]+-\d{2}-\d{5})/i);
+  if (!match) {
+    return null;
+  }
+
+  return match[1].toUpperCase();
+}
+
 /**
  * Helper to calculate Bangladesh Time date ranges properly
  * Bangladesh is UTC+6, so we need to convert between BDT and UTC for DB queries
@@ -189,6 +202,12 @@ export async function GET(request: NextRequest) {
     const departmentId = searchParams.get("departmentId");
     const customStartDate = searchParams.get("startDate") || undefined;
     const customEndDate = searchParams.get("endDate") || undefined;
+    const parsedDepartmentId =
+      departmentId && departmentId !== "all" ? parseInt(departmentId, 10) : null;
+    const selectedDepartmentId =
+      parsedDepartmentId !== null && Number.isNaN(parsedDepartmentId)
+        ? null
+        : parsedDepartmentId;
 
     // 3. Calculate date range
     const { startDate, endDate, periodLabel } = getBangladeshDateRange(
@@ -208,6 +227,14 @@ export async function GET(request: NextRequest) {
             payments: {
               some: {
                 paymentDate: { gte: startDate, lte: endDate },
+              },
+            },
+          },
+          {
+            cashMovements: {
+              some: {
+                movementType: "REFUND",
+                timestamp: { gte: startDate, lte: endDate },
               },
             },
           },
@@ -292,6 +319,61 @@ export async function GET(request: NextRequest) {
       orderBy: { startTime: "desc" },
     });
 
+    // Build lookup maps for refund movements that don't have payment links.
+    // Refund descriptions contain admission/test numbers (e.g. "Refund for GYNE-25-00001").
+    const unresolvedRefundReferences = new Set<string>();
+    for (const shift of shifts) {
+      for (const movement of shift.cashMovements) {
+        if (movement.payment) {
+          continue;
+        }
+
+        const reference = extractRefundReference(movement.description);
+        if (reference) {
+          unresolvedRefundReferences.add(reference);
+        }
+      }
+    }
+
+    const unresolvedReferences = Array.from(unresolvedRefundReferences);
+    const [admissionsByNumber, pathologyTestsByNumber] = await Promise.all([
+      unresolvedReferences.length > 0
+        ? prisma.admission.findMany({
+            where: { admissionNumber: { in: unresolvedReferences } },
+            select: {
+              admissionNumber: true,
+              department: { select: { id: true, name: true } },
+              patient: {
+                select: { id: true, fullName: true, phoneNumber: true },
+              },
+            },
+          })
+        : Promise.resolve([]),
+      unresolvedReferences.length > 0
+        ? prisma.pathologyTest.findMany({
+            where: { testNumber: { in: unresolvedReferences } },
+            select: {
+              testNumber: true,
+              testCategory: true,
+              department: { select: { id: true, name: true } },
+              patient: {
+                select: { id: true, fullName: true, phoneNumber: true },
+              },
+            },
+          })
+        : Promise.resolve([]),
+    ]);
+
+    const admissionByNumber = new Map(
+      admissionsByNumber.map((admission) => [
+        admission.admissionNumber.toUpperCase(),
+        admission,
+      ]),
+    );
+    const pathologyByNumber = new Map(
+      pathologyTestsByNumber.map((test) => [test.testNumber.toUpperCase(), test]),
+    );
+
     // 5. Process shifts with detailed payment data
     const shiftDetailedSummaries: ShiftDetailedSummary[] = [];
     let overallTotalCollected = 0;
@@ -356,10 +438,8 @@ export async function GET(request: NextRequest) {
           const allocatedAmount = allocation.allocatedAmount.toNumber();
 
           // Department filter
-          if (departmentId && departmentId !== "all") {
-            if (deptId !== parseInt(departmentId)) {
-              continue;
-            }
+          if (selectedDepartmentId !== null && deptId !== selectedDepartmentId) {
+            continue;
           }
 
           // Determine the registration ID based on service type
@@ -428,7 +508,6 @@ export async function GET(request: NextRequest) {
 
       for (const cm of shift.cashMovements) {
         const refundAmount = cm.amount.toNumber();
-        shiftRefunded += refundAmount;
 
         // Build patient info from linked payment (if available)
         let patientId: number | undefined;
@@ -438,6 +517,7 @@ export async function GET(request: NextRequest) {
         let serviceName = "Refund";
         let serviceType = "REFUND";
         let departmentName = "N/A";
+        let refundDepartmentId: number | undefined;
 
         if (cm.payment) {
           patientId = cm.payment.patientAccount.patient.id;
@@ -462,11 +542,48 @@ export async function GET(request: NextRequest) {
             serviceName = alloc.serviceCharge.serviceName;
             serviceType = alloc.serviceCharge.serviceType;
             departmentName = alloc.serviceCharge.department.name;
+            refundDepartmentId = alloc.serviceCharge.department.id;
           } else {
             const year = getTwoDigitYear(new Date(cm.payment.paymentDate));
             registrationId = `GEN-${year}-${String(patientId).padStart(5, "0")}`;
           }
+        } else {
+          const reference = extractRefundReference(cm.description);
+          if (reference) {
+            const pathology = pathologyByNumber.get(reference);
+            if (pathology) {
+              patientId = pathology.patient.id;
+              patientName = pathology.patient.fullName;
+              patientPhone = pathology.patient.phoneNumber || undefined;
+              registrationId = pathology.testNumber;
+              serviceName = pathology.testCategory || "Pathology Test";
+              serviceType = "PATHOLOGY_TEST";
+              departmentName = pathology.department.name;
+              refundDepartmentId = pathology.department.id;
+            } else {
+              const admission = admissionByNumber.get(reference);
+              if (admission) {
+                patientId = admission.patient.id;
+                patientName = admission.patient.fullName;
+                patientPhone = admission.patient.phoneNumber || undefined;
+                registrationId = admission.admissionNumber;
+                serviceName = "Admission";
+                serviceType = "ADMISSION";
+                departmentName = admission.department.name;
+                refundDepartmentId = admission.department.id;
+              }
+            }
+          }
         }
+
+        if (
+          selectedDepartmentId !== null &&
+          refundDepartmentId !== selectedDepartmentId
+        ) {
+          continue;
+        }
+
+        shiftRefunded += refundAmount;
 
         shiftRefunds.push({
           paymentId: cm.payment?.id,
@@ -498,8 +615,8 @@ export async function GET(request: NextRequest) {
       );
 
       // Skip shifts that have no payments within the date range
-      // This prevents active shifts from appearing when they have no relevant transactions
-      if (shift.payments.length === 0) {
+      // Include refund-only shifts so cancellations/refunds still appear in reports.
+      if (shiftTransactionCount === 0 && shiftRefunds.length === 0) {
         continue;
       }
 
@@ -555,7 +672,7 @@ export async function GET(request: NextRequest) {
         periodLabel,
         startDate: startDate.toISOString(),
         endDate: endDate.toISOString(),
-        shiftsCount: shifts.length,
+        shiftsCount: shiftDetailedSummaries.length,
       },
     });
   } catch (error) {

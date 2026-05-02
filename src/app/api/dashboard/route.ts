@@ -331,9 +331,24 @@ export async function GET(request: NextRequest) {
     // 7. Transform cash session
     let cashSession = null;
     if (activeShift) {
-      const totalCollected = activeShift.totalCollected.toNumber();
-      const totalRefunded = activeShift.totalRefunded.toNumber();
-      const openingCash = activeShift.openingCash.toNumber();
+      const totalCollectedFromMovements = activeShift.cashMovements
+        .filter(
+          (movement) =>
+            movement.movementType === "COLLECTION" ||
+            movement.movementType === "PAYMENT_RECEIVED",
+        )
+        .reduce((sum, movement) => sum + movement.amount.toNumber(), 0);
+      const totalRefundedFromMovements = activeShift.cashMovements
+        .filter((movement) => movement.movementType === "REFUND")
+        .reduce((sum, movement) => sum + movement.amount.toNumber(), 0);
+
+      // Prefer shift aggregates, but fall back to movement totals when aggregate
+      // values are missing/zero on legacy rows.
+      const totalCollected =
+        activeShift.totalCollected?.toNumber() || totalCollectedFromMovements;
+      const totalRefunded =
+        activeShift.totalRefunded?.toNumber() || totalRefundedFromMovements;
+      const openingCash = activeShift.openingCash?.toNumber() || 0;
       // System cash should match this calculation if logic is correct
       const currentCash = openingCash + totalCollected - totalRefunded;
 
@@ -345,11 +360,11 @@ export async function GET(request: NextRequest) {
         endTime: activeShift.endTime?.toISOString(),
         openingCash,
         currentCash,
-        systemCash: activeShift.systemCash.toNumber(),
+        systemCash: activeShift.systemCash?.toNumber() || currentCash,
         totalCollected,
         totalRefunded,
         paymentsCount: activeShift.payments.length,
-        variance: activeShift.variance.toNumber(),
+        variance: activeShift.variance?.toNumber() || 0,
         isActive: activeShift.isActive,
       };
     }
