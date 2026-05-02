@@ -10,6 +10,7 @@ import type {
   ShiftSummary,
   CustomDateRange,
 } from "../components/SessionCashTracker/types";
+import { formatCalendarDateISO } from "../utils/dateUtils";
 
 interface SessionCashApiResponse {
   success: boolean;
@@ -41,16 +42,6 @@ export interface SessionCashDataResult extends SessionCashData {
   shiftsCount: number;
 }
 
-/**
- * Formats a date to ISO date string (YYYY-MM-DD) in Bangladesh Time (UTC+6)
- * This ensures consistency with how the API handles dates
- */
-function formatDateToBDTISO(date: Date): string {
-  const BDT_OFFSET_MS = 6 * 60 * 60 * 1000;
-  const dateInBDT = new Date(date.getTime() + BDT_OFFSET_MS);
-  return dateInBDT.toISOString().split("T")[0];
-}
-
 export function useSessionCashData({
   datePreset,
   departmentId,
@@ -66,8 +57,8 @@ export function useSessionCashData({
 
   // Add custom date range parameters if using custom preset
   if (datePreset === "custom" && customDateRange?.from && customDateRange?.to) {
-    queryParams.set("startDate", formatDateToBDTISO(customDateRange.from));
-    queryParams.set("endDate", formatDateToBDTISO(customDateRange.to));
+    queryParams.set("startDate", formatCalendarDateISO(customDateRange.from));
+    queryParams.set("endDate", formatCalendarDateISO(customDateRange.to));
   }
 
   const queryKey = [
@@ -75,10 +66,10 @@ export function useSessionCashData({
     datePreset,
     departmentId,
     datePreset === "custom" && customDateRange?.from
-      ? formatDateToBDTISO(customDateRange.from)
+      ? formatCalendarDateISO(customDateRange.from)
       : null,
     datePreset === "custom" && customDateRange?.to
-      ? formatDateToBDTISO(customDateRange.to)
+      ? formatCalendarDateISO(customDateRange.to)
       : null,
   ];
 

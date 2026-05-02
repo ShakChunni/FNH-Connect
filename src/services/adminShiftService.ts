@@ -45,7 +45,7 @@ export async function getAdminShifts(filters: ShiftFilters) {
       const endBDT = new Date(
         Date.UTC(year, month - 1, day + 1) - BDT_OFFSET_MS
       );
-      where.startTime.lte = endBDT;
+      where.startTime.lt = endBDT;
     }
   }
 
@@ -272,7 +272,7 @@ export async function getCashTrackingSummary(filters?: ShiftFilters) {
       const endBDT = new Date(
         Date.UTC(year, month - 1, day + 1) - BDT_OFFSET_MS
       );
-      where.startTime.lte = endBDT;
+      where.startTime.lt = endBDT;
     }
   }
 

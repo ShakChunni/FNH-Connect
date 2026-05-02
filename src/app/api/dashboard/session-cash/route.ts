@@ -200,7 +200,7 @@ export async function GET(request: NextRequest) {
           {
             startTime: {
               gte: startDate,
-              lte: endDate,
+              lt: endDate,
             },
           },
           // Active shifts (regardless of when they started)
@@ -213,7 +213,7 @@ export async function GET(request: NextRequest) {
               some: {
                 paymentDate: {
                   gte: startDate,
-                  lte: endDate,
+                  lt: endDate,
                 },
               },
             },
@@ -225,7 +225,7 @@ export async function GET(request: NextRequest) {
                 movementType: "REFUND",
                 timestamp: {
                   gte: startDate,
-                  lte: endDate,
+                  lt: endDate,
                 },
               },
             },
@@ -239,7 +239,7 @@ export async function GET(request: NextRequest) {
           where: {
             paymentDate: {
               gte: startDate,
-              lte: endDate,
+              lt: endDate,
             },
           },
           include: {
@@ -261,7 +261,7 @@ export async function GET(request: NextRequest) {
           where: {
             timestamp: {
               gte: startDate,
-              lte: endDate,
+              lt: endDate,
             },
             movementType: "REFUND",
           },

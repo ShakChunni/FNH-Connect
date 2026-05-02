@@ -15,6 +15,7 @@ import { CashTrackerShifts } from "./CashTrackerShifts";
 import { generateSessionCashReport } from "./generateCashReport";
 import { generateDetailedCashReport } from "./generateDetailedCashReport";
 import { api } from "@/lib/axios";
+import { formatCalendarDateISO } from "../../utils/dateUtils";
 import type {
   DatePreset,
   DetailedCashReportData,
@@ -162,13 +163,8 @@ export const SessionCashTracker: React.FC<SessionCashTrackerProps> = ({
         customDateRange?.from &&
         customDateRange?.to
       ) {
-        const BDT_OFFSET_MS = 6 * 60 * 60 * 1000;
-        const fromBDT = new Date(
-          customDateRange.from.getTime() + BDT_OFFSET_MS,
-        );
-        const toBDT = new Date(customDateRange.to.getTime() + BDT_OFFSET_MS);
-        queryParams.set("startDate", fromBDT.toISOString().split("T")[0]);
-        queryParams.set("endDate", toBDT.toISOString().split("T")[0]);
+        queryParams.set("startDate", formatCalendarDateISO(customDateRange.from));
+        queryParams.set("endDate", formatCalendarDateISO(customDateRange.to));
       }
 
       // Fetch detailed data from API

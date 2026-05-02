@@ -2,17 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/axios";
-import {
-  startOfDay,
-  endOfDay,
-  subDays,
-  startOfWeek,
-  endOfWeek,
-  startOfMonth,
-  endOfMonth,
-  subWeeks,
-  subMonths,
-} from "date-fns";
+import { getBDTDateRangeFromPreset } from "../utils/dateUtils";
 
 /**
  * Date preset options for filtering shifts
@@ -71,56 +61,23 @@ interface UseAdminShiftsOptions {
 }
 
 /**
- * Format date to YYYY-MM-DD using local time (not UTC)
- * This prevents timezone conversion issues with BDT (+6)
- */
-function formatLocalDate(date: Date): string {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-}
-
-/**
  * Calculate date range from preset
  */
 function getDateRangeFromPreset(preset: DatePreset): {
   startDate: string;
   endDate: string;
 } {
-  const now = new Date();
-
   switch (preset) {
     case "today":
-      return {
-        startDate: formatLocalDate(startOfDay(now)),
-        endDate: formatLocalDate(endOfDay(now)),
-      };
+      return getBDTDateRangeFromPreset("today");
     case "yesterday":
-      const yesterday = subDays(now, 1);
-      return {
-        startDate: formatLocalDate(startOfDay(yesterday)),
-        endDate: formatLocalDate(endOfDay(yesterday)),
-      };
+      return getBDTDateRangeFromPreset("yesterday");
     case "lastWeek":
-      const lastWeekStart = startOfWeek(subWeeks(now, 1), { weekStartsOn: 0 });
-      const lastWeekEnd = endOfWeek(subWeeks(now, 1), { weekStartsOn: 0 });
-      return {
-        startDate: formatLocalDate(lastWeekStart),
-        endDate: formatLocalDate(lastWeekEnd),
-      };
+      return getBDTDateRangeFromPreset("lastWeek");
     case "lastMonth":
-      const lastMonthStart = startOfMonth(subMonths(now, 1));
-      const lastMonthEnd = endOfMonth(subMonths(now, 1));
-      return {
-        startDate: formatLocalDate(lastMonthStart),
-        endDate: formatLocalDate(lastMonthEnd),
-      };
+      return getBDTDateRangeFromPreset("lastMonth");
     default:
-      return {
-        startDate: formatLocalDate(startOfDay(now)),
-        endDate: formatLocalDate(endOfDay(now)),
-      };
+      return getBDTDateRangeFromPreset("today");
   }
 }
 

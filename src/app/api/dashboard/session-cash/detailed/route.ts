@@ -221,12 +221,12 @@ export async function GET(request: NextRequest) {
       where: {
         staffId: user.staffId,
         OR: [
-          { startTime: { gte: startDate, lte: endDate } },
+          { startTime: { gte: startDate, lt: endDate } },
           { isActive: true },
           {
             payments: {
               some: {
-                paymentDate: { gte: startDate, lte: endDate },
+                paymentDate: { gte: startDate, lt: endDate },
               },
             },
           },
@@ -234,7 +234,7 @@ export async function GET(request: NextRequest) {
             cashMovements: {
               some: {
                 movementType: "REFUND",
-                timestamp: { gte: startDate, lte: endDate },
+                timestamp: { gte: startDate, lt: endDate },
               },
             },
           },
@@ -244,7 +244,7 @@ export async function GET(request: NextRequest) {
         staff: { select: { fullName: true } },
         payments: {
           where: {
-            paymentDate: { gte: startDate, lte: endDate },
+            paymentDate: { gte: startDate, lt: endDate },
           },
           include: {
             patientAccount: {
@@ -279,7 +279,7 @@ export async function GET(request: NextRequest) {
           where: {
             timestamp: {
               gte: startDate,
-              lte: endDate,
+              lt: endDate,
             },
             movementType: "REFUND",
           },

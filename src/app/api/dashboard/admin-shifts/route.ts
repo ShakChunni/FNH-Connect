@@ -36,12 +36,12 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
 
-    // Default to today's date if not provided (using local time, not UTC)
-    const now = new Date();
-    const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(
-      2,
-      "0"
-    )}-${String(now.getDate()).padStart(2, "0")}`;
+    // Default to today's date in Bangladesh time (UTC+6)
+    const BDT_OFFSET_MS = 6 * 60 * 60 * 1000;
+    const nowBDT = new Date(Date.now() + BDT_OFFSET_MS);
+    const today = `${nowBDT.getUTCFullYear()}-${String(
+      nowBDT.getUTCMonth() + 1
+    ).padStart(2, "0")}-${String(nowBDT.getUTCDate()).padStart(2, "0")}`;
     const startDate = searchParams.get("startDate") || today;
     const endDate = searchParams.get("endDate") || undefined;
     const search = searchParams.get("search") || undefined;
