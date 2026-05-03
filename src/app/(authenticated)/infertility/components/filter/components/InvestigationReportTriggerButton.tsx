@@ -9,6 +9,7 @@ import { generateInfertilityInvestigationReport } from "../../../utils/generateI
 import { exportInvestigationsToCSV } from "../../../utils/exportToCSV";
 import { useAuth } from "@/app/AuthContext";
 import { useInfertilityTestFilterStore } from "../../../stores/testFilterStore";
+import { buildBDTQueryDateRange } from "@/lib/timezone";
 
 interface ReportTriggerButtonProps {
   disabled?: boolean;
@@ -40,10 +41,14 @@ export const InvestigationReportTriggerButton: React.FC<ReportTriggerButtonProps
     const loadingToast = toast.loading(`Preparing ${type} report...`);
 
     try {
+      const dateRangeParams = buildBDTQueryDateRange(
+        filters.startDate,
+        filters.endDate
+      );
+
       const data = await fetchReportData({
         search: filters.search,
-        startDate: filters.startDate?.toISOString(),
-        endDate: filters.endDate?.toISOString(),
+        ...dateRangeParams,
         status: filters.status,
         testNames: filters.testNames,
         orderedById: filters.orderedById || undefined,

@@ -35,6 +35,7 @@ import {
   useInfertilityTestFilterValues,
   useInfertilityTestFilterStore,
 } from "./stores";
+import { buildBDTQueryDateRange } from "@/lib/timezone";
 
 const InfertilityManagement = React.memo(() => {
   const [activeTab, setActiveTab] = useState<"patients" | "investigations">("patients");
@@ -60,32 +61,38 @@ const InfertilityManagement = React.memo(() => {
   );
 
   // Patient Filters for hook
-  const patientHookFilters: InfertilityFilters = useMemo(
-    () => ({
+  const patientHookFilters: InfertilityFilters = useMemo(() => {
+    const dateRangeParams = buildBDTQueryDateRange(
+      patientFilterValues.startDate,
+      patientFilterValues.endDate
+    );
+
+    return {
       page: patientPagination.page,
       limit: patientPagination.limit,
       search: patientFilterValues.search.length >= 2 ? patientFilterValues.search : undefined,
-      startDate: patientFilterValues.startDate?.toISOString(),
-      endDate: patientFilterValues.endDate?.toISOString(),
-    }),
-    [patientPagination.page, patientPagination.limit, patientFilterValues]
-  );
+      ...dateRangeParams,
+    };
+  }, [patientPagination.page, patientPagination.limit, patientFilterValues]);
 
   // Investigation Filters for hook
-  const investigationHookFilters: InfertilityTestFilters = useMemo(
-    () => ({
+  const investigationHookFilters: InfertilityTestFilters = useMemo(() => {
+    const dateRangeParams = buildBDTQueryDateRange(
+      investigationFilters.startDate,
+      investigationFilters.endDate
+    );
+
+    return {
       page: investigationFilters.page,
       limit: investigationFilters.limit,
       search: investigationFilters.search,
-      startDate: investigationFilters.startDate?.toISOString(),
-      endDate: investigationFilters.endDate?.toISOString(),
+      ...dateRangeParams,
       status: investigationFilters.status,
       orderedById: investigationFilters.orderedById || undefined,
       doneById: investigationFilters.doneById || undefined,
       testNames: investigationFilters.testNames,
-    }),
-    [investigationFilters]
-  );
+    };
+  }, [investigationFilters]);
 
   // Fetching data
   const { data: patientResult, isLoading: isPatientsLoading } = useFetchInfertilityData(patientHookFilters);

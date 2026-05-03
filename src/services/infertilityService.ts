@@ -130,7 +130,7 @@ export async function getInfertilityPatients(filters: InfertilityFilters) {
       where.createdAt.gte = new Date(filters.startDate);
     }
     if (filters.endDate) {
-      where.createdAt.lte = new Date(filters.endDate);
+      where.createdAt.lt = new Date(filters.endDate);
     }
   }
 
@@ -759,7 +759,7 @@ export async function getInfertilityTests(filters: InfertilityTestFilters) {
       where.testDate.gte = new Date(filters.startDate);
     }
     if (filters.endDate) {
-      where.testDate.lte = new Date(filters.endDate);
+      where.testDate.lt = new Date(filters.endDate);
     }
   }
 
