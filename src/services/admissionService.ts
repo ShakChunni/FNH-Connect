@@ -125,7 +125,7 @@ export async function getAdmissions(filters: AdmissionFilters) {
       where.dateAdmitted.gte = new Date(filters.startDate);
     }
     if (filters.endDate) {
-      where.dateAdmitted.lte = new Date(filters.endDate);
+      where.dateAdmitted.lt = new Date(filters.endDate);
     }
   }
 

@@ -11,6 +11,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getAuthenticatedUserForAPI } from "@/lib/auth-validation";
+import { getSessionCashUTCDateRange } from "@/lib/timezone";
 
 interface DepartmentBreakdown {
   departmentId: number;
@@ -30,130 +31,17 @@ interface ShiftSummary {
   departmentBreakdown: DepartmentBreakdown[];
 }
 
-/**
- * Helper to calculate Bangladesh Time date ranges properly
- * Bangladesh is UTC+6, so we need to convert between BDT and UTC for DB queries
- */
-function getBangladeshDateRange(
-  datePreset: string,
-  customStartDate?: string,
-  customEndDate?: string,
-): {
-  startDate: Date;
-  endDate: Date;
-  periodLabel: string;
-} {
-  const BDT_OFFSET_MS = 6 * 60 * 60 * 1000; // UTC+6 in milliseconds
-  const nowUTC = new Date();
-  const nowBDT = new Date(nowUTC.getTime() + BDT_OFFSET_MS);
-
-  // Get Bangladesh "today" components
-  const bdtYear = nowBDT.getUTCFullYear();
-  const bdtMonth = nowBDT.getUTCMonth();
-  const bdtDate = nowBDT.getUTCDate();
-
-  let startDate: Date;
-  let endDate: Date;
-  let periodLabel: string;
-
-  switch (datePreset) {
-    case "yesterday":
-      // Yesterday in Bangladesh time
-      startDate = new Date(
-        Date.UTC(bdtYear, bdtMonth, bdtDate - 1) - BDT_OFFSET_MS,
-      );
-      endDate = new Date(Date.UTC(bdtYear, bdtMonth, bdtDate) - BDT_OFFSET_MS);
-      periodLabel = "Yesterday";
-      break;
-
-    case "lastWeek":
-      // Last 7 days including today in Bangladesh time
-      startDate = new Date(
-        Date.UTC(bdtYear, bdtMonth, bdtDate - 6) - BDT_OFFSET_MS,
-      );
-      endDate = new Date(
-        Date.UTC(bdtYear, bdtMonth, bdtDate + 1) - BDT_OFFSET_MS,
-      );
-      periodLabel = "Last Week";
-      break;
-
-    case "thisMonth":
-      // Current calendar month in Bangladesh time (1st of month to now)
-      startDate = new Date(Date.UTC(bdtYear, bdtMonth, 1) - BDT_OFFSET_MS);
-      endDate = new Date(
-        Date.UTC(bdtYear, bdtMonth, bdtDate + 1) - BDT_OFFSET_MS,
-      );
-      periodLabel = "This Month";
-      break;
-
-    case "lastCalendarMonth":
-      // Previous calendar month (1st to last day of previous month)
-      startDate = new Date(Date.UTC(bdtYear, bdtMonth - 1, 1) - BDT_OFFSET_MS);
-      endDate = new Date(Date.UTC(bdtYear, bdtMonth, 1) - BDT_OFFSET_MS);
-      periodLabel = "Last Month";
-      break;
-
-    case "last30Days":
-      // Last 30 days including today in Bangladesh time
-      startDate = new Date(
-        Date.UTC(bdtYear, bdtMonth, bdtDate - 29) - BDT_OFFSET_MS,
-      );
-      endDate = new Date(
-        Date.UTC(bdtYear, bdtMonth, bdtDate + 1) - BDT_OFFSET_MS,
-      );
-      periodLabel = "Last 30 Days";
-      break;
-
-    case "custom":
-      // Custom date range provided via query params
-      if (customStartDate && customEndDate) {
-        // Parse the date strings as BDT dates (YYYY-MM-DD format)
-        const [startYear, startMonth, startDay] = customStartDate
-          .split("-")
-          .map(Number);
-        const [endYear, endMonth, endDay] = customEndDate
-          .split("-")
-          .map(Number);
-
-        // Convert BDT midnight to UTC
-        startDate = new Date(
-          Date.UTC(startYear, startMonth - 1, startDay) - BDT_OFFSET_MS,
-        );
-        // End date should be the end of the day (next day midnight)
-        endDate = new Date(
-          Date.UTC(endYear, endMonth - 1, endDay + 1) - BDT_OFFSET_MS,
-        );
-
-        // Format period label for display
-        const startFormatted = `${startDay}/${startMonth}/${startYear}`;
-        const endFormatted = `${endDay}/${endMonth}/${endYear}`;
-        periodLabel = `${startFormatted} - ${endFormatted}`;
-      } else {
-        // Fallback to today if no custom dates provided
-        startDate = new Date(
-          Date.UTC(bdtYear, bdtMonth, bdtDate) - BDT_OFFSET_MS,
-        );
-        endDate = new Date(
-          Date.UTC(bdtYear, bdtMonth, bdtDate + 1) - BDT_OFFSET_MS,
-        );
-        periodLabel = "Today";
-      }
-      break;
-
-    case "today":
-    default:
-      // Today in Bangladesh time (midnight BDT to next midnight BDT)
-      startDate = new Date(
-        Date.UTC(bdtYear, bdtMonth, bdtDate) - BDT_OFFSET_MS,
-      );
-      endDate = new Date(
-        Date.UTC(bdtYear, bdtMonth, bdtDate + 1) - BDT_OFFSET_MS,
-      );
-      periodLabel = "Today";
-      break;
+function extractRefundReference(description?: string | null): string | null {
+  if (!description) {
+    return null;
   }
 
-  return { startDate, endDate, periodLabel };
+  const match = description.match(/for\s+([A-Z]+-\d{2}-\d{5})/i);
+  if (!match) {
+    return null;
+  }
+
+  return match[1].toUpperCase();
 }
 
 export async function GET(request: NextRequest) {
@@ -181,7 +69,7 @@ export async function GET(request: NextRequest) {
         : parsedDepartmentId;
 
     // 3. Calculate date range based on preset (in Bangladesh Time / UTC+6)
-    const { startDate, endDate, periodLabel } = getBangladeshDateRange(
+    const { startDate, endDate, periodLabel } = getSessionCashUTCDateRange(
       datePreset,
       customStartDate,
       customEndDate,
@@ -268,11 +156,78 @@ export async function GET(request: NextRequest) {
           select: {
             amount: true,
             movementType: true,
+            description: true,
+            payment: {
+              select: {
+                paymentAllocations: {
+                  include: {
+                    serviceCharge: {
+                      include: {
+                        department: { select: { id: true, name: true } },
+                        admission: { select: { admissionNumber: true } },
+                        pathologyTest: { select: { testNumber: true } },
+                      },
+                    },
+                  },
+                },
+              },
+            },
           },
         },
       },
       orderBy: { startTime: "desc" },
     });
+
+    const unresolvedRefundReferences = new Set<string>();
+    if (selectedDepartmentId !== null) {
+      for (const shift of shifts) {
+        for (const movement of shift.cashMovements) {
+          if (movement.payment) {
+            continue;
+          }
+
+          const reference = extractRefundReference(movement.description);
+          if (reference) {
+            unresolvedRefundReferences.add(reference);
+          }
+        }
+      }
+    }
+
+    const unresolvedReferences = Array.from(unresolvedRefundReferences);
+    const [admissionsByNumber, pathologyTestsByNumber] = await Promise.all([
+      selectedDepartmentId !== null && unresolvedReferences.length > 0
+        ? prisma.admission.findMany({
+            where: { admissionNumber: { in: unresolvedReferences } },
+            select: {
+              admissionNumber: true,
+              department: { select: { id: true } },
+            },
+          })
+        : Promise.resolve([]),
+      selectedDepartmentId !== null && unresolvedReferences.length > 0
+        ? prisma.pathologyTest.findMany({
+            where: { testNumber: { in: unresolvedReferences } },
+            select: {
+              testNumber: true,
+              department: { select: { id: true } },
+            },
+          })
+        : Promise.resolve([]),
+    ]);
+
+    const admissionByNumber = new Map(
+      admissionsByNumber.map((admission) => [
+        admission.admissionNumber.toUpperCase(),
+        admission.department.id,
+      ]),
+    );
+    const pathologyByNumber = new Map(
+      pathologyTestsByNumber.map((test) => [
+        test.testNumber.toUpperCase(),
+        test.department.id,
+      ]),
+    );
 
     // 5. Get all active departments for the dropdown
     const departments = await prisma.department.findMany({
@@ -354,15 +309,35 @@ export async function GET(request: NextRequest) {
         }
       }
 
-      // Calculate refunds from date-filtered cash movements instead of shift.totalRefunded
-      // This ensures refund numbers are consistent with the date range filter
-      const shiftRefunded = shift.cashMovements.reduce(
-        (
-          sum: number,
-          cm: { amount: { toNumber: () => number }; movementType: string },
-        ) => sum + cm.amount.toNumber(),
-        0,
-      );
+      // Calculate refunds from date-filtered cash movements.
+      // For department-scoped queries, include only refunds linked to that department.
+      let shiftRefunded = 0;
+      for (const refundMovement of shift.cashMovements) {
+        const refundAmount = refundMovement.amount.toNumber();
+
+        if (selectedDepartmentId === null) {
+          shiftRefunded += refundAmount;
+          continue;
+        }
+
+        let refundDepartmentId: number | undefined;
+        const firstAllocation =
+          refundMovement.payment?.paymentAllocations?.[0]?.serviceCharge;
+
+        if (firstAllocation) {
+          refundDepartmentId = firstAllocation.department.id;
+        } else {
+          const reference = extractRefundReference(refundMovement.description);
+          if (reference) {
+            refundDepartmentId =
+              pathologyByNumber.get(reference) ?? admissionByNumber.get(reference);
+          }
+        }
+
+        if (refundDepartmentId === selectedDepartmentId) {
+          shiftRefunded += refundAmount;
+        }
+      }
 
       // Build shift department breakdown
       const shiftDepartmentBreakdown: DepartmentBreakdown[] = [];
@@ -411,7 +386,7 @@ export async function GET(request: NextRequest) {
     }
     departmentBreakdown.sort((a, b) => b.totalCollected - a.totalCollected);
 
-    // 8. Return response (periodLabel is already calculated in getBangladeshDateRange)
+    // 8. Return response
     return NextResponse.json({
       success: true,
       data: {

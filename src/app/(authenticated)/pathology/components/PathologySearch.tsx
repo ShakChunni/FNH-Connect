@@ -11,6 +11,7 @@ import { exportPathologyToCSV } from "../utils/exportToCSV";
 import { useFetchPathologyReportData } from "../hooks/useFetchPathologyReportData";
 import { transformPathologyPatients } from "../utils/dataTransformers";
 import { toast } from "sonner";
+import { buildBDTQueryDateRange } from "@/lib/timezone";
 
 interface PathologySearchProps {
   disabled?: boolean;
@@ -63,8 +64,7 @@ export const PathologySearch: React.FC<PathologySearchProps> = ({
     try {
       const reportFilters = {
         search: filters.search.length >= 2 ? filters.search : undefined,
-        startDate: filters.startDate?.toISOString(),
-        endDate: filters.endDate?.toISOString(),
+        ...buildBDTQueryDateRange(filters.startDate, filters.endDate),
         status: filters.status !== "All" ? filters.status : undefined,
         orderedById: filters.orderedById ?? undefined,
         doneById: filters.doneById ?? undefined,

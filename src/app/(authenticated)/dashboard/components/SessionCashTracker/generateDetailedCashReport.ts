@@ -5,8 +5,8 @@
 
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
-import { format } from "date-fns";
 import type { DetailedCashReportData } from "./types";
+import { formatBDT } from "@/lib/timezone";
 
 // FNH Brand Colors
 const COLORS = {
@@ -45,11 +45,11 @@ const formatCurrency = (amount: number): string => {
 };
 
 const formatTime = (dateString: string): string => {
-  return format(new Date(dateString), "h:mm a");
+  return formatBDT(dateString, "h:mm a");
 };
 
 const formatDateTime = (dateString: string): string => {
-  return format(new Date(dateString), "MMM dd, hh:mm a");
+  return formatBDT(dateString, "MMM dd, hh:mm a");
 };
 
 const safeText = (value: string | null | undefined, fallback = "N/A"): string => {

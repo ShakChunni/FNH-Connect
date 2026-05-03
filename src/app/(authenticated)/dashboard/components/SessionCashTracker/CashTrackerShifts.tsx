@@ -8,8 +8,8 @@ import {
   ChevronDown,
   ChevronUp,
 } from "lucide-react";
-import { format } from "date-fns";
 import type { ShiftSummary, DepartmentCashBreakdown } from "./types";
+import { formatBDT } from "@/lib/timezone";
 
 interface CashTrackerShiftsProps {
   shifts: ShiftSummary[];
@@ -23,7 +23,7 @@ const formatCurrency = (amount: number): string => {
 };
 
 const formatTime = (dateString: string): string => {
-  return format(new Date(dateString), "h:mm a");
+  return formatBDT(dateString, "h:mm a");
 };
 
 /**
@@ -113,8 +113,13 @@ export const CashTrackerShifts: React.FC<CashTrackerShiftsProps> = ({
                 <div className="flex items-center gap-1.5 shrink-0">
                   <div className="text-right">
                     <span className="text-[10px] sm:text-xs font-bold text-fnh-navy-dark">
-                      BDT {formatCurrency(shift.totalCollected)}
+                      BDT {formatCurrency(shift.totalCollected - shift.totalRefunded)}
                     </span>
+                    {shift.totalRefunded > 0 && (
+                      <span className="block text-[9px] text-rose-500">
+                        -{formatCurrency(shift.totalRefunded)} refund
+                      </span>
+                    )}
                     <span className="text-[9px] text-gray-400 ml-1">
                       ({shift.transactionCount})
                     </span>

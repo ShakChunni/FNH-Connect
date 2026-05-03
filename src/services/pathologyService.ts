@@ -129,7 +129,7 @@ export async function getPathologyPatients(filters: PathologyFilters) {
       where.testDate.gte = new Date(filters.startDate);
     }
     if (filters.endDate) {
-      where.testDate.lte = new Date(filters.endDate);
+      where.testDate.lt = new Date(filters.endDate);
     }
   }
 

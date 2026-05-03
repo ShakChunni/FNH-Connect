@@ -14,6 +14,7 @@ const DATE_OPTIONS = [
   { value: "last7days", label: "Last 7 Days" },
   { value: "last30days", label: "Last 30 Days" },
   { value: "thisMonth", label: "This Month" },
+  { value: "lastMonth", label: "Last Calendar Month" },
   { value: "custom", label: "Custom Range" },
 ];
 

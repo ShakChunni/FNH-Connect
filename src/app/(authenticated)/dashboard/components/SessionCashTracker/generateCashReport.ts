@@ -5,8 +5,8 @@
 
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
-import { format } from "date-fns";
 import type { SessionCashReportData } from "./types";
+import { formatBDT } from "@/lib/timezone";
 
 // FNH Brand Colors - matching pathology receipt
 const COLORS = {
@@ -45,7 +45,7 @@ const formatCurrency = (amount: number): string => {
 };
 
 const formatTime = (dateString: string): string => {
-  return format(new Date(dateString), "h:mm a");
+  return formatBDT(dateString, "h:mm a");
 };
 
 /**
@@ -260,7 +260,7 @@ export const generateSessionCashReport = async (
         data.shifts!.length > 1 ? `#${data.shifts!.length - index}` : "Shift";
       const status = shift.isActive ? "Active" : "Closed";
       // Format date from startTime
-      const shiftDate = format(new Date(shift.startTime), "MMM dd");
+      const shiftDate = formatBDT(shift.startTime, "MMM dd");
       const timeRange = shift.endTime
         ? `${formatTime(shift.startTime)} - ${formatTime(shift.endTime)}`
         : `${formatTime(shift.startTime)} - now`;
@@ -399,14 +399,7 @@ export const generateSessionCashReport = async (
   doc.setTextColor(COLORS.primary);
   doc.text(data.staffName, margin, footerY + 5);
 
-  const printTime = new Date().toLocaleString("en-BD", {
-    hour: "numeric",
-    minute: "numeric",
-    hour12: true,
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
+  const printTime = formatBDT(new Date(), "dd MMM yyyy, h:mm a");
   doc.setFont("helvetica", "normal");
   doc.setFontSize(7);
   doc.setTextColor(COLORS.lightText);

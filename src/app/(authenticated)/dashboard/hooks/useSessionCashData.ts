@@ -10,7 +10,7 @@ import type {
   ShiftSummary,
   CustomDateRange,
 } from "../components/SessionCashTracker/types";
-import { formatCalendarDateISO } from "../utils/dateUtils";
+import { formatCalendarDateISO } from "@/lib/timezone";
 
 interface SessionCashApiResponse {
   success: boolean;

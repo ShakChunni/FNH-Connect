@@ -5,6 +5,7 @@
 
 import { create } from "zustand";
 import { useShallow } from "zustand/react/shallow";
+import { getBDTPresetCalendarRange } from "@/lib/timezone";
 
 // ═══════════════════════════════════════════════════════════════
 // State Interfaces
@@ -113,45 +114,7 @@ const initialReportState: ReportState = {
 export const getDateRangeFromOption = (
   option: string
 ): { start: Date | null; end: Date | null } => {
-  const now = new Date();
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-
-  switch (option) {
-    case "today": {
-      const endOfDay = new Date(today);
-      endOfDay.setHours(23, 59, 59, 999);
-      return { start: today, end: endOfDay };
-    }
-    case "yesterday": {
-      const yesterday = new Date(today);
-      yesterday.setDate(yesterday.getDate() - 1);
-      const endOfYesterday = new Date(yesterday);
-      endOfYesterday.setHours(23, 59, 59, 999);
-      return { start: yesterday, end: endOfYesterday };
-    }
-    case "last7days": {
-      const last7Days = new Date(today);
-      last7Days.setDate(last7Days.getDate() - 7);
-      return { start: last7Days, end: now };
-    }
-    case "last30days": {
-      const last30Days = new Date(today);
-      last30Days.setDate(last30Days.getDate() - 30);
-      return { start: last30Days, end: now };
-    }
-    case "thisMonth": {
-      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-      return { start: startOfMonth, end: now };
-    }
-    case "lastMonth": {
-      const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-      const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0);
-      lastMonthEnd.setHours(23, 59, 59, 999);
-      return { start: lastMonthStart, end: lastMonthEnd };
-    }
-    default:
-      return { start: null, end: null };
-  }
+  return getBDTPresetCalendarRange(option);
 };
 
 // ═══════════════════════════════════════════════════════════════

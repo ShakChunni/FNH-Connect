@@ -17,6 +17,7 @@ import { useFetchAdmissionsReportData } from "../../../hooks/useFetchAdmissionsR
 import { useFetchDepartments } from "../../../hooks/useFetchDepartments";
 import { useFetchDoctors } from "../../../hooks/useFetchDoctors";
 import { toast } from "sonner";
+import { buildBDTQueryDateRange } from "@/lib/timezone";
 
 interface ExportActionBarProps {
   data: AdmissionPatientData[];
@@ -65,8 +66,7 @@ export const ExportActionBar: React.FC<ExportActionBarProps> = ({ data }) => {
   > => {
     const reportFilters = {
       search: filters.search.length >= 2 ? filters.search : undefined,
-      startDate: filters.startDate?.toISOString(),
-      endDate: filters.endDate?.toISOString(),
+      ...buildBDTQueryDateRange(filters.startDate, filters.endDate),
       status: filters.status !== "All" ? filters.status : undefined,
       departmentId: filters.departmentId ?? undefined,
       doctorId: filters.doctorId ?? undefined,

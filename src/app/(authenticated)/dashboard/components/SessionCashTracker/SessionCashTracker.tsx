@@ -2,7 +2,6 @@
 
 import React, { useCallback, useEffect, useState } from "react";
 import { RefreshCw } from "lucide-react";
-import { format } from "date-fns";
 import { useNotification } from "@/hooks/useNotification";
 import { useSessionCashStore } from "../../store";
 import { useSessionCashData } from "../../hooks/useSessionCashData";
@@ -15,7 +14,11 @@ import { CashTrackerShifts } from "./CashTrackerShifts";
 import { generateSessionCashReport } from "./generateCashReport";
 import { generateDetailedCashReport } from "./generateDetailedCashReport";
 import { api } from "@/lib/axios";
-import { formatCalendarDateISO } from "../../utils/dateUtils";
+import {
+  formatBDT,
+  formatCalendarDateISO,
+  getInclusiveEndDateFromExclusiveUTC,
+} from "@/lib/timezone";
 import type {
   DatePreset,
   DetailedCashReportData,
@@ -121,10 +124,13 @@ export const SessionCashTracker: React.FC<SessionCashTrackerProps> = ({
 
       await generateSessionCashReport({
         staffName: data.staffName,
-        generatedAt: format(new Date(), "MMM dd, yyyy hh:mm a"),
+        generatedAt: formatBDT(new Date(), "MMM dd, yyyy hh:mm a"),
         periodLabel: data.periodLabel,
-        startDate: format(new Date(data.startDate), "MMM dd, yyyy"),
-        endDate: format(new Date(data.endDate), "MMM dd, yyyy"),
+        startDate: formatBDT(data.startDate, "MMM dd, yyyy"),
+        endDate: formatBDT(
+          getInclusiveEndDateFromExclusiveUTC(data.endDate),
+          "MMM dd, yyyy",
+        ),
         departmentFilter: selectedDept,
         totalCollected: data.totalCollected,
         totalRefunded: data.totalRefunded,
@@ -187,10 +193,13 @@ export const SessionCashTracker: React.FC<SessionCashTrackerProps> = ({
       // Generate detailed report
       await generateDetailedCashReport({
         staffName: detailedData.staffName,
-        generatedAt: format(new Date(), "MMM dd, yyyy hh:mm a"),
+        generatedAt: formatBDT(new Date(), "MMM dd, yyyy hh:mm a"),
         periodLabel: detailedData.periodLabel,
-        startDate: format(new Date(detailedData.startDate), "MMM dd, yyyy"),
-        endDate: format(new Date(detailedData.endDate), "MMM dd, yyyy"),
+        startDate: formatBDT(detailedData.startDate, "MMM dd, yyyy"),
+        endDate: formatBDT(
+          getInclusiveEndDateFromExclusiveUTC(detailedData.endDate),
+          "MMM dd, yyyy",
+        ),
         departmentFilter: selectedDept,
         totalCollected: detailedData.totalCollected,
         totalRefunded: detailedData.totalRefunded,

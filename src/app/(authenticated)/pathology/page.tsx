@@ -24,6 +24,7 @@ import {
   usePathologyFilterStore,
 } from "./stores";
 import { serializeDateOfBirth } from "@/lib/dateOfBirth";
+import { buildBDTQueryDateRange } from "@/lib/timezone";
 
 const PathologyManagement = React.memo(() => {
   // Ref for scrolling table container on pagination
@@ -39,24 +40,30 @@ const PathologyManagement = React.memo(() => {
 
   // Map filter store values to hook format - properly connect ALL filters
   const hookFilters: PathologyFilters = useMemo(
-    () => ({
-      // Search filter (minimum 2 characters)
-      search: filterValues.search.length >= 2 ? filterValues.search : undefined,
-      // Status filter - convert to API format
-      status: filterValues.status !== "All" ? filterValues.status : undefined,
-      // Date range filters
-      startDate: filterValues.startDate?.toISOString(),
-      endDate: filterValues.endDate?.toISOString(),
-      // Doctor filters
-      orderedById: filterValues.orderedById ?? undefined,
-      doneById: filterValues.doneById ?? undefined,
-      // Test name filters (multi-select)
-      testNames:
-        filterValues.testNames.length > 0 ? filterValues.testNames : undefined,
-      // Pagination
-      page: filterValues.page,
-      limit: filterValues.limit,
-    }),
+    () => {
+      const dateRangeParams = buildBDTQueryDateRange(
+        filterValues.startDate,
+        filterValues.endDate,
+      );
+
+      return {
+        // Search filter (minimum 2 characters)
+        search: filterValues.search.length >= 2 ? filterValues.search : undefined,
+        // Status filter - convert to API format
+        status: filterValues.status !== "All" ? filterValues.status : undefined,
+        // Date range filters (always BDT-day selected, sent as UTC bounds)
+        ...dateRangeParams,
+        // Doctor filters
+        orderedById: filterValues.orderedById ?? undefined,
+        doneById: filterValues.doneById ?? undefined,
+        // Test name filters (multi-select)
+        testNames:
+          filterValues.testNames.length > 0 ? filterValues.testNames : undefined,
+        // Pagination
+        page: filterValues.page,
+        limit: filterValues.limit,
+      };
+    },
     [filterValues],
   );
 

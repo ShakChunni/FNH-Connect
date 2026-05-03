@@ -51,7 +51,7 @@ export async function getActivityLogs(filters: ActivityLogFilters) {
       const endBDT = new Date(
         Date.UTC(year, month - 1, day + 1) - BDT_OFFSET_MS
       );
-      where.timestamp.lte = endBDT;
+      where.timestamp.lt = endBDT;
     }
   }
 
@@ -284,7 +284,7 @@ export async function getActivityLogSummary(filters?: ActivityLogFilters) {
       const endBDT = new Date(
         Date.UTC(year, month - 1, day + 1) - BDT_OFFSET_MS
       );
-      where.timestamp.lte = endBDT;
+      where.timestamp.lt = endBDT;
     }
   }
 

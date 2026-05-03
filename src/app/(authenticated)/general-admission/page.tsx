@@ -27,6 +27,7 @@ import {
   useFilterValues,
   useFilterStore,
 } from "./stores";
+import { buildBDTQueryDateRange } from "@/lib/timezone";
 
 // New Patient Button Component - Full width centered on mobile
 const NewPatientButton: React.FC<{
@@ -70,14 +71,20 @@ const GeneralAdmissionPage = React.memo(() => {
 
   // Map filter store values to hook format
   const hookFilters: AdmissionFilters = useMemo(
-    () => ({
-      search: filterValues.search.length >= 2 ? filterValues.search : undefined,
-      departmentId: filterValues.departmentId ?? undefined,
-      doctorId: filterValues.doctorId ?? undefined,
-      status: filterValues.status !== "All" ? filterValues.status : undefined,
-      startDate: filterValues.startDate?.toISOString(),
-      endDate: filterValues.endDate?.toISOString(),
-    }),
+    () => {
+      const dateRangeParams = buildBDTQueryDateRange(
+        filterValues.startDate,
+        filterValues.endDate,
+      );
+
+      return {
+        search: filterValues.search.length >= 2 ? filterValues.search : undefined,
+        departmentId: filterValues.departmentId ?? undefined,
+        doctorId: filterValues.doctorId ?? undefined,
+        status: filterValues.status !== "All" ? filterValues.status : undefined,
+        ...dateRangeParams,
+      };
+    },
     [filterValues]
   );
 

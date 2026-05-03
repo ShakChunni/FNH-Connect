@@ -12,6 +12,7 @@ import { generateAdmissionsReport } from "../utils/generateReport";
 import { exportAdmissionsToExcel } from "../utils/exportToExcel";
 import { useFetchAdmissionsReportData } from "../hooks/useFetchAdmissionsReportData";
 import { toast } from "sonner";
+import { buildBDTQueryDateRange } from "@/lib/timezone";
 
 interface AdmissionSearchProps {
   disabled?: boolean;
@@ -87,8 +88,7 @@ export const AdmissionSearch: React.FC<AdmissionSearchProps> = ({
     try {
       const reportFilters = {
         search: filters.search.length >= 2 ? filters.search : undefined,
-        startDate: filters.startDate?.toISOString(),
-        endDate: filters.endDate?.toISOString(),
+        ...buildBDTQueryDateRange(filters.startDate, filters.endDate),
         status: filters.status !== "All" ? filters.status : undefined,
         departmentId: filters.departmentId ?? undefined,
         doctorId: filters.doctorId ?? undefined,
