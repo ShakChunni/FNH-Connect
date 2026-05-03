@@ -30,7 +30,7 @@ export const StatusFilter: React.FC = () => {
               transition-all duration-200 cursor-pointer
               ${
                 status === option.value
-                  ? "border-fnh-blue bg-fnh-blue/5 text-fnh-blue shadow-sm"
+                  ? "border-emerald-600 bg-emerald-600/5 text-emerald-600 shadow-sm"
                   : "border-gray-100 bg-white text-gray-500 hover:border-gray-200 hover:bg-gray-50"
               }
             `}

@@ -162,7 +162,7 @@ const InfertilityManagement = React.memo(() => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-fnh-porcelain pb-2 sm:pb-3 lg:pb-4 w-full overflow-x-hidden">
+    <div className="min-h-screen bg-emerald-50/50 pb-2 sm:pb-3 lg:pb-4 w-full overflow-x-hidden">
       <div className="mx-auto w-full max-w-full px-3 sm:px-4 lg:px-6 pt-16 sm:pt-12 lg:pt-2">
         <div className="space-y-4 sm:space-y-5 lg:space-y-6 w-full">
           {/* Page Header */}
@@ -185,7 +185,7 @@ const InfertilityManagement = React.memo(() => {
               <button
                 className={`pb-3 text-sm font-medium transition-all ${
                   activeTab === "patients" 
-                    ? "border-b-2 border-fnh-blue text-fnh-blue" 
+                    ? "border-b-2 border-emerald-600 text-emerald-600" 
                     : "text-slate-500 hover:text-slate-700"
                 }`}
                 onClick={() => setActiveTab("patients")}
@@ -195,7 +195,7 @@ const InfertilityManagement = React.memo(() => {
               <button
                 className={`pb-3 text-sm font-medium transition-all ${
                   activeTab === "investigations" 
-                    ? "border-b-2 border-fnh-blue text-fnh-blue" 
+                    ? "border-b-2 border-emerald-600 text-emerald-600" 
                     : "text-slate-500 hover:text-slate-700"
                 }`}
                 onClick={() => setActiveTab("investigations")}

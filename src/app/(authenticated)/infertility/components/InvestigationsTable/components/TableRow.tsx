@@ -76,7 +76,7 @@ const TableRow: React.FC<TableRowProps> = ({
   const renderCellContent = (header: TableHeader) => {
     switch (header.key) {
       case "id":
-        return <span className="font-semibold text-fnh-navy">{index}</span>;
+        return <span className="font-semibold text-emerald-900">{index}</span>;
 
       case "patientFullName":
         return (
@@ -84,7 +84,7 @@ const TableRow: React.FC<TableRowProps> = ({
             className="font-medium cursor-pointer group/name"
             onClick={() => onPatientClick?.(row)}
           >
-            <div className="text-gray-900 group-hover/name:text-fnh-blue transition-colors flex items-center gap-2">
+            <div className="text-gray-900 group-hover/name:text-emerald-600 transition-colors flex items-center gap-2">
               {row.patientFullName}
             </div>
             {row.guardianName && (
@@ -97,7 +97,7 @@ const TableRow: React.FC<TableRowProps> = ({
 
       case "testNumber":
         return (
-          <span className="font-mono text-fnh-navy">{row.testNumber}</span>
+          <span className="font-mono text-emerald-900">{row.testNumber}</span>
         );
 
       case "testDate":
@@ -150,7 +150,7 @@ const TableRow: React.FC<TableRowProps> = ({
             {/* Edit Button */}
             <button
               onClick={() => onEdit?.(row)}
-              className="p-1.5 bg-fnh-navy text-white rounded-lg hover:bg-fnh-navy-dark transition-all cursor-pointer shadow-sm hover:shadow-md active:scale-95"
+              className="p-1.5 bg-emerald-900 text-white rounded-lg hover:bg-emerald-950 transition-all cursor-pointer shadow-sm hover:shadow-md active:scale-95"
               title="Edit patient"
             >
               <Edit2 size={16} />

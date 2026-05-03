@@ -29,7 +29,7 @@ export const TestFilter: React.FC = () => {
 
       {/* Search Input */}
       <div className="relative group">
-        <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-fnh-blue transition-colors">
+        <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-emerald-600 transition-colors">
           <Search className="w-4 h-4" />
         </div>
         <input
@@ -38,7 +38,7 @@ export const TestFilter: React.FC = () => {
           onChange={(e) => setSearchValue(e.target.value)}
           placeholder="Search investigation names..."
           className="w-full bg-white border border-gray-200 rounded-xl pl-10 pr-4 py-3 text-sm
-            focus:ring-2 focus:ring-fnh-blue/10 focus:border-fnh-blue outline-none
+            focus:ring-2 focus:ring-emerald-600/10 focus:border-emerald-600 outline-none
             transition-all duration-200"
         />
       </div>
@@ -50,7 +50,7 @@ export const TestFilter: React.FC = () => {
             <button
               key={name}
               onClick={() => toggleTestName(name)}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 bg-fnh-blue text-white rounded-lg text-xs font-medium hover:bg-fnh-navy transition-colors animate-in zoom-in duration-200"
+              className="flex items-center gap-1.5 px-2.5 py-1.5 bg-emerald-600 text-white rounded-lg text-xs font-medium hover:bg-emerald-900 transition-colors animate-in zoom-in duration-200"
             >
               {name}
               <X className="w-3 h-3 opacity-80" />
@@ -80,7 +80,7 @@ export const TestFilter: React.FC = () => {
                     transition-colors duration-150
                     ${
                       isSelected
-                        ? "bg-fnh-blue/5 text-fnh-blue font-medium"
+                        ? "bg-emerald-600/5 text-emerald-600 font-medium"
                         : "text-gray-600 hover:bg-gray-100/80 hover:text-gray-900"
                     }
                   `}
@@ -92,7 +92,7 @@ export const TestFilter: React.FC = () => {
                     </span>
                   </div>
                   {isSelected && (
-                    <div className="p-1 bg-fnh-blue rounded-full text-white">
+                    <div className="p-1 bg-emerald-600 rounded-full text-white">
                       <Check className="w-3 h-3" />
                     </div>
                   )}

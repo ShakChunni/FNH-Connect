@@ -23,7 +23,7 @@ const TableHeader: React.FC<TableHeaderProps> = ({
           <div className="flex items-center gap-1">
             {header.label}
             {sortConfig?.key === header.key && (
-              <span className="text-fnh-blue">
+              <span className="text-emerald-600">
                 {sortConfig.direction === "ascending" ? "↑" : "↓"}
               </span>
             )}

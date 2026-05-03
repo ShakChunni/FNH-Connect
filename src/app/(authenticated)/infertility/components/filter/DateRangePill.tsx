@@ -132,8 +132,8 @@ export const DateRangePill: React.FC<DateRangePillProps> = ({
           cursor-pointer shadow-sm hover:shadow-md
           ${
             hasActiveFilter
-              ? "border-fnh-blue text-fnh-blue bg-blue-50/50"
-              : "border-gray-200 text-gray-600 hover:bg-gray-50 hover:border-fnh-blue hover:text-fnh-blue"
+              ? "border-emerald-600 text-emerald-600 bg-blue-50/50"
+              : "border-gray-200 text-gray-600 hover:bg-gray-50 hover:border-emerald-600 hover:text-emerald-600"
           }`}
         aria-label="Filter by date"
       >
@@ -175,7 +175,7 @@ export const DateRangePill: React.FC<DateRangePillProps> = ({
               onClick={() => handleOptionSelect(option.value)}
               className={`w-full text-left px-4 py-2.5 text-sm transition-colors cursor-pointer ${
                 selectedOption === option.value
-                  ? "bg-fnh-navy text-white font-medium"
+                  ? "bg-emerald-900 text-white font-medium"
                   : "text-gray-700 hover:bg-slate-100"
               }`}
             >

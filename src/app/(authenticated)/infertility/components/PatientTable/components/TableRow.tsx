@@ -70,7 +70,7 @@ const TableRow: React.FC<TableRowProps> = ({
   const renderCellContent = (header: TableHeader) => {
     switch (header.key) {
       case "id":
-        return <span className="font-semibold text-fnh-navy">{index}</span>;
+        return <span className="font-semibold text-emerald-900">{index}</span>;
 
       case "actions": {
         const isAlreadyAdmitted = row.status?.toLowerCase() === "admitted";
@@ -82,7 +82,7 @@ const TableRow: React.FC<TableRowProps> = ({
                 e.stopPropagation();
                 onEdit?.(row);
               }}
-              className="p-1.5 bg-fnh-navy text-white rounded-lg hover:bg-fnh-navy-dark transition-all cursor-pointer shadow-sm hover:shadow-md active:scale-95"
+              className="p-1.5 bg-emerald-900 text-white rounded-lg hover:bg-emerald-950 transition-all cursor-pointer shadow-sm hover:shadow-md active:scale-95"
               title="Edit patient"
             >
               <Edit2 size={16} />
@@ -131,7 +131,7 @@ const TableRow: React.FC<TableRowProps> = ({
             className="font-medium cursor-pointer group/name"
             onClick={onClick}
           >
-            <div className="text-gray-900 group-hover/name:text-fnh-blue transition-colors flex items-center gap-2">
+            <div className="text-gray-900 group-hover/name:text-emerald-600 transition-colors flex items-center gap-2">
               {row.patientFullName}
             </div>
             <div className="text-[10px] text-gray-500 leading-none mt-0.5">

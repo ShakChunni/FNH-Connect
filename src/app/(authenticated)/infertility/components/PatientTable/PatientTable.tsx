@@ -140,11 +140,11 @@ const PatientTable: React.FC<PatientTableProps> = ({
       px-2 py-2 sm:px-3 sm:py-3 md:px-4 md:py-4
       text-left text-[10px] sm:text-xs md:text-xs
       font-semibold text-white uppercase tracking-wider
-      bg-fnh-navy
+      bg-emerald-900
       transition-colors
       ${
         header.key !== "id" && header.key !== "actions"
-          ? "cursor-pointer hover:bg-fnh-navy-dark"
+          ? "cursor-pointer hover:bg-emerald-950"
           : ""
       }
     `;
@@ -177,7 +177,7 @@ const PatientTable: React.FC<PatientTableProps> = ({
             onMouseLeave={dragScroll.onMouseLeave}
           >
             <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-fnh-navy sticky top-0 z-20">
+              <thead className="bg-emerald-900 sticky top-0 z-20">
                 <tr>
                   {headers.map((header, index) => (
                     <th
@@ -235,7 +235,7 @@ const PatientTable: React.FC<PatientTableProps> = ({
             onMouseLeave={dragScroll.onMouseLeave}
           >
             <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-fnh-navy sticky top-0 z-20">
+              <thead className="bg-emerald-900 sticky top-0 z-20">
                 <tr>
                   {headers.map((header, index) => (
                     <th

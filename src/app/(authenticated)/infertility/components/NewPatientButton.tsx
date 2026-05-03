@@ -22,10 +22,10 @@ export const NewPatientButton: React.FC<NewPatientButtonProps> = ({
       onClick={onClick}
       disabled={disabled}
       className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 sm:px-6 py-3 
-        bg-linear-to-r from-fnh-navy-dark to-fnh-navy 
+        bg-linear-to-r from-emerald-950 to-emerald-900 
         text-white rounded-xl font-semibold 
         shadow-lg hover:shadow-xl 
-        hover:from-fnh-navy hover:to-fnh-navy-dark 
+        hover:from-emerald-900 hover:to-emerald-950 
         transition-all duration-300 transform hover:scale-105 
         disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
     >

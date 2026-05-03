@@ -63,7 +63,7 @@ export const Filters: React.FC = () => {
               flex flex-col sm:rounded-l-[2rem] overflow-hidden"
           >
             {/* Header */}
-            <div className="flex items-center justify-between px-6 py-5 bg-linear-to-r from-fnh-navy-dark to-fnh-navy">
+            <div className="flex items-center justify-between px-6 py-5 bg-linear-to-r from-emerald-950 to-emerald-900">
               <div className="flex items-center gap-3">
                 <div className="p-2.5 bg-white/15 rounded-xl backdrop-blur-sm">
                   <SlidersHorizontal className="w-5 h-5 text-white" />
@@ -101,7 +101,7 @@ export const Filters: React.FC = () => {
                 </button>
                 <button
                   onClick={closeFilterPanel}
-                  className="flex-1 px-4 py-3 bg-linear-to-r from-fnh-navy-dark to-fnh-navy rounded-xl text-sm font-semibold text-white hover:from-fnh-navy hover:to-fnh-navy-light shadow-lg transition-all cursor-pointer"
+                  className="flex-1 px-4 py-3 bg-linear-to-r from-emerald-950 to-emerald-900 rounded-xl text-sm font-semibold text-white hover:from-emerald-900 hover:to-emerald-800 shadow-lg transition-all cursor-pointer"
                 >
                   Apply Filters
                 </button>

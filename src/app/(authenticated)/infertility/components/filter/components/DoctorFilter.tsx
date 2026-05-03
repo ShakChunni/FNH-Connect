@@ -21,7 +21,7 @@ export const DoctorFilter: React.FC = () => {
           value={orderedById || ""}
           onChange={(e) => setOrderedById(e.target.value ? Number(e.target.value) : null)}
           className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm
-            focus:ring-2 focus:ring-fnh-blue/20 focus:border-fnh-blue outline-none
+            focus:ring-2 focus:ring-emerald-600/20 focus:border-emerald-600 outline-none
             transition-all duration-200 appearance-none cursor-pointer"
           disabled={isLoading}
         >

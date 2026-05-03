@@ -37,22 +37,26 @@ export default function LoginPage() {
     const blur2 = document.getElementById("auth-bg-blur-2");
     
     if (selectedPortal === "infertility") {
+      document.documentElement.style.backgroundColor = "#022c22";
       document.body.style.backgroundColor = "#022c22";
       if (wrapper) wrapper.style.backgroundColor = "#022c22";
       if (blur1) blur1.className = "fixed top-[-20%] left-[-10%] w-[50%] h-[50%] bg-emerald-500/20 rounded-full blur-[120px] pointer-events-none opacity-50 transition-colors duration-1000";
       if (blur2) blur2.className = "fixed bottom-[-20%] right-[-10%] w-[50%] h-[50%] bg-emerald-700/20 rounded-full blur-[120px] pointer-events-none opacity-50 transition-colors duration-1000";
     } else if (selectedPortal === "general") {
+      document.documentElement.style.backgroundColor = "#020617";
       document.body.style.backgroundColor = "#020617";
       if (wrapper) wrapper.style.backgroundColor = "#020617";
       if (blur1) blur1.className = "fixed top-[-20%] left-[-10%] w-[50%] h-[50%] bg-blue-500/20 rounded-full blur-[120px] pointer-events-none opacity-50 transition-colors duration-1000";
       if (blur2) blur2.className = "fixed bottom-[-20%] right-[-10%] w-[50%] h-[50%] bg-blue-700/10 rounded-full blur-[120px] pointer-events-none opacity-50 transition-colors duration-1000";
     } else {
+      document.documentElement.style.backgroundColor = "#020617";
       document.body.style.backgroundColor = "#020617";
       if (wrapper) wrapper.style.backgroundColor = "#020617";
       if (blur1) blur1.className = "fixed top-[-20%] left-[-10%] w-[50%] h-[50%] bg-blue-500/20 rounded-full blur-[120px] pointer-events-none opacity-50 transition-colors duration-1000";
       if (blur2) blur2.className = "fixed bottom-[-20%] right-[-10%] w-[50%] h-[50%] bg-purple-500/10 rounded-full blur-[120px] pointer-events-none opacity-50 transition-colors duration-1000";
     }
     return () => {
+      document.documentElement.style.backgroundColor = "";
       document.body.style.backgroundColor = "";
       if (wrapper) wrapper.style.backgroundColor = "";
     };

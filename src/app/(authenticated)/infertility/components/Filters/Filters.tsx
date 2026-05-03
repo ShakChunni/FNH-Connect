@@ -44,7 +44,7 @@ const Filters: React.FC<FiltersProps> = ({ filters, onFilterUpdate }) => {
         <button
           ref={statusButtonRef}
           onClick={() => setIsStatusDropdownOpen(!isStatusDropdownOpen)}
-          className="flex items-center gap-2 px-4 py-2 border border-fnh-grey-light rounded-lg hover:border-fnh-blue transition-colors"
+          className="flex items-center gap-2 px-4 py-2 border border-fnh-grey-light rounded-lg hover:border-emerald-600 transition-colors"
         >
           <span className="text-sm text-fnh-grey-dark">
             Status: {filters.leadsFilter}
@@ -79,7 +79,7 @@ const Filters: React.FC<FiltersProps> = ({ filters, onFilterUpdate }) => {
                 onClick={() => handleStatusSelect(status)}
                 className={`w-full text-left px-4 py-2 text-sm hover:bg-fnh-grey-lighter transition-colors ${
                   filters.leadsFilter === status
-                    ? "bg-fnh-blue text-white"
+                    ? "bg-emerald-600 text-white"
                     : "text-fnh-grey-dark"
                 }`}
               >
@@ -95,7 +95,7 @@ const Filters: React.FC<FiltersProps> = ({ filters, onFilterUpdate }) => {
         <button
           ref={dateButtonRef}
           onClick={() => setIsDateDropdownOpen(!isDateDropdownOpen)}
-          className="flex items-center gap-2 px-4 py-2 bg-white border border-fnh-grey-light rounded-lg hover:border-fnh-blue transition-colors"
+          className="flex items-center gap-2 px-4 py-2 bg-white border border-fnh-grey-light rounded-lg hover:border-emerald-600 transition-colors"
         >
           <span className="text-sm text-fnh-grey-dark">
             Date: {filters.dateSelector.option[0] || "All"}
@@ -131,7 +131,7 @@ const Filters: React.FC<FiltersProps> = ({ filters, onFilterUpdate }) => {
                   onClick={() => handleDateSelect(option)}
                   className={`w-full text-left px-4 py-2 text-sm hover:bg-fnh-grey-lighter transition-colors ${
                     filters.dateSelector.option[0] === option
-                      ? "bg-fnh-blue text-white"
+                      ? "bg-emerald-600 text-white"
                       : "text-fnh-grey-dark"
                   }`}
                 >

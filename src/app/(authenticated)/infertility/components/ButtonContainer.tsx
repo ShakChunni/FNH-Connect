@@ -34,13 +34,13 @@ const ButtonContainer: React.FC<ButtonContainerProps> = ({
             initial={false}
             animate={{
               background: isExpanded
-                ? "linear-gradient(135deg, #3b82f6, #2563eb)"
-                : "linear-gradient(135deg, #1e293b, #334155)",
+                ? "linear-gradient(135deg, #059669, #2563eb)"
+                : "linear-gradient(135deg, #064e3b, #334155)",
               scale: 1,
             }}
             whileHover={{
               background: isExpanded
-                ? "linear-gradient(135deg, #60a5fa, #3b82f6)"
+                ? "linear-gradient(135deg, #60a5fa, #059669)"
                 : "linear-gradient(135deg, #334155, #475569)",
               scale: 1.02,
             }}
@@ -127,10 +127,10 @@ const ButtonContainer: React.FC<ButtonContainerProps> = ({
           onClick={onAddData}
           initial={false}
           animate={{
-            background: "linear-gradient(135deg, #3b82f6, #2563eb)",
+            background: "linear-gradient(135deg, #059669, #2563eb)",
           }}
           whileHover={{
-            background: "linear-gradient(135deg, #60a5fa, #3b82f6)",
+            background: "linear-gradient(135deg, #60a5fa, #059669)",
             scale: 1.02,
           }}
           transition={{

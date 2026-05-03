@@ -34,7 +34,7 @@ export const FilterTriggerButton: React.FC<FilterTriggerButtonProps> = ({
         transition-all duration-300 ease-out
         ${
           activeCount > 0
-            ? "border-fnh-blue bg-fnh-blue/5 shadow-[0_0_0_3px_rgba(59,130,246,0.1)]"
+            ? "border-emerald-600 bg-emerald-600/5 shadow-[0_0_0_3px_rgba(5,150,105,0.1)]"
             : "border-gray-200 shadow-sm hover:border-gray-300 hover:shadow-md"
         }
         ${disabled ? "opacity-50 pointer-events-none" : "cursor-pointer"}
@@ -43,12 +43,12 @@ export const FilterTriggerButton: React.FC<FilterTriggerButtonProps> = ({
     >
       <SlidersHorizontal
         className={`w-4 h-4 transition-colors duration-200 ${
-          activeCount > 0 ? "text-fnh-blue" : "text-gray-400 group-hover:text-gray-600"
+          activeCount > 0 ? "text-emerald-600" : "text-gray-400 group-hover:text-gray-600"
         }`}
       />
       <span
         className={`text-sm font-medium transition-colors duration-200 ${
-          activeCount > 0 ? "text-fnh-blue" : "text-gray-600 group-hover:text-gray-900"
+          activeCount > 0 ? "text-emerald-600" : "text-gray-600 group-hover:text-gray-900"
         }`}
       >
         Filters
@@ -58,8 +58,8 @@ export const FilterTriggerButton: React.FC<FilterTriggerButtonProps> = ({
         <span
           className="absolute -top-1.5 -right-1.5 flex items-center justify-center
             min-w-[20px] h-5 px-1.5 rounded-full
-            bg-fnh-blue text-white text-[10px] font-bold
-            shadow-[0_2px_8px_rgba(59,130,246,0.4)]
+            bg-emerald-600 text-white text-[10px] font-bold
+            shadow-[0_2px_8px_rgba(5,150,105,0.4)]
             animate-in zoom-in duration-300"
         >
           {activeCount}

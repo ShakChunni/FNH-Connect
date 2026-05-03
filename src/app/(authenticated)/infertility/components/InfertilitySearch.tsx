@@ -70,14 +70,14 @@ export const InfertilitySearch: React.FC<InfertilitySearchProps> = ({
             relative flex-1 w-full h-14 bg-white border rounded-2xl
             transition-all duration-300 ease-out shadow-sm
             ${isFocused 
-              ? "border-fnh-blue ring-4 ring-fnh-blue/5 shadow-md" 
+              ? "border-emerald-600 ring-4 ring-emerald-600/5 shadow-md" 
               : "border-slate-200 hover:border-slate-300"
             }
             ${disabled ? "opacity-60 pointer-events-none" : ""}
           `}
         >
           <div className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400">
-            <Search className={`w-5 h-5 transition-colors ${isFocused ? "text-fnh-blue" : ""}`} />
+            <Search className={`w-5 h-5 transition-colors ${isFocused ? "text-emerald-600" : ""}`} />
           </div>
           
           <input

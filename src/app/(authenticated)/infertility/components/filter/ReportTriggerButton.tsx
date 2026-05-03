@@ -118,7 +118,7 @@ export const ReportTriggerButton: React.FC<ReportTriggerButtonProps> = ({
         className="relative flex items-center justify-center gap-2 h-full w-full sm:w-auto px-4 sm:px-5 
           bg-white border border-gray-200 rounded-full
           text-gray-600 text-sm font-medium
-          hover:bg-gray-50 hover:border-fnh-blue hover:text-fnh-blue
+          hover:bg-gray-50 hover:border-emerald-600 hover:text-emerald-600
           transition-all duration-200 
           disabled:opacity-50 disabled:cursor-not-allowed
           cursor-pointer shadow-sm hover:shadow-md"

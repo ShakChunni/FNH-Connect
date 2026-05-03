@@ -4,8 +4,8 @@ import { InfertilityPatientData } from "../types";
 
 // FNH Brand Colors
 const COLORS = {
-  primary: "#1e293b", // fnh-navy (header)
-  accent: "#3b82f6", // fnh-blue
+  primary: "#064e3b", // emerald-900 (header)
+  accent: "#059669", // emerald-600
   indigo: "#4f46e5", // indigo-600
   text: "#334155", // slate-700
   lightText: "#64748b",
