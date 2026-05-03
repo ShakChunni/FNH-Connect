@@ -1,3 +1,5 @@
+export type PortalType = "general" | "infertility";
+
 // Session User Type (subset returned from verify-session API)
 // Lightweight user data for client-side rendering
 export interface SessionUser {
@@ -11,6 +13,7 @@ export interface SessionUser {
   lastName: string;
   fullName: string;
   staffRole: string; // Staff table role
+  portal: PortalType; // Which portal the user logged into
   department?: string; // Derived from staff assignments if needed
   specialization?: string;
   email?: string;

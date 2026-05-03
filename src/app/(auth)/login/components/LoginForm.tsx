@@ -15,16 +15,19 @@ interface LoginFormProps {
   onSubmit: (data: LoginFormData) => Promise<void>;
   isLoading?: boolean;
   error?: string | null;
+  portal: import("@/types/auth").PortalType;
 }
 
 export function LoginForm({
   onSubmit,
   isLoading = false,
   error = null,
+  portal,
 }: LoginFormProps) {
   const [formData, setFormData] = useState<LoginFormData>({
     username: "",
     password: "",
+    portal,
   });
 
   const [errors, setErrors] = useState<LoginFormErrors>({});
@@ -32,8 +35,10 @@ export function LoginForm({
   const [submitError, setSubmitError] = useState<string | null>(error);
   const [focusedField, setFocusedField] = useState<string | null>(null);
 
+  type ValidatableField = Extract<keyof LoginFormData, keyof LoginFormErrors>;
+
   const validateField = useCallback(
-    (field: keyof LoginFormData, value: string): string | undefined => {
+    (field: ValidatableField, value: string): string | undefined => {
       switch (field) {
         case "username":
           if (!value.trim()) {
@@ -60,11 +65,11 @@ export function LoginForm({
           return undefined;
       }
     },
-    []
+    [],
   );
 
   const handleFieldChange = useCallback(
-    (field: keyof LoginFormData, value: string) => {
+    (field: ValidatableField, value: string) => {
       setFormData((prev) => ({ ...prev, [field]: value }));
       setSubmitError(null);
       // Clear specific field error when user types
@@ -72,7 +77,7 @@ export function LoginForm({
         setErrors((prev) => ({ ...prev, [field]: undefined }));
       }
     },
-    [errors]
+    [errors],
   );
 
   const handleFieldBlur = useCallback((field: keyof LoginFormData) => {
@@ -88,11 +93,12 @@ export function LoginForm({
     e.preventDefault();
     setSubmitError(null);
 
-    // Validate all fields
+    // Validate all fields (skip portal - it's set programmatically)
     const newErrors: LoginFormErrors = {};
     let isValid = true;
 
     (Object.keys(formData) as Array<keyof LoginFormData>).forEach((field) => {
+      if (field === "portal") return;
       const error = validateField(field, formData[field]);
       if (error) {
         newErrors[field] = error;
@@ -125,18 +131,18 @@ export function LoginForm({
 
   const getInputClassName = (
     field: "username" | "password",
-    hasError: boolean
+    hasError: boolean,
   ) => {
-    // Cleaner, more modern input style
+    // Solid white background with dark text for maximum readability
     const base =
-      "w-full px-4 py-3.5 rounded-xl border bg-white/50 text-sm text-fnh-navy placeholder-fnh-grey/50 transition-all duration-300 ease-out focus:outline-none focus:bg-white";
+      "w-full px-4 py-3.5 rounded-xl border bg-white text-sm text-slate-900 placeholder-slate-400 transition-all duration-300 ease-out focus:outline-none focus:ring-4 focus:ring-white/10 shadow-sm";
 
     const errorStyles = hasError
-      ? "border-red-300 bg-red-50/30 focus:border-red-400 focus:ring-4 focus:ring-red-100/50"
-      : "border-gray-200 hover:border-gray-300 focus:border-fnh-blue focus:ring-4 focus:ring-fnh-blue/10 shadow-sm hover:shadow-md";
+      ? "border-red-500 bg-red-50 focus:border-red-600 focus:ring-red-500/20"
+      : "border-slate-200 hover:border-slate-300 focus:border-white shadow-inner";
 
     const disabledStyles = isLoading
-      ? "bg-gray-50 text-gray-400 cursor-not-allowed opacity-75 border-gray-100"
+      ? "opacity-50 cursor-not-allowed bg-slate-100"
       : "";
 
     return `${base} ${errorStyles} ${disabledStyles}`;
@@ -182,7 +188,7 @@ export function LoginForm({
           autoComplete="username"
           className={getInputClassName(
             "username",
-            !!(touched.username && errors.username)
+            !!(touched.username && errors.username),
           )}
         />
       </motion.div>

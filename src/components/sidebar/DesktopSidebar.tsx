@@ -12,11 +12,11 @@ import ViewSwitcher from "./ViewSwitcher";
 import { useEndShift } from "@/hooks/useEndShift";
 import { getDefaultRouteForRole } from "@/lib/roles";
 
-const SIDEBAR_BG = "#0f172a"; // FNH Black
-const CONTAINER_BG = "#1e293b"; // FNH Navy - slightly lighter slate 800
-const ACTIVE_BG = "#334155"; // FNH Navy Light - slate 700 for active items
-const HOVER_BG = "rgba(59, 130, 246, 0.1)"; // Blue with opacity for hover
-const ACTIVE_INDICATOR = "#fbbf24"; // Yellow accent for active border
+const SIDEBAR_BG = "var(--fnh-navy-dark)";
+const CONTAINER_BG = "var(--fnh-navy)";
+const ACTIVE_BG = "var(--fnh-navy-light)";
+const HOVER_BG = "rgba(255, 255, 255, 0.06)";
+const ACTIVE_INDICATOR = "var(--sidebar-accent)";
 
 interface UserProfileSectionProps {
   user: {
@@ -112,7 +112,7 @@ export default function DesktopSidebar({
   /* import { useEndShift } from "@/hooks/useEndShift"; */ // Add this to top imports or ensure it's imported
 
   // ... inside component
-  const { user, logout } = useAuth();
+  const { user, logout, portal } = useAuth();
   const { endShift, isEnding: isEndingShift } = useEndShift();
   const expandTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const collapseTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -161,7 +161,7 @@ export default function DesktopSidebar({
   const handleLogoutClick = () => {
     // Check if user has a role that typically has shifts (handles cash)
     const role = user?.role?.toLowerCase();
-    const staffRole = (user as any)?.staffRole?.toLowerCase() || "";
+    const staffRole = user?.staffRole?.toLowerCase() || "";
 
     // Roles that need to confirm shift end: system-admin, operator, receptionist, staff
     const needsShiftConfirmation =
@@ -276,7 +276,7 @@ export default function DesktopSidebar({
               }}
             >
               <ul className="space-y-3">
-                {getNavigationItems(user?.role).map((item) => {
+                {getNavigationItems(user?.role, portal).map((item) => {
                   const isActive = pathname === item.href;
                   const Icon = item.icon;
 

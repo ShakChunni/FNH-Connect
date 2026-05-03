@@ -21,7 +21,7 @@ export default function MobileSidebar() {
   const pathname = usePathname();
   const overlayRef = useRef<HTMLDivElement>(null);
   const profileRef = useRef<HTMLDivElement>(null);
-  const { user, logout } = useAuth();
+  const { user, logout, portal } = useAuth();
   const { endShift, isEnding: isEndingShift } = useEndShift();
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const homeRoute = getDefaultRouteForRole(user?.role || "");
@@ -94,7 +94,7 @@ export default function MobileSidebar() {
   const handleLogoutClick = () => {
     // Check if user has a role that typically has shifts (handles cash)
     const role = user?.role?.toLowerCase();
-    const staffRole = (user as any)?.staffRole?.toLowerCase() || "";
+    const staffRole = user?.staffRole?.toLowerCase() || "";
 
     // Roles that need to confirm shift end: system-admin, operator, receptionist, staff
     const needsShiftConfirmation =
@@ -193,7 +193,7 @@ export default function MobileSidebar() {
               }}
             >
               <ul className="space-y-2">
-                {getNavigationItems(user?.role).map((item) => {
+                {getNavigationItems(user?.role, portal).map((item) => {
                   const isActive = pathname === item.href;
                   const Icon = item.icon;
 

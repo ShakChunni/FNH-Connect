@@ -2,11 +2,12 @@
  * Login Page Type Definitions
  * Centralized types for login form, validation, and API communication
  */
-import { SessionUser } from "@/types/auth";
+import { SessionUser, PortalType } from "@/types/auth";
 
 export interface LoginFormData {
   username: string;
   password: string;
+  portal: PortalType;
 }
 
 export interface LoginFormErrors {

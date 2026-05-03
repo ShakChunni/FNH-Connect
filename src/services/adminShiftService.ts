@@ -197,7 +197,7 @@ export async function getShiftDetails(id: number) {
         },
       }),
       prisma.pathologyTest.findMany({
-        where: { testNumber: { in: refs } },
+        where: { testNumber: { in: refs }, migratedToInfertility: false },
         select: {
           testNumber: true,
           testCategory: true,

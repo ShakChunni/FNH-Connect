@@ -329,15 +329,26 @@ export async function middleware(request: NextRequest) {
   const sessionToken = request.cookies.get("session")?.value;
   let hasValidSession = false;
   let userRole: string | null = null;
+  let userPortal: string = "general";
 
   if (sessionToken && SECRET_KEY) {
     try {
       const { payload } = await jwtVerify(sessionToken, SECRET_KEY);
       hasValidSession = true;
       userRole = (payload.role as string) || null;
+      userPortal = (payload.portal as string) || "general";
     } catch (error) {
       hasValidSession = false;
       userRole = null;
+      userPortal = "general";
+    }
+  }
+
+  // Fallback to portal cookie if JWT doesn't have it (legacy sessions)
+  if (!hasValidSession) {
+    const portalCookie = request.cookies.get("portal")?.value;
+    if (portalCookie) {
+      userPortal = portalCookie;
     }
   }
 
@@ -349,9 +360,40 @@ export async function middleware(request: NextRequest) {
   const isLoginPage = normalizedPath === "/login";
   const isRootPath = normalizedPath === "/";
 
+  // Infertility-only routes
+  const infertilityRoutes = [
+    "/infertility",
+    "/api/infertility",
+    "/api/infertility-patients",
+    "/api/infertility/cash-tracking",
+    "/admin/infertility-cash-tracking",
+    "/api/admin/infertility-cash-tracking",
+   ];
+
+  // General-only routes (infertility users must NOT access)
+  // Note: /admin/user-management and /admin/activity-logs are SHARED — accessible from both portals
+  const generalOnlyRoutes = [
+    "/dashboard",
+    "/general-admission",
+    "/pathology",
+    "/medicine-inventory",
+    "/patient-records",
+    "/admin/cash-tracking",
+    "/admin-dashboard",
+    "/api/dashboard",
+    "/api/general-admission",
+    "/api/pathology",
+    "/api/patient-records",
+    "/api/medicine-inventory",
+    "/api/admin/cash-tracking",
+  ];
+
   // REDIRECT 1: Root path with valid session
   if (isRootPath && hasValidSession) {
     const normalizedRole = userRole?.toLowerCase().replace(/[\s_-]/g, "") || "";
+    if (userPortal === "infertility") {
+      return NextResponse.redirect(new URL("/infertility", request.url));
+    }
     if (
       normalizedRole === "medicinepharmacist" ||
       normalizedRole === "pharmacist"
@@ -369,6 +411,9 @@ export async function middleware(request: NextRequest) {
   // REDIRECT 3: Login page with valid session
   if (isLoginPage && hasValidSession) {
     const normalizedRole = userRole?.toLowerCase().replace(/[\s_-]/g, "") || "";
+    if (userPortal === "infertility") {
+      return NextResponse.redirect(new URL("/infertility", request.url));
+    }
     if (
       normalizedRole === "medicinepharmacist" ||
       normalizedRole === "pharmacist"
@@ -448,17 +493,32 @@ export async function middleware(request: NextRequest) {
         "/api/shifts",
       ];
 
-      // Additional routes for receptionist-infertility
+      // Additional routes for receptionist-infertility AND regular receptionists
+      // who logged into the infertility portal
       const infertilityPaths = [
         "/infertility",
+        "/infertility/cash-tracking",
         "/api/infertility",
         "/api/infertility-patients",
+        "/api/infertility/cash-tracking",
+        "/api/admin/infertility-cash-tracking",
       ];
 
-      // Combine paths based on role
+      // Shared API routes always needed regardless of portal
+      const sharedAPIPaths = [
+        "/api/auth",
+        "/api/staff",
+        "/api/hospitals",
+        "/api/patients",
+        "/login",
+      ];
+
+      // Combine paths based on role AND current portal
       const receptionistAllowedPaths = isReceptionistInfertility
         ? [...baseReceptionistPaths, ...infertilityPaths]
-        : baseReceptionistPaths;
+        : userPortal === "infertility"
+          ? [...infertilityPaths, ...sharedAPIPaths]
+          : baseReceptionistPaths;
 
       // Check if current path is allowed
       const isAllowed = receptionistAllowedPaths.some(
@@ -524,6 +584,51 @@ export async function middleware(request: NextRequest) {
           new URL("/medicine-inventory", request.url),
         );
       }
+    }
+  }
+
+  // REDIRECT 5.7: Portal boundary enforcement
+  // Infertility portal users cannot access general-only routes
+  // General portal users cannot access infertility-only routes
+  if (hasValidSession && userPortal) {
+    const isInfertilityRoute = infertilityRoutes.some(
+      (route) =>
+        normalizedPath === route || normalizedPath.startsWith(route + "/"),
+    );
+
+    const isGeneralOnly = generalOnlyRoutes.some(
+      (route) =>
+        normalizedPath === route || normalizedPath.startsWith(route + "/"),
+    );
+
+    if (userPortal === "infertility" && isGeneralOnly) {
+      if (isAPIRoute) {
+        return new NextResponse(
+          JSON.stringify({
+            message: "Forbidden - Not accessible in Infertility Portal",
+          }),
+          {
+            status: 403,
+            headers: { "Content-Type": "application/json" },
+          },
+        );
+      }
+      return NextResponse.redirect(new URL("/infertility", request.url));
+    }
+
+    if (userPortal === "general" && isInfertilityRoute) {
+      if (isAPIRoute) {
+        return new NextResponse(
+          JSON.stringify({
+            message: "Forbidden - Use the Infertility Portal",
+          }),
+          {
+            status: 403,
+            headers: { "Content-Type": "application/json" },
+          },
+        );
+      }
+      return NextResponse.redirect(new URL("/dashboard", request.url));
     }
   }
 

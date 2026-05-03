@@ -38,6 +38,7 @@ model Patient {
   account            PatientAccount? // Central account for all charges/payments
   infertilityRecords InfertilityPatient[] // Infertility department records
   infertilityTests   InfertilityTest[]
+  infertilityAccount InfertilityPatientAccount?
   hospital           Hospital?            @relation(fields: [hospitalId], references: [id])
   hospitalId         Int?
   medicineSales      MedicineSale[] // Medicine sales to this patient
@@ -86,6 +87,8 @@ model Staff {
   infertilityModified InfertilityPatient[] @relation("InfertilityModifiedBy")
   infertilityTestOrdered  InfertilityTest[] @relation("InfertilityTestOrderedBy")
   infertilityTestDone     InfertilityTest[] @relation("InfertilityTestDoneBy")
+  infertilityShifts       InfertilityShift[]
+  infertilityCollectedPayments InfertilityPayment[]
 
   // Login credentials
   user User?
@@ -219,6 +222,9 @@ model PathologyTest {
   createdBy      Int
   lastModifiedBy Int
 
+  // Migration flag — soft-delete when moved to infertility system
+  migratedToInfertility Boolean @default(false)
+
   // Relations
   patient        Patient         @relation(fields: [patientId], references: [id])
   department     Department      @relation(fields: [departmentId], references: [id])
@@ -232,6 +238,7 @@ model PathologyTest {
   @@index([admissionId])
   @@index([orderedById])
   @@index([testDate])
+  @@index([migratedToInfertility])
 }
 
 // Enhanced Payment & Cash Management System
@@ -576,11 +583,12 @@ model InfertilityTest {
   lastModifiedBy      Int
 
   // Relations
-  infertilityPatient  InfertilityPatient @relation(fields: [infertilityPatientId], references: [id])
-  patient             Patient            @relation(fields: [patientId], references: [id])
-  admission           Admission?         @relation(fields: [admissionId], references: [id])
-  orderedBy           Staff              @relation("InfertilityTestOrderedBy", fields: [orderedById], references: [id])
-  doneBy              Staff?             @relation("InfertilityTestDoneBy", fields: [doneById], references: [id])
+  infertilityPatient  InfertilityPatient          @relation(fields: [infertilityPatientId], references: [id])
+  patient             Patient                     @relation(fields: [patientId], references: [id])
+  admission           Admission?                  @relation(fields: [admissionId], references: [id])
+  orderedBy           Staff                       @relation("InfertilityTestOrderedBy", fields: [orderedById], references: [id])
+  doneBy              Staff?                      @relation("InfertilityTestDoneBy", fields: [doneById], references: [id])
+  serviceCharges      InfertilityServiceCharge[]
 
   @@index([infertilityPatientId])
   @@index([patientId])
@@ -618,6 +626,139 @@ model BlockedIP {
 
   @@index([ip_address])
   @@index([blocked_until])
+}
+
+// ============================================
+// Infertility-Only Cash & Shift System
+// Fully separated from general hospital shifts
+// ============================================
+
+model InfertilityShift {
+  id        Int       @id @default(autoincrement())
+  staffId   Int
+  startTime DateTime
+  endTime   DateTime?
+  isActive  Boolean   @default(true)
+
+  openingCash Decimal @default(0)
+  closingCash Decimal @default(0)
+  systemCash  Decimal @default(0)
+  variance    Decimal @default(0)
+
+  totalCollected Decimal @default(0)
+  totalRefunded  Decimal @default(0)
+
+  notes        String?
+  reconciledAt DateTime?
+  reconciledBy Int?
+
+  staff         Staff                       @relation(fields: [staffId], references: [id])
+  payments      InfertilityPayment[]
+  cashMovements InfertilityCashMovement[]
+
+  @@index([staffId])
+  @@index([startTime])
+  @@index([isActive])
+}
+
+model InfertilityCashMovement {
+  id           Int      @id @default(autoincrement())
+  shiftId      Int
+  amount       Decimal
+  movementType String // "PAYMENT_RECEIVED", "CHANGE_GIVEN", "CASH_FLOAT", "REFUND"
+  description  String?
+  timestamp    DateTime @default(now())
+  paymentId    Int?
+
+  shift   InfertilityShift     @relation(fields: [shiftId], references: [id])
+  payment InfertilityPayment?  @relation(fields: [paymentId], references: [id])
+
+  @@index([shiftId])
+  @@index([timestamp])
+}
+
+model InfertilityPatientAccount {
+  id             Int     @id @default(autoincrement())
+  patientId      Int     @unique
+  totalCharges   Decimal @default(0)
+  totalPaid      Decimal @default(0)
+  totalDue       Decimal @default(0)
+  advanceBalance Decimal @default(0)
+
+  patient        Patient                    @relation(fields: [patientId], references: [id])
+  serviceCharges InfertilityServiceCharge[]
+  payments       InfertilityPayment[]
+
+  @@index([patientId])
+}
+
+model InfertilityServiceCharge {
+  id               Int    @id @default(autoincrement())
+  patientAccountId Int
+  serviceType      String // "INFERTILITY_TEST", "CONSULTATION", "PROCEDURE"
+  serviceName      String
+  departmentId     Int
+
+  originalAmount Decimal
+  discountAmount Decimal @default(0)
+  finalAmount    Decimal
+
+  serviceDate DateTime @default(now())
+  description String?
+
+  infertilityTestId Int?
+  infertilityTest   InfertilityTest?   @relation(fields: [infertilityTestId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  createdBy Int
+
+  patientAccount     InfertilityPatientAccount      @relation(fields: [patientAccountId], references: [id])
+  paymentAllocations InfertilityPaymentAllocation[]
+
+  @@index([patientAccountId])
+  @@index([serviceType])
+  @@index([serviceDate])
+}
+
+model InfertilityPayment {
+  id               Int      @id @default(autoincrement())
+  patientAccountId Int
+  amount           Decimal
+  paymentMethod    String
+  paymentDate      DateTime @default(now())
+  collectedById    Int
+  shiftId          Int
+
+  receiptNumber String  @unique
+  notes         String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  patientAccount     InfertilityPatientAccount      @relation(fields: [patientAccountId], references: [id])
+  collector          Staff                          @relation(fields: [collectedById], references: [id])
+  shift              InfertilityShift               @relation(fields: [shiftId], references: [id])
+  paymentAllocations InfertilityPaymentAllocation[]
+  cashMovements      InfertilityCashMovement[]
+
+  @@index([patientAccountId])
+  @@index([collectedById])
+  @@index([shiftId])
+  @@index([paymentDate])
+}
+
+model InfertilityPaymentAllocation {
+  id              Int     @id @default(autoincrement())
+  paymentId       Int
+  serviceChargeId Int
+  allocatedAmount Decimal
+
+  payment       InfertilityPayment       @relation(fields: [paymentId], references: [id])
+  serviceCharge InfertilityServiceCharge @relation(fields: [serviceChargeId], references: [id])
+
+  @@index([paymentId])
+  @@index([serviceChargeId])
 }
 
 model RateLimit {

@@ -110,13 +110,14 @@ export async function GET(request: NextRequest) {
       prisma.pathologyTest.count({
         where: {
           isCompleted: true,
+          migratedToInfertility: false,
           reportDate: { gte: startOfDay, lt: endOfDay },
         },
       }),
 
       // Stats: Pathology completed all time
       prisma.pathologyTest.count({
-        where: { isCompleted: true },
+        where: { isCompleted: true, migratedToInfertility: false },
       }),
 
       // Stats: Infertility completed today
@@ -152,6 +153,7 @@ export async function GET(request: NextRequest) {
 
       // Recent: Pathology
       prisma.pathologyTest.findMany({
+        where: { migratedToInfertility: false },
         take: recentPatientsLimit,
         orderBy: { testDate: "desc" },
         select: {

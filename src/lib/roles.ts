@@ -57,6 +57,21 @@ export const RECEPTIONIST_ALLOWED_ROUTES = [
   "/api/patients", // Patient data
 ];
 
+// Routes specific to infertility portal receptionists
+// Regular receptionists logging into infertility portal also use these
+export const INFERTILITY_RECEPTIONIST_ALLOWED_ROUTES = [
+  "/infertility",
+  "/infertility/cash-tracking",
+  "/api/infertility",
+  "/api/infertility-patients",
+  "/api/infertility/cash-tracking",
+  "/api/admin/infertility-cash-tracking",
+  "/api/auth",
+  "/api/staff",
+  "/api/hospitals",
+  "/api/patients",
+];
+
 // Routes that medicine-pharmacist can access
 export const PHARMACIST_ALLOWED_ROUTES = [
   "/medicine-inventory",
@@ -70,7 +85,7 @@ export const PHARMACIST_ALLOWED_ROUTES = [
  * Normalize role string to check against canonical values
  * Handles various formats: "system-admin", "SysAdmin", "System Admin", "systemadmin", etc.
  */
-function normalizeRole(role: string): string {
+export function normalizeRole(role: string): string {
   const lower = role.toLowerCase().replace(/[\s_-]/g, "");
 
   // Map to canonical values

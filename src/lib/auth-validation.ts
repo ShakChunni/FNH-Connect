@@ -72,6 +72,7 @@ export async function validateServerSession() {
     }
 
     // Map to SessionUser type
+    const portalCookie = cookieStore.get("portal")?.value;
     const user: SessionUser = {
       id: session.user.id,
       username: session.user.username,
@@ -82,6 +83,7 @@ export async function validateServerSession() {
       lastName: session.user.staff.lastName,
       fullName: session.user.staff.fullName,
       staffRole: session.user.staff.role,
+      portal: (portalCookie as import("@/types/auth").PortalType) || "general",
       specialization: session.user.staff.specialization || undefined,
       email: session.user.staff.email || undefined,
       phoneNumber: session.user.staff.phoneNumber || undefined,
@@ -176,6 +178,7 @@ export async function getAuthenticatedUserForAPI(): Promise<AuthenticatedUser | 
     }
 
     // Map to SessionUser type
+    const portalCookie = cookieStore.get("portal")?.value;
     const user: SessionUser = {
       id: session.user.id,
       username: session.user.username,
@@ -186,6 +189,7 @@ export async function getAuthenticatedUserForAPI(): Promise<AuthenticatedUser | 
       lastName: session.user.staff.lastName,
       fullName: session.user.staff.fullName,
       staffRole: session.user.staff.role,
+      portal: (portalCookie as import("@/types/auth").PortalType) || "general",
       specialization: session.user.staff.specialization || undefined,
       email: session.user.staff.email || undefined,
       phoneNumber: session.user.staff.phoneNumber || undefined,

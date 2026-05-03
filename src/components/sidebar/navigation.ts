@@ -15,7 +15,9 @@ import {
   isAdminRole,
   isReceptionistRole,
   isPharmacistRole,
+  isReceptionistInfertilityRole,
 } from "@/lib/roles";
+import type { PortalType } from "@/types/auth";
 
 // Receptionist allowed routes for sidebar filtering
 const RECEPTIONIST_SIDEBAR_ROUTES = [
@@ -23,11 +25,16 @@ const RECEPTIONIST_SIDEBAR_ROUTES = [
   "/general-admission",
   "/pathology",
   "/patient-records",
-  "/infertility",
 ];
 
 // Pharmacist allowed routes for sidebar filtering
 const PHARMACIST_SIDEBAR_ROUTES = ["/medicine-inventory"];
+
+// Infertility portal sidebar routes
+const INFERTILITY_SIDEBAR_ROUTES = [
+  "/infertility",
+  "/infertility/cash-tracking",
+];
 
 // Full navigation items - will be filtered based on user role
 export const navigationItems: NavigationItem[] = [
@@ -94,42 +101,112 @@ export const navigationItems: NavigationItem[] = [
   },
 ];
 
+// Infertility-specific navigation items
+export const infertilityNavigationItems: NavigationItem[] = [
+  {
+    label: "Infertility Patients",
+    href: "/infertility",
+    icon: Baby,
+  },
+  {
+    label: "Cash Tracking",
+    href: "/infertility/cash-tracking",
+    icon: Wallet,
+  },
+];
+
 /**
- * Get navigation items filtered by user role
+ * Get navigation items filtered by user role and portal
  * Uses the existing roles.ts utility functions
  */
-export function getNavigationItems(userRole?: string): NavigationItem[] {
-  if (!userRole) {
-    // No role means no session - only return non-admin items
-    return navigationItems.filter((item) => !item.adminOnly);
+export function getNavigationItems(
+  userRole?: string,
+  portal?: PortalType | null
+): NavigationItem[] {
+  // Infertility portal: always show only infertility routes
+  if (portal === "infertility") {
+    // Admin/system-admin in infertility: see infertility items + shared admin items
+    if (userRole && isAdminRole(userRole)) {
+      return [
+        {
+          label: "Infertility Patients",
+          href: "/infertility",
+          icon: Baby,
+        },
+        {
+          label: "Infertility Cash",
+          href: "/admin/infertility-cash-tracking",
+          icon: Wallet,
+        },
+        {
+          label: "User Management",
+          href: "/admin/user-management",
+          icon: Users,
+        },
+        {
+          label: "Activity Logs",
+          href: "/admin/activity-logs",
+          icon: FileText,
+        },
+      ];
+    }
+    // Receptionists (any type) in infertility: only infertility nav items
+    return infertilityNavigationItems;
   }
 
-  // Check if user is a receptionist (regular or infertility)
+  // ── GENERAL PORTAL ──
+  // All general portal views exclude infertility-specific items
+
+  if (!userRole) {
+    return navigationItems.filter(
+      (item) =>
+        !item.adminOnly &&
+        item.href !== "/infertility" &&
+        item.href !== "/admin/infertility-cash-tracking"
+    );
+  }
+
+  // Infertility-only receptionist should never reach general portal
+  // (enforced by middleware); defensive fallback
+  if (isReceptionistInfertilityRole(userRole)) {
+    return navigationItems.filter(
+      (item) =>
+        !item.adminOnly && INFERTILITY_SIDEBAR_ROUTES.includes(item.href)
+    );
+  }
+
+  // Regular receptionist in general portal
   if (isReceptionistRole(userRole)) {
     return navigationItems.filter(
       (item) =>
         (item.href === "/patient-records" || !item.adminOnly) &&
-        RECEPTIONIST_SIDEBAR_ROUTES.includes(item.href),
+        RECEPTIONIST_SIDEBAR_ROUTES.includes(item.href)
     );
   }
 
-  // Use the existing isAdminRole function from roles.ts
+  // Admin in general portal: all items except infertility-specific ones
   if (isAdminRole(userRole)) {
-    return navigationItems;
+    return navigationItems.filter(
+      (item) =>
+        item.href !== "/infertility" &&
+        item.href !== "/admin/infertility-cash-tracking"
+    );
   }
 
-  // Check if user is a pharmacist - strictly medicine inventory
+  // Pharmacist: strictly medicine inventory
   if (isPharmacistRole(userRole)) {
     return navigationItems.filter(
       (item) =>
-        !item.adminOnly && PHARMACIST_SIDEBAR_ROUTES.includes(item.href),
+        !item.adminOnly && PHARMACIST_SIDEBAR_ROUTES.includes(item.href)
     );
   }
 
+  // Fallback: non-admin, non-receptionist, non-pharmacist (staff, etc.)
   return navigationItems.filter((item) => {
     if (item.adminOnly) return false;
-    // Medicine inventory is special - only for admins and pharmacists
     if (item.href === "/medicine-inventory") return false;
+    if (item.href === "/infertility") return false;
+    if (item.href === "/admin/infertility-cash-tracking") return false;
     return true;
   });
 }

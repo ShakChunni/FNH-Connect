@@ -50,6 +50,7 @@ export async function POST(request: NextRequest) {
       // IMPORTANT: End any active shift for this user's staff
       // This ensures shifts don't stay open indefinitely
       if (session.user.staff) {
+        // Close general shift if active
         const activeShift = await tx.shift.findFirst({
           where: {
             staffId: session.user.staff.id,
@@ -58,19 +59,17 @@ export async function POST(request: NextRequest) {
         });
 
         if (activeShift) {
-          // Close the active shift
           await tx.shift.update({
             where: { id: activeShift.id },
             data: {
               isActive: false,
               endTime: new Date(),
               closingCash: activeShift.systemCash,
-              variance: 0, // System cash matches closing cash when auto-closed
+              variance: 0,
               notes: "Shift auto-closed on logout",
             },
           });
 
-          // Log shift end
           await tx.activityLog.create({
             data: {
               userId: session.userId,
@@ -78,6 +77,46 @@ export async function POST(request: NextRequest) {
               description: `Shift #${activeShift.id} auto-closed on logout for ${session.user.username}`,
               entityType: "Shift",
               entityId: activeShift.id,
+              ipAddress: session.ipAddress,
+              sessionId: session.id,
+              deviceFingerprint: session.deviceFingerprint,
+              readableFingerprint: session.readableFingerprint,
+              deviceType: session.deviceType,
+              browserName: session.browserName,
+              browserVersion: session.browserVersion,
+              osType: session.osType,
+              timestamp: new Date(),
+            },
+          });
+        }
+
+        // Close infertility shift if active
+        const activeInfertilityShift = await tx.infertilityShift.findFirst({
+          where: {
+            staffId: session.user.staff.id,
+            isActive: true,
+          },
+        });
+
+        if (activeInfertilityShift) {
+          await tx.infertilityShift.update({
+            where: { id: activeInfertilityShift.id },
+            data: {
+              isActive: false,
+              endTime: new Date(),
+              closingCash: activeInfertilityShift.systemCash,
+              variance: 0,
+              notes: "Infertility shift auto-closed on logout",
+            },
+          });
+
+          await tx.activityLog.create({
+            data: {
+              userId: session.userId,
+              action: "INFERTILITY_SHIFT_AUTO_CLOSED",
+              description: `Infertility shift #${activeInfertilityShift.id} auto-closed on logout for ${session.user.username}`,
+              entityType: "InfertilityShift",
+              entityId: activeInfertilityShift.id,
               ipAddress: session.ipAddress,
               sessionId: session.id,
               deviceFingerprint: session.deviceFingerprint,
@@ -138,6 +177,17 @@ export async function POST(request: NextRequest) {
       expires: new Date(0),
       path: "/",
       httpOnly: COOKIE_HTTP_ONLY,
+      secure: COOKIE_SECURE,
+      sameSite: COOKIE_SAME_SITE,
+    });
+
+    // Clear the portal cookie
+    response.cookies.set({
+      name: "portal",
+      value: "",
+      expires: new Date(0),
+      path: "/",
+      httpOnly: false,
       secure: COOKIE_SECURE,
       sameSite: COOKIE_SAME_SITE,
     });

@@ -10,7 +10,7 @@ import {
   getTwoDigitYear,
 } from "@/lib/registrationNumber";
 import { SessionDeviceInfo } from "@/types/auth";
-import { shiftService } from "./shiftService";
+
 
 // ═══════════════════════════════════════════════════════════════
 // TYPES
@@ -946,13 +946,13 @@ export async function createInfertilityTest(
       },
     });
 
-    // 4. Update or create central patient account
-    let patientAccount = await tx.patientAccount.findUnique({
+    // 4. Update or create infertility-specific patient account
+    let patientAccount = await tx.infertilityPatientAccount.findUnique({
       where: { patientId: infertilityPatient.patientId },
     });
 
     if (!patientAccount) {
-      patientAccount = await tx.patientAccount.create({
+      patientAccount = await tx.infertilityPatientAccount.create({
         data: {
           patientId: infertilityPatient.patientId,
           totalCharges: testData.grandTotal,
@@ -961,7 +961,7 @@ export async function createInfertilityTest(
         },
       });
     } else {
-      patientAccount = await tx.patientAccount.update({
+      patientAccount = await tx.infertilityPatientAccount.update({
         where: { id: patientAccount.id },
         data: {
           totalCharges: { increment: testData.grandTotal },
@@ -971,8 +971,8 @@ export async function createInfertilityTest(
       });
     }
 
-    // 5. Create ServiceCharge with serviceType "INFERTILITY_TEST"
-    const serviceCharge = await tx.serviceCharge.create({
+    // 5. Create InfertilityServiceCharge
+    const serviceCharge = await tx.infertilityServiceCharge.create({
       data: {
         patientAccountId: patientAccount.id,
         serviceType: "INFERTILITY_TEST",
@@ -981,20 +981,36 @@ export async function createInfertilityTest(
         originalAmount: testData.testCharge,
         discountAmount: testData.discountAmount || 0,
         finalAmount: testData.grandTotal,
+        infertilityTestId: infertilityTest.id,
         createdBy: staffId,
       },
     });
 
-    // 6. Handle payments and shadow cash
+    // 6. Handle payments and shadow cash via infertility-only tables
     if (testData.paidAmount > 0) {
       const activeShift = shiftId
         ? { id: shiftId }
-        : await shiftService.ensureActiveShift(staffId, tx);
+        : await tx.infertilityShift.findFirst({
+            where: { staffId, isActive: true },
+          }) ||
+          await tx.infertilityShift.create({
+            data: {
+              staffId,
+              startTime: new Date(),
+              isActive: true,
+              openingCash: 0,
+              systemCash: 0,
+              totalCollected: 0,
+              totalRefunded: 0,
+              closingCash: 0,
+              variance: 0,
+            },
+          });
 
-      const paymentCount = await tx.payment.count();
-      const receiptNumber = `RCP-${Date.now()}-${paymentCount + 1}`;
+      const paymentCount = await tx.infertilityPayment.count();
+      const receiptNumber = `RCP-INF-${Date.now()}-${paymentCount + 1}`;
 
-      const payment = await tx.payment.create({
+      const payment = await tx.infertilityPayment.create({
         data: {
           patientAccountId: patientAccount.id,
           amount: testData.paidAmount,
@@ -1006,7 +1022,7 @@ export async function createInfertilityTest(
         },
       });
 
-      await tx.paymentAllocation.create({
+      await tx.infertilityPaymentAllocation.create({
         data: {
           paymentId: payment.id,
           serviceChargeId: serviceCharge.id,
@@ -1014,17 +1030,17 @@ export async function createInfertilityTest(
         },
       });
 
-      await tx.cashMovement.create({
+      await tx.infertilityCashMovement.create({
         data: {
           shiftId: activeShift.id,
           amount: testData.paidAmount,
-          movementType: "COLLECTION",
+          movementType: "PAYMENT_RECEIVED",
           description: `Infertility test payment - ${testNumber}`,
           paymentId: payment.id,
         },
       });
 
-      await tx.shift.update({
+      await tx.infertilityShift.update({
         where: { id: activeShift.id },
         data: {
           systemCash: { increment: testData.paidAmount },

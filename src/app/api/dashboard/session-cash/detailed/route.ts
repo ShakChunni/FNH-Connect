@@ -240,7 +240,7 @@ export async function GET(request: NextRequest) {
         : Promise.resolve([]),
       unresolvedReferences.length > 0
         ? prisma.pathologyTest.findMany({
-            where: { testNumber: { in: unresolvedReferences } },
+            where: { testNumber: { in: unresolvedReferences }, migratedToInfertility: false },
             select: {
               testNumber: true,
               testCategory: true,

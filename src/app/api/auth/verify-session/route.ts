@@ -61,6 +61,11 @@ export async function GET(request: NextRequest) {
       return response;
     }
 
+    // Extract portal from JWT payload via cookie fallback
+    const portalCookie = request.cookies.get("portal")?.value;
+    const portal: import("@/types/auth").PortalType =
+      (portalCookie as import("@/types/auth").PortalType) || "general";
+
     const response = NextResponse.json<VerifySessionResponse>(
       {
         success: true,
@@ -75,6 +80,7 @@ export async function GET(request: NextRequest) {
           lastName: session.user.staff.lastName,
           fullName: session.user.staff.fullName,
           staffRole: session.user.staff.role,
+          portal,
           specialization: session.user.staff.specialization || undefined,
           email: session.user.staff.email || undefined,
           phoneNumber: session.user.staff.phoneNumber || undefined,

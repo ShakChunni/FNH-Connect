@@ -17,8 +17,9 @@ import {
   blockIP,
   trackSuspiciousActivity,
 } from "@/lib/securityActions";
-import type { SessionUser, LoginResponse } from "@/types/auth";
+import type { SessionUser, LoginResponse, PortalType } from "@/types/auth";
 import { shiftService } from "@/services/shiftService";
+import { isAdminRole, normalizeRole, SystemRole } from "@/lib/roles";
 
 const SECRET_KEY = process.env.SECRET_KEY as string;
 
@@ -48,6 +49,7 @@ if (!SECRET_KEY) {
 const loginSchema = z.object({
   username: z.string().min(1, "Username is required").trim(),
   password: z.string().min(1, "Password is required"),
+  portal: z.enum(["general", "infertility"]),
 });
 
 function generateDeviceFingerprint(
@@ -372,6 +374,51 @@ export async function POST(request: NextRequest) {
         throw new Error("Invalid username or password");
       }
 
+      // ✅ Portal / Role enforcement
+      const normalizedRole = normalizeRole(user.role);
+      const isInfertilityRole =
+        normalizedRole === SystemRole.RECEPTIONIST_INFERTILITY;
+      const isRegularReceptionist =
+        normalizedRole === SystemRole.RECEPTIONIST;
+      const isAdmin = isAdminRole(user.role);
+
+      // Infertility portal: allowed for receptionist-infertility, regular receptionist, and admins
+      if (body.portal === "infertility") {
+        if (!isInfertilityRole && !isRegularReceptionist && !isAdmin) {
+          await trackLoginAttempt({
+            ipAddress: clientIp,
+            username,
+            success: false,
+            userAgent,
+            metadata: {
+              reason: "Unauthorized portal access",
+              attemptedPortal: body.portal,
+            },
+          });
+          throw new Error(
+            "You are not authorized to access the Infertility Portal."
+          );
+        }
+      }
+
+      if (body.portal === "general") {
+        if (isInfertilityRole) {
+          await trackLoginAttempt({
+            ipAddress: clientIp,
+            username,
+            success: false,
+            userAgent,
+            metadata: {
+              reason: "Wrong portal for role",
+              attemptedPortal: body.portal,
+            },
+          });
+          throw new Error(
+            "Please use the Infertility Portal to log in."
+          );
+        }
+      }
+
       // Generate JWT token
       const sessionToken = jwt.sign(
         {
@@ -380,6 +427,7 @@ export async function POST(request: NextRequest) {
           staffId: user.staff.id,
           fullName: user.staff.fullName,
           role: user.role, // Use User.role (system role: admin, system-admin, staff) NOT staff.role (hospital role: Doctor, Nurse)
+          portal: body.portal,
         },
         SECRET_KEY,
         { expiresIn: EXPIRATION_TIME },
@@ -459,7 +507,14 @@ export async function POST(request: NextRequest) {
         staffRole === "receptionist";
 
       if (needsShift) {
-        await shiftService.ensureActiveShift(user.staff.id, tx);
+        if (body.portal === "infertility") {
+          const { infertilityShiftService } = await import(
+            "@/services/infertilityShiftService"
+          );
+          await infertilityShiftService.ensureActiveShift(user.staff.id, tx);
+        } else {
+          await shiftService.ensureActiveShift(user.staff.id, tx);
+        }
       }
 
       // ✅ Track successful login attempt
@@ -485,6 +540,7 @@ export async function POST(request: NextRequest) {
         lastName: user.staff.lastName,
         fullName: user.staff.fullName,
         staffRole: user.staff.role, // Hospital role
+        portal: body.portal,
         specialization: user.staff.specialization || undefined,
         email: user.staff.email || undefined,
         phoneNumber: user.staff.phoneNumber || undefined,
@@ -493,6 +549,7 @@ export async function POST(request: NextRequest) {
       return {
         user: sessionUser,
         sessionToken,
+        portal: body.portal as PortalType,
       };
     });
 
@@ -513,6 +570,17 @@ export async function POST(request: NextRequest) {
       name: "session",
       value: result.sessionToken,
       httpOnly: COOKIE_HTTP_ONLY,
+      secure: COOKIE_SECURE,
+      expires: cookieExpiry,
+      sameSite: COOKIE_SAME_SITE,
+      path: "/",
+    });
+
+    // Set portal cookie for middleware/client sync
+    response.cookies.set({
+      name: "portal",
+      value: result.portal,
+      httpOnly: false,
       secure: COOKIE_SECURE,
       expires: cookieExpiry,
       sameSite: COOKIE_SAME_SITE,

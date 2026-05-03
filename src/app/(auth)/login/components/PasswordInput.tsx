@@ -31,21 +31,18 @@ export function PasswordInput({
 
   // Modernized input styles - cleaner border, subtle shadow
   const getInputClassName = () => {
+    // Solid white background with dark text for maximum readability
     const base =
-      "w-full px-4 py-3.5 pr-12 rounded-xl border bg-white/50 text-sm text-fnh-navy placeholder-fnh-grey/50 transition-all duration-300 ease-out focus:outline-none focus:bg-white";
+      "w-full px-4 py-3.5 pr-12 rounded-xl border bg-white text-sm text-slate-900 placeholder-slate-400 transition-all duration-300 ease-out focus:outline-none focus:ring-4 focus:ring-white/10 shadow-sm";
 
-    // Error state: Red tint, red border
+    // Error state: High visibility red border
     const errorStyles = error
-      ? "border-red-300 bg-red-50/30 focus:border-red-400 focus:ring-4 focus:ring-red-100/50"
-      : "border-gray-200 hover:border-gray-300 focus:border-fnh-blue focus:ring-4 focus:ring-fnh-blue/10 shadow-sm hover:shadow-md";
+      ? "border-red-500 bg-red-50 focus:border-red-600 focus:ring-red-500/20"
+      : "border-slate-200 hover:border-slate-300 focus:border-white shadow-inner";
 
     const disabledStyles = disabled
-      ? "bg-gray-50 text-gray-400 cursor-not-allowed opacity-75 border-gray-100"
+      ? "bg-slate-100 text-slate-400 cursor-not-allowed opacity-75 border-slate-100"
       : "";
-
-    // Remove separate focusedStyles as they are handled in base/error logic now
-    // but we can keep the logic if needed for external control,
-    // though CSS :focus is usually snappier.
 
     return `${base} ${errorStyles} ${disabledStyles}`;
   };
@@ -54,7 +51,7 @@ export function PasswordInput({
     <div className="space-y-1 relative">
       <label
         htmlFor="password"
-        className="block text-sm font-semibold text-fnh-navy/80 ml-1"
+        className="block text-sm font-bold text-white/80 ml-1 uppercase tracking-wider"
       >
         Password
       </label>

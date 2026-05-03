@@ -88,7 +88,9 @@ export interface PathologyData {
 // ═══════════════════════════════════════════════════════════════
 
 export async function getPathologyPatients(filters: PathologyFilters) {
-  const where: Prisma.PathologyTestWhereInput = {};
+  const where: Prisma.PathologyTestWhereInput = {
+    migratedToInfertility: false,
+  };
 
   // Search filter - search by patient name, phone, or test number
   if (filters.search) {

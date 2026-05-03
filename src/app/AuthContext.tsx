@@ -18,6 +18,7 @@ import type { SessionUser } from "@/types/auth";
 interface AuthContextType {
   user: SessionUser | null;
   loading: boolean;
+  portal: import("@/types/auth").PortalType | null;
   login: (userData: SessionUser) => Promise<void>;
   logout: () => Promise<void>;
 }
@@ -88,6 +89,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<SessionUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [loggingOut, setLoggingOut] = useState(false);
+  const [portal, setPortal] = useState<import("@/types/auth").PortalType | null>(null);
 
   const router = useRouter();
   const sessionManager = useRef(SessionManager.getInstance());
@@ -115,6 +117,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             fullName: data.user.fullName,
             role: data.user.role,
             staffRole: data.user.staffRole,
+            portal: data.user.portal,
             specialization: data.user.specialization,
             email: data.user.email,
             phoneNumber: data.user.phoneNumber,
@@ -122,11 +125,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           };
 
           setUser(validatedUser);
+          setPortal(data.user.portal);
         } else {
           // Session invalid - clear everything and redirect
           console.log("[AuthContext] Session invalid, clearing state");
           setUser(null);
+          setPortal(null);
           Cookies.remove("session");
+          Cookies.remove("portal");
           sessionManager.current.reset();
           router.replace("/login");
         }
@@ -134,7 +140,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         console.error("[AuthContext] Session check failed:", error);
         // On error (401, network issue, etc.) - clear and redirect
         setUser(null);
+        setPortal(null);
         Cookies.remove("session");
+        Cookies.remove("portal");
         sessionManager.current.reset();
         router.replace("/login");
       } finally {
@@ -181,10 +189,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     async (userData: SessionUser) => {
       try {
         setUser(userData);
+        setPortal(userData.portal);
         sessionManager.current.reset(); // Reset session manager state
 
-        // Role-based redirection
-        router.push(getDefaultRouteForRole(userData.role));
+        // Set portal cookie for client-side middleware fallback
+        Cookies.set("portal", userData.portal, { path: "/" });
+
+        // Portal-based redirection
+        if (userData.portal === "infertility") {
+          router.push("/infertility");
+        } else {
+          router.push(getDefaultRouteForRole(userData.role));
+        }
       } catch (error) {
         sessionManager.current.reset();
         throw error;
@@ -201,14 +217,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       });
 
       setUser(null);
+      setPortal(null);
       Cookies.remove("session");
+      Cookies.remove("portal");
       sessionManager.current.reset();
       router.replace("/login");
     } catch (error) {
       console.error("Logout error:", error);
       // Force logout even if API call fails
       setUser(null);
+      setPortal(null);
       Cookies.remove("session");
+      Cookies.remove("portal");
       sessionManager.current.reset();
       router.replace("/login");
     } finally {
@@ -226,6 +246,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       value={{
         user,
         loading,
+        portal,
         login,
         logout,
       }}
