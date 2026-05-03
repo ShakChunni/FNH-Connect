@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import { motion, AnimatePresence } from "framer-motion";
+import type { PortalType } from "@/types/auth";
 
 interface PasswordInputProps {
   value: string;
@@ -14,6 +15,7 @@ interface PasswordInputProps {
   disabled?: boolean;
   autoComplete?: string;
   isFocused?: boolean;
+  portal?: PortalType;
 }
 
 export function PasswordInput({
@@ -26,19 +28,24 @@ export function PasswordInput({
   disabled = false,
   autoComplete = "current-password",
   isFocused = false,
+  portal,
 }: PasswordInputProps) {
   const [showPassword, setShowPassword] = useState(false);
 
   // Modernized input styles - cleaner border, subtle shadow
   const getInputClassName = () => {
+    const focusRingColor = portal === "infertility" 
+      ? "focus:ring-emerald-500/20 focus:border-emerald-500" 
+      : "focus:ring-blue-500/20 focus:border-blue-500";
+
     // Solid white background with dark text for maximum readability
     const base =
-      "w-full px-4 py-3.5 pr-12 rounded-xl border bg-white text-sm text-slate-900 placeholder-slate-400 transition-all duration-300 ease-out focus:outline-none focus:ring-4 focus:ring-white/10 shadow-sm";
+      `w-full px-4 py-3.5 pr-12 rounded-xl border bg-white text-sm text-slate-900 placeholder-slate-400 transition-all duration-300 ease-out focus:outline-none focus:ring-4 shadow-sm`;
 
     // Error state: High visibility red border
     const errorStyles = error
       ? "border-red-500 bg-red-50 focus:border-red-600 focus:ring-red-500/20"
-      : "border-slate-200 hover:border-slate-300 focus:border-white shadow-inner";
+      : `border-slate-200 hover:border-slate-300 ${focusRingColor} shadow-inner`;
 
     const disabledStyles = disabled
       ? "bg-slate-100 text-slate-400 cursor-not-allowed opacity-75 border-slate-100"

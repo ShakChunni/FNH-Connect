@@ -6,10 +6,10 @@ export default function LoginLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-dvh lg:min-h-screen bg-fnh-navy-dark flex items-center justify-center p-4 lg:p-8 transition-colors duration-500 overflow-hidden relative">
+    <div id="auth-layout-wrapper" className="min-h-dvh lg:min-h-screen bg-[#020617] flex items-center justify-center p-4 lg:p-8 transition-colors duration-1000 overflow-hidden relative">
       {/* Decorative background blur */}
-      <div className="fixed top-[-20%] left-[-10%] w-[50%] h-[50%] bg-fnh-blue/20 rounded-full blur-[120px] pointer-events-none opacity-50" />
-      <div className="fixed bottom-[-20%] right-[-10%] w-[50%] h-[50%] bg-purple-500/10 rounded-full blur-[120px] pointer-events-none opacity-50" />
+      <div id="auth-bg-blur-1" className="fixed top-[-20%] left-[-10%] w-[50%] h-[50%] bg-blue-500/20 rounded-full blur-[120px] pointer-events-none opacity-50 transition-colors duration-1000" />
+      <div id="auth-bg-blur-2" className="fixed bottom-[-20%] right-[-10%] w-[50%] h-[50%] bg-purple-500/10 rounded-full blur-[120px] pointer-events-none opacity-50 transition-colors duration-1000" />
       
       {/* Grid Pattern Overlay */}
       <div

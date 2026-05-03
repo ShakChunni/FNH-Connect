@@ -133,13 +133,17 @@ export function LoginForm({
     field: "username" | "password",
     hasError: boolean,
   ) => {
+    const focusRingColor = portal === "infertility" 
+      ? "focus:ring-emerald-500/20 focus:border-emerald-500" 
+      : "focus:ring-blue-500/20 focus:border-blue-500";
+      
     // Solid white background with dark text for maximum readability
     const base =
-      "w-full px-4 py-3.5 rounded-xl border bg-white text-sm text-slate-900 placeholder-slate-400 transition-all duration-300 ease-out focus:outline-none focus:ring-4 focus:ring-white/10 shadow-sm";
+      `w-full px-4 py-3.5 rounded-xl border bg-white text-sm text-slate-900 placeholder-slate-400 transition-all duration-300 ease-out focus:outline-none focus:ring-4 shadow-sm`;
 
     const errorStyles = hasError
       ? "border-red-500 bg-red-50 focus:border-red-600 focus:ring-red-500/20"
-      : "border-slate-200 hover:border-slate-300 focus:border-white shadow-inner";
+      : `border-slate-200 hover:border-slate-300 ${focusRingColor} shadow-inner`;
 
     const disabledStyles = isLoading
       ? "opacity-50 cursor-not-allowed bg-slate-100"
@@ -172,7 +176,7 @@ export function LoginForm({
       >
         <label
           htmlFor="username"
-          className="block text-sm font-semibold text-fnh-navy/80 ml-1"
+          className="block text-sm font-bold text-white/80 ml-1 uppercase tracking-wider"
         >
           Username
         </label>
@@ -214,6 +218,7 @@ export function LoginForm({
           error={touched.password ? errors.password : undefined}
           disabled={isLoading}
           isFocused={focusedField === "password"}
+          portal={portal}
         />
       </motion.div>
 
@@ -226,7 +231,11 @@ export function LoginForm({
         <button
           type="submit"
           disabled={isLoading}
-          className="w-full h-12 px-4 bg-fnh-navy text-white font-bold rounded-xl shadow-lg hover:shadow-xl hover:bg-fnh-navy-light hover:scale-[1.01] active:scale-[0.98] focus:ring-4 focus:ring-fnh-blue/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 cursor-pointer"
+          className={`w-full h-12 px-4 text-white font-bold rounded-xl shadow-lg hover:shadow-xl hover:scale-[1.01] active:scale-[0.98] focus:ring-4 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 cursor-pointer ${
+            portal === "infertility"
+              ? "bg-emerald-600 hover:bg-emerald-500 focus:ring-emerald-500/20 shadow-emerald-900/20"
+              : "bg-blue-600 hover:bg-blue-500 focus:ring-blue-500/20 shadow-blue-900/20"
+          }`}
         >
           {isLoading ? <LoginLoading message="Signing in..." /> : "Sign In"}
         </button>
