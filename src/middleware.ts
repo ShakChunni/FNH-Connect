@@ -605,7 +605,7 @@ export async function middleware(request: NextRequest) {
       if (isAPIRoute) {
         return new NextResponse(
           JSON.stringify({
-            message: "Forbidden - Not accessible in Infertility Portal",
+            message: "Forbidden - Not accessible in HSI Center Portal",
           }),
           {
             status: 403,
@@ -620,7 +620,7 @@ export async function middleware(request: NextRequest) {
       if (isAPIRoute) {
         return new NextResponse(
           JSON.stringify({
-            message: "Forbidden - Use the Infertility Portal",
+            message: "Forbidden - Use the HSI Center Portal",
           }),
           {
             status: 403,

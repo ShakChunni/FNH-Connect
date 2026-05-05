@@ -317,7 +317,7 @@ export async function GET(request: NextRequest) {
         name: t.patient.fullName,
         phoneNumber: t.patient.phoneNumber,
         admissionDate: t.testDate.toISOString(),
-        department: "Infertility",
+        department: "HSI Center",
         departmentType: "infertility" as const,
         status: t.isCompleted ? ("discharged" as const) : ("pending" as const),
         roomNumber: undefined,

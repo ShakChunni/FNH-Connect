@@ -29,7 +29,7 @@ export function useAddInfertilityData(
       data: AddInfertilityPatientRequest
     ): Promise<AddInfertilityPatientResponse> => {
       // Show loading notification
-      showNotification("Adding infertility patient...", "loading");
+      showNotification("Adding HSI Center patient...", "loading");
 
       const response = await api.post<{
         success: boolean;
@@ -40,14 +40,14 @@ export function useAddInfertilityData(
 
       if (!response.data.success) {
         throw new Error(
-          response.data.error || "Failed to add infertility patient"
+          response.data.error || "Failed to add HSI Center patient"
         );
       }
 
       return response.data;
     },
     onSuccess: (response, variables, context) => {
-      // Invalidate and refetch infertility patients queries
+      // Invalidate and refetch HSI Center patients queries
       queryClient.invalidateQueries({ queryKey: ["infertilityPatients"] });
 
       // Add the new patient to the cache if data exists
@@ -65,7 +65,7 @@ export function useAddInfertilityData(
 
       // Show success notification
       showNotification(
-        response.message || "Infertility patient added successfully!",
+        response.message || "HSI Center patient added successfully!",
         "success"
       );
 
@@ -73,7 +73,7 @@ export function useAddInfertilityData(
       (options?.onSuccess as any)?.(response, variables, undefined, context);
     },
     onError: (error: Error, variables, context) => {
-      let errorMessage = "Failed to add infertility patient";
+      let errorMessage = "Failed to add HSI Center patient";
 
       if (axios.isAxiosError(error) && error.response?.data) {
         const data = error.response.data as any;

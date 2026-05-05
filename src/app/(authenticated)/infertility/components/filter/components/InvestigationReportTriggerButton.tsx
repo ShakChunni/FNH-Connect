@@ -17,7 +17,7 @@ interface ReportTriggerButtonProps {
 }
 
 /**
- * Report Trigger Button for Infertility Investigations
+ * Report Trigger Button for HSI Center Investigations
  * Handles Financial, Summary, Detailed reports and CSV export
  */
 export const InvestigationReportTriggerButton: React.FC<ReportTriggerButtonProps> = ({

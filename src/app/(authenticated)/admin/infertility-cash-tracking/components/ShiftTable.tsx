@@ -104,7 +104,7 @@ const ShiftTable: React.FC<ShiftTableProps> = ({
       {shifts.length === 0 && !isLoading && (
         <div className="py-20 flex flex-col items-center text-gray-400">
           <AlertCircle className="w-12 h-12 mb-3 opacity-20" />
-          <p className="font-medium text-sm">No infertility shifts recorded.</p>
+          <p className="font-medium text-sm">No HSI Center shifts recorded.</p>
         </div>
       )}
     </div>

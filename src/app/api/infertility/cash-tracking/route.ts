@@ -60,7 +60,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error("GET /api/infertility/cash-tracking error:", error);
     return NextResponse.json(
-      { success: false, error: "Failed to fetch infertility cash tracking data" },
+      { success: false, error: "Failed to fetch HSI Center cash tracking data" },
       { status: 500 }
     );
   }

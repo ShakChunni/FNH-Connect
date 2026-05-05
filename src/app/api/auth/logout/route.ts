@@ -106,7 +106,7 @@ export async function POST(request: NextRequest) {
               endTime: new Date(),
               closingCash: activeInfertilityShift.systemCash,
               variance: 0,
-              notes: "Infertility shift auto-closed on logout",
+              notes: "HSI Center shift auto-closed on logout",
             },
           });
 

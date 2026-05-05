@@ -19,7 +19,7 @@ const COMPANY_INFO = {
     "1257, Sholakia, Khorompatti Kishoreganj Sadar, Kishoreganj Dhaka, Bangladesh",
   email: "Email: firozanursinghome@gmail.com",
   phone: "Mobile: +8801726219350, +8801701295016, +8801787993086",
-  department: "Infertility Management Unit",
+  department: "HSI Center",
 };
 
 const loadImage = (src: string): Promise<HTMLImageElement> => {
@@ -159,7 +159,7 @@ export const generateInfertilityTestReceipt = async (
       doc.setFont("helvetica", "bold");
       doc.setFontSize(14);
       doc.setTextColor(COLORS.primary);
-      doc.text("INFERTILITY INVESTIGATION INVOICE", pageWidth / 2, currentY, { align: "center" });
+      doc.text("HSI CENTER INVESTIGATION INVOICE", pageWidth / 2, currentY, { align: "center" });
       currentY += 6;
 
       // Receipt # and Date

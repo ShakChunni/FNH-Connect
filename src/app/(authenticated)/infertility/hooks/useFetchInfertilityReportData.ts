@@ -60,7 +60,7 @@ export function useFetchInfertilityReportData(
 
       if (!response.data.success) {
         throw new Error(
-          response.data.error || "Failed to fetch infertility report data"
+          response.data.error || "Failed to fetch HSI Center report data"
         );
       }
 

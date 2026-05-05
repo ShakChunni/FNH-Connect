@@ -121,7 +121,7 @@ const CashMovementDetailModal: React.FC<CashMovementDetailModalProps> = ({
               <ModalHeader
                 icon={Icon}
                 iconColor={iconColor}
-                title="Infertility Transaction"
+                title="HSI Center Transaction"
                 subtitle={`Movement #${movement.id}`}
                 onClose={onClose}
               />

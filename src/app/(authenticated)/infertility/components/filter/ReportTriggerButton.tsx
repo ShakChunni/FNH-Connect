@@ -16,7 +16,7 @@ interface ReportTriggerButtonProps {
 }
 
 /**
- * Report Trigger Button for Infertility
+ * Report Trigger Button for HSI Center
  * Pill-shaped button with dropdown for report generation options
  */
 export const ReportTriggerButton: React.FC<ReportTriggerButtonProps> = ({

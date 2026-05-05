@@ -59,7 +59,7 @@ export function useFetchInfertilityData(filters: InfertilityFilters = {}) {
 
       if (!response.data.success) {
         throw new Error(
-          response.data.error || "Failed to fetch infertility patients"
+          response.data.error || "Failed to fetch HSI Center patients"
         );
       }
 

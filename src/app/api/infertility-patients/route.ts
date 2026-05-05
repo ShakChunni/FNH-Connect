@@ -62,7 +62,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(
       {
         success: false,
-        error: "Failed to fetch infertility patients",
+        error: "Failed to fetch HSI Center patients",
         message: error instanceof Error ? error.message : "Unknown error",
       },
       { status: 500 }
@@ -126,7 +126,7 @@ export async function POST(request: NextRequest) {
       {
         success: true,
         data: result,
-        message: "Infertility patient record created successfully",
+        message: "HSI Center patient record created successfully",
       },
       { status: 201 }
     );
@@ -138,7 +138,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         success: false,
-        error: "Failed to create infertility patient record",
+        error: "Failed to create HSI Center patient record",
         message: error instanceof Error ? error.message : "Unknown error",
       },
       { status: 500 }

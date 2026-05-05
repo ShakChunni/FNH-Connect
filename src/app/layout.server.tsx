@@ -40,8 +40,8 @@ export async function generateMetadata(): Promise<Metadata> {
 
     case "/infertility":
       return {
-        title: "Infertility | FNH Connect",
-        description: "Infertility services and patient management",
+        title: "HSI Center | FNH Connect",
+        description: "HSI Center services and patient management",
         robots: baseRobots,
       };
 

@@ -49,7 +49,7 @@ const allQuickActions: QuickActionItem[] = [
   },
   {
     id: "infertility",
-    label: "Infertility",
+    label: "HSI Center",
     description: "Fertility treatments",
     href: "/infertility",
     icon: Baby,

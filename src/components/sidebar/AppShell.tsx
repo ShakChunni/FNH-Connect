@@ -1,5 +1,6 @@
 "use client";
 
+import React from "react";
 import SidebarLayout from "./SidebarLayout";
 import { Header } from "@/components/header";
 import { useAuth } from "@/app/AuthContext";
@@ -12,6 +13,19 @@ interface AppShellProps {
 export default function AppShell({ title, children }: AppShellProps) {
   const { portal } = useAuth();
   const isInfertility = portal === "infertility";
+
+  // Sync overscroll background color with portal theme
+  React.useEffect(() => {
+    const html = document.documentElement;
+    if (isInfertility) {
+      html.classList.add("infertility-portal");
+    } else {
+      html.classList.remove("infertility-portal");
+    }
+    return () => {
+      html.classList.remove("infertility-portal");
+    };
+  }, [isInfertility]);
 
   return (
     <div className={isInfertility ? "infertility-theme" : undefined}>

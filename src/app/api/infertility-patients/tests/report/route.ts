@@ -42,7 +42,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error("GET Infertility Tests Report error:", error);
     return NextResponse.json(
-      { success: false, error: "Failed to fetch infertility tests report data" },
+      { success: false, error: "Failed to fetch HSI Center tests report data" },
       { status: 500 }
     );
   }

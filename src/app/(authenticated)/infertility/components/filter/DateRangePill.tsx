@@ -61,7 +61,7 @@ const getDateRangeFromOption = (
 };
 
 /**
- * Date Range Pill for Infertility
+ * Date Range Pill for HSI Center
  * Pill-shaped button with dropdown for date filtering
  */
 export const DateRangePill: React.FC<DateRangePillProps> = ({

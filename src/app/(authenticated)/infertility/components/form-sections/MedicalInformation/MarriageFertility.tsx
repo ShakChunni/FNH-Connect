@@ -91,7 +91,7 @@ const MarriageFertility: React.FC = () => {
         </div>
         <div>
           <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1.5 sm:mb-2">
-            Infertility Type
+            HSI Center Type
           </label>
           <InfertilityTypeDropdown
             value={medicalInfo.infertilityType}

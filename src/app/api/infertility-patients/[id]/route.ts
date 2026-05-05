@@ -39,7 +39,7 @@ export async function GET(
 
     if (!patient) {
       return NextResponse.json(
-        { success: false, error: "Infertility patient not found" },
+        { success: false, error: "HSI Center patient not found" },
         { status: 404 }
       );
     }
@@ -54,7 +54,7 @@ export async function GET(
     return NextResponse.json(
       {
         success: false,
-        error: "Failed to fetch infertility patient",
+        error: "Failed to fetch HSI Center patient",
         message: error instanceof Error ? error.message : "Unknown error",
       },
       { status: 500 }
@@ -136,7 +136,7 @@ export async function PATCH(
     const response = NextResponse.json({
       success: true,
       data: result,
-      message: "Infertility patient record updated successfully",
+      message: "HSI Center patient record updated successfully",
     });
 
     return addCSRFTokenToResponse(response);
@@ -153,7 +153,7 @@ export async function PATCH(
     return NextResponse.json(
       {
         success: false,
-        error: "Failed to update infertility patient record",
+        error: "Failed to update HSI Center patient record",
         message: error instanceof Error ? error.message : "Unknown error",
       },
       { status: 500 }
@@ -207,7 +207,7 @@ export async function DELETE(
 
     const response = NextResponse.json({
       success: true,
-      message: "Infertility patient record deleted successfully",
+      message: "HSI Center patient record deleted successfully",
     });
 
     return addCSRFTokenToResponse(response);
@@ -224,7 +224,7 @@ export async function DELETE(
     return NextResponse.json(
       {
         success: false,
-        error: "Failed to delete infertility patient record",
+        error: "Failed to delete HSI Center patient record",
         message: error instanceof Error ? error.message : "Unknown error",
       },
       { status: 500 }

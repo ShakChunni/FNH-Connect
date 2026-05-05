@@ -48,7 +48,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error("GET Infertility Tests error:", error);
     return NextResponse.json(
-      { success: false, error: "Failed to fetch infertility tests" },
+      { success: false, error: "Failed to fetch HSI Center tests" },
       { status: 500 }
     );
   }
@@ -112,7 +112,7 @@ export async function POST(request: NextRequest) {
     return addCSRFTokenToResponse(response);
   } catch (error) {
     console.error("POST Infertility Test error:", error);
-    const errorMessage = error instanceof Error ? error.message : "Failed to create infertility test";
+    const errorMessage = error instanceof Error ? error.message : "Failed to create HSI Center test";
     return NextResponse.json({ success: false, error: errorMessage }, { status: 500 });
   }
 }

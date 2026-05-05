@@ -168,8 +168,8 @@ const InfertilityManagement = React.memo(() => {
           {/* Page Header */}
           <div className="px-1 sm:px-2 lg:px-4 pb-4 lg:pb-8">
             <PageHeader
-              title="Infertility Patients"
-              subtitle="Manage and track infertility patient records"
+              title="HSI Center Patients"
+              subtitle="Manage and track HSI Center patient records"
               actions={
                 <NewPatientButton
                   onClick={actions.openAddModal}

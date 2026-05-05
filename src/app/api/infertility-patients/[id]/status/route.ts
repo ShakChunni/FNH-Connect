@@ -100,7 +100,7 @@ export async function PATCH(
     return NextResponse.json(
       {
         success: false,
-        error: "Failed to update infertility patient status",
+        error: "Failed to update HSI Center patient status",
         message: error instanceof Error ? error.message : "Unknown error",
       },
       { status: 500 }

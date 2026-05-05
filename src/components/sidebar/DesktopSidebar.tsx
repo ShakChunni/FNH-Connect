@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LogOut, Pin, Settings } from "lucide-react";
+import { Heart, LogOut, Pin, Settings } from "lucide-react";
 import { getNavigationItems } from "./navigation";
 import { SidebarProps } from "./types";
 import Image from "next/image";
@@ -222,14 +222,20 @@ export default function DesktopSidebar({
             >
               {!isExpanded ? (
                 <div className="relative h-10 w-10 shrink-0 flex items-center justify-center">
-                  <Image
-                    src="/fnh-logo.svg"
-                    alt="FNH Healthcare"
-                    width={40}
-                    height={40}
-                    className="object-contain brightness-0 invert"
-                    priority
-                  />
+                  {portal === "infertility" ? (
+                    <div className="h-10 w-10 rounded-xl bg-emerald-800/40 flex items-center justify-center border border-emerald-600/30">
+                      <Heart className="h-5 w-5 text-emerald-400" />
+                    </div>
+                  ) : (
+                    <Image
+                      src="/fnh-logo.svg"
+                      alt="FNH Healthcare"
+                      width={40}
+                      height={40}
+                      className="object-contain brightness-0 invert"
+                      priority
+                    />
+                  )}
                 </div>
               ) : (
                 <>
@@ -237,17 +243,23 @@ export default function DesktopSidebar({
                     href={homeRoute}
                     className="flex items-center gap-3 flex-1 min-w-0"
                   >
-                    <Image
-                      src="/fnh-logo.svg"
-                      alt="FNH Healthcare"
-                      width={40}
-                      height={40}
-                      className="h-10 w-10 shrink-0 object-contain brightness-0 invert"
-                      priority
-                    />
+                    {portal === "infertility" ? (
+                      <div className="h-10 w-10 rounded-xl bg-emerald-800/40 flex items-center justify-center border border-emerald-600/30 shrink-0">
+                        <Heart className="h-5 w-5 text-emerald-400" />
+                      </div>
+                    ) : (
+                      <Image
+                        src="/fnh-logo.svg"
+                        alt="FNH Healthcare"
+                        width={40}
+                        height={40}
+                        className="h-10 w-10 shrink-0 object-contain brightness-0 invert"
+                        priority
+                      />
+                    )}
                     <div className="flex items-center gap-1 leading-tight min-w-0">
                       <span className="text-sm font-bold uppercase tracking-[0.25em] text-white/80 whitespace-nowrap">
-                        FNH Connect
+                        {portal === "infertility" ? "HSI Center" : "FNH Connect"}
                       </span>
                     </div>
                   </Link>

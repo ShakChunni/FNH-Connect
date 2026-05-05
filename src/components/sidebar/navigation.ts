@@ -49,7 +49,7 @@ export const navigationItems: NavigationItem[] = [
     icon: Building2,
   },
   {
-    label: "Infertility",
+    label: "HSI Center",
     href: "/infertility",
     icon: Baby,
   },
@@ -76,7 +76,7 @@ export const navigationItems: NavigationItem[] = [
     adminOnly: true,
   },
   {
-    label: "Infertility Cash",
+    label: "HSI Center Cash",
     href: "/admin/infertility-cash-tracking",
     icon: Wallet,
     adminOnly: true,
@@ -104,7 +104,7 @@ export const navigationItems: NavigationItem[] = [
 // Infertility-specific navigation items
 export const infertilityNavigationItems: NavigationItem[] = [
   {
-    label: "Infertility Patients",
+    label: "HSI Center Patients",
     href: "/infertility",
     icon: Baby,
   },
@@ -129,12 +129,12 @@ export function getNavigationItems(
     if (userRole && isAdminRole(userRole)) {
       return [
         {
-          label: "Infertility Patients",
+          label: "HSI Center Patients",
           href: "/infertility",
           icon: Baby,
         },
         {
-          label: "Infertility Cash",
+          label: "HSI Center Cash",
           href: "/admin/infertility-cash-tracking",
           icon: Wallet,
         },

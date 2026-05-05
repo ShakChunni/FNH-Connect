@@ -1,6 +1,6 @@
 /**
- * Infertility Summary Report Generator
- * Generates PDF summary reports for multiple infertility patients
+ * HSI Center Summary Report Generator
+ * Generates PDF summary reports for multiple HSI Center patients
  */
 
 import jsPDF from "jspdf";
@@ -41,9 +41,9 @@ export function generateInfertilitySummaryReport(
   doc.setFontSize(12);
   doc.setFont("helvetica", "normal");
   doc.text(
-    detailed
-      ? "Infertility Patients - Detailed Report"
-      : "Infertility Patients - Summary Report",
+      detailed
+      ? "HSI Center Patients - Detailed Report"
+      : "HSI Center Patients - Summary Report",
     20,
     23
   );
@@ -160,7 +160,7 @@ export function generateInfertilitySummaryReport(
       { align: "center" }
     );
     doc.text(
-      "Feroza Nursing Home - Infertility Management System",
+      "Feroza Nursing Home - HSI Center Management System",
       20,
       doc.internal.pageSize.height - 10
     );

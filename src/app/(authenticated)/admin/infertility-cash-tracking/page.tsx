@@ -51,8 +51,8 @@ const InfertilityCashTrackingPage = () => {
         <div className="space-y-4 sm:space-y-5 lg:space-y-6 w-full">
           <div className="px-1 sm:px-2 lg:px-4 pb-4 lg:pb-8">
             <PageHeader
-              title="Infertility Cash Tracking"
-              subtitle="Monitor infertility collections and financial flow."
+              title="HSI Center Cash Tracking"
+              subtitle="Monitor HSI Center collections and financial flow."
               actions={
                 <button
                   onClick={() => refetch()}

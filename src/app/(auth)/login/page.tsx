@@ -319,10 +319,10 @@ export default function LoginPage() {
                     className="text-right"
                   >
                     <h1 className="text-xl lg:text-2xl font-black text-white tracking-tight uppercase">
-                      FNH <span className="text-emerald-500">Infertility</span>
+                       HSI <span className="text-emerald-500">Center</span>
                     </h1>
                     <p className="text-[10px] font-bold text-emerald-400/60 uppercase tracking-[0.3em]">
-                      Fertility Care Portal
+                       Infertility Portal
                     </p>
                   </motion.div>
                 )}
@@ -348,13 +348,13 @@ export default function LoginPage() {
                         Back to Portals
                       </button>
                       <div className="mb-10 lg:text-left text-right">
-                        <h2 className="text-4xl lg:text-5xl font-black text-white mb-4 tracking-tighter leading-none">
-                          Infertility <br />
-                          Speciality.
-                        </h2>
-                        <p className="text-emerald-200/60 text-sm font-medium leading-relaxed">
-                          Access the dedicated portal for fertility treatments, related diagnostics, and specialized patient management.
-                        </p>
+                         <h2 className="text-4xl lg:text-5xl font-black text-white mb-4 tracking-tighter leading-none">
+                           HSI Center <br />
+                           Specialty.
+                         </h2>
+                         <p className="text-emerald-200/60 text-sm font-medium leading-relaxed">
+                           Access the dedicated portal for HSI treatments, related diagnostics, and specialized patient management.
+                         </p>
                       </div>
                       <div className="bg-[#022c22]/90 backdrop-blur-3xl border border-emerald-500/20 p-6 lg:p-8 rounded-[2.5rem] shadow-[0_0_40px_-15px_rgba(16,185,129,0.3)] relative overflow-hidden group/form">
                         <div className="absolute inset-0 bg-gradient-to-br from-emerald-600/10 via-transparent to-transparent opacity-50" />
@@ -377,15 +377,15 @@ export default function LoginPage() {
                     >
                       <div className="max-w-md">
                         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-black uppercase tracking-[0.3em] mb-8">
-                          <Microscope className="w-3 h-3" /> Specialized Care
+                          <Microscope className="w-3 h-3" /> Infertility Care
                         </div>
-                        <h2 className="text-5xl lg:text-7xl font-black text-white leading-[0.9] mb-8 tracking-tighter">
-                          Infertility <br />
-                          <span className="text-emerald-500">Unit.</span>
-                        </h2>
-                        <p className="text-lg text-slate-400 leading-relaxed font-medium">
-                          Dedicated tools for fertility diagnostics, treatment planning, and specialized management.
-                        </p>
+                         <h2 className="text-5xl lg:text-7xl font-black text-white leading-[0.9] mb-8 tracking-tighter">
+                           HSI Center <br />
+                           <span className="text-emerald-500">Unit.</span>
+                         </h2>
+                         <p className="text-lg text-slate-400 leading-relaxed font-medium">
+                           Dedicated tools for HSI diagnostics, treatment planning, and specialized management.
+                         </p>
                       </div>
 
                       <div className="hidden lg:flex gap-4">

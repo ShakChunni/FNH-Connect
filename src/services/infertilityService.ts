@@ -346,7 +346,7 @@ export async function createInfertilityPatient(
 
     if (existingInfertilityRecord) {
       throw new Error(
-        `This patient already has an active infertility record at ${hospital.name}. Please edit the existing record instead of creating a new one.`,
+        `This patient already has an active HSI Center record at ${hospital.name}. Please edit the existing record instead of creating a new one.`,
       );
     }
 
@@ -385,7 +385,7 @@ export async function createInfertilityPatient(
       data: {
         userId,
         action: "CREATE",
-        description: `Created infertility patient record ${caseNumber} for ${patient.fullName} at ${hospital.name}`,
+        description: `Created HSI Center patient record ${caseNumber} for ${patient.fullName} at ${hospital.name}`,
         entityType: "InfertilityPatient",
         entityId: infertilityRecord.id,
         timestamp: new Date(),
@@ -440,7 +440,7 @@ export async function updateInfertilityPatient(
     });
 
     if (!existingRecord) {
-      throw new Error("Infertility patient record not found");
+      throw new Error("HSI Center patient record not found");
     }
 
     // 1. Update or create hospital (moved to start)
@@ -490,7 +490,7 @@ export async function updateInfertilityPatient(
 
       if (collisionRecord) {
         throw new Error(
-          `This patient already has an infertility record at ${hospital.name}. You cannot move this record to that hospital.`,
+          `This patient already has an HSI Center record at ${hospital.name}. You cannot move this record to that hospital.`,
         );
       }
     }
@@ -555,7 +555,7 @@ export async function updateInfertilityPatient(
       data: {
         userId,
         action: "UPDATE",
-        description: `Updated infertility patient record for ${updatedPatient.fullName} at ${hospital.name}`,
+        description: `Updated HSI Center patient record for ${updatedPatient.fullName} at ${hospital.name}`,
         entityType: "InfertilityPatient",
         entityId: updatedRecord.id,
         timestamp: new Date(),
@@ -595,7 +595,7 @@ export async function deleteInfertilityPatient(
     });
 
     if (!existingRecord) {
-      throw new Error("Infertility patient record not found");
+      throw new Error("HSI Center patient record not found");
     }
 
     await tx.infertilityPatient.delete({
@@ -606,7 +606,7 @@ export async function deleteInfertilityPatient(
       data: {
         userId,
         action: "DELETE",
-        description: `Deleted infertility patient record for ${existingRecord.patient.fullName}`,
+        description: `Deleted HSI Center patient record for ${existingRecord.patient.fullName}`,
         entityType: "InfertilityPatient",
         entityId: id,
         timestamp: new Date(),
@@ -639,7 +639,7 @@ export async function updateInfertilityPatientStatus(
     });
 
     if (!existingRecord) {
-      throw new Error("Infertility patient record not found");
+      throw new Error("HSI Center patient record not found");
     }
 
     const updatedRecord = await tx.infertilityPatient.update({
@@ -659,7 +659,7 @@ export async function updateInfertilityPatientStatus(
       data: {
         userId,
         action: "UPDATE",
-        description: `Updated infertility patient ${existingRecord.caseNumber} (${existingRecord.patient.fullName}) status from "${existingRecord.status || "Unknown"}" to "${status}"`,
+        description: `Updated HSI Center patient ${existingRecord.caseNumber} (${existingRecord.patient.fullName}) status from "${existingRecord.status || "Unknown"}" to "${status}"`,
         entityType: "InfertilityPatient",
         entityId: id,
         timestamp: new Date(),
@@ -886,7 +886,7 @@ export async function createInfertilityTest(
     });
 
     if (!infertilityPatient) {
-      throw new Error("Infertility patient record not found");
+      throw new Error("HSI Center patient record not found");
     }
 
     // 2. Generate test number: INFT-YY-XXXXX
@@ -911,7 +911,7 @@ export async function createInfertilityTest(
 
     // Get Infertility Department ID (fallback to 1 if not explicitly created yet, or find by name)
     let department = await tx.department.findFirst({
-      where: { OR: [{ name: "Infertility" }, { name: "Gynecology" }] },
+      where: { OR: [{ name: "HSI Center" }, { name: "Gynecology" }] },
     });
     if (!department) {
       department = await tx.department.findFirst({
@@ -976,7 +976,7 @@ export async function createInfertilityTest(
       data: {
         patientAccountId: patientAccount.id,
         serviceType: "INFERTILITY_TEST",
-        serviceName: `Infertility Investigation - ${testNumber}`,
+        serviceName: `HSI Center Investigation - ${testNumber}`,
         departmentId: department ? department.id : 1, // Fallback
         originalAmount: testData.testCharge,
         discountAmount: testData.discountAmount || 0,
@@ -1018,7 +1018,7 @@ export async function createInfertilityTest(
           collectedById: staffId,
           shiftId: activeShift.id,
           receiptNumber,
-          notes: `Payment for infertility test ${testNumber}`,
+          notes: `Payment for HSI Center test ${testNumber}`,
         },
       });
 
@@ -1093,7 +1093,7 @@ export async function updateInfertilityTest(
     });
 
     if (!existingTest) {
-      throw new Error("Infertility test not found");
+      throw new Error("HSI Center test not found");
     }
 
     const dataToUpdate: any = {

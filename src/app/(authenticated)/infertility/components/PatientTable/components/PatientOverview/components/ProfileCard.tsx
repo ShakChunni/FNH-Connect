@@ -154,7 +154,7 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({ patient }) => {
                     Prof. Dr. Sufia Khatun
                   </span>
                   <span className="text-[10px] sm:text-xs text-indigo-500/80 font-medium mt-1">
-                    Gynecology & Infertility Specialist
+                    Gynecology & HSI Center Specialist
                   </span>
                 </div>
                 <div className="w-8 h-8 rounded-lg bg-indigo-100/50 flex items-center justify-center text-indigo-600 ring-4 ring-white shadow-sm">

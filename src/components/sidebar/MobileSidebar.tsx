@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LogOut, Menu, Settings } from "lucide-react";
+import { Heart, LogOut, Menu, Settings } from "lucide-react";
 import Image from "next/image";
 import { getNavigationItems } from "./navigation";
 import { useAuth } from "@/app/AuthContext";
@@ -138,7 +138,7 @@ export default function MobileSidebar() {
 
         <Link href={homeRoute} className="flex flex-1 flex-col">
           <span className="text-sm font-semibold text-jd-rich-black">
-            FNH Connect
+            {portal === "infertility" ? "HSI Center" : "FNH Connect"}
           </span>
         </Link>
       </header>
@@ -165,15 +165,21 @@ export default function MobileSidebar() {
           >
             <div className="flex items-center justify-between gap-2 mb-2 px-1">
               <div className="flex items-center gap-2">
-                <Image
-                  src="/fnh-logo.svg"
-                  alt="FNH Healthcare"
-                  width={32}
-                  height={32}
-                  className="h-8 w-8 shrink-0 object-contain brightness-0 invert"
-                />
+                {portal === "infertility" ? (
+                  <div className="h-8 w-8 rounded-lg bg-emerald-800/40 flex items-center justify-center border border-emerald-600/30 shrink-0">
+                    <Heart className="h-4 w-4 text-emerald-400" />
+                  </div>
+                ) : (
+                  <Image
+                    src="/fnh-logo.svg"
+                    alt="FNH Healthcare"
+                    width={32}
+                    height={32}
+                    className="h-8 w-8 shrink-0 object-contain brightness-0 invert"
+                  />
+                )}
                 <div className="text-[10px] font-bold uppercase tracking-[0.25em] text-white/80 leading-tight">
-                  FNH Connect
+                  {portal === "infertility" ? "HSI Center" : "FNH Connect"}
                 </div>
               </div>
               <button

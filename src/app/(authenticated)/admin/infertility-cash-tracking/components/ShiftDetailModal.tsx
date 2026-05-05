@@ -55,8 +55,8 @@ const ShiftDetailModal: React.FC<ShiftDetailModalProps> = ({
     >
       <ModalHeader
         icon={Wallet}
-        title="Infertility Shift Report"
-        subtitle={`Summary of infertility collections for shift #${shiftId}`}
+        title="HSI Center Shift Report"
+        subtitle={`Summary of HSI Center collections for shift #${shiftId}`}
         onClose={onClose}
         iconColor="teal"
       />

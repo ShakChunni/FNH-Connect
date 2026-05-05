@@ -56,7 +56,7 @@ function ShiftTable({
         <Activity className="w-10 h-10 text-gray-300 mx-auto mb-3" />
         <h3 className="text-sm font-bold text-gray-700">No shifts found</h3>
         <p className="text-xs text-gray-500 mt-1">
-          There are no infertility cash tracking records matching your filters.
+          There are no HSI Center cash tracking records matching your filters.
         </p>
       </div>
     );
@@ -178,8 +178,8 @@ const InfertilityCashTrackingPage = () => {
         <div className="space-y-4 sm:space-y-5 lg:space-y-6 w-full">
           <div className="px-1 sm:px-2 lg:px-4 pb-4 lg:pb-8">
             <PageHeader
-              title="Infertility Cash Tracking"
-              subtitle="Monitor infertility collections and financial flow."
+              title="HSI Center Cash Tracking"
+              subtitle="Monitor HSI Center collections and financial flow."
               actions={
                 <button
                   onClick={() => refetch()}
@@ -203,7 +203,7 @@ const InfertilityCashTrackingPage = () => {
                     <DollarSign className="w-5 h-5 text-emerald-600" />
                   </div>
                   <span className="text-xs font-black uppercase tracking-widest text-emerald-800/60">
-                    Net Infertility Cash
+                    Net HSI Center Cash
                   </span>
                 </div>
                 <p className="text-2xl sm:text-3xl font-black text-emerald-950">

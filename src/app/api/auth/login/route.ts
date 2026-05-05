@@ -396,7 +396,7 @@ export async function POST(request: NextRequest) {
             },
           });
           throw new Error(
-            "You are not authorized to access the Infertility Portal."
+            "You are not authorized to access the HSI Center Portal."
           );
         }
       }
@@ -414,7 +414,7 @@ export async function POST(request: NextRequest) {
             },
           });
           throw new Error(
-            "Please use the Infertility Portal to log in."
+            "Please use the HSI Center Portal to log in."
           );
         }
       }

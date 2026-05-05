@@ -20,7 +20,7 @@ const COMPANY_INFO = {
   address:
     "1257, Sholakia, Khorompatti Kishoreganj Sadar, Kishoreganj Dhaka, Bangladesh",
   phone: "+8801726219350, +8801701295016, +8801787993086",
-  department: "Infertility Management Unit",
+  department: "HSI Center",
 };
 
 const loadImage = (src: string): Promise<HTMLImageElement> => {
@@ -165,7 +165,7 @@ export const generateInfertilityReport = async (
   doc.setFont("helvetica", "bold");
   doc.setFontSize(12);
   doc.setTextColor(COLORS.primary);
-  doc.text("INFERTILITY CASE REPORT", pageWidth / 2, currentY, {
+  doc.text("HSI CENTER CASE REPORT", pageWidth / 2, currentY, {
     align: "center",
   });
   currentY += 5;
@@ -707,7 +707,7 @@ export const generateInfertilityReport = async (
     { align: "center" }
   );
   doc.text(
-    "Feroza Nursing Home · Infertility Management Unit",
+    "Feroza Nursing Home · HSI Center",
     pageWidth / 2,
     pageHeight - 8, // Increased safety margin
     { align: "center" }

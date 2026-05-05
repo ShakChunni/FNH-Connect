@@ -458,15 +458,15 @@
    ======================================== */
 
 .infertility-theme {
-  --fnh-navy: #064e3b;
-  --fnh-navy-dark: #022c22;
-  --fnh-navy-light: #065f46;
-  --fnh-blue: #10b981;
-  --fnh-blue-light: #34d399;
-  --fnh-blue-dark: #059669;
-  --fnh-porcelain: #ecfdf5;
-  --fnh-grey: #64748b;
-  --fnh-grey-dark: #475569;
+  --fnh-navy: #011c16;
+  --fnh-navy-dark: #010f0a;
+  --fnh-navy-light: #022c22;
+  --fnh-blue: #047857;
+  --fnh-blue-light: #059669;
+  --fnh-blue-dark: #065f46;
+  --fnh-porcelain: #f8fafc;
+  --fnh-grey: #94a3b8;
+  --fnh-grey-dark: #64748b;
 
   --primary: var(--fnh-navy);
   --primary-foreground: #ffffff;
@@ -483,6 +483,12 @@
   --sidebar-accent-foreground: #ffffff;
   --sidebar-border: var(--fnh-navy-light);
   --sidebar-ring: var(--fnh-blue);
+}
+
+/* Overscroll background when in infertility portal */
+html.infertility-portal,
+body.infertility-portal {
+  background-color: #010f0a;
 }
 
 /* Custom scrollbar for sidebar navigation */

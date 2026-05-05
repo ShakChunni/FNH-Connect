@@ -273,7 +273,7 @@ export async function DELETE(
         {
           success: false,
           error: "Cannot delete hospital with associated patients",
-          message: `This hospital has ${patientCount} infertility patient(s). Please reassign or delete the patients first.`,
+          message: `This hospital has ${patientCount} HSI Center patient(s). Please reassign or delete the patients first.`,
         },
         { status: 409 }
       );

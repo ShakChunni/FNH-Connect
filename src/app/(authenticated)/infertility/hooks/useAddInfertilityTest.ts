@@ -34,14 +34,14 @@ export function useAddInfertilityTest(
   const mutation = useMutation({
     ...options,
     mutationFn: async (data: AddInfertilityTestRequest): Promise<AddInfertilityTestResponse> => {
-      showNotification("Adding infertility test...", "loading");
+      showNotification("Adding HSI Center test...", "loading");
       const response = await api.post<{ success: boolean; data: any; error?: string }>(
         "/infertility-patients/tests",
         data
       );
 
       if (!response.data.success) {
-        throw new Error(response.data.error || "Failed to add infertility test");
+        throw new Error(response.data.error || "Failed to add HSI Center test");
       }
 
       return response.data;
@@ -49,7 +49,7 @@ export function useAddInfertilityTest(
     onSuccess: (response, variables, context) => {
       queryClient.invalidateQueries({ queryKey: ["infertilityTestPatients"] });
       queryClient.invalidateQueries({ queryKey: ["infertilityPatients"] });
-      showNotification("Infertility test added successfully", "success");
+      showNotification("HSI Center test added successfully", "success");
       if (options?.onSuccess) {
         options.onSuccess(response, variables, context as any, mutation as any);
       }

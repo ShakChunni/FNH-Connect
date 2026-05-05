@@ -29,7 +29,7 @@ export function useEditInfertilityData(
       data: EditInfertilityPatientRequest
     ): Promise<EditInfertilityPatientResponse> => {
       // Show loading notification
-      showNotification("Updating infertility patient...", "loading");
+      showNotification("Updating HSI Center patient...", "loading");
 
       const { id, ...updateData } = data;
 
@@ -42,14 +42,14 @@ export function useEditInfertilityData(
 
       if (!response.data.success) {
         throw new Error(
-          response.data.error || "Failed to edit infertility patient"
+          response.data.error || "Failed to edit HSI Center patient"
         );
       }
 
       return response.data;
     },
     onSuccess: (response, variables, context) => {
-      // Invalidate and refetch infertility patients queries
+      // Invalidate and refetch HSI Center patients queries
       queryClient.invalidateQueries({ queryKey: ["infertilityPatients"] });
 
       // Update the patient in the cache if data exists
@@ -66,7 +66,7 @@ export function useEditInfertilityData(
 
       // Show success notification
       showNotification(
-        response.message || "Infertility patient updated successfully!",
+        response.message || "HSI Center patient updated successfully!",
         "success"
       );
 
@@ -74,7 +74,7 @@ export function useEditInfertilityData(
       (options?.onSuccess as any)?.(response, variables, undefined, context);
     },
     onError: (error: Error, variables, context) => {
-      let errorMessage = "Failed to update infertility patient";
+      let errorMessage = "Failed to update HSI Center patient";
 
       if (axios.isAxiosError(error) && error.response?.data) {
         const data = error.response.data as any;

@@ -14,7 +14,7 @@ interface InfertilitySearchProps {
 }
 
 /**
- * Infertility Search Component
+ * HSI Center Search Component
  * Adaptive search bar that switches between Patient and Investigation stores
  */
 export const InfertilitySearch: React.FC<InfertilitySearchProps> = ({

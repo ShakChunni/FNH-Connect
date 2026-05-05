@@ -200,7 +200,7 @@ const AddNewDataInfertility: React.FC<AddNewDataProps> = ({
               icon={Stethoscope}
               iconColor="blue"
               title="Add New Patient"
-              subtitle="Enter all required details to register a new infertility case."
+              subtitle="Enter all required details to register a new HSI Center case."
               onClose={handleClose}
               isDisabled={isSubmitting}
             >
