@@ -441,6 +441,7 @@ export interface InfertilityTestFilters {
   orderedById?: number;
   doneById?: number;
   testNames?: string[];
+  infertilityPatientId?: number;
   page?: number;
   limit?: number;
 }

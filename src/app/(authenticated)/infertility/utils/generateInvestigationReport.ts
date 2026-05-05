@@ -17,7 +17,7 @@ const COLORS = {
 };
 
 const COMPANY_INFO = {
-  name: "Feroza Nursing Home",
+  name: "HSI Center",
   address: "1257, Sholakia, Khorompatti Kishoreganj Sadar, Kishoreganj Dhaka, Bangladesh",
   email: "Email: firozanursinghome@gmail.com",
   phone: "Mobile: +8801726219350, +8801701295016, +8801787993086",
@@ -39,7 +39,7 @@ const drawHeader = async (doc: jsPDF, title: string, dateRange?: string) => {
   let currentY = 10;
 
   try {
-    const logo = await loadImage("/fnh-logo.png");
+    const logo = await loadImage("/hsi-logo.png");
     const logoW = 20;
     const logoH = 20;
     const logoX = pageWidth / 2 - logoW / 2;

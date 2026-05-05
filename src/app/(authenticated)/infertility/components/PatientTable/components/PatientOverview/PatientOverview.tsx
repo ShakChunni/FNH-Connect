@@ -17,8 +17,10 @@ import { ProfileCard } from "./components/ProfileCard";
 import { MedicalDetails } from "./components/MedicalDetails";
 import { HistorySection } from "./components/HistorySection";
 import { HospitalDetails } from "./components/HospitalDetails";
+import { InvestigationDetails } from "./components/InvestigationDetails";
 import { useInfertilityActions } from "../../../../stores";
 import { generateInfertilityReport } from "../../../../utils/generateReport";
+import { useFetchInfertilityTests } from "../../../../hooks";
 import { useAuth } from "@/app/AuthContext";
 
 interface PatientOverviewProps {
@@ -40,6 +42,13 @@ const PatientOverview: React.FC<PatientOverviewProps> = ({
 }) => {
   const { openEditModal } = useInfertilityActions();
   const { user } = useAuth();
+
+  // Fetch investigations for this patient
+  const { data: testsData } = useFetchInfertilityTests({
+    infertilityPatientId: patient?.id,
+    limit: 100,
+  });
+  const patientTests = testsData?.data || [];
 
   if (!patient && !isOpen) return null;
   if (!patient) return null;
@@ -216,6 +225,9 @@ const PatientOverview: React.FC<PatientOverviewProps> = ({
 
               {/* Hospital Context Context */}
               <HospitalDetails patient={patient} />
+
+              {/* Investigations Ordered */}
+              <InvestigationDetails tests={patientTests} />
             </div>
           </div>
         </div>

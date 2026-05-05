@@ -14,7 +14,7 @@ const COLORS = {
 };
 
 const COMPANY_INFO = {
-  name: "Feroza Nursing Home",
+  name: "HSI Center",
   address:
     "1257, Sholakia, Khorompatti Kishoreganj Sadar, Kishoreganj Dhaka, Bangladesh",
   email: "Email: firozanursinghome@gmail.com",
@@ -39,7 +39,7 @@ const drawLogoWatermark = async (doc: jsPDF) => {
   const pageHeight = doc.internal.pageSize.height;
 
   try {
-    const logo = await loadImage("/fnh-logo.png");
+    const logo = await loadImage("/hsi-logo.png");
     doc.saveGraphicsState();
     doc.setGState(new (doc as any).GState({ opacity: 0.04 }));
     const logoSize = 100;
@@ -125,7 +125,7 @@ export const generateInfertilityTestReceipt = async (
     if (isFirstPage) {
       // Header
       try {
-        const logo = await loadImage("/fnh-logo.png");
+        const logo = await loadImage("/hsi-logo.png");
         const logoW = 20;
         const logoH = 20;
         const logoX = pageWidth / 2 - logoW / 2;
@@ -224,7 +224,7 @@ export const generateInfertilityTestReceipt = async (
       doc.setFont("helvetica", "bold");
       doc.text("Consultation:", col1X, pY);
       doc.setFont("helvetica", "normal");
-      doc.text(data.orderedBy || "Self", col1ValX, pY);
+      doc.text("Dr. Sufia Khatun", col1ValX, pY);
 
       currentY += 31;
     } else {

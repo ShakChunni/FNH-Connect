@@ -16,7 +16,7 @@ const COLORS = {
 };
 
 const COMPANY_INFO = {
-  name: "Feroza Nursing Home",
+  name: "HSI Center",
   address:
     "1257, Sholakia, Khorompatti Kishoreganj Sadar, Kishoreganj Dhaka, Bangladesh",
   phone: "+8801726219350, +8801701295016, +8801787993086",
@@ -40,7 +40,7 @@ const drawLogoWatermark = async (doc: jsPDF) => {
   const pageHeight = doc.internal.pageSize.height;
 
   try {
-    const logo = await loadImage("/fnh-logo.png");
+    const logo = await loadImage("/hsi-logo.png");
     doc.saveGraphicsState();
     doc.setGState(new (doc as any).GState({ opacity: 0.04 }));
     const logoSize = 90;
@@ -121,7 +121,7 @@ export const generateInfertilityReport = async (
 
   // === HEADER SECTION ===
   try {
-    const logo = await loadImage("/fnh-logo.png");
+    const logo = await loadImage("/hsi-logo.png");
     const logoW = 16;
     const logoH = 16;
     const logoX = pageWidth / 2 - logoW / 2;
@@ -707,7 +707,7 @@ export const generateInfertilityReport = async (
     { align: "center" }
   );
   doc.text(
-    "Feroza Nursing Home · HSI Center",
+    "HSI Center",
     pageWidth / 2,
     pageHeight - 8, // Increased safety margin
     { align: "center" }

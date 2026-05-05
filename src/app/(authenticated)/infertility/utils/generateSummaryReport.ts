@@ -36,7 +36,7 @@ export function generateInfertilitySummaryReport(
   doc.setTextColor(255, 255, 255);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(18);
-  doc.text("Feroza Nursing Home", 20, 15);
+  doc.text("HSI Center", 20, 15);
 
   doc.setFontSize(12);
   doc.setFont("helvetica", "normal");
@@ -160,7 +160,7 @@ export function generateInfertilitySummaryReport(
       { align: "center" }
     );
     doc.text(
-      "Feroza Nursing Home - HSI Center Management System",
+      "HSI Center Management System",
       20,
       doc.internal.pageSize.height - 10
     );

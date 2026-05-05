@@ -9,23 +9,11 @@ interface InfertilityShiftFilters {
 }
 
 /**
- * Get shifts that have at least one Infertility-related payment allocation
+ * Get shifts from the dedicated InfertilityShift table
+ * (includes both live portal data and migrated historical data)
  */
 export async function getAdminInfertilityShifts(filters: InfertilityShiftFilters) {
-  const where: any = {
-    // Only shifts that have infertility payments
-    payments: {
-      some: {
-        paymentAllocations: {
-          some: {
-            serviceCharge: {
-              serviceType: "INFERTILITY_TEST"
-            }
-          }
-        }
-      }
-    }
-  };
+  const where: Record<string, unknown> = {};
 
   if (filters.staffId) {
     where.staffId = filters.staffId;
@@ -38,12 +26,12 @@ export async function getAdminInfertilityShifts(filters: InfertilityShiftFilters
     if (filters.startDate) {
       const [year, month, day] = filters.startDate.split("-").map(Number);
       const startBDT = new Date(Date.UTC(year, month - 1, day) - BDT_OFFSET_MS);
-      where.startTime.gte = startBDT;
+      (where.startTime as Record<string, Date>).gte = startBDT;
     }
     if (filters.endDate) {
       const [year, month, day] = filters.endDate.split("-").map(Number);
       const endBDT = new Date(Date.UTC(year, month - 1, day + 1) - BDT_OFFSET_MS);
-      where.startTime.lte = endBDT;
+      (where.startTime as Record<string, Date>).lte = endBDT;
     }
   }
 
@@ -57,35 +45,27 @@ export async function getAdminInfertilityShifts(filters: InfertilityShiftFilters
     };
   }
 
-  const shifts = await prisma.shift.findMany({
+  const shifts = await prisma.infertilityShift.findMany({
     where,
-    include: {
+    select: {
+      id: true,
+      staffId: true,
+      startTime: true,
+      endTime: true,
+      isActive: true,
+      openingCash: true,
+      closingCash: true,
+      systemCash: true,
+      variance: true,
+      totalCollected: true,
+      totalRefunded: true,
+      notes: true,
       staff: {
         select: {
           id: true,
           fullName: true,
           role: true,
         },
-      },
-      payments: {
-        where: {
-          paymentAllocations: {
-            some: {
-              serviceCharge: {
-                serviceType: "INFERTILITY_TEST"
-              }
-            }
-          }
-        },
-        include: {
-          paymentAllocations: {
-            where: {
-              serviceCharge: {
-                serviceType: "INFERTILITY_TEST"
-              }
-            }
-          }
-        }
       },
       _count: {
         select: {
@@ -99,36 +79,38 @@ export async function getAdminInfertilityShifts(filters: InfertilityShiftFilters
     },
   });
 
-  // Transform shifts to show only infertility-related totals
-  // Note: variance and closing cash are physical shift-level properties, 
-  // but for "Infertility Cash Tracking", we mostly care about collections.
-  return shifts.map(shift => {
-    let infertilityCollected = 0;
-    shift.payments.forEach(payment => {
-      payment.paymentAllocations.forEach(alloc => {
-        infertilityCollected += Number(alloc.allocatedAmount);
-      });
-    });
-
-    return {
-      ...shift,
-      // Overwrite general totals with department-specific ones for this view
-      systemCash: infertilityCollected,
-      totalCollected: infertilityCollected,
-      totalRefunded: 0, // Infertility refunds logic can be added later if implemented
-      variance: 0, // Variance is a full-shift property, not department-specific
-      infertilityPaymentsCount: shift.payments.length
-    };
-  });
+  return shifts.map((shift) => ({
+    ...shift,
+    openingCash: Number(shift.openingCash),
+    closingCash: Number(shift.closingCash),
+    systemCash: Number(shift.systemCash),
+    variance: Number(shift.variance),
+    totalCollected: Number(shift.totalCollected),
+    totalRefunded: Number(shift.totalRefunded),
+    paymentsCount: shift._count.payments,
+    cashMovementsCount: shift._count.cashMovements,
+  }));
 }
 
 /**
  * Get detailed infertility-specific movements for a shift
  */
 export async function getInfertilityShiftDetails(id: number) {
-  const shift = await prisma.shift.findUnique({
+  const shift = await prisma.infertilityShift.findUnique({
     where: { id },
-    include: {
+    select: {
+      id: true,
+      staffId: true,
+      startTime: true,
+      endTime: true,
+      isActive: true,
+      openingCash: true,
+      closingCash: true,
+      systemCash: true,
+      variance: true,
+      totalCollected: true,
+      totalRefunded: true,
+      notes: true,
       staff: {
         select: {
           id: true,
@@ -138,25 +120,22 @@ export async function getInfertilityShiftDetails(id: number) {
         },
       },
       cashMovements: {
-        where: {
-          payment: {
-            paymentAllocations: {
-              some: {
-                serviceCharge: {
-                  serviceType: "INFERTILITY_TEST"
-                }
-              }
-            }
-          }
-        },
         orderBy: {
           timestamp: "desc",
         },
-        include: {
+        select: {
+          id: true,
+          amount: true,
+          movementType: true,
+          description: true,
+          timestamp: true,
           payment: {
-            include: {
+            select: {
+              id: true,
+              amount: true,
+              receiptNumber: true,
               patientAccount: {
-                include: {
+                select: {
                   patient: {
                     select: {
                       id: true,
@@ -166,27 +145,41 @@ export async function getInfertilityShiftDetails(id: number) {
                   },
                 },
               },
-              paymentAllocations: {
-                where: {
-                  serviceCharge: {
-                    serviceType: "INFERTILITY_TEST"
-                  }
-                },
-                include: {
-                  serviceCharge: {
-                    include: {
-                      department: {
-                        select: {
-                          id: true,
-                          name: true,
-                        },
-                      },
-                    },
-                  },
+            },
+          },
+        },
+      },
+      payments: {
+        select: {
+          id: true,
+          amount: true,
+          receiptNumber: true,
+          paymentDate: true,
+          patientAccount: {
+            select: {
+              patient: {
+                select: {
+                  id: true,
+                  fullName: true,
+                  phoneNumber: true,
                 },
               },
             },
           },
+          paymentAllocations: {
+            select: {
+              allocatedAmount: true,
+              serviceCharge: {
+                select: {
+                  serviceName: true,
+                  serviceType: true,
+                },
+              },
+            },
+          },
+        },
+        orderBy: {
+          paymentDate: "desc",
         },
       },
     },
@@ -194,63 +187,22 @@ export async function getInfertilityShiftDetails(id: number) {
 
   if (!shift) return null;
 
-  // Calculate infertility collected for this detail view
-  let infertilityCollected = 0;
-  // We need to fetch all payments for this shift that are infertility related
-  const infertilityPayments = await prisma.payment.findMany({
-    where: {
-      shiftId: id,
-      paymentAllocations: {
-        some: {
-          serviceCharge: {
-            serviceType: "INFERTILITY_TEST"
-          }
-        }
-      }
-    },
-    include: {
-      paymentAllocations: {
-        where: {
-          serviceCharge: {
-            serviceType: "INFERTILITY_TEST"
-          }
-        }
-      }
-    }
-  });
-
-  infertilityPayments.forEach(p => {
-    p.paymentAllocations.forEach(a => {
-      infertilityCollected += Number(a.allocatedAmount);
-    });
-  });
-
   return {
     ...shift,
-    systemCash: infertilityCollected,
-    totalCollected: infertilityCollected,
-    totalRefunded: 0,
-    variance: 0,
+    openingCash: Number(shift.openingCash),
+    closingCash: Number(shift.closingCash),
+    systemCash: Number(shift.systemCash),
+    variance: Number(shift.variance),
+    totalCollected: Number(shift.totalCollected),
+    totalRefunded: Number(shift.totalRefunded),
   };
 }
 
 /**
- * Summary stats for Infertility cash tracking dashboard
+ * Summary stats for HSI Center cash tracking dashboard
  */
 export async function getInfertilityCashTrackingSummary(filters?: InfertilityShiftFilters) {
-  const where: any = {
-    payments: {
-      some: {
-        paymentAllocations: {
-          some: {
-            serviceCharge: {
-              serviceType: "INFERTILITY_TEST"
-            }
-          }
-        }
-      }
-    }
-  };
+  const where: Record<string, unknown> = {};
 
   if (filters?.staffId) {
     where.staffId = filters.staffId;
@@ -263,12 +215,12 @@ export async function getInfertilityCashTrackingSummary(filters?: InfertilityShi
     if (filters.startDate) {
       const [year, month, day] = filters.startDate.split("-").map(Number);
       const startBDT = new Date(Date.UTC(year, month - 1, day) - BDT_OFFSET_MS);
-      where.startTime.gte = startBDT;
+      (where.startTime as Record<string, Date>).gte = startBDT;
     }
     if (filters.endDate) {
       const [year, month, day] = filters.endDate.split("-").map(Number);
       const endBDT = new Date(Date.UTC(year, month - 1, day + 1) - BDT_OFFSET_MS);
-      where.startTime.lte = endBDT;
+      (where.startTime as Record<string, Date>).lte = endBDT;
     }
   }
 
@@ -282,45 +234,24 @@ export async function getInfertilityCashTrackingSummary(filters?: InfertilityShi
     };
   }
 
-  // Calculate total collected strictly for Infertility across these shifts
-  const matchingAllocations = await prisma.paymentAllocation.findMany({
-    where: {
-      serviceCharge: {
-        serviceType: "INFERTILITY_TEST"
-      },
-      payment: {
-        shift: where
-      }
+  const aggregate = await prisma.infertilityShift.aggregate({
+    where,
+    _sum: {
+      totalCollected: true,
+      totalRefunded: true,
     },
-    select: {
-      allocatedAmount: true,
-      payment: {
-        select: {
-          shiftId: true
-        }
-      }
-    }
   });
 
-  let totalCollected = 0;
-  const uniqueShifts = new Set();
-  
-  matchingAllocations.forEach(alloc => {
-    totalCollected += Number(alloc.allocatedAmount);
-    uniqueShifts.add(alloc.payment.shiftId);
-  });
-
-  // Count active shifts among those that have infertility collections
-  const activeShiftsCount = await prisma.shift.count({
+  const activeShiftsCount = await prisma.infertilityShift.count({
     where: {
       ...where,
-      isActive: true
-    }
+      isActive: true,
+    },
   });
 
   return {
-    totalCollected,
-    totalRefunded: 0,
+    totalCollected: Number(aggregate._sum.totalCollected || 0),
+    totalRefunded: Number(aggregate._sum.totalRefunded || 0),
     activeShiftsCount,
   };
 }

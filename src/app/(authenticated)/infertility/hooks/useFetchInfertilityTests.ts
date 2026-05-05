@@ -68,6 +68,11 @@ export function useFetchInfertilityTests(filters: InfertilityTestFilters = {}) {
         params.append("doneById", filters.doneById.toString());
       }
 
+      // Patient filter (for overview)
+      if (filters.infertilityPatientId) {
+        params.append("infertilityPatientId", filters.infertilityPatientId.toString());
+      }
+
       // Pagination
       if (filters.page) {
         params.append("page", filters.page.toString());
