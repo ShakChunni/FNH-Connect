@@ -5,7 +5,6 @@ import {
   Phone,
   MapPin,
   Heart,
-  Mail,
   Calendar,
   Briefcase,
   Droplets,
@@ -132,7 +131,6 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({ patient }) => {
           {/* Contact Info Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 sm:gap-2.5">
             <InfoRow icon={Phone} label={patient.mobileNumber || "No phone"} />
-            <InfoRow icon={Mail} label={patient.email || "No email"} />
             <InfoRow
               icon={Briefcase}
               label={patient.patientOccupation || "Not specified"}

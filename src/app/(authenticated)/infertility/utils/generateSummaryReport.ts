@@ -42,8 +42,8 @@ export function generateInfertilitySummaryReport(
   doc.setFont("helvetica", "normal");
   doc.text(
       detailed
-      ? "HSI Center Patients - Detailed Report"
-      : "HSI Center Patients - Summary Report",
+      ? "Patients - Detailed Report"
+      : "Patients - Summary Report",
     20,
     23
   );

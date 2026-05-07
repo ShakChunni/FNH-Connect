@@ -17,39 +17,68 @@ const COMPANY_INFO = {
   name: "HSI Center",
   address:
     "1257, Sholakia, Khorompatti Kishoreganj Sadar, Kishoreganj Dhaka, Bangladesh",
-  email: "Email: firozanursinghome@gmail.com",
   phone: "Mobile: +8801726219350, +8801701295016, +8801787993086",
   department: "HSI Center",
 };
 
-const loadImage = (src: string): Promise<HTMLImageElement> => {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.src = src;
-    img.onload = () => resolve(img);
-    img.onerror = (err) => reject(err);
-  });
+/**
+ * Draw a medical cross icon inside a circle
+ */
+const drawMedicalIcon = (
+  doc: jsPDF,
+  x: number,
+  y: number,
+  size: number,
+  color: string = COLORS.primary,
+  opacity: number = 1
+) => {
+  const half = size / 2;
+  const crossWidth = size * 0.25;
+  const crossLength = size * 0.6;
+
+  doc.saveGraphicsState();
+  if (opacity < 1) {
+    doc.setGState(new (doc as any).GState({ opacity }));
+  }
+
+  // Circle
+  doc.setDrawColor(color);
+  doc.setLineWidth(size * 0.06);
+  doc.circle(x + half, y + half, half - size * 0.03, "S");
+
+  // Horizontal bar of cross
+  doc.setFillColor(color);
+  doc.rect(
+    x + half - crossLength / 2,
+    y + half - crossWidth / 2,
+    crossLength,
+    crossWidth,
+    "F"
+  );
+
+  // Vertical bar of cross
+  doc.rect(
+    x + half - crossWidth / 2,
+    y + half - crossLength / 2,
+    crossWidth,
+    crossLength,
+    "F"
+  );
+
+  doc.restoreGraphicsState();
 };
 
 /**
- * Draw a subtle logo watermark
+ * Draw a subtle medical icon watermark
  */
-const drawLogoWatermark = async (doc: jsPDF) => {
+const drawLogoWatermark = (doc: jsPDF) => {
   const pageWidth = doc.internal.pageSize.width;
   const pageHeight = doc.internal.pageSize.height;
 
-  try {
-    const logo = await loadImage("/hsi-logo.png");
-    doc.saveGraphicsState();
-    doc.setGState(new (doc as any).GState({ opacity: 0.04 }));
-    const logoSize = 100;
-    const logoX = pageWidth / 2 - logoSize / 2;
-    const logoY = pageHeight * 0.7 - logoSize / 2;
-    doc.addImage(logo, "PNG", logoX, logoY, logoSize, logoSize);
-    doc.restoreGraphicsState();
-  } catch (e) {
-    // Silently fail if logo not available
-  }
+  const logoSize = 90;
+  const logoX = pageWidth / 2 - logoSize / 2;
+  const logoY = pageHeight * 0.7 - logoSize / 2;
+  drawMedicalIcon(doc, logoX, logoY, logoSize, COLORS.primary, 0.04);
 };
 
 /**
@@ -123,14 +152,8 @@ export const generateInfertilityTestReceipt = async (
     let currentY = 10;
 
     if (isFirstPage) {
-      // Header
-      try {
-        const logo = await loadImage("/hsi-logo.png");
-        const logoW = 20;
-        const logoH = 20;
-        const logoX = pageWidth / 2 - logoW / 2;
-        doc.addImage(logo, "PNG", logoX, currentY, logoW, logoH);
-      } catch (e) {}
+      // Header with medical icon
+      drawMedicalIcon(doc, pageWidth / 2 - 10, currentY, 20, COLORS.primary);
 
       currentY = 35;
       doc.setFont("helvetica", "bold");
@@ -144,7 +167,7 @@ export const generateInfertilityTestReceipt = async (
       doc.setTextColor(COLORS.lightText);
       doc.text(COMPANY_INFO.address, pageWidth / 2, currentY, { align: "center" });
       currentY += 5;
-      doc.text(`${COMPANY_INFO.phone}  |  ${COMPANY_INFO.email}`, pageWidth / 2, currentY, { align: "center" });
+      doc.text(COMPANY_INFO.phone, pageWidth / 2, currentY, { align: "center" });
       currentY += 4;
       doc.setFont("helvetica", "bold");
       doc.setTextColor(COLORS.accent);
@@ -159,7 +182,7 @@ export const generateInfertilityTestReceipt = async (
       doc.setFont("helvetica", "bold");
       doc.setFontSize(14);
       doc.setTextColor(COLORS.primary);
-      doc.text("HSI CENTER INVESTIGATION INVOICE", pageWidth / 2, currentY, { align: "center" });
+      doc.text("Investigation Invoice", pageWidth / 2, currentY, { align: "center" });
       currentY += 6;
 
       // Receipt # and Date
@@ -246,7 +269,7 @@ export const generateInfertilityTestReceipt = async (
       doc.text(COMPANY_INFO.name, pageWidth / 2, currentY + 5, { align: "center" });
       doc.setFont("helvetica", "normal");
       doc.setFontSize(9);
-      doc.text(`Investigation Invoice: ${data.testNumber} - Page ${pageIndex + 1} of ${totalPages}`, pageWidth / 2, currentY + 12, { align: "center" });
+      doc.text(`Investigation Invoice: ${data.testNumber} — Page ${pageIndex + 1} of ${totalPages}`, pageWidth / 2, currentY + 12, { align: "center" });
       currentY += 20;
     }
 
