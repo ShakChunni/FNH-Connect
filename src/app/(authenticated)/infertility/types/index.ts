@@ -168,6 +168,9 @@ export interface InfertilityPatient {
     email: string | null;
     website: string | null;
   };
+  _count?: {
+    tests: number;
+  };
   yearsMarried: number | null;
   yearsTrying: number | null;
   infertilityType: string | null;
@@ -325,6 +328,7 @@ export interface InfertilityPatientData {
   nextAppointment: string | null;
   status: string | null;
   notes: string | null;
+  testCount?: number;
   createdAt: string;
   updatedAt: string;
 }

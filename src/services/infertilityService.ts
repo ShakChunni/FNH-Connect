@@ -181,6 +181,11 @@ export async function getInfertilityPatients(filters: InfertilityFilters) {
             website: true,
           },
         },
+        _count: {
+          select: {
+            tests: true,
+          },
+        },
       },
       orderBy: {
         createdAt: "desc",

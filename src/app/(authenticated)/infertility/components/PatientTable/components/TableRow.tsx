@@ -1,8 +1,10 @@
-import React from "react";
-import { Edit2, Printer, Beaker, UserCheck } from "lucide-react";
+import React, { useState } from "react";
+import { Edit2, Printer, Beaker, UserCheck, CheckCircle, XCircle } from "lucide-react";
 import { InfertilityPatientData } from "../../../types";
 import { TableHeader, formatDate } from "../utils";
 import { generateInfertilityReport } from "../../../utils/generateReport";
+import { ConfirmModal } from "@/components/ui/ConfirmModal";
+import { useUpdateInfertilityPatientStatus } from "../../../hooks";
 import { useAuth } from "@/app/AuthContext";
 
 interface TableRowProps {
@@ -41,7 +43,10 @@ const TableRow: React.FC<TableRowProps> = ({
   isStatusUpdating = false,
   onClick,
 }) => {
+  const [showStatusConfirm, setShowStatusConfirm] = useState(false);
+  const { updateStatus, isUpdating } = useUpdateInfertilityPatientStatus();
   const { user } = useAuth();
+
   const FIRST_COL_WIDTH = "w-[60px] min-w-[60px]";
   const SECOND_COL_WIDTH = "w-[120px] min-w-[120px]";
   const THIRD_COL_WIDTH = "w-[200px] min-w-[200px]";
@@ -65,6 +70,21 @@ const TableRow: React.FC<TableRowProps> = ({
   const handlePrint = (e: React.MouseEvent) => {
     e.stopPropagation();
     generateInfertilityReport(row, user?.fullName || "Staff");
+  };
+
+  const isCompleted = row.status?.toLowerCase() === "completed";
+  const hasTests = (row.testCount ?? 0) > 0;
+
+  const handleStatusToggle = () => {
+    const newStatus = isCompleted ? "Active" : "Completed";
+    updateStatus(
+      { id: row.id, status: newStatus },
+      {
+        onSuccess: () => {
+          setShowStatusConfirm(false);
+        },
+      }
+    );
   };
 
   const renderCellContent = (header: TableHeader) => {
@@ -121,6 +141,35 @@ const TableRow: React.FC<TableRowProps> = ({
             >
               <UserCheck size={16} />
             </button>
+
+            {/* Status Toggle Button */}
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                if (hasTests) {
+                  setShowStatusConfirm(true);
+                }
+              }}
+              disabled={!hasTests || isUpdating}
+              className={`p-1.5 rounded-lg transition-all shadow-sm hover:shadow-md active:scale-95 ${
+                isCompleted
+                  ? "bg-green-100 text-green-700 hover:bg-green-200"
+                  : "bg-amber-100 text-amber-700 hover:bg-amber-200"
+              } ${!hasTests || isUpdating ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
+              title={
+                !hasTests
+                  ? "No investigations to complete"
+                  : isCompleted
+                  ? "Mark as Active"
+                  : "Mark as Completed"
+              }
+            >
+              {isCompleted ? (
+                <CheckCircle size={16} />
+              ) : (
+                <XCircle size={16} />
+              )}
+            </button>
           </div>
         );
       }
@@ -170,11 +219,6 @@ const TableRow: React.FC<TableRowProps> = ({
         return (
           <div>
             <div className="text-gray-700">{row.mobileNumber || "N/A"}</div>
-            {row.email && (
-              <div className="text-[10px] text-gray-400 truncate max-w-[120px]">
-                {row.email}
-              </div>
-            )}
           </div>
         );
 
@@ -260,16 +304,36 @@ const TableRow: React.FC<TableRowProps> = ({
   };
 
   return (
-    <tr
-      className="hover:bg-gray-50 transition-colors cursor-pointer group"
-      onClick={onClick}
-    >
-      {headers.map((header, headerIndex) => (
-        <td key={header.key} className={getCellClasses(headerIndex)}>
-          {renderCellContent(header)}
-        </td>
-      ))}
-    </tr>
+    <>
+      <tr
+        className="hover:bg-gray-50 transition-colors cursor-pointer group"
+        onClick={onClick}
+      >
+        {headers.map((header, headerIndex) => (
+          <td key={header.key} className={getCellClasses(headerIndex)}>
+            {renderCellContent(header)}
+          </td>
+        ))}
+      </tr>
+
+      {/* Status Change Confirmation Modal */}
+      <ConfirmModal
+        isOpen={showStatusConfirm}
+        onClose={() => setShowStatusConfirm(false)}
+        onConfirm={handleStatusToggle}
+        isLoading={isUpdating}
+        title={isCompleted ? "Mark as Active?" : "Mark as Completed?"}
+        variant={isCompleted ? "warning" : "success"}
+        confirmLabel={isCompleted ? "Mark Active" : "Mark Completed"}
+        cancelLabel="Cancel"
+      >
+        <p>
+          Are you sure you want to change the status of patient{" "}
+          <strong>{row.patientFullName}</strong>{" "}
+          to <strong>{isCompleted ? "Active" : "Completed"}</strong>?
+        </p>
+      </ConfirmModal>
+    </>
   );
 };
 

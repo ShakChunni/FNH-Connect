@@ -4,7 +4,6 @@ import {
   User,
   Phone,
   MapPin,
-  Mail,
   Calendar,
   Droplets,
   Building2,
@@ -127,7 +126,6 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({ patient }) => {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 sm:gap-2.5">
             <InfoRow icon={Phone} label={patient.mobileNumber || "No phone"} />
-            <InfoRow icon={Mail} label={patient.email || "No email"} />
             <InfoRow
               icon={MapPin}
               label={patient.address || "No address"}
