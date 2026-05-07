@@ -1,0 +1,22 @@
+{
+  "entries": [
+    {
+      "pathologyTestId": 20,
+      "infertilityPatientId": 8,
+      "subjectType": "SPOUSE",
+      "subjectNameSnapshot": "Saddam Husen"
+    },
+    {
+      "pathologyTestId": 248,
+      "infertilityPatientId": 8,
+      "subjectType": "SPOUSE",
+      "subjectNameSnapshot": "Saddam Husen"
+    },
+    {
+      "pathologyTestId": 756,
+      "infertilityPatientId": 8,
+      "subjectType": "SPOUSE",
+      "subjectNameSnapshot": "Saddam Husen"
+    }
+  ]
+}

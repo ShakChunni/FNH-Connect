@@ -124,13 +124,14 @@ export async function GET(request: NextRequest) {
       prisma.infertilityTest.count({
         where: {
           isCompleted: true,
+          isMigrationSuperseded: false,
           testDate: { gte: startOfDay, lt: endOfDay },
         },
       }),
 
       // Stats: Infertility completed all time
       prisma.infertilityTest.count({
-        where: { isCompleted: true },
+        where: { isCompleted: true, isMigrationSuperseded: false },
       }),
 
       // Recent: Admissions
@@ -168,6 +169,9 @@ export async function GET(request: NextRequest) {
 
       // Recent: Infertility
       prisma.infertilityTest.findMany({
+        where: {
+          isMigrationSuperseded: false,
+        },
         take: recentPatientsLimit,
         orderBy: { testDate: "desc" },
         select: {
