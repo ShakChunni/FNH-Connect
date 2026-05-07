@@ -592,6 +592,10 @@ model InfertilityTest {
   createdBy           Int
   lastModifiedBy      Int
   sourcePathologyTestId Int?                   @unique
+  isMigrationSuperseded Boolean                @default(false)
+  migrationSupersededAt DateTime?
+  migrationSupersededReason String?
+  migrationSupersededBatch String?
 
   // Relations
   infertilityPatient  InfertilityPatient       @relation(fields: [infertilityPatientId], references: [id])
@@ -606,6 +610,7 @@ model InfertilityTest {
   @@index([orderedById])
   @@index([testDate])
   @@index([isCompleted])
+  @@index([isMigrationSuperseded])
   @@index([infertilityPatientId, testDate(sort: Desc)])
 }
 
@@ -683,6 +688,10 @@ model InfertilityCashMovement {
   timestamp    DateTime @default(now())
   paymentId    Int?
   sourceCashMovementId Int? @unique
+  isMigrationSuperseded Boolean @default(false)
+  migrationSupersededAt DateTime?
+  migrationSupersededReason String?
+  migrationSupersededBatch String?
 
   shift   InfertilityShift     @relation(fields: [shiftId], references: [id])
   payment InfertilityPayment?  @relation(fields: [paymentId], references: [id])
@@ -723,6 +732,10 @@ model InfertilityServiceCharge {
   infertilityTestId Int?
   infertilityTest   InfertilityTest?   @relation(fields: [infertilityTestId], references: [id])
   sourceServiceChargeId Int? @unique
+  isMigrationSuperseded Boolean @default(false)
+  migrationSupersededAt DateTime?
+  migrationSupersededReason String?
+  migrationSupersededBatch String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -748,6 +761,10 @@ model InfertilityPayment {
   receiptNumber String  @unique
   notes         String?
   sourcePaymentId Int?  @unique
+  isMigrationSuperseded Boolean @default(false)
+  migrationSupersededAt DateTime?
+  migrationSupersededReason String?
+  migrationSupersededBatch String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -770,6 +787,10 @@ model InfertilityPaymentAllocation {
   serviceChargeId Int
   allocatedAmount Decimal
   sourcePaymentAllocationId Int? @unique
+  isMigrationSuperseded Boolean @default(false)
+  migrationSupersededAt DateTime?
+  migrationSupersededReason String?
+  migrationSupersededBatch String?
 
   payment       InfertilityPayment       @relation(fields: [paymentId], references: [id])
   serviceCharge InfertilityServiceCharge @relation(fields: [serviceChargeId], references: [id])

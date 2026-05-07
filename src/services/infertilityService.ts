@@ -985,7 +985,9 @@ function serializeInfertilityTestRow(
 }
 
 export async function getInfertilityTests(filters: InfertilityTestFilters) {
-  const where: Prisma.InfertilityTestWhereInput = {};
+  const where: Prisma.InfertilityTestWhereInput = {
+    isMigrationSuperseded: false,
+  };
 
   if (filters.infertilityPatientId) {
     where.infertilityPatientId = filters.infertilityPatientId;
@@ -1124,8 +1126,11 @@ export async function getInfertilityTests(filters: InfertilityTestFilters) {
 }
 
 export async function getInfertilityTestById(id: number) {
-  const row = await prisma.infertilityTest.findUnique({
-    where: { id },
+  const row = await prisma.infertilityTest.findFirst({
+    where: {
+      id,
+      isMigrationSuperseded: false,
+    },
     include: {
       infertilityPatient: {
         include: {
@@ -1389,7 +1394,7 @@ export async function updateInfertilityTest(
       },
     });
 
-    if (!existingTest) {
+    if (!existingTest || existingTest.isMigrationSuperseded) {
       throw new Error("HSI Center test not found");
     }
 
@@ -1612,8 +1617,11 @@ export async function updateInfertilityTest(
       },
     });
 
-    const refreshedTest = await tx.infertilityTest.findUnique({
-      where: { id: updatedTest.id },
+    const refreshedTest = await tx.infertilityTest.findFirst({
+      where: {
+        id: updatedTest.id,
+        isMigrationSuperseded: false,
+      },
       include: {
         infertilityPatient: {
           include: {
