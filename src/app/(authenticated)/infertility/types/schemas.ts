@@ -6,6 +6,11 @@
 import { z } from "zod";
 import { parseDateOfBirth } from "@/lib/dateOfBirth";
 
+const investigationSubjectTypeSchema = z.enum([
+  "PATIENT",
+  "SPOUSE",
+]);
+
 // ═══════════════════════════════════════════════════════════════
 // GET Query Schemas
 // ═══════════════════════════════════════════════════════════════
@@ -152,12 +157,15 @@ export const infertilityTestFiltersSchema = z.object({
   orderedById: z.coerce.number().optional(),
   doneById: z.coerce.number().optional(),
   testNames: z.array(z.string()).optional(),
+  infertilityPatientId: z.coerce.number().optional(),
   page: z.coerce.number().min(1).default(1),
   limit: z.coerce.number().min(1).max(100).default(15),
 });
 
 export const createInfertilityTestSchema = z.object({
   infertilityPatientId: z.number(),
+  subjectType: investigationSubjectTypeSchema,
+  subjectNameSnapshot: z.string().trim().min(1).nullable().optional(),
   selectedTests: z.array(z.string()).min(1),
   testCharge: z.number().min(0),
   discountType: z.enum(["percentage", "value"]).nullable().optional(),
@@ -170,4 +178,23 @@ export const createInfertilityTestSchema = z.object({
   doneById: z.number().nullable().optional(),
   remarks: z.string().optional(),
   testDate: z.string().optional(),
+  isCompleted: z.boolean().optional(),
+});
+
+export const updateInfertilityTestSchema = z.object({
+  subjectType: investigationSubjectTypeSchema.optional(),
+  subjectNameSnapshot: z.string().trim().min(1).nullable().optional(),
+  selectedTests: z.array(z.string()).min(1).optional(),
+  testCharge: z.number().min(0).optional(),
+  discountType: z.enum(["percentage", "value"]).nullable().optional(),
+  discountValue: z.number().nullable().optional(),
+  discountAmount: z.number().min(0).optional(),
+  grandTotal: z.number().min(0).optional(),
+  paidAmount: z.number().min(0).optional(),
+  dueAmount: z.number().min(0).optional(),
+  orderedById: z.number().optional(),
+  doneById: z.number().nullable().optional(),
+  remarks: z.string().nullable().optional(),
+  testDate: z.string().optional(),
+  isCompleted: z.boolean().optional(),
 });

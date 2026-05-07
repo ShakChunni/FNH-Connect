@@ -84,7 +84,7 @@ export const generateInfertilityTestReceipt = async (
   const isPaid = Number(data.dueAmount) <= 0;
 
   // Prepare table rows
-  const tests = data.testResults?.tests || [];
+  const tests = data.selectedTests;
   const allTableRows = tests.map((testName: string, index: number) => {
     const testInfo = PATHOLOGY_TESTS.find((t) => t.name === testName || t.code === testName);
     return [
@@ -210,10 +210,15 @@ export const generateInfertilityTestReceipt = async (
 
       pY += rowHeight;
       doc.setFont("helvetica", "bold");
-      doc.text("Age/Gender:", col1X, pY);
+      doc.text("Subject:", col1X, pY);
       doc.setFont("helvetica", "normal");
-      const age = data.patientAge ? `${data.patientAge}Y` : "N/A";
-      doc.text(`${age} / ${data.patientGender || "N/A"}`, col1ValX, pY);
+      doc.text(
+        data.subjectName
+          ? `${data.subjectLabel} - ${data.subjectName}`
+          : data.subjectLabel,
+        col1ValX,
+        pY,
+      );
 
       doc.setFont("helvetica", "bold");
       doc.text("Mobile:", col2X, pY);
@@ -222,9 +227,15 @@ export const generateInfertilityTestReceipt = async (
 
       pY += rowHeight;
       doc.setFont("helvetica", "bold");
-      doc.text("Consultation:", col1X, pY);
+      doc.text("Age/Gender:", col1X, pY);
       doc.setFont("helvetica", "normal");
-      doc.text("Dr. Sufia Khatun", col1ValX, pY);
+      const age = data.patientAge ? `${data.patientAge}Y` : "N/A";
+      doc.text(`${age} / ${data.patientGender || "N/A"}`, col1ValX, pY);
+
+      doc.setFont("helvetica", "bold");
+      doc.text("Ordered By:", col2X, pY);
+      doc.setFont("helvetica", "normal");
+      doc.text(data.orderedBy || "Self", col2ValX, pY);
 
       currentY += 31;
     } else {

@@ -73,7 +73,39 @@ const TableRow: React.FC<TableRowProps> = ({
     );
   };
 
-  const renderCellContent = (header: TableHeader) => {
+  const renderFallbackValue = (value: unknown): React.ReactNode => {
+    if (value === null || value === undefined || value === "") {
+      return "N/A";
+    }
+
+    if (Array.isArray(value)) {
+      return value.length > 0 ? value.join(", ") : "N/A";
+    }
+
+    if (typeof value === "object") {
+      if (
+        "tests" in (value as Record<string, unknown>) &&
+        Array.isArray((value as { tests?: unknown }).tests)
+      ) {
+        const tests = (value as { tests: string[] }).tests;
+        return tests.length > 0 ? tests.join(", ") : "N/A";
+      }
+
+      return JSON.stringify(value);
+    }
+
+    if (
+      typeof value === "string" ||
+      typeof value === "number" ||
+      typeof value === "boolean"
+    ) {
+      return value;
+    }
+
+    return "N/A";
+  };
+
+  const renderCellContent = (header: TableHeader): React.ReactNode => {
     switch (header.key) {
       case "id":
         return <span className="font-semibold text-emerald-900">{index}</span>;
@@ -189,7 +221,7 @@ const TableRow: React.FC<TableRowProps> = ({
         );
 
       default:
-        return row[header.key as keyof InfertilityTestData] || "N/A";
+        return renderFallbackValue(row[header.key as keyof InfertilityTestData]);
     }
   };
 

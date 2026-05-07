@@ -7,6 +7,12 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum InvestigationSubjectType {
+  PATIENT
+  SPOUSE
+  UNKNOWN
+}
+
 model Patient {
   id          Int       @id @default(autoincrement())
   firstName   String
@@ -35,9 +41,9 @@ model Patient {
   // Relations
   admissions         Admission[]
   pathologyTests     PathologyTest[]
+  legacyInfertilityTests InfertilityTest[] @relation("LegacyInfertilityTestPatient")
   account            PatientAccount? // Central account for all charges/payments
   infertilityRecords InfertilityPatient[] // Infertility department records
-  infertilityTests   InfertilityTest[]
   infertilityAccount InfertilityPatientAccount?
   hospital           Hospital?            @relation(fields: [hospitalId], references: [id])
   hospitalId         Int?
@@ -547,54 +553,60 @@ model InfertilityPatient {
 }
 
 model InfertilityTest {
-  id                  Int       @id @default(autoincrement())
-  infertilityPatientId Int      // Links to InfertilityPatient
-  patientId           Int       // Links to Patient (denormalized for queries)
-  testNumber          String    @unique // Format: INFT-YY-XXXXX
-  
+  id                   Int                      @id @default(autoincrement())
+  infertilityPatientId Int                      // Links to InfertilityPatient
+  legacyPatientId      Int?                     @map("patientId") // Legacy migration reference retained for non-destructive cleanup
+  testNumber           String                   @unique // Format: INFT-YY-XXXXX
+
   // Optional admission link — fees only apply when admitted
-  admissionId         Int?
+  admissionId          Int?
 
   // Doctor references
-  orderedById         Int       // Doctor who ordered
-  doneById            Int?      // Staff who performed
+  orderedById          Int                      // Doctor who ordered
+  doneById             Int?                     // Staff who performed
+
+  // Investigation subject
+  subjectType         InvestigationSubjectType @default(UNKNOWN)
+  subjectNameSnapshot String?
 
   // Test info
-  testDate            DateTime  @default(now())
+  testDate            DateTime                 @default(now())
   reportDate          DateTime?
-  testCategory        String    // Same categories as pathology
-  testResults         Json?     // { tests: ["CBC", "RBS", ...] }
+  testCategory        String                   // Same categories as pathology
+  testResults         Json?                    // { tests: ["CBC", "RBS", ...] }
   remarks             String?
-  isCompleted         Boolean   @default(false)
+  isCompleted         Boolean                  @default(false)
 
   // Financial — independent from pathology
-  testCharge          Decimal   @default(0)
-  discountType        String?   // "percentage" or "value"
+  testCharge          Decimal                  @default(0)
+  discountType        String?                  // "percentage" or "value"
   discountValue       Decimal?
   discountAmount      Decimal?
-  grandTotal          Decimal   @default(0)
-  paidAmount          Decimal   @default(0)
-  dueAmount           Decimal   @default(0)
+  grandTotal          Decimal                  @default(0)
+  paidAmount          Decimal                  @default(0)
+  dueAmount           Decimal                  @default(0)
 
   // Tracking
-  createdAt           DateTime  @default(now())
-  updatedAt           DateTime  @updatedAt
+  createdAt           DateTime                 @default(now())
+  updatedAt           DateTime                 @updatedAt
   createdBy           Int
   lastModifiedBy      Int
+  sourcePathologyTestId Int?                   @unique
 
   // Relations
-  infertilityPatient  InfertilityPatient          @relation(fields: [infertilityPatientId], references: [id])
-  patient             Patient                     @relation(fields: [patientId], references: [id])
-  admission           Admission?                  @relation(fields: [admissionId], references: [id])
-  orderedBy           Staff                       @relation("InfertilityTestOrderedBy", fields: [orderedById], references: [id])
-  doneBy              Staff?                      @relation("InfertilityTestDoneBy", fields: [doneById], references: [id])
+  infertilityPatient  InfertilityPatient       @relation(fields: [infertilityPatientId], references: [id])
+  legacyPatient       Patient?                 @relation("LegacyInfertilityTestPatient", fields: [legacyPatientId], references: [id], map: "InfertilityTest_patientId_fkey")
+  admission           Admission?               @relation(fields: [admissionId], references: [id])
+  orderedBy           Staff                    @relation("InfertilityTestOrderedBy", fields: [orderedById], references: [id])
+  doneBy              Staff?                   @relation("InfertilityTestDoneBy", fields: [doneById], references: [id])
   serviceCharges      InfertilityServiceCharge[]
 
   @@index([infertilityPatientId])
-  @@index([patientId])
+  @@index([legacyPatientId], map: "InfertilityTest_patientId_idx")
   @@index([orderedById])
   @@index([testDate])
   @@index([isCompleted])
+  @@index([infertilityPatientId, testDate(sort: Desc)])
 }
 
 // Security & Monitoring Models
@@ -639,6 +651,7 @@ model InfertilityShift {
   startTime DateTime
   endTime   DateTime?
   isActive  Boolean   @default(true)
+  sourceShiftId Int?  @unique
 
   openingCash Decimal @default(0)
   closingCash Decimal @default(0)
@@ -669,6 +682,7 @@ model InfertilityCashMovement {
   description  String?
   timestamp    DateTime @default(now())
   paymentId    Int?
+  sourceCashMovementId Int? @unique
 
   shift   InfertilityShift     @relation(fields: [shiftId], references: [id])
   payment InfertilityPayment?  @relation(fields: [paymentId], references: [id])
@@ -708,6 +722,7 @@ model InfertilityServiceCharge {
 
   infertilityTestId Int?
   infertilityTest   InfertilityTest?   @relation(fields: [infertilityTestId], references: [id])
+  sourceServiceChargeId Int? @unique
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -732,6 +747,7 @@ model InfertilityPayment {
 
   receiptNumber String  @unique
   notes         String?
+  sourcePaymentId Int?  @unique
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -753,6 +769,7 @@ model InfertilityPaymentAllocation {
   paymentId       Int
   serviceChargeId Int
   allocatedAmount Decimal
+  sourcePaymentAllocationId Int? @unique
 
   payment       InfertilityPayment       @relation(fields: [paymentId], references: [id])
   serviceCharge InfertilityServiceCharge @relation(fields: [serviceChargeId], references: [id])

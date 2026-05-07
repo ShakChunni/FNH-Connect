@@ -2,8 +2,18 @@ import { useMutation, useQueryClient, UseMutationOptions } from "@tanstack/react
 import { api } from "@/lib/axios";
 import { useNotification } from "@/hooks/useNotification";
 
+interface CreatedInfertilityTestPayload {
+  infertilityTest: {
+    id: number;
+    testNumber: string;
+  };
+  displayId: string;
+}
+
 export interface AddInfertilityTestRequest {
   infertilityPatientId: number;
+  subjectType: "PATIENT" | "SPOUSE";
+  subjectNameSnapshot?: string | null;
   selectedTests: string[];
   testCharge: number;
   discountType?: "percentage" | "value" | null;
@@ -21,7 +31,7 @@ export interface AddInfertilityTestRequest {
 
 export interface AddInfertilityTestResponse {
   success: boolean;
-  data: any;
+  data: CreatedInfertilityTestPayload;
   error?: string;
 }
 
@@ -35,7 +45,7 @@ export function useAddInfertilityTest(
     ...options,
     mutationFn: async (data: AddInfertilityTestRequest): Promise<AddInfertilityTestResponse> => {
       showNotification("Adding HSI Center test...", "loading");
-      const response = await api.post<{ success: boolean; data: any; error?: string }>(
+      const response = await api.post<AddInfertilityTestResponse>(
         "/infertility-patients/tests",
         data
       );
@@ -50,15 +60,9 @@ export function useAddInfertilityTest(
       queryClient.invalidateQueries({ queryKey: ["infertilityTestPatients"] });
       queryClient.invalidateQueries({ queryKey: ["infertilityPatients"] });
       showNotification("HSI Center test added successfully", "success");
-      if (options?.onSuccess) {
-        options.onSuccess(response, variables, context as any, mutation as any);
-      }
     },
     onError: (error, variables, context) => {
       showNotification(`Failed to add test: ${error.message}`, "error");
-      if (options?.onError) {
-        options.onError(error, variables, context as any, mutation as any);
-      }
     },
   });
 

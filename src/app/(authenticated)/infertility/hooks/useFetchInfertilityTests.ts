@@ -43,20 +43,16 @@ export function useFetchInfertilityTests(filters: InfertilityTestFilters = {}) {
 
       // Status filter - convert to status for API
       if (filters.status && filters.status !== "All") {
-        params.append(
-          "status",
-          (filters.status === "Completed").toString()
-        );
+        params.append("status", filters.status);
       } else if (filters.status !== undefined) {
-        params.append("status", filters.status.toString());
+        params.append("status", filters.status);
       }
 
       // Test name filters (multi-select)
       if (filters.testNames && filters.testNames.length > 0) {
-        params.append("testNames", filters.testNames.join("|"));
-      } else if (filters.status) {
-        // Legacy single category support
-        params.append("status", filters.status);
+        filters.testNames.forEach((testName) => {
+          params.append("testNames[]", testName);
+        });
       }
 
       // Doctor/Staff filters

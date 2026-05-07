@@ -108,6 +108,7 @@ const initialFormState: FormState = {
     occupation: "",
   },
   testInfo: {
+    subjectType: "PATIENT",
     selectedTests: [],
     testCharge: 0,
     discountType: "percentage",
@@ -122,6 +123,7 @@ const initialFormState: FormState = {
     isCompleted: false,
     orderedById: 3, // Prof. Dr. Sufia Khatun — default infertility doctor
     doneById: null,
+    subjectNameSnapshot: null,
   },
   validationStatus: {
     phone: true,
@@ -203,7 +205,7 @@ export const useInfertilityTestFormStore = create<FormState & FormActions>()(
             type: patient.hospitalType || "",
           },
           patientData: {
-            id: patient.patientId,
+            id: null,
             firstName: patient.patientFirstName || "",
             lastName: patient.patientLastName || "",
             fullName: patient.patientFullName,
@@ -225,6 +227,7 @@ export const useInfertilityTestFormStore = create<FormState & FormActions>()(
             occupation: "",
           },
           testInfo: {
+            subjectType: patient.subjectType,
             selectedTests,
             testCharge: Number(patient.testCharge) || 0,
             discountType:
@@ -240,6 +243,7 @@ export const useInfertilityTestFormStore = create<FormState & FormActions>()(
             isCompleted: patient.isCompleted || false,
             orderedById: patient.orderedById,
             doneById: patient.doneById,
+            subjectNameSnapshot: patient.subjectNameSnapshot,
           },
           validationStatus: {
             phone: true,

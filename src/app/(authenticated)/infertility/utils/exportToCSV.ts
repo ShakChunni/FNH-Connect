@@ -13,6 +13,7 @@ export const exportInvestigationsToCSV = (data: InfertilityTestData[]) => {
     "Test Number",
     "Date",
     "Patient Name",
+    "Subject",
     "Phone Number",
     "Case Number",
     "Ordered By",
@@ -28,14 +29,18 @@ export const exportInvestigationsToCSV = (data: InfertilityTestData[]) => {
 
   // Map data to rows
   const rows = data.map((item) => {
-    const tests = item.testResults?.tests && Array.isArray(item.testResults.tests)
-      ? item.testResults.tests.join("; ")
-      : item.testCategory || "";
+    const tests =
+      item.selectedTests.length > 0
+        ? item.selectedTests.join("; ")
+        : item.testCategory || "";
 
     return [
       item.testNumber,
       format(new Date(item.testDate), "yyyy-MM-dd"),
       item.patientFullName,
+      item.subjectName
+        ? `${item.subjectLabel}: ${item.subjectName}`
+        : item.subjectLabel,
       item.mobileNumber || "N/A",
       item.caseNumber,
       item.orderedBy || "Self",

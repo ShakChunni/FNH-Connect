@@ -29,6 +29,7 @@ import { useAddInfertilityTest } from "../../hooks/useAddInfertilityTest";
 import { InvestigationInformation } from "../form-sections/InvestigationInformation";
 import { Beaker } from "lucide-react";
 import { useInfertilityTestInfo } from "../../stores";
+import { useNotification } from "@/hooks/useNotification";
 
 
 interface AddNewDataProps {
@@ -44,6 +45,7 @@ const AddNewDataInfertility: React.FC<AddNewDataProps> = ({
   onClose,
 }) => {
   const popupRef = useRef<HTMLDivElement>(null);
+  const { showNotification } = useNotification();
 
   // Store access
   const hospitalData = useInfertilityHospitalData();
@@ -70,8 +72,18 @@ const AddNewDataInfertility: React.FC<AddNewDataProps> = ({
     onSuccess: (res: any) => {
       // If tests are selected, submit them using the new patient's ID
       if (testInfo.selectedTests && testInfo.selectedTests.length > 0 && res?.data?.infertilityRecord?.id) {
+        if (testInfo.subjectType === "UNKNOWN") {
+          showNotification(
+            "Choose Patient or Spouse before adding investigations",
+            "error",
+          );
+          return;
+        }
+
         addTest({
           infertilityPatientId: res.data.infertilityRecord.id,
+          subjectType: testInfo.subjectType,
+          subjectNameSnapshot: testInfo.subjectNameSnapshot || null,
           selectedTests: testInfo.selectedTests,
           testCharge: testInfo.testCharge,
           discountType: testInfo.discountType,
@@ -108,6 +120,14 @@ const AddNewDataInfertility: React.FC<AddNewDataProps> = ({
   const handleSubmit = useCallback(() => {
     if (!isFormValid || isSubmitting) return;
 
+    if (testInfo.selectedTests.length > 0 && testInfo.subjectType === "UNKNOWN") {
+      showNotification(
+        "Choose Patient or Spouse before adding investigations",
+        "error",
+      );
+      return;
+    }
+
     const { id, ...payloadWithoutId } = transformInfertilityDataForApi(
       hospitalData,
       patientData,
@@ -124,6 +144,9 @@ const AddNewDataInfertility: React.FC<AddNewDataProps> = ({
     spouseData,
     medicalInfo,
     addPatient,
+    testInfo.selectedTests.length,
+    testInfo.subjectType,
+    showNotification,
   ]);
 
   // Keyboard handling

@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
+import {
+  addCSRFTokenToResponse,
+  validateCSRFToken,
+} from "@/lib/csrfProtection";
 import { getAuthenticatedUserForAPI } from "@/lib/auth-validation";
 import * as infertilityService from "@/services/infertilityService";
+import { updateInfertilityTestSchema } from "@/app/(authenticated)/infertility/types/schemas";
 
 export async function GET(
   request: NextRequest,
@@ -38,6 +43,13 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    if (!validateCSRFToken(request)) {
+      return NextResponse.json(
+        { success: false, error: "Invalid CSRF token" },
+        { status: 403 }
+      );
+    }
+
     const user = await getAuthenticatedUserForAPI();
     if (!user || !user.staffId) {
       return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
@@ -50,33 +62,54 @@ export async function PUT(
     }
 
     const body = await request.json();
+    const validation = updateInfertilityTestSchema.safeParse(body);
+    if (!validation.success) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Invalid request data",
+          details: validation.error.flatten().fieldErrors,
+        },
+        { status: 400 }
+      );
+    }
     
     const ipAddress = request.headers.get("x-forwarded-for") || "Unknown IP";
 
     const updatedTest = await infertilityService.updateInfertilityTest(
       testId,
-      body,
+      validation.data,
       user.staffId,
       user.id,
       {
-        sessionId: undefined,
+        sessionId: user.sessionId,
         deviceInfo: {
           ipAddress,
-          deviceFingerprint: "",
-          readableFingerprint: "",
-          deviceType: "",
-          browserName: "",
-          browserVersion: "",
-          osType: "",
+          deviceFingerprint: user.sessionDeviceInfo.deviceFingerprint,
+          readableFingerprint: user.sessionDeviceInfo.readableFingerprint,
+          deviceType: user.sessionDeviceInfo.deviceType,
+          browserName: user.sessionDeviceInfo.browserName,
+          browserVersion: user.sessionDeviceInfo.browserVersion,
+          osType: user.sessionDeviceInfo.osType,
         },
       }
     );
 
-    return NextResponse.json({ success: true, data: updatedTest });
+    return addCSRFTokenToResponse(
+      NextResponse.json({
+        success: true,
+        data: updatedTest,
+        message: "Investigation updated successfully",
+      })
+    );
   } catch (error) {
     console.error("PUT Infertility Test error:", error);
     return NextResponse.json(
-      { success: false, error: "Failed to update test" },
+      {
+        success: false,
+        error:
+          error instanceof Error ? error.message : "Failed to update test",
+      },
       { status: 500 }
     );
   }

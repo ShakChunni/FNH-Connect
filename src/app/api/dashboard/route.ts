@@ -172,11 +172,20 @@ export async function GET(request: NextRequest) {
         orderBy: { testDate: "desc" },
         select: {
           id: true,
-          patientId: true,
           testDate: true,
           isCompleted: true,
           testCategory: true,
-          patient: { select: { fullName: true, phoneNumber: true } },
+          infertilityPatient: {
+            select: {
+              patientId: true,
+              patient: {
+                select: {
+                  fullName: true,
+                  phoneNumber: true,
+                },
+              },
+            },
+          },
         },
       }),
 
@@ -313,9 +322,9 @@ export async function GET(request: NextRequest) {
       })),
       ...recentInfertility.map((t) => ({
         id: t.id + 40000,
-        patientId: t.patientId,
-        name: t.patient.fullName,
-        phoneNumber: t.patient.phoneNumber,
+        patientId: t.infertilityPatient.patientId,
+        name: t.infertilityPatient.patient.fullName,
+        phoneNumber: t.infertilityPatient.patient.phoneNumber,
         admissionDate: t.testDate.toISOString(),
         department: "HSI Center",
         departmentType: "infertility" as const,

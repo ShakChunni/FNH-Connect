@@ -50,17 +50,18 @@ export function useFetchInfertilityTestReport() {
         params.append("endDate", filters.endDate);
       }
 
-      // Status filter - convert to isCompleted for API
+      // Status filter
       if (filters.status && filters.status !== "All") {
-        params.append(
-          "isCompleted",
-          (filters.status === "Completed").toString()
-        );
+        params.append("status", filters.status);
+      } else if (filters.status === "All") {
+        params.append("status", filters.status);
       }
 
       // Test name filters (multi-select)
       if (filters.testNames && filters.testNames.length > 0) {
-        params.append("testNames", filters.testNames.join("|"));
+        filters.testNames.forEach((testName) => {
+          params.append("testNames[]", testName);
+        });
       }
 
       // Doctor/Staff filters

@@ -5,7 +5,7 @@
 
 import { 
   isReceptionistRole, 
-  RECEPTIONIST_ALLOWED_ROUTES,
+  getReceptionistAllowedRoutes,
   isAdminRole
 } from "../src/lib/roles";
 
@@ -38,12 +38,12 @@ async function runTests() {
   );
 
   assert(
-    RECEPTIONIST_ALLOWED_ROUTES.includes("/infertility"),
+    getReceptionistAllowedRoutes("receptionist", "infertility").includes("/infertility"),
     "Infertility route should be allowed for all receptionists"
   );
 
   assert(
-    RECEPTIONIST_ALLOWED_ROUTES.includes("/api/infertility"),
+    getReceptionistAllowedRoutes("receptionist", "infertility").includes("/api/infertility"),
     "Infertility API route should be allowed for all receptionists"
   );
 

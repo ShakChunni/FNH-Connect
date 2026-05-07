@@ -33,8 +33,11 @@ export const OrderInvestigationModal: React.FC<OrderInvestigationModalProps> = (
   const { updateStatusAsync } = useUpdateInfertilityPatientStatus();
 
   const isFormValid = useMemo(
-    () => testInfo.selectedTests.length > 0 && !!testInfo.orderedById,
-    [testInfo.selectedTests.length, testInfo.orderedById]
+    () =>
+      testInfo.selectedTests.length > 0 &&
+      !!testInfo.orderedById &&
+      testInfo.subjectType !== "UNKNOWN",
+    [testInfo.selectedTests.length, testInfo.orderedById, testInfo.subjectType]
   );
 
   const handleClose = useCallback(() => {
@@ -51,8 +54,16 @@ export const OrderInvestigationModal: React.FC<OrderInvestigationModalProps> = (
 
     if (!isFormValid) {
       showNotification(
-        "Please select at least one investigation and an ordering doctor",
+        "Please select at least one investigation, an ordering doctor, and a valid investigation subject",
         "error"
+      );
+      return;
+    }
+
+    if (testInfo.subjectType === "UNKNOWN") {
+      showNotification(
+        "Choose Patient or Spouse before saving this investigation",
+        "error",
       );
       return;
     }
@@ -60,6 +71,8 @@ export const OrderInvestigationModal: React.FC<OrderInvestigationModalProps> = (
     try {
       await addTestAsync({
         infertilityPatientId: patient.id,
+        subjectType: testInfo.subjectType,
+        subjectNameSnapshot: testInfo.subjectNameSnapshot || null,
         selectedTests: testInfo.selectedTests,
         testCharge: testInfo.testCharge,
         discountType: testInfo.discountType,
@@ -187,4 +200,3 @@ export const OrderInvestigationModal: React.FC<OrderInvestigationModalProps> = (
 };
 
 export default OrderInvestigationModal;
-

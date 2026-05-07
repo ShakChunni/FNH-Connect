@@ -5,6 +5,7 @@ import {
   setCSRFCookie,
 } from "./lib/csrfProtection";
 import { jwtVerify } from "jose";
+import { getReceptionistAllowedRoutes } from "./lib/roles";
 
 // === CONFIGURATION ===
 const SECRET_ENV = process.env.SECRET_KEY;
@@ -467,58 +468,10 @@ export async function middleware(request: NextRequest) {
       normalizedRole === "receptionistinfertility";
 
     if (isReceptionist || isReceptionistInfertility) {
-      // Define allowed routes for base receptionists
-      // They can access: dashboard, general-admission, pathology, patient-records
-      // Data-level patient-record restrictions are enforced in patient-records APIs
-      const baseReceptionistPaths = [
-        // Page routes
-        "/dashboard",
-        "/general-admission",
-        "/pathology",
-        "/patient-records",
-        "/login",
-        // API routes for pages
-        "/api/dashboard",
-        "/api/general-admission",
-        "/api/pathology",
-        "/api/patient-records",
-        // Supporting API routes
-        "/api/auth",
-        "/api/staff",
-        "/api/hospitals",
-        "/api/patients",
-        "/api/admissions",
-        "/api/pathology-patients",
-        "/api/departments",
-        "/api/shifts",
-      ];
-
-      // Additional routes for receptionist-infertility AND regular receptionists
-      // who logged into the infertility portal
-      const infertilityPaths = [
-        "/infertility",
-        "/infertility/cash-tracking",
-        "/api/infertility",
-        "/api/infertility-patients",
-        "/api/infertility/cash-tracking",
-        "/api/admin/infertility-cash-tracking",
-      ];
-
-      // Shared API routes always needed regardless of portal
-      const sharedAPIPaths = [
-        "/api/auth",
-        "/api/staff",
-        "/api/hospitals",
-        "/api/patients",
-        "/login",
-      ];
-
-      // Combine paths based on role AND current portal
-      const receptionistAllowedPaths = isReceptionistInfertility
-        ? [...baseReceptionistPaths, ...infertilityPaths]
-        : userPortal === "infertility"
-          ? [...infertilityPaths, ...sharedAPIPaths]
-          : baseReceptionistPaths;
+      const receptionistAllowedPaths = getReceptionistAllowedRoutes(
+        userRole,
+        userPortal === "infertility" ? "infertility" : "general",
+      );
 
       // Check if current path is allowed
       const isAllowed = receptionistAllowedPaths.some(

@@ -116,6 +116,11 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({ patient }) => {
                     {patient.bloodGroup}
                   </span>
                 )}
+                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 sm:px-2 sm:py-1 bg-teal-50 rounded-md text-[10px] sm:text-xs font-bold text-teal-700">
+                  {patient.subjectName
+                    ? `${patient.subjectLabel}: ${patient.subjectName}`
+                    : patient.subjectLabel}
+                </span>
               </div>
             </div>
           </div>

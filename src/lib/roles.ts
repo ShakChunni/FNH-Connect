@@ -39,22 +39,24 @@ export enum HospitalRole {
 // Data-level filtering for patient-records is enforced in API routes:
 // - receptionist: non-infertility patients only
 // - receptionist-infertility: infertility patients only
-export const RECEPTIONIST_ALLOWED_ROUTES = [
+export const BASE_RECEPTIONIST_ALLOWED_ROUTES = [
   "/dashboard",
   "/general-admission",
   "/pathology",
   "/patient-records",
-  "/infertility",
   "/api/dashboard",
   "/api/general-admission",
   "/api/pathology",
   "/api/patient-records",
-  "/api/infertility",
-  "/api/admin/infertility-cash-tracking",
   "/api/auth", // Auth routes are always allowed
   "/api/staff", // Staff/doctors list for dropdowns
   "/api/hospitals", // Hospitals list for dropdowns
   "/api/patients", // Patient data
+  "/api/admissions",
+  "/api/pathology-patients",
+  "/api/departments",
+  "/api/shifts",
+  "/login",
 ];
 
 // Routes specific to infertility portal receptionists
@@ -64,13 +66,36 @@ export const INFERTILITY_RECEPTIONIST_ALLOWED_ROUTES = [
   "/infertility/cash-tracking",
   "/api/infertility",
   "/api/infertility-patients",
-  "/api/infertility/cash-tracking",
   "/api/admin/infertility-cash-tracking",
+  "/api/infertility/cash-tracking",
   "/api/auth",
   "/api/staff",
   "/api/hospitals",
   "/api/patients",
+  "/login",
 ];
+
+export type PortalAccessType = "general" | "infertility";
+
+export function getReceptionistAllowedRoutes(
+  role: string,
+  portal: PortalAccessType = "general",
+): string[] {
+  const normalizedRole = normalizeRole(role);
+
+  if (normalizedRole === SystemRole.RECEPTIONIST_INFERTILITY) {
+    return [
+      ...BASE_RECEPTIONIST_ALLOWED_ROUTES,
+      ...INFERTILITY_RECEPTIONIST_ALLOWED_ROUTES,
+    ];
+  }
+
+  if (portal === "infertility") {
+    return [...INFERTILITY_RECEPTIONIST_ALLOWED_ROUTES];
+  }
+
+  return [...BASE_RECEPTIONIST_ALLOWED_ROUTES];
+}
 
 // Routes that medicine-pharmacist can access
 export const PHARMACIST_ALLOWED_ROUTES = [
@@ -211,8 +236,9 @@ export function canViewActivityLogs(userRole: string): boolean {
 export function canReceptionistAccessPath(
   pathname: string,
   role: string,
+  portal: PortalAccessType = "general",
 ): boolean {
-  return RECEPTIONIST_ALLOWED_ROUTES.some(
+  return getReceptionistAllowedRoutes(role, portal).some(
     (route) => pathname === route || pathname.startsWith(route + "/"),
   );
 }

@@ -366,6 +366,7 @@ export interface ModalFormState extends FormDataState {
 // ═══════════════════════════════════════════════════════════════
 
 export interface InfertilityTestInfo {
+  subjectType: "PATIENT" | "SPOUSE" | "UNKNOWN";
   selectedTests: string[];
   testCharge: number;
   discountType: "percentage" | "value" | null;
@@ -380,6 +381,11 @@ export interface InfertilityTestInfo {
   isCompleted: boolean;
   orderedById: number | null;
   doneById: number | null;
+  subjectNameSnapshot?: string | null;
+}
+
+export interface InfertilityTestResults {
+  tests: string[];
 }
 
 export interface InfertilityTestData {
@@ -402,8 +408,11 @@ export interface InfertilityTestData {
   createdByName?: string | null;
   lastModifiedByName?: string | null;
   infertilityPatientId: number;
-  patientId: number;
   testNumber: string;
+  subjectType: "PATIENT" | "SPOUSE" | "UNKNOWN";
+  subjectLabel: string;
+  subjectName: string | null;
+  subjectNameSnapshot: string | null;
   patientFullName: string;
   patientGender: string;
   patientAge: number | null;
@@ -413,7 +422,8 @@ export interface InfertilityTestData {
   testDate: string;
   reportDate: string | null;
   testCategory: string;
-  testResults: any;
+  selectedTests: string[];
+  testResults: InfertilityTestResults;
   remarks: string | null;
   isCompleted: boolean;
   testCharge: number;
@@ -431,6 +441,7 @@ export interface InfertilityTestData {
   updatedAt: string;
   createdBy: number;
   lastModifiedBy: number;
+  sourcePathologyTestId: number | null;
 }
 
 export interface InfertilityTestFilters {
@@ -445,4 +456,3 @@ export interface InfertilityTestFilters {
   page?: number;
   limit?: number;
 }
-

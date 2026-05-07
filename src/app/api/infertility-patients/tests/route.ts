@@ -16,8 +16,14 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
     
-    // Parse testNames array properly if sent multiple times
     const testNamesParam = searchParams.getAll("testNames[]");
+    const legacyTestNamesParam = searchParams.get("testNames");
+    const parsedLegacyTestNames = legacyTestNamesParam
+      ? legacyTestNamesParam
+          .split("|")
+          .map((value) => value.trim())
+          .filter(Boolean)
+      : [];
     
     const validation = infertilityTestFiltersSchema.safeParse({
       search: searchParams.get("search") || undefined,
@@ -26,7 +32,12 @@ export async function GET(request: NextRequest) {
       status: searchParams.get("status") || undefined,
       orderedById: searchParams.get("orderedById") || undefined,
       doneById: searchParams.get("doneById") || undefined,
-      testNames: testNamesParam.length > 0 ? testNamesParam : undefined,
+      testNames:
+        testNamesParam.length > 0
+          ? testNamesParam
+          : parsedLegacyTestNames.length > 0
+            ? parsedLegacyTestNames
+            : undefined,
       infertilityPatientId: searchParams.get("infertilityPatientId") ? Number(searchParams.get("infertilityPatientId")) : undefined,
       page: searchParams.get("page") || undefined,
       limit: searchParams.get("limit") || undefined,
@@ -95,15 +106,15 @@ export async function POST(request: NextRequest) {
       user.id,
       shiftId,
       {
-        sessionId: undefined,
+        sessionId: user.sessionId,
         deviceInfo: {
           ipAddress,
-          deviceFingerprint: "",
-          readableFingerprint: "",
-          deviceType: "",
-          browserName: "",
-          browserVersion: "",
-          osType: "",
+          deviceFingerprint: user.sessionDeviceInfo.deviceFingerprint,
+          readableFingerprint: user.sessionDeviceInfo.readableFingerprint,
+          deviceType: user.sessionDeviceInfo.deviceType,
+          browserName: user.sessionDeviceInfo.browserName,
+          browserVersion: user.sessionDeviceInfo.browserVersion,
+          osType: user.sessionDeviceInfo.osType,
         },
       }
     );

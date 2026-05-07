@@ -12,6 +12,13 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
     const testNamesParam = searchParams.getAll("testNames[]");
+    const legacyTestNamesParam = searchParams.get("testNames");
+    const parsedLegacyTestNames = legacyTestNamesParam
+      ? legacyTestNamesParam
+          .split("|")
+          .map((value) => value.trim())
+          .filter(Boolean)
+      : [];
 
     const validation = infertilityTestFiltersSchema.safeParse({
       search: searchParams.get("search") || undefined,
@@ -20,7 +27,13 @@ export async function GET(request: NextRequest) {
       status: searchParams.get("status") || undefined,
       orderedById: searchParams.get("orderedById") || undefined,
       doneById: searchParams.get("doneById") || undefined,
-      testNames: testNamesParam.length > 0 ? testNamesParam : undefined,
+      testNames:
+        testNamesParam.length > 0
+          ? testNamesParam
+          : parsedLegacyTestNames.length > 0
+            ? parsedLegacyTestNames
+            : undefined,
+      infertilityPatientId: searchParams.get("infertilityPatientId") || undefined,
     });
 
     if (!validation.success) {

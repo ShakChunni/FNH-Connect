@@ -112,6 +112,9 @@ const InvestigationInformation: React.FC = () => {
     };
   }, []);
 
+  const subjectSelectValue =
+    testInfo.subjectType === "UNKNOWN" ? "" : testInfo.subjectType;
+
   // Handle discount input change - allow empty string for better UX
   const handleDiscountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
@@ -144,9 +147,41 @@ const InvestigationInformation: React.FC = () => {
       {/* Ordered By Doctor - At the top */}
       <div className="mb-6">
         <h4 className="text-sm font-bold text-gray-800 mb-4">
-          Ordering Doctor
+          Ordering Context
         </h4>
-        <div>
+        <div className="grid gap-4 md:grid-cols-2">
+          <div>
+            <label className="block text-gray-700 text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2">
+              Investigation Subject<span className="text-red-500">*</span>
+            </label>
+            <select
+              value={subjectSelectValue}
+              onChange={(event) =>
+                setInfertilityTestInfo({
+                  ...testInfo,
+                  subjectType: event.target.value as "PATIENT" | "SPOUSE",
+                })
+              }
+              className={inputClassName(testInfo.subjectType, false)}
+            >
+              <option value="" disabled>
+                Select subject
+              </option>
+              <option value="PATIENT">Patient</option>
+              <option value="SPOUSE">Spouse</option>
+            </select>
+            <p className="text-xs text-gray-500 mt-1">
+              Choose who the investigation is being ordered for.
+            </p>
+            {testInfo.subjectType === "UNKNOWN" && (
+              <p className="text-xs text-red-600 mt-1">
+                Legacy migrated record has no valid subject. Choose Patient or
+                Spouse before saving.
+              </p>
+            )}
+          </div>
+
+          <div>
           <label className="block text-gray-700 text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2">
             Ordered By<span className="text-red-500">*</span>
           </label>
@@ -166,6 +201,7 @@ const InvestigationInformation: React.FC = () => {
           <p className="text-xs text-gray-500 mt-1">
             Select a doctor or &ldquo;Self&rdquo; if patient is self-referred
           </p>
+          </div>
         </div>
       </div>
 

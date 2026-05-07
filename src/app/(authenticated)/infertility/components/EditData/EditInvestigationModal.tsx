@@ -10,6 +10,7 @@ import { InvestigationInformation } from "../form-sections/InvestigationInformat
 import { useInfertilityTestFormStore } from "../../stores/testFormStore";
 import { useEditInfertilityTest } from "../../hooks/useEditInfertilityTest";
 import { InfertilityTestData } from "../../types";
+import { useNotification } from "@/hooks/useNotification";
 
 interface EditInvestigationModalProps {
   isOpen: boolean;
@@ -25,6 +26,7 @@ export const EditInvestigationModal: React.FC<EditInvestigationModalProps> = ({
   const popupRef = useRef<HTMLDivElement>(null);
   const { initializeFormForEdit, resetForm, testInfo } = useInfertilityTestFormStore();
   const { editPatient: updateInvestigation, isPending: isSubmitting } = useEditInfertilityTest();
+  const { showNotification } = useNotification();
 
   // Initialize form when modal opens
   useEffect(() => {
@@ -42,9 +44,19 @@ export const EditInvestigationModal: React.FC<EditInvestigationModalProps> = ({
   const handleSubmit = useCallback(() => {
     if (isSubmitting) return;
 
+    if (testInfo.subjectType === "UNKNOWN") {
+      showNotification(
+        "Choose Patient or Spouse before saving this migrated investigation",
+        "error",
+      );
+      return;
+    }
+
     updateInvestigation(
       {
         ...investigationData,
+        subjectType: testInfo.subjectType,
+        subjectNameSnapshot: testInfo.subjectNameSnapshot || null,
         testResults: { tests: testInfo.selectedTests },
         testCharge: testInfo.testCharge,
         discountType: testInfo.discountType,
@@ -63,7 +75,7 @@ export const EditInvestigationModal: React.FC<EditInvestigationModalProps> = ({
         },
       }
     );
-  }, [isSubmitting, investigationData, testInfo, updateInvestigation, handleClose]);
+  }, [isSubmitting, investigationData, testInfo, updateInvestigation, handleClose, showNotification]);
 
   // Keyboard handling
   useEffect(() => {

@@ -4,12 +4,16 @@
  */
 
 import { prisma } from "@/lib/prisma";
-import type { Prisma } from "@prisma/client";
+import {
+  InvestigationSubjectType,
+  type Prisma,
+} from "@prisma/client";
 import {
   formatRegistrationNumber,
   getTwoDigitYear,
 } from "@/lib/registrationNumber";
 import { SessionDeviceInfo } from "@/types/auth";
+import { infertilityShiftService } from "@/services/infertilityShiftService";
 
 
 // ═══════════════════════════════════════════════════════════════
@@ -697,8 +701,11 @@ export interface InfertilityTestFilters {
   limit?: number;
 }
 
+type EditableInvestigationSubjectType = "PATIENT" | "SPOUSE";
+
 export interface InfertilityTestData {
   infertilityPatientId: number;
+  subjectType: EditableInvestigationSubjectType;
   selectedTests: string[];
   testCharge: number;
   discountType?: "percentage" | "value" | null;
@@ -709,9 +716,272 @@ export interface InfertilityTestData {
   dueAmount: number;
   orderedById: number;
   doneById?: number | null;
-  remarks?: string;
+  remarks?: string | null;
   testDate?: string;
   isCompleted?: boolean;
+  subjectNameSnapshot?: string | null;
+}
+
+export interface InfertilityTestUpdateData
+  extends Partial<Omit<InfertilityTestData, "infertilityPatientId">> {}
+
+interface SerializedTestResults {
+  tests: string[];
+}
+
+interface FlattenedInfertilityTestRecord {
+  id: number;
+  infertilityPatientId: number;
+  testNumber: string;
+  caseNumber: string;
+  patientFullName: string;
+  patientGender: string;
+  patientDOB: string | null;
+  patientAge: number | null;
+  patientFirstName: string | null;
+  patientLastName: string | null;
+  mobileNumber: string | null;
+  email: string | null;
+  address: string | null;
+  bloodGroup: string | null;
+  guardianName: string | null;
+  guardianDOB: string | null;
+  guardianGender: string | null;
+  guardianAge: number | null;
+  subjectType: InvestigationSubjectType;
+  subjectLabel: string;
+  subjectName: string | null;
+  subjectNameSnapshot: string | null;
+  hospitalName: string | null;
+  hospitalType: string | null;
+  hospitalAddress: string | null;
+  hospitalPhone: string | null;
+  hospitalWebsite: string | null;
+  hospitalEmail: string | null;
+  testDate: string;
+  reportDate: string | null;
+  testCategory: string;
+  selectedTests: string[];
+  testResults: SerializedTestResults;
+  remarks: string | null;
+  isCompleted: boolean;
+  testCharge: number;
+  discountType: string | null;
+  discountValue: number | null;
+  discountAmount: number | null;
+  grandTotal: number;
+  paidAmount: number;
+  dueAmount: number;
+  orderedById: number;
+  orderedBy: string | null;
+  doneById: number | null;
+  doneBy: string | null;
+  createdAt: string;
+  updatedAt: string;
+  createdBy: number;
+  createdByName: string | null;
+  lastModifiedBy: number;
+  lastModifiedByName: string | null;
+  sourcePathologyTestId: number | null;
+}
+
+function parseSelectedTests(
+  testResults: Prisma.JsonValue | null,
+): string[] {
+  if (
+    !testResults ||
+    typeof testResults !== "object" ||
+    Array.isArray(testResults)
+  ) {
+    return [];
+  }
+
+  const maybeTests = testResults as { tests?: unknown; testNames?: unknown };
+
+  if (Array.isArray(maybeTests.tests)) {
+    return maybeTests.tests.filter(
+      (value): value is string => typeof value === "string",
+    );
+  }
+
+  if (Array.isArray(maybeTests.testNames)) {
+    return maybeTests.testNames.filter(
+      (value): value is string => typeof value === "string",
+    );
+  }
+
+  return [];
+}
+
+function getAgeFromDateOfBirth(dateOfBirth: Date | null): number | null {
+  if (!dateOfBirth) {
+    return null;
+  }
+
+  const now = new Date();
+  let age = now.getFullYear() - dateOfBirth.getFullYear();
+  const monthDiff = now.getMonth() - dateOfBirth.getMonth();
+
+  if (
+    monthDiff < 0 ||
+    (monthDiff === 0 && now.getDate() < dateOfBirth.getDate())
+  ) {
+    age -= 1;
+  }
+
+  return age;
+}
+
+function formatNullableDate(date: Date | null | undefined): string | null {
+  return date ? date.toISOString() : null;
+}
+
+function getSubjectName(
+  subjectType: InvestigationSubjectType,
+  patient: {
+    fullName: string;
+    guardianName: string | null;
+  },
+  subjectNameSnapshot: string | null,
+): string | null {
+  if (subjectType === InvestigationSubjectType.PATIENT) {
+    return patient.fullName;
+  }
+
+  if (subjectType === InvestigationSubjectType.SPOUSE) {
+    return subjectNameSnapshot || patient.guardianName;
+  }
+
+  return subjectNameSnapshot || patient.guardianName || patient.fullName;
+}
+
+function getSubjectLabel(subjectType: InvestigationSubjectType): string {
+  switch (subjectType) {
+    case InvestigationSubjectType.PATIENT:
+      return "Patient";
+    case InvestigationSubjectType.SPOUSE:
+      return "Spouse";
+    case InvestigationSubjectType.UNKNOWN:
+      return "Invalid Legacy Subject";
+    default:
+      return "Patient";
+  }
+}
+
+type InfertilityTestQueryRow = Prisma.InfertilityTestGetPayload<{
+  include: {
+    infertilityPatient: {
+      include: {
+        patient: true;
+        hospital: true;
+      };
+    };
+    orderedBy: {
+      select: {
+        id: true;
+        fullName: true;
+      };
+    };
+    doneBy: {
+      select: {
+        id: true;
+        fullName: true;
+      };
+    };
+  };
+}>;
+
+async function buildStaffNameMap(
+  testRows: Array<{
+    createdBy: number;
+    lastModifiedBy: number;
+  }>,
+) {
+  const staffIds = Array.from(
+    new Set(
+      testRows.flatMap((row) => [row.createdBy, row.lastModifiedBy]),
+    ),
+  );
+
+  if (staffIds.length === 0) {
+    return new Map<number, string>();
+  }
+
+  const staffList = await prisma.staff.findMany({
+    where: { id: { in: staffIds } },
+    select: { id: true, fullName: true },
+  });
+
+  return new Map(staffList.map((staff) => [staff.id, staff.fullName]));
+}
+
+function serializeInfertilityTestRow(
+  row: InfertilityTestQueryRow,
+  staffNameMap: Map<number, string>,
+): FlattenedInfertilityTestRecord {
+  const { patient, hospital } = row.infertilityPatient;
+  const selectedTests = parseSelectedTests(row.testResults);
+  const subjectName = getSubjectName(
+    row.subjectType,
+    patient,
+    row.subjectNameSnapshot,
+  );
+
+  return {
+    id: row.id,
+    infertilityPatientId: row.infertilityPatientId,
+    testNumber: row.testNumber,
+    caseNumber: row.infertilityPatient.caseNumber,
+    patientFullName: patient.fullName,
+    patientGender: patient.gender,
+    patientDOB: formatNullableDate(patient.dateOfBirth),
+    patientAge: getAgeFromDateOfBirth(patient.dateOfBirth),
+    patientFirstName: patient.firstName,
+    patientLastName: patient.lastName,
+    mobileNumber: patient.phoneNumber,
+    email: patient.email,
+    address: patient.address,
+    bloodGroup: patient.bloodGroup,
+    guardianName: patient.guardianName,
+    guardianDOB: formatNullableDate(patient.guardianDOB),
+    guardianGender: patient.guardianGender,
+    guardianAge: getAgeFromDateOfBirth(patient.guardianDOB),
+    subjectType: row.subjectType,
+    subjectLabel: getSubjectLabel(row.subjectType),
+    subjectName,
+    subjectNameSnapshot: row.subjectNameSnapshot,
+    hospitalName: hospital.name,
+    hospitalType: hospital.type,
+    hospitalAddress: hospital.address,
+    hospitalPhone: hospital.phoneNumber,
+    hospitalWebsite: hospital.website,
+    hospitalEmail: hospital.email,
+    testDate: row.testDate.toISOString(),
+    reportDate: formatNullableDate(row.reportDate),
+    testCategory: row.testCategory,
+    selectedTests,
+    testResults: { tests: selectedTests },
+    remarks: row.remarks,
+    isCompleted: row.isCompleted,
+    testCharge: Number(row.testCharge),
+    discountType: row.discountType,
+    discountValue: row.discountValue ? Number(row.discountValue) : null,
+    discountAmount: row.discountAmount ? Number(row.discountAmount) : null,
+    grandTotal: Number(row.grandTotal),
+    paidAmount: Number(row.paidAmount),
+    dueAmount: Number(row.dueAmount),
+    orderedById: row.orderedById,
+    orderedBy: row.orderedBy.fullName,
+    doneById: row.doneById,
+    doneBy: row.doneBy?.fullName || null,
+    createdAt: row.createdAt.toISOString(),
+    updatedAt: row.updatedAt.toISOString(),
+    createdBy: row.createdBy,
+    createdByName: staffNameMap.get(row.createdBy) || null,
+    lastModifiedBy: row.lastModifiedBy,
+    lastModifiedByName: staffNameMap.get(row.lastModifiedBy) || null,
+    sourcePathologyTestId: row.sourcePathologyTestId,
+  };
 }
 
 export async function getInfertilityTests(filters: InfertilityTestFilters) {
@@ -727,11 +997,32 @@ export async function getInfertilityTests(filters: InfertilityTestFilters) {
     (where.AND as Prisma.InfertilityTestWhereInput[]).push({
       OR: [
         {
-          patient: {
-            OR: [
-              { fullName: { contains: filters.search, mode: "insensitive" } },
-              { phoneNumber: { contains: filters.search } },
-            ],
+          infertilityPatient: {
+            patient: {
+              OR: [
+                {
+                  fullName: {
+                    contains: filters.search,
+                    mode: "insensitive",
+                  },
+                },
+                { phoneNumber: { contains: filters.search } },
+                {
+                  guardianName: {
+                    contains: filters.search,
+                    mode: "insensitive",
+                  },
+                },
+              ],
+            },
+          },
+        },
+        {
+          infertilityPatient: {
+            caseNumber: {
+              contains: filters.search,
+              mode: "insensitive",
+            },
           },
         },
         { testNumber: { contains: filters.search } },
@@ -787,19 +1078,10 @@ export async function getInfertilityTests(filters: InfertilityTestFilters) {
     prisma.infertilityTest.findMany({
       where,
       include: {
-        patient: {
-          select: {
-            id: true,
-            fullName: true,
-            gender: true,
-            dateOfBirth: true,
-            phoneNumber: true,
-          },
-        },
         infertilityPatient: {
-          select: {
-            id: true,
-            caseNumber: true,
+          include: {
+            patient: true,
+            hospital: true,
           },
         },
         orderedBy: {
@@ -823,10 +1105,15 @@ export async function getInfertilityTests(filters: InfertilityTestFilters) {
     }),
   ]);
 
+  const staffNameMap = await buildStaffNameMap(data);
+  const serializedData = data.map((row) =>
+    serializeInfertilityTestRow(row, staffNameMap),
+  );
+
   const totalPages = Math.ceil(total / limit);
 
   return {
-    data,
+    data: serializedData,
     pagination: {
       total,
       page,
@@ -837,22 +1124,13 @@ export async function getInfertilityTests(filters: InfertilityTestFilters) {
 }
 
 export async function getInfertilityTestById(id: number) {
-  return await prisma.infertilityTest.findUnique({
+  const row = await prisma.infertilityTest.findUnique({
     where: { id },
     include: {
-      patient: {
-        select: {
-          id: true,
-          fullName: true,
-          gender: true,
-          dateOfBirth: true,
-          phoneNumber: true,
-        },
-      },
       infertilityPatient: {
-        select: {
-          id: true,
-          caseNumber: true,
+        include: {
+          patient: true,
+          hospital: true,
         },
       },
       orderedBy: {
@@ -869,6 +1147,13 @@ export async function getInfertilityTestById(id: number) {
       },
     },
   });
+
+  if (!row) {
+    return null;
+  }
+
+  const staffNameMap = await buildStaffNameMap([row]);
+  return serializeInfertilityTestRow(row, staffNameMap);
 }
 
 export async function createInfertilityTest(
@@ -923,8 +1208,14 @@ export async function createInfertilityTest(
     const infertilityTest = await tx.infertilityTest.create({
       data: {
         infertilityPatientId: infertilityPatient.id,
-        patientId: infertilityPatient.patientId,
         testNumber,
+        subjectType: testData.subjectType,
+        subjectNameSnapshot:
+          testData.subjectType === InvestigationSubjectType.PATIENT
+            ? null
+            : testData.subjectNameSnapshot ||
+              infertilityPatient.patient.guardianName ||
+              null,
         testDate: testData.testDate ? new Date(testData.testDate) : new Date(),
         testCategory: "Multiple Tests",
         testResults: {
@@ -964,9 +1255,9 @@ export async function createInfertilityTest(
       patientAccount = await tx.infertilityPatientAccount.update({
         where: { id: patientAccount.id },
         data: {
-          totalCharges: { increment: testData.grandTotal },
-          totalPaid: { increment: testData.paidAmount },
-          totalDue: { increment: testData.dueAmount },
+        totalCharges: { increment: testData.grandTotal },
+        totalPaid: { increment: testData.paidAmount },
+        totalDue: { increment: testData.dueAmount },
         },
       });
     }
@@ -1081,7 +1372,7 @@ export async function createInfertilityTest(
 
 export async function updateInfertilityTest(
   id: number,
-  testData: Partial<InfertilityTestData>,
+  testData: InfertilityTestUpdateData,
   staffId: number,
   userId: number,
   activityLogContext?: ActivityLogContext,
@@ -1089,32 +1380,224 @@ export async function updateInfertilityTest(
   return await prisma.$transaction(async (tx) => {
     const existingTest = await tx.infertilityTest.findUnique({
       where: { id },
-      include: { patient: true },
+      include: {
+        infertilityPatient: {
+          include: {
+            patient: true,
+          },
+        },
+      },
     });
 
     if (!existingTest) {
       throw new Error("HSI Center test not found");
     }
 
-    const dataToUpdate: any = {
+    const currentSelectedTests = parseSelectedTests(existingTest.testResults);
+    const nextSelectedTests = testData.selectedTests ?? currentSelectedTests;
+    const nextTestCharge = testData.testCharge ?? Number(existingTest.testCharge);
+    const nextDiscountAmount =
+      testData.discountAmount ?? Number(existingTest.discountAmount ?? 0);
+    const nextGrandTotal = testData.grandTotal ?? Number(existingTest.grandTotal);
+    const nextPaidAmount = testData.paidAmount ?? Number(existingTest.paidAmount);
+    const nextDueAmount = testData.dueAmount ?? Number(existingTest.dueAmount);
+    const paidAmountDiff = nextPaidAmount - Number(existingTest.paidAmount);
+    const grandTotalDiff = nextGrandTotal - Number(existingTest.grandTotal);
+    const dueAmountDiff = nextDueAmount - Number(existingTest.dueAmount);
+
+    const dataToUpdate: Prisma.InfertilityTestUncheckedUpdateInput = {
       lastModifiedBy: staffId,
     };
 
     if (testData.selectedTests) {
-      dataToUpdate.testResults = { tests: testData.selectedTests };
+      dataToUpdate.testResults = { tests: nextSelectedTests };
     }
-    if (testData.remarks !== undefined) dataToUpdate.remarks = testData.remarks;
-    if (testData.isCompleted !== undefined) dataToUpdate.isCompleted = testData.isCompleted;
-    if (testData.orderedById !== undefined) dataToUpdate.orderedById = testData.orderedById;
-    if (testData.doneById !== undefined) dataToUpdate.doneById = testData.doneById;
-    
-    // For simplicity, we assume financial updates (changing tests after payment) are handled
-    // through a separate process or this just updates the test details.
-    
+    if (testData.remarks !== undefined) {
+      dataToUpdate.remarks = testData.remarks;
+    }
+    if (testData.isCompleted !== undefined) {
+      dataToUpdate.isCompleted = testData.isCompleted;
+    }
+    if (testData.orderedById !== undefined) {
+      dataToUpdate.orderedById = testData.orderedById;
+    }
+    if (testData.doneById !== undefined) {
+      dataToUpdate.doneById = testData.doneById;
+    }
+    if (testData.subjectType !== undefined) {
+      dataToUpdate.subjectType = testData.subjectType;
+      dataToUpdate.subjectNameSnapshot =
+        testData.subjectType === InvestigationSubjectType.PATIENT
+          ? null
+          : testData.subjectNameSnapshot ||
+            existingTest.infertilityPatient.patient.guardianName ||
+            existingTest.subjectNameSnapshot;
+    } else if (testData.subjectNameSnapshot !== undefined) {
+      dataToUpdate.subjectNameSnapshot = testData.subjectNameSnapshot;
+    }
+    if (testData.testDate !== undefined) {
+      dataToUpdate.testDate = new Date(testData.testDate);
+    }
+    if (testData.testCharge !== undefined) {
+      dataToUpdate.testCharge = testData.testCharge;
+    }
+    if (testData.discountType !== undefined) {
+      dataToUpdate.discountType = testData.discountType;
+    }
+    if (testData.discountValue !== undefined) {
+      dataToUpdate.discountValue = testData.discountValue;
+    }
+    if (testData.discountAmount !== undefined) {
+      dataToUpdate.discountAmount = testData.discountAmount;
+    }
+    if (testData.grandTotal !== undefined) {
+      dataToUpdate.grandTotal = testData.grandTotal;
+    }
+    if (testData.paidAmount !== undefined) {
+      dataToUpdate.paidAmount = testData.paidAmount;
+    }
+    if (testData.dueAmount !== undefined) {
+      dataToUpdate.dueAmount = testData.dueAmount;
+    }
+
     const updatedTest = await tx.infertilityTest.update({
       where: { id },
       data: dataToUpdate,
     });
+
+    await tx.infertilityServiceCharge.updateMany({
+      where: { infertilityTestId: id },
+      data: {
+        serviceName: `HSI Center Investigation - ${existingTest.testNumber}`,
+        originalAmount: nextTestCharge,
+        discountAmount: nextDiscountAmount,
+        finalAmount: nextGrandTotal,
+        description:
+          nextSelectedTests.length > 0
+            ? `Investigations: ${nextSelectedTests.join(", ")}`
+            : undefined,
+      },
+    });
+
+    if (paidAmountDiff !== 0) {
+      const activeShift = await infertilityShiftService.ensureActiveShift(
+        staffId,
+        tx,
+      );
+
+      const existingServiceCharge = await tx.infertilityServiceCharge.findFirst({
+        where: { infertilityTestId: id },
+      });
+
+      if (paidAmountDiff > 0) {
+        const patientAccountForPayment =
+          await tx.infertilityPatientAccount.findUnique({
+            where: {
+              patientId: existingTest.infertilityPatient.patientId,
+            },
+          });
+
+        if (!patientAccountForPayment) {
+          throw new Error("Patient account not found for payment recording");
+        }
+
+        const paymentCount = await tx.infertilityPayment.count();
+        const receiptNumber = `RCP-INF-${Date.now()}-${paymentCount + 1}`;
+
+        const payment = await tx.infertilityPayment.create({
+          data: {
+            patientAccountId: patientAccountForPayment.id,
+            amount: paidAmountDiff,
+            paymentMethod: "Cash",
+            collectedById: staffId,
+            shiftId: activeShift.id,
+            receiptNumber,
+            notes: `Additional payment for HSI Center test ${existingTest.testNumber}`,
+          },
+        });
+
+        if (existingServiceCharge) {
+          await tx.infertilityPaymentAllocation.create({
+            data: {
+              paymentId: payment.id,
+              serviceChargeId: existingServiceCharge.id,
+              allocatedAmount: paidAmountDiff,
+            },
+          });
+        }
+
+        await tx.infertilityCashMovement.create({
+          data: {
+            shiftId: activeShift.id,
+            amount: paidAmountDiff,
+            movementType: "PAYMENT_RECEIVED",
+            description: `Additional collection for ${existingTest.testNumber}`,
+            paymentId: payment.id,
+          },
+        });
+
+        await tx.infertilityShift.update({
+          where: { id: activeShift.id },
+          data: {
+            systemCash: { increment: paidAmountDiff },
+            totalCollected: { increment: paidAmountDiff },
+          },
+        });
+      } else {
+        const refundAmount = Math.abs(paidAmountDiff);
+
+        let originalPaymentId: number | undefined;
+        if (existingServiceCharge) {
+          const originalPayment = await tx.infertilityPayment.findFirst({
+            where: {
+              paymentAllocations: {
+                some: {
+                  serviceChargeId: existingServiceCharge.id,
+                },
+              },
+            },
+            orderBy: { paymentDate: "desc" },
+            select: { id: true },
+          });
+          originalPaymentId = originalPayment?.id;
+        }
+
+        await tx.infertilityCashMovement.create({
+          data: {
+            shiftId: activeShift.id,
+            amount: refundAmount,
+            movementType: "REFUND",
+            description: `Refund/Correction for ${existingTest.testNumber}`,
+            paymentId: originalPaymentId,
+          },
+        });
+
+        await tx.infertilityShift.update({
+          where: { id: activeShift.id },
+          data: {
+            systemCash: { decrement: refundAmount },
+            totalRefunded: { increment: refundAmount },
+          },
+        });
+      }
+    }
+
+    const patientAccount = await tx.infertilityPatientAccount.findUnique({
+      where: {
+        patientId: existingTest.infertilityPatient.patientId,
+      },
+    });
+
+    if (patientAccount) {
+      await tx.infertilityPatientAccount.update({
+        where: { id: patientAccount.id },
+        data: {
+          totalCharges: { increment: grandTotalDiff },
+          totalPaid: { increment: paidAmountDiff },
+          totalDue: { increment: dueAmountDiff },
+        },
+      });
+    }
 
     await tx.activityLog.create({
       data: {
@@ -1129,7 +1612,46 @@ export async function updateInfertilityTest(
       },
     });
 
-    return updatedTest;
+    const refreshedTest = await tx.infertilityTest.findUnique({
+      where: { id: updatedTest.id },
+      include: {
+        infertilityPatient: {
+          include: {
+            patient: true,
+            hospital: true,
+          },
+        },
+        orderedBy: {
+          select: {
+            id: true,
+            fullName: true,
+          },
+        },
+        doneBy: {
+          select: {
+            id: true,
+            fullName: true,
+          },
+        },
+      },
+    });
+
+    if (!refreshedTest) {
+      throw new Error("Failed to load updated HSI Center test");
+    }
+
+    const refreshedStaffIds = Array.from(
+      new Set([refreshedTest.createdBy, refreshedTest.lastModifiedBy]),
+    );
+    const refreshedStaff = await tx.staff.findMany({
+      where: { id: { in: refreshedStaffIds } },
+      select: { id: true, fullName: true },
+    });
+    const refreshedStaffMap = new Map(
+      refreshedStaff.map((staff) => [staff.id, staff.fullName]),
+    );
+
+    return serializeInfertilityTestRow(refreshedTest, refreshedStaffMap);
   });
 }
 

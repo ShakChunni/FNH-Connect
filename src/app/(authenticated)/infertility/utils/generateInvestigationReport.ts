@@ -178,7 +178,7 @@ export const generateInfertilityInvestigationReport = async (
   // Individual Tests Breakdown
   const testCountMap = new Map<string, { count: number; revenue: number; name: string }>();
   data.forEach((record) => {
-    const testNames = record.testResults?.tests || [];
+    const testNames = record.selectedTests;
     testNames.forEach((name: string) => {
       const testInfo = PATHOLOGY_TESTS.find((t) => t.name === name || t.code === name);
       const testPrice = testInfo?.price || 0;
@@ -241,7 +241,7 @@ export const generateInfertilityInvestigationReport = async (
         item.testNumber,
         format(new Date(item.testDate), "dd/MM/yy"),
         item.patientFullName,
-        (item.testResults?.tests || []).join(", ").substring(0, 30),
+        item.selectedTests.join(", ").substring(0, 30),
         item.isCompleted ? "Done" : "Pending",
         Number(item.grandTotal).toLocaleString(),
         Number(item.paidAmount).toLocaleString(),
