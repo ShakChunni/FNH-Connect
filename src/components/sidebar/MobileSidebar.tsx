@@ -21,10 +21,17 @@ export default function MobileSidebar() {
   const pathname = usePathname();
   const overlayRef = useRef<HTMLDivElement>(null);
   const profileRef = useRef<HTMLDivElement>(null);
-  const { user, logout, portal } = useAuth();
+  const {
+    user,
+    logout,
+    portal,
+    availablePortals,
+    switchPortal,
+    isSwitchingPortal,
+  } = useAuth();
   const { endShift, isEnding: isEndingShift } = useEndShift();
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
-  const homeRoute = getDefaultRouteForRole(user?.role || "");
+  const homeRoute = getDefaultRouteForRole(user?.role || "", portal || "general");
 
   // ... (useMemo for initials, displayName)
   const initials = useMemo(() => {
@@ -241,6 +248,10 @@ export default function MobileSidebar() {
                 isExpanded={true}
                 isOpen={isDropdownOpen}
                 onToggle={setIsDropdownOpen}
+                portal={portal}
+                availablePortals={availablePortals}
+                onSwitchPortal={switchPortal}
+                isSwitchingPortal={isSwitchingPortal}
                 onLogout={handleLogoutClick}
                 parentRef={profileRef}
               />

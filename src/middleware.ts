@@ -5,7 +5,7 @@ import {
   setCSRFCookie,
 } from "./lib/csrfProtection";
 import { jwtVerify } from "jose";
-import { getReceptionistAllowedRoutes } from "./lib/roles";
+import { getDefaultRouteForRole, getReceptionistAllowedRoutes } from "./lib/roles";
 
 // === CONFIGURATION ===
 const SECRET_ENV = process.env.SECRET_KEY;
@@ -356,6 +356,12 @@ export async function middleware(request: NextRequest) {
   const isAdminRoute =
     normalizedPath.startsWith("/admin") ||
     normalizedPath.startsWith("/api/admin");
+  const portalAccess =
+    userPortal === "infertility" ? "infertility" : "general";
+  const authenticatedHomeRoute = getDefaultRouteForRole(
+    userRole || "",
+    portalAccess,
+  );
 
   // Only /login is public
   const isLoginPage = normalizedPath === "/login";
@@ -391,17 +397,7 @@ export async function middleware(request: NextRequest) {
 
   // REDIRECT 1: Root path with valid session
   if (isRootPath && hasValidSession) {
-    const normalizedRole = userRole?.toLowerCase().replace(/[\s_-]/g, "") || "";
-    if (userPortal === "infertility") {
-      return NextResponse.redirect(new URL("/infertility", request.url));
-    }
-    if (
-      normalizedRole === "medicinepharmacist" ||
-      normalizedRole === "pharmacist"
-    ) {
-      return NextResponse.redirect(new URL("/medicine-inventory", request.url));
-    }
-    return NextResponse.redirect(new URL("/dashboard", request.url));
+    return NextResponse.redirect(new URL(authenticatedHomeRoute, request.url));
   }
 
   // REDIRECT 2: Root path without session → /login
@@ -411,17 +407,7 @@ export async function middleware(request: NextRequest) {
 
   // REDIRECT 3: Login page with valid session
   if (isLoginPage && hasValidSession) {
-    const normalizedRole = userRole?.toLowerCase().replace(/[\s_-]/g, "") || "";
-    if (userPortal === "infertility") {
-      return NextResponse.redirect(new URL("/infertility", request.url));
-    }
-    if (
-      normalizedRole === "medicinepharmacist" ||
-      normalizedRole === "pharmacist"
-    ) {
-      return NextResponse.redirect(new URL("/medicine-inventory", request.url));
-    }
-    return NextResponse.redirect(new URL("/dashboard", request.url));
+    return NextResponse.redirect(new URL(authenticatedHomeRoute, request.url));
   }
 
   // REDIRECT 4: Admin routes without session → /login
@@ -435,7 +421,7 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
-  // REDIRECT 5: Admin routes with session but insufficient privileges → /dashboard
+  // REDIRECT 5: Admin routes with session but insufficient privileges → authenticated home
   if (isAdminRoute && hasValidSession) {
     // Normalize role and check for admin access
     // Handles: system-admin, SysAdmin, admin, Admin, etc.
@@ -455,7 +441,7 @@ export async function middleware(request: NextRequest) {
           },
         );
       }
-      return NextResponse.redirect(new URL("/dashboard", request.url));
+      return NextResponse.redirect(new URL(authenticatedHomeRoute, request.url));
     }
   }
 
@@ -493,7 +479,7 @@ export async function middleware(request: NextRequest) {
             },
           );
         }
-        return NextResponse.redirect(new URL("/dashboard", request.url));
+        return NextResponse.redirect(new URL(authenticatedHomeRoute, request.url));
       }
     }
 
@@ -581,7 +567,7 @@ export async function middleware(request: NextRequest) {
           },
         );
       }
-      return NextResponse.redirect(new URL("/dashboard", request.url));
+      return NextResponse.redirect(new URL(authenticatedHomeRoute, request.url));
     }
   }
 

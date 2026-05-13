@@ -1,5 +1,9 @@
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
+import {
+  GENERAL_TO_INFERTILITY_TRANSFER_MARKER,
+  hasTransferredToInfertilityMarker,
+} from "@/lib/infertilityTransfer";
 
 interface ShiftFilters {
   staffId?: number;
@@ -86,10 +90,38 @@ export async function getAdminShifts(filters: ShiftFilters) {
           },
         },
       },
-      _count: {
+      payments: {
+        where: {
+          OR: [
+            { notes: null },
+            {
+              notes: {
+                not: {
+                  contains: GENERAL_TO_INFERTILITY_TRANSFER_MARKER,
+                },
+              },
+            },
+          ],
+        },
         select: {
-          payments: true,
-          cashMovements: true,
+          id: true,
+        },
+      },
+      cashMovements: {
+        where: {
+          OR: [
+            { description: null },
+            {
+              description: {
+                not: {
+                  contains: GENERAL_TO_INFERTILITY_TRANSFER_MARKER,
+                },
+              },
+            },
+          ],
+        },
+        select: {
+          id: true,
         },
       },
     },
@@ -98,7 +130,13 @@ export async function getAdminShifts(filters: ShiftFilters) {
     },
   });
 
-  return shifts;
+  return shifts.map((shift) => ({
+    ...shift,
+    _count: {
+      payments: shift.payments.length,
+      cashMovements: shift.cashMovements.length,
+    },
+  }));
 }
 
 export async function getShiftDetails(id: number) {
@@ -174,9 +212,24 @@ export async function getShiftDetails(id: number) {
 
   if (!shift) return null;
 
+  const filteredCashMovements = shift.cashMovements.filter((movement) => {
+    if (hasTransferredToInfertilityMarker(movement.description)) {
+      return false;
+    }
+
+    if (
+      movement.payment &&
+      hasTransferredToInfertilityMarker(movement.payment.notes)
+    ) {
+      return false;
+    }
+
+    return true;
+  });
+
   // ── Post-process: resolve historical refunds without a linked payment ──
   const unresolvedRefs = new Set<string>();
-  for (const movement of shift.cashMovements) {
+  for (const movement of filteredCashMovements) {
     if (movement.movementType === "REFUND" && !movement.payment) {
       const ref = extractRefundReference(movement.description);
       if (ref) unresolvedRefs.add(ref);
@@ -216,7 +269,7 @@ export async function getShiftDetails(id: number) {
       pathologyTests.map((t) => [t.testNumber.toUpperCase(), t]),
     );
 
-    for (const movement of shift.cashMovements) {
+    for (const movement of filteredCashMovements) {
       if (movement.movementType !== "REFUND" || movement.payment) continue;
       const ref = extractRefundReference(movement.description);
       if (!ref) continue;
@@ -246,7 +299,10 @@ export async function getShiftDetails(id: number) {
     }
   }
 
-  return shift;
+  return {
+    ...shift,
+    cashMovements: filteredCashMovements,
+  };
 }
 
 export async function getCashTrackingSummary(filters?: ShiftFilters) {

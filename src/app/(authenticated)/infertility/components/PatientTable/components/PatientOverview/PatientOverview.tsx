@@ -22,12 +22,14 @@ import { useInfertilityActions } from "../../../../stores";
 import { generateInfertilityReport } from "../../../../utils/generateReport";
 import { useFetchInfertilityTests } from "../../../../hooks";
 import { useAuth } from "@/app/AuthContext";
+import type { InfertilityTestData } from "../../../../types";
 
 interface PatientOverviewProps {
   isOpen: boolean;
   onClose: () => void;
   patient: InfertilityPatientData | null;
   onOrderInvestigation?: (patient: InfertilityPatientData) => void;
+  onEditInvestigation?: (test: InfertilityTestData) => void;
   onSetAdmitted?: (patient: InfertilityPatientData) => void;
   isStatusUpdating?: boolean;
 }
@@ -37,6 +39,7 @@ const PatientOverview: React.FC<PatientOverviewProps> = ({
   onClose,
   patient,
   onOrderInvestigation,
+  onEditInvestigation,
   onSetAdmitted,
   isStatusUpdating = false,
 }) => {
@@ -227,7 +230,10 @@ const PatientOverview: React.FC<PatientOverviewProps> = ({
               <HospitalDetails patient={patient} />
 
               {/* Investigations Ordered */}
-              <InvestigationDetails tests={patientTests} />
+              <InvestigationDetails
+                tests={patientTests}
+                onEditInvestigation={onEditInvestigation}
+              />
             </div>
           </div>
         </div>

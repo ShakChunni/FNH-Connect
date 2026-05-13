@@ -403,6 +403,7 @@ model Session {
   id        String   @id @default(cuid())
   userId    Int
   token     String   @unique
+  portal    String   @default("general")
   expiresAt DateTime
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

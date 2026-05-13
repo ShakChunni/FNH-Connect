@@ -9,6 +9,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getAuthenticatedUserForAPI } from "@/lib/auth-validation";
+import { GENERAL_TO_INFERTILITY_TRANSFER_MARKER } from "@/lib/infertilityTransfer";
 import { getDepartmentCode, getTwoDigitYear } from "@/lib/registrationNumber";
 import { formatBDT, getSessionCashUTCDateRange } from "@/lib/timezone";
 
@@ -133,7 +134,23 @@ export async function GET(request: NextRequest) {
         staff: { select: { fullName: true } },
         payments: {
           where: {
-            paymentDate: { gte: startDate, lt: endDate },
+            AND: [
+              {
+                paymentDate: { gte: startDate, lt: endDate },
+              },
+              {
+                OR: [
+                  { notes: null },
+                  {
+                    notes: {
+                      not: {
+                        contains: GENERAL_TO_INFERTILITY_TRANSFER_MARKER,
+                      },
+                    },
+                  },
+                ],
+              },
+            ],
           },
           include: {
             patientAccount: {
@@ -166,11 +183,29 @@ export async function GET(request: NextRequest) {
         // Include payment details for patient info
         cashMovements: {
           where: {
-            timestamp: {
-              gte: startDate,
-              lt: endDate,
-            },
-            movementType: "REFUND",
+            AND: [
+              {
+                timestamp: {
+                  gte: startDate,
+                  lt: endDate,
+                },
+              },
+              {
+                movementType: "REFUND",
+              },
+              {
+                OR: [
+                  { description: null },
+                  {
+                    description: {
+                      not: {
+                        contains: GENERAL_TO_INFERTILITY_TRANSFER_MARKER,
+                      },
+                    },
+                  },
+                ],
+              },
+            ],
           },
           select: {
             id: true,

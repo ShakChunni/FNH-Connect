@@ -11,6 +11,7 @@ import { InfertilityPatientData } from "../types";
 import { useInfertilityTestFormStore } from "../stores/testFormStore";
 import { useAddInfertilityTest } from "../hooks/useAddInfertilityTest";
 import { useUpdateInfertilityPatientStatus } from "../hooks/useUpdateInfertilityPatientStatus";
+import { buildInvestigationSubjectCards } from "../utils/investigationSubjects";
 
 interface OrderInvestigationModalProps {
   isOpen: boolean;
@@ -31,13 +32,37 @@ export const OrderInvestigationModal: React.FC<OrderInvestigationModalProps> = (
 
   const { addTestAsync, isLoading: isSubmitting } = useAddInfertilityTest();
   const { updateStatusAsync } = useUpdateInfertilityPatientStatus();
+  const subjectCards = useMemo(
+    () =>
+      patient
+        ? buildInvestigationSubjectCards({
+            patientName: patient.patientFullName,
+            patientGender: patient.patientGender,
+            patientAge: patient.patientAge,
+            patientDateOfBirth: patient.patientDOB,
+            patientPhone: patient.mobileNumber,
+            spouseName: patient.husbandName,
+            spouseGender: patient.spouseGender,
+            spouseAge: patient.husbandAge,
+            spouseDateOfBirth: patient.husbandDOB,
+            spousePhone: patient.husbandPhone,
+          })
+        : null,
+    [patient],
+  );
 
   const isFormValid = useMemo(
     () =>
       testInfo.selectedTests.length > 0 &&
       !!testInfo.orderedById &&
-      testInfo.subjectType !== "UNKNOWN",
-    [testInfo.selectedTests.length, testInfo.orderedById, testInfo.subjectType]
+      testInfo.subjectType !== "UNKNOWN" &&
+      (testInfo.subjectType !== "SPOUSE" || Boolean(subjectCards?.spouse.isAvailable)),
+    [
+      subjectCards?.spouse.isAvailable,
+      testInfo.selectedTests.length,
+      testInfo.orderedById,
+      testInfo.subjectType,
+    ]
   );
 
   const handleClose = useCallback(() => {
@@ -68,11 +93,22 @@ export const OrderInvestigationModal: React.FC<OrderInvestigationModalProps> = (
       return;
     }
 
+    if (testInfo.subjectType === "SPOUSE" && !subjectCards?.spouse.isAvailable) {
+      showNotification(
+        "Spouse details are missing. Update the case before ordering spouse investigations.",
+        "error",
+      );
+      return;
+    }
+
     try {
       await addTestAsync({
         infertilityPatientId: patient.id,
         subjectType: testInfo.subjectType,
-        subjectNameSnapshot: testInfo.subjectNameSnapshot || null,
+        subjectNameSnapshot:
+          testInfo.subjectType === "SPOUSE"
+            ? subjectCards?.spouse.displayName || null
+            : null,
         selectedTests: testInfo.selectedTests,
         testCharge: testInfo.testCharge,
         discountType: testInfo.discountType,
@@ -108,6 +144,7 @@ export const OrderInvestigationModal: React.FC<OrderInvestigationModalProps> = (
     testInfo,
     updateStatusAsync,
     handleClose,
+    subjectCards,
     showNotification,
   ]);
 
@@ -152,7 +189,7 @@ export const OrderInvestigationModal: React.FC<OrderInvestigationModalProps> = (
 
         <div className="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8 custom-scrollbar">
           <div className="mb-6 rounded-2xl border border-slate-100 bg-slate-50 p-4">
-            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
               <div>
                 <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
                   Patient Name
@@ -180,7 +217,12 @@ export const OrderInvestigationModal: React.FC<OrderInvestigationModalProps> = (
             </div>
           </div>
 
-          <InvestigationInformation />
+          {subjectCards ? (
+            <InvestigationInformation
+              patientSubject={subjectCards.patient}
+              spouseSubject={subjectCards.spouse}
+            />
+          ) : null}
         </div>
 
         <ModalFooter

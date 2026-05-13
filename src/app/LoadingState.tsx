@@ -1,5 +1,5 @@
 interface LoadingStateProps {
-  type?: "authenticating" | "loading" | "logout";
+  type?: "authenticating" | "loading" | "logout" | "switching";
   message?: string;
   description?: string;
   className?: string;
@@ -18,6 +18,8 @@ const LoadingState = ({
         return "Authenticating";
       case "logout":
         return "Signing Out";
+      case "switching":
+        return "Switching Portal";
       default:
         return "Loading";
     }
@@ -29,6 +31,8 @@ const LoadingState = ({
         return "Verifying your credentials";
       case "logout":
         return "See you soon";
+      case "switching":
+        return "Preparing the selected workspace";
       default:
         return "Preparing your experience";
     }

@@ -6,10 +6,20 @@ import {
 } from "../../../stores";
 import InvestigationTestSelector from "./InvestigationTestSelector";
 import OrderingDoctorDropdown from "./OrderingDoctorDropdown";
+import InvestigationSubjectSelector from "./InvestigationSubjectSelector";
+import type { InvestigationSubjectCardData } from "../../../utils/investigationSubjects";
 
 import NumberInput from "@/components/form-sections/Fields/NumberInput";
 
-const InvestigationInformation: React.FC = () => {
+interface InvestigationInformationProps {
+  patientSubject: InvestigationSubjectCardData;
+  spouseSubject: InvestigationSubjectCardData;
+}
+
+const InvestigationInformation: React.FC<InvestigationInformationProps> = ({
+  patientSubject,
+  spouseSubject,
+}) => {
   const testInfo = useInfertilityTestInfo();
   // Destructure smart actions
   const { setInfertilityTestInfo, setTestCharge, setDiscount, setPaidAmount } =
@@ -99,6 +109,43 @@ const InvestigationInformation: React.FC = () => {
     setPaidAmount(value);
   };
 
+  const handleSubjectChange = (subjectType: "PATIENT" | "SPOUSE") => {
+    setInfertilityTestInfo({
+      ...testInfo,
+      subjectType,
+      subjectNameSnapshot:
+        subjectType === "SPOUSE" ? spouseSubject.displayName : null,
+    });
+  };
+
+  useEffect(() => {
+    if (
+      testInfo.subjectType === "SPOUSE" &&
+      spouseSubject.isAvailable &&
+      testInfo.subjectNameSnapshot !== spouseSubject.displayName
+    ) {
+      setInfertilityTestInfo({
+        ...testInfo,
+        subjectNameSnapshot: spouseSubject.displayName,
+      });
+    }
+
+    if (
+      testInfo.subjectType === "PATIENT" &&
+      testInfo.subjectNameSnapshot !== null
+    ) {
+      setInfertilityTestInfo({
+        ...testInfo,
+        subjectNameSnapshot: null,
+      });
+    }
+  }, [
+    setInfertilityTestInfo,
+    spouseSubject.displayName,
+    spouseSubject.isAvailable,
+    testInfo,
+  ]);
+
   const inputClassName = useMemo(() => {
     const baseStyle =
       "text-gray-700 font-normal rounded-lg h-12 md:h-14 py-2 px-4 w-full focus:border-blue-900 focus:ring-2 focus:ring-blue-950 outline-none shadow-sm hover:shadow-md transition-all duration-300 placeholder:text-gray-400 placeholder:font-light text-xs sm:text-sm cursor-pointer";
@@ -111,9 +158,6 @@ const InvestigationInformation: React.FC = () => {
         : `bg-white border-2 border-gray-300 ${baseStyle}`;
     };
   }, []);
-
-  const subjectSelectValue =
-    testInfo.subjectType === "UNKNOWN" ? "" : testInfo.subjectType;
 
   // Handle discount input change - allow empty string for better UX
   const handleDiscountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -149,58 +193,62 @@ const InvestigationInformation: React.FC = () => {
         <h4 className="text-sm font-bold text-gray-800 mb-4">
           Ordering Context
         </h4>
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="space-y-4">
           <div>
-            <label className="block text-gray-700 text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2">
+            <label className="mb-1.5 block text-xs font-semibold text-gray-700 sm:text-sm">
               Investigation Subject<span className="text-red-500">*</span>
             </label>
-            <select
-              value={subjectSelectValue}
-              onChange={(event) =>
-                setInfertilityTestInfo({
-                  ...testInfo,
-                  subjectType: event.target.value as "PATIENT" | "SPOUSE",
-                })
-              }
-              className={inputClassName(testInfo.subjectType, false)}
-            >
-              <option value="" disabled>
-                Select subject
-              </option>
-              <option value="PATIENT">Patient</option>
-              <option value="SPOUSE">Spouse</option>
-            </select>
-            <p className="text-xs text-gray-500 mt-1">
-              Choose who the investigation is being ordered for.
-            </p>
+            <InvestigationSubjectSelector
+              value={testInfo.subjectType}
+              patientOption={patientSubject}
+              spouseOption={spouseSubject}
+              onChange={handleSubjectChange}
+            />
             {testInfo.subjectType === "UNKNOWN" && (
-              <p className="text-xs text-red-600 mt-1">
+              <p className="mt-2 text-xs text-red-600">
                 Legacy migrated record has no valid subject. Choose Patient or
                 Spouse before saving.
               </p>
             )}
           </div>
 
-          <div>
-          <label className="block text-gray-700 text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2">
-            Ordered By<span className="text-red-500">*</span>
-          </label>
-          <OrderingDoctorDropdown
-            value={testInfo.orderedById}
-            onSelect={(doctorId) =>
-              setInfertilityTestInfo({
-                ...testInfo,
-                orderedById: doctorId,
-              })
-            }
-            inputClassName={inputClassName(
-              testInfo.orderedById?.toString() || "",
-              false
-            )}
-          />
-          <p className="text-xs text-gray-500 mt-1">
-            Select a doctor or &ldquo;Self&rdquo; if patient is self-referred
-          </p>
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3">
+              <p className="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">
+                Current Investigation Subject
+              </p>
+              <p className="mt-1 text-sm font-bold text-slate-900">
+                {testInfo.subjectType === "SPOUSE"
+                  ? spouseSubject.displayName
+                  : patientSubject.displayName}
+              </p>
+              <p className="mt-1 text-xs text-slate-500">
+                {testInfo.subjectType === "SPOUSE"
+                  ? spouseSubject.detailLine
+                  : patientSubject.detailLine}
+              </p>
+            </div>
+            <div>
+              <label className="block text-gray-700 text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2">
+                Ordered By<span className="text-red-500">*</span>
+              </label>
+              <OrderingDoctorDropdown
+                value={testInfo.orderedById}
+                onSelect={(doctorId) =>
+                  setInfertilityTestInfo({
+                    ...testInfo,
+                    orderedById: doctorId,
+                  })
+                }
+                inputClassName={inputClassName(
+                  testInfo.orderedById?.toString() || "",
+                  false
+                )}
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Select a doctor or &ldquo;Self&rdquo; if patient is self-referred
+              </p>
+            </div>
           </div>
         </div>
       </div>

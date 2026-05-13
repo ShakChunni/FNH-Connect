@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useRef } from "react";
-import { Save, Stethoscope, Beaker, X } from "lucide-react";
+import { Save, Beaker } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { modalVariants, backdropVariants } from "@/components/ui/modal-animations";
 import { ModalHeader } from "@/components/ui/ModalHeader";
@@ -11,6 +11,7 @@ import { useInfertilityTestFormStore } from "../../stores/testFormStore";
 import { useEditInfertilityTest } from "../../hooks/useEditInfertilityTest";
 import { InfertilityTestData } from "../../types";
 import { useNotification } from "@/hooks/useNotification";
+import { buildInvestigationSubjectCards } from "../../utils/investigationSubjects";
 
 interface EditInvestigationModalProps {
   isOpen: boolean;
@@ -27,6 +28,17 @@ export const EditInvestigationModal: React.FC<EditInvestigationModalProps> = ({
   const { initializeFormForEdit, resetForm, testInfo } = useInfertilityTestFormStore();
   const { editPatient: updateInvestigation, isPending: isSubmitting } = useEditInfertilityTest();
   const { showNotification } = useNotification();
+  const subjectCards = buildInvestigationSubjectCards({
+    patientName: investigationData.patientFullName,
+    patientGender: investigationData.patientGender,
+    patientAge: investigationData.patientAge,
+    patientDateOfBirth: investigationData.patientDOB,
+    patientPhone: investigationData.mobileNumber,
+    spouseName: investigationData.guardianName,
+    spouseGender: investigationData.guardianGender,
+    spouseAge: investigationData.guardianAge,
+    spouseDateOfBirth: investigationData.guardianDOB,
+  });
 
   // Initialize form when modal opens
   useEffect(() => {
@@ -52,11 +64,22 @@ export const EditInvestigationModal: React.FC<EditInvestigationModalProps> = ({
       return;
     }
 
+    if (testInfo.subjectType === "SPOUSE" && !subjectCards.spouse.isAvailable) {
+      showNotification(
+        "Spouse details are missing for this case. Update the patient record first.",
+        "error",
+      );
+      return;
+    }
+
     updateInvestigation(
       {
         ...investigationData,
         subjectType: testInfo.subjectType,
-        subjectNameSnapshot: testInfo.subjectNameSnapshot || null,
+        subjectNameSnapshot:
+          testInfo.subjectType === "SPOUSE"
+            ? subjectCards.spouse.displayName
+            : null,
         testResults: { tests: testInfo.selectedTests },
         testCharge: testInfo.testCharge,
         discountType: testInfo.discountType,
@@ -75,7 +98,15 @@ export const EditInvestigationModal: React.FC<EditInvestigationModalProps> = ({
         },
       }
     );
-  }, [isSubmitting, investigationData, testInfo, updateInvestigation, handleClose, showNotification]);
+  }, [
+    handleClose,
+    investigationData,
+    isSubmitting,
+    showNotification,
+    subjectCards,
+    testInfo,
+    updateInvestigation,
+  ]);
 
   // Keyboard handling
   useEffect(() => {
@@ -141,7 +172,10 @@ export const EditInvestigationModal: React.FC<EditInvestigationModalProps> = ({
                 </div>
               </div>
 
-              <InvestigationInformation />
+              <InvestigationInformation
+                patientSubject={subjectCards.patient}
+                spouseSubject={subjectCards.spouse}
+              />
             </div>
 
             <ModalFooter

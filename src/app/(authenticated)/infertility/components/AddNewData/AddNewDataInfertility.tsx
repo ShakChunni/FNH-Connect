@@ -1,6 +1,6 @@
 "use client";
 import React, { useCallback, useMemo, useRef, useEffect } from "react";
-import { Save, User, Stethoscope } from "lucide-react";
+import { Save, User, Stethoscope, Beaker } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAddInfertilityData } from "../../hooks/useAddInfertilityData";
 import {
@@ -23,13 +23,14 @@ import {
 import { useInfertilityBMI } from "../../hooks/useInfertilityBMI";
 import { useInfertilityScrollSpy } from "../../hooks/useInfertilityScrollSpy";
 import { transformInfertilityDataForApi } from "../../utils/formTransformers";
+import { buildInvestigationSubjectCards } from "../../utils/investigationSubjects";
 
 import { useInfertilityTestFormStore } from "../../stores/testFormStore";
 import { useAddInfertilityTest } from "../../hooks/useAddInfertilityTest";
 import { InvestigationInformation } from "../form-sections/InvestigationInformation";
-import { Beaker } from "lucide-react";
 import { useInfertilityTestInfo } from "../../stores";
 import { useNotification } from "@/hooks/useNotification";
+import type { AddInfertilityPatientRequest, AddInfertilityPatientResponse } from "../../types";
 
 
 interface AddNewDataProps {
@@ -58,6 +59,34 @@ const AddNewDataInfertility: React.FC<AddNewDataProps> = ({
   const testInfo = useInfertilityTestInfo();
   const { resetForm: resetTestForm } = useInfertilityTestFormStore();
   const { addTest } = useAddInfertilityTest();
+  const subjectCards = useMemo(
+    () =>
+      buildInvestigationSubjectCards({
+        patientName: patientData.fullName || patientData.firstName,
+        patientGender: patientData.gender,
+        patientAge: patientData.age,
+        patientDateOfBirth: patientData.dateOfBirth,
+        patientPhone: patientData.phoneNumber,
+        spouseName: spouseData.name,
+        spouseGender: spouseData.gender,
+        spouseAge: spouseData.age,
+        spouseDateOfBirth: spouseData.dateOfBirth,
+        spousePhone: spouseData.phoneNumber,
+      }),
+    [
+      patientData.age,
+      patientData.dateOfBirth,
+      patientData.firstName,
+      patientData.fullName,
+      patientData.gender,
+      patientData.phoneNumber,
+      spouseData.age,
+      spouseData.dateOfBirth,
+      spouseData.gender,
+      spouseData.name,
+      spouseData.phoneNumber,
+    ],
+  );
 
 
   // Custom Hooks
@@ -69,7 +98,7 @@ const AddNewDataInfertility: React.FC<AddNewDataProps> = ({
 
   // Mutation Hook
   const { addPatient, isLoading: isSubmitting } = useAddInfertilityData({
-    onSuccess: (res: any) => {
+    onSuccess: (res: AddInfertilityPatientResponse) => {
       // If tests are selected, submit them using the new patient's ID
       if (testInfo.selectedTests && testInfo.selectedTests.length > 0 && res?.data?.infertilityRecord?.id) {
         if (testInfo.subjectType === "UNKNOWN") {
@@ -83,7 +112,10 @@ const AddNewDataInfertility: React.FC<AddNewDataProps> = ({
         addTest({
           infertilityPatientId: res.data.infertilityRecord.id,
           subjectType: testInfo.subjectType,
-          subjectNameSnapshot: testInfo.subjectNameSnapshot || null,
+          subjectNameSnapshot:
+            testInfo.subjectType === "SPOUSE"
+              ? subjectCards.spouse.displayName
+              : null,
           selectedTests: testInfo.selectedTests,
           testCharge: testInfo.testCharge,
           discountType: testInfo.discountType,
@@ -128,6 +160,18 @@ const AddNewDataInfertility: React.FC<AddNewDataProps> = ({
       return;
     }
 
+    if (
+      testInfo.selectedTests.length > 0 &&
+      testInfo.subjectType === "SPOUSE" &&
+      !subjectCards.spouse.isAvailable
+    ) {
+      showNotification(
+        "Enter spouse details before ordering spouse investigations",
+        "error",
+      );
+      return;
+    }
+
     const { id, ...payloadWithoutId } = transformInfertilityDataForApi(
       hospitalData,
       patientData,
@@ -135,7 +179,7 @@ const AddNewDataInfertility: React.FC<AddNewDataProps> = ({
       medicalInfo
     );
 
-    addPatient(payloadWithoutId as any);
+    addPatient(payloadWithoutId as AddInfertilityPatientRequest);
   }, [
     isFormValid,
     isSubmitting,
@@ -146,6 +190,8 @@ const AddNewDataInfertility: React.FC<AddNewDataProps> = ({
     addPatient,
     testInfo.selectedTests.length,
     testInfo.subjectType,
+    subjectCards.spouse.displayName,
+    subjectCards.spouse.isAvailable,
     showNotification,
   ]);
 
@@ -262,7 +308,10 @@ const AddNewDataInfertility: React.FC<AddNewDataProps> = ({
                   <MedicalInformation />
                 </div>
                 <div id="investigation">
-                  <InvestigationInformation />
+              <InvestigationInformation
+                patientSubject={subjectCards.patient}
+                spouseSubject={subjectCards.spouse}
+              />
                 </div>
               </div>
             </div>

@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
 import type { VerifySessionResponse } from "@/types/auth";
+import {
+  getPortalFromSessionToken,
+  normalizePortal,
+} from "@/lib/sessionPortal";
 
 export async function GET(request: NextRequest) {
   try {
@@ -63,8 +67,10 @@ export async function GET(request: NextRequest) {
 
     // Extract portal from JWT payload via cookie fallback
     const portalCookie = request.cookies.get("portal")?.value;
-    const portal: import("@/types/auth").PortalType =
-      (portalCookie as import("@/types/auth").PortalType) || "general";
+    const portal = getPortalFromSessionToken(
+      sessionToken,
+      normalizePortal(session.portal, normalizePortal(portalCookie)),
+    );
 
     const response = NextResponse.json<VerifySessionResponse>(
       {

@@ -134,7 +134,7 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({ patient }) => {
             {patient.guardianName && (
               <InfoRow
                 icon={ShieldCheck}
-                label={`Guardian: ${patient.guardianName}`}
+                label={`Spouse: ${patient.guardianName}`}
               />
             )}
 

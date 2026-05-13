@@ -12,15 +12,18 @@ import { useRouter } from "next/navigation";
 import Cookies from "js-cookie";
 import LoadingState from "./LoadingState";
 import { fetchWithCSRF } from "@/lib/fetchWithCSRF";
-import { getDefaultRouteForRole } from "@/lib/roles";
-import type { SessionUser } from "@/types/auth";
+import { getAvailablePortals, getDefaultRouteForRole } from "@/lib/roles";
+import type { PortalType, SessionUser } from "@/types/auth";
 
 interface AuthContextType {
   user: SessionUser | null;
   loading: boolean;
   portal: import("@/types/auth").PortalType | null;
+  availablePortals: PortalType[];
+  isSwitchingPortal: boolean;
   login: (userData: SessionUser) => Promise<void>;
   logout: () => Promise<void>;
+  switchPortal: (targetPortal: PortalType) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -89,6 +92,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<SessionUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [loggingOut, setLoggingOut] = useState(false);
+  const [switchingPortal, setSwitchingPortal] = useState(false);
   const [portal, setPortal] = useState<import("@/types/auth").PortalType | null>(null);
 
   const router = useRouter();
@@ -199,7 +203,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         if (userData.portal === "infertility") {
           router.push("/infertility");
         } else {
-          router.push(getDefaultRouteForRole(userData.role));
+          router.push(getDefaultRouteForRole(userData.role, userData.portal));
         }
       } catch (error) {
         sessionManager.current.reset();
@@ -236,9 +240,55 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [router]);
 
+  const switchPortal = useCallback(
+    async (targetPortal: PortalType) => {
+      if (!user || targetPortal === portal) {
+        return;
+      }
+
+      setSwitchingPortal(true);
+
+      try {
+        const response = await fetchWithCSRF("/api/auth/switch-portal", {
+          method: "POST",
+          body: JSON.stringify({ portal: targetPortal }),
+        });
+
+        const data = (await response.json()) as {
+          success: boolean;
+          error?: string;
+          user?: SessionUser;
+        };
+
+        if (!response.ok || !data.success || !data.user) {
+          throw new Error(data.error || "Failed to switch portal");
+        }
+
+        setUser(data.user);
+        setPortal(data.user.portal);
+        Cookies.set("portal", data.user.portal, { path: "/" });
+        sessionManager.current.reset();
+        window.location.replace(
+          getDefaultRouteForRole(data.user.role, data.user.portal),
+        );
+      } catch (error) {
+        console.error("[AuthContext] Portal switch failed:", error);
+        setSwitchingPortal(false);
+        throw error;
+      }
+    },
+    [portal, user],
+  );
+
+  const availablePortals = user ? getAvailablePortals(user.role) : [];
+
   // Show LoadingState component only during logout
   if (loggingOut) {
     return <LoadingState type="logout" />;
+  }
+
+  if (switchingPortal) {
+    return <LoadingState type="switching" />;
   }
 
   return (
@@ -247,8 +297,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         user,
         loading,
         portal,
+        availablePortals,
+        isSwitchingPortal: switchingPortal,
         login,
         logout,
+        switchPortal,
       }}
     >
       {children}
