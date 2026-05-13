@@ -123,12 +123,15 @@ export default function ViewSwitcher({
 
   const handleViewSwitch = (viewId: ViewMode | "logout") => {
     if (viewId === "general" || viewId === "infertility") {
+      handleClose();
+
       if (viewId !== portal) {
-        Promise.resolve(onSwitchPortal?.(viewId)).catch((error) => {
-          console.error("[ViewSwitcher] Portal switch failed:", error);
+        queueMicrotask(() => {
+          Promise.resolve(onSwitchPortal?.(viewId)).catch((error) => {
+            console.error("[ViewSwitcher] Portal switch failed:", error);
+          });
         });
       }
-      handleClose();
       return;
     }
 

@@ -102,6 +102,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const checkSession = useCallback(
     async (force = false) => {
       try {
+        if (switchingPortal || loggingOut) {
+          return;
+        }
+
         if (initialLoad && !force) {
           return;
         }
@@ -156,7 +160,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setLoading(false);
       }
     },
-    [initialLoad, router],
+    [initialLoad, loggingOut, router, switchingPortal],
   );
 
   // Initial session check - only run once on mount
@@ -264,9 +268,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           throw new Error(data.error || "Failed to switch portal");
         }
 
-        setUser(data.user);
-        setPortal(data.user.portal);
-        Cookies.set("portal", data.user.portal, { path: "/" });
+        Cookies.set("portal", targetPortal, { path: "/" });
         sessionManager.current.reset();
         window.location.replace(
           getDefaultRouteForRole(data.user.role, data.user.portal),

@@ -10,7 +10,7 @@ export default function MainContent({
 }: {
   children: React.ReactNode;
 }) {
-  const { loading, user } = useAuth();
+  const { loading, user, isSwitchingPortal } = useAuth();
   const pathname = usePathname();
   const router = useRouter();
 
@@ -45,12 +45,19 @@ export default function MainContent({
 
   // Redirect authenticated users away from auth pages
   useEffect(() => {
-    if (hasHydrated && !loading && user && isPublicAuthPage) {
+    if (
+      hasHydrated &&
+      !loading &&
+      !isSwitchingPortal &&
+      user &&
+      isPublicAuthPage
+    ) {
       router.replace(authenticatedHomePath);
     }
   }, [
     hasHydrated,
     loading,
+    isSwitchingPortal,
     user,
     isPublicAuthPage,
     router,
@@ -59,11 +66,17 @@ export default function MainContent({
 
   // Redirect unauthenticated users away from protected routes
   useEffect(() => {
-    if (hasHydrated && !loading && !user && isProtectedRoute) {
+    if (
+      hasHydrated &&
+      !loading &&
+      !isSwitchingPortal &&
+      !user &&
+      isProtectedRoute
+    ) {
       console.log("[MainContent] Session invalid, redirecting to login");
       router.replace("/login");
     }
-  }, [hasHydrated, loading, user, isProtectedRoute, router]);
+  }, [hasHydrated, loading, isSwitchingPortal, user, isProtectedRoute, router]);
 
   // Show loading only during initial hydration/auth
   // Use suppressHydrationWarning on the container to prevent mismatch warnings
@@ -74,6 +87,10 @@ export default function MainContent({
   const showInitialLoading = loading && !initialAuthCompleted;
   if (showInitialLoading) {
     return <LoadingState type="authenticating" />;
+  }
+
+  if (isSwitchingPortal) {
+    return <LoadingState type="switching" />;
   }
 
   // Authenticated user on auth page - show loading while redirecting
