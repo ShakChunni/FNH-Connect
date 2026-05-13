@@ -4,6 +4,10 @@ import { prisma } from "@/lib/prisma";
 import jwt from "jsonwebtoken";
 import { SessionUser, AuthenticatedUser } from "@/types/auth";
 import { isAdminRole } from "@/lib/roles";
+import {
+  getPortalFromSessionToken,
+  normalizePortal,
+} from "@/lib/sessionPortal";
 
 const SECRET_KEY = process.env.SECRET_KEY as string;
 
@@ -73,6 +77,10 @@ export async function validateServerSession() {
 
     // Map to SessionUser type
     const portalCookie = cookieStore.get("portal")?.value;
+    const portal = getPortalFromSessionToken(
+      sessionToken,
+      normalizePortal(session.portal, normalizePortal(portalCookie)),
+    );
     const user: SessionUser = {
       id: session.user.id,
       username: session.user.username,
@@ -83,7 +91,7 @@ export async function validateServerSession() {
       lastName: session.user.staff.lastName,
       fullName: session.user.staff.fullName,
       staffRole: session.user.staff.role,
-      portal: (portalCookie as import("@/types/auth").PortalType) || "general",
+      portal,
       specialization: session.user.staff.specialization || undefined,
       email: session.user.staff.email || undefined,
       phoneNumber: session.user.staff.phoneNumber || undefined,
@@ -179,6 +187,10 @@ export async function getAuthenticatedUserForAPI(): Promise<AuthenticatedUser | 
 
     // Map to SessionUser type
     const portalCookie = cookieStore.get("portal")?.value;
+    const portal = getPortalFromSessionToken(
+      sessionToken,
+      normalizePortal(session.portal, normalizePortal(portalCookie)),
+    );
     const user: SessionUser = {
       id: session.user.id,
       username: session.user.username,
@@ -189,7 +201,7 @@ export async function getAuthenticatedUserForAPI(): Promise<AuthenticatedUser | 
       lastName: session.user.staff.lastName,
       fullName: session.user.staff.fullName,
       staffRole: session.user.staff.role,
-      portal: (portalCookie as import("@/types/auth").PortalType) || "general",
+      portal,
       specialization: session.user.staff.specialization || undefined,
       email: session.user.staff.email || undefined,
       phoneNumber: session.user.staff.phoneNumber || undefined,

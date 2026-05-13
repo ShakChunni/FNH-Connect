@@ -40,7 +40,7 @@ export default function MainContent({
 
   const isProtectedRoute = !isPublicAuthPage && pathname !== "/";
   const authenticatedHomePath = user
-    ? getDefaultRouteForRole(user.role)
+    ? getDefaultRouteForRole(user.role, user.portal)
     : "/dashboard";
 
   // Redirect authenticated users away from auth pages

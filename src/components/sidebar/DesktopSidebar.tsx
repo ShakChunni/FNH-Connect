@@ -11,6 +11,7 @@ import { useAuth } from "@/app/AuthContext";
 import ViewSwitcher from "./ViewSwitcher";
 import { useEndShift } from "@/hooks/useEndShift";
 import { getDefaultRouteForRole } from "@/lib/roles";
+import type { PortalType } from "@/types/auth";
 
 const SIDEBAR_BG = "var(--fnh-navy-dark)";
 const CONTAINER_BG = "var(--fnh-navy)";
@@ -31,6 +32,10 @@ interface UserProfileSectionProps {
   isExpanded: boolean;
   initials: string;
   displayName: string;
+  portal: PortalType | null;
+  availablePortals: PortalType[];
+  onSwitchPortal: (portal: PortalType) => Promise<void>;
+  isSwitchingPortal: boolean;
   onLogout: () => void;
 }
 
@@ -39,6 +44,10 @@ function UserProfileSection({
   isExpanded,
   initials,
   displayName,
+  portal,
+  availablePortals,
+  onSwitchPortal,
+  isSwitchingPortal,
   onLogout,
 }: UserProfileSectionProps) {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -52,6 +61,10 @@ function UserProfileSection({
         isExpanded={isExpanded}
         isOpen={isDropdownOpen}
         onToggle={setIsDropdownOpen}
+        portal={portal}
+        availablePortals={availablePortals}
+        onSwitchPortal={onSwitchPortal}
+        isSwitchingPortal={isSwitchingPortal}
         onLogout={onLogout}
         parentRef={profileRef}
       />
@@ -112,7 +125,14 @@ export default function DesktopSidebar({
   /* import { useEndShift } from "@/hooks/useEndShift"; */ // Add this to top imports or ensure it's imported
 
   // ... inside component
-  const { user, logout, portal } = useAuth();
+  const {
+    user,
+    logout,
+    portal,
+    availablePortals,
+    switchPortal,
+    isSwitchingPortal,
+  } = useAuth();
   const { endShift, isEnding: isEndingShift } = useEndShift();
   const expandTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const collapseTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -188,7 +208,7 @@ export default function DesktopSidebar({
   };
 
   const pathname = usePathname();
-  const homeRoute = getDefaultRouteForRole(user?.role || "");
+  const homeRoute = getDefaultRouteForRole(user?.role || "", portal || "general");
 
   return (
     <>
@@ -347,6 +367,10 @@ export default function DesktopSidebar({
               isExpanded={isExpanded}
               initials={initials}
               displayName={displayName}
+              portal={portal}
+              availablePortals={availablePortals}
+              onSwitchPortal={switchPortal}
+              isSwitchingPortal={isSwitchingPortal}
               onLogout={handleLogoutClick}
             />
           )}

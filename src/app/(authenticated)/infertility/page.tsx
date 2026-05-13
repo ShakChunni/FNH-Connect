@@ -225,6 +225,7 @@ const InfertilityManagement = React.memo(() => {
                   tableData={normalizedPatientData}
                   isLoading={isPatientsLoading}
                   onEdit={actions.openEditModal}
+                  onEditInvestigation={handleEditInvestigation}
                   onOrderInvestigation={handleOrderInvestigation}
                   onSetAdmitted={handleSetAdmitted}
                   isStatusUpdating={isUpdatingPatientStatus}

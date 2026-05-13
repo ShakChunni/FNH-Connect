@@ -19,7 +19,7 @@ import {
 } from "@/lib/securityActions";
 import type { SessionUser, LoginResponse, PortalType } from "@/types/auth";
 import { shiftService } from "@/services/shiftService";
-import { isAdminRole, normalizeRole, SystemRole } from "@/lib/roles";
+import { canAccessPortal, normalizeRole, SystemRole } from "@/lib/roles";
 
 const SECRET_KEY = process.env.SECRET_KEY as string;
 
@@ -378,29 +378,6 @@ export async function POST(request: NextRequest) {
       const normalizedRole = normalizeRole(user.role);
       const isInfertilityRole =
         normalizedRole === SystemRole.RECEPTIONIST_INFERTILITY;
-      const isRegularReceptionist =
-        normalizedRole === SystemRole.RECEPTIONIST;
-      const isAdmin = isAdminRole(user.role);
-
-      // Infertility portal: allowed for receptionist-infertility, regular receptionist, and admins
-      if (body.portal === "infertility") {
-        if (!isInfertilityRole && !isRegularReceptionist && !isAdmin) {
-          await trackLoginAttempt({
-            ipAddress: clientIp,
-            username,
-            success: false,
-            userAgent,
-            metadata: {
-              reason: "Unauthorized portal access",
-              attemptedPortal: body.portal,
-            },
-          });
-          throw new Error(
-            "You are not authorized to access the HSI Center Portal."
-          );
-        }
-      }
-
       if (body.portal === "general") {
         if (isInfertilityRole) {
           await trackLoginAttempt({
@@ -417,6 +394,24 @@ export async function POST(request: NextRequest) {
             "Please use the HSI Center Portal to log in."
           );
         }
+      }
+
+      if (!canAccessPortal(user.role, body.portal)) {
+        await trackLoginAttempt({
+          ipAddress: clientIp,
+          username,
+          success: false,
+          userAgent,
+          metadata: {
+            reason: "Unauthorized portal access",
+            attemptedPortal: body.portal,
+          },
+        });
+        throw new Error(
+          body.portal === "infertility"
+            ? "You are not authorized to access the HSI Center Portal."
+            : "You are not authorized to access the Hospital Portal.",
+        );
       }
 
       // Generate JWT token
@@ -460,6 +455,7 @@ export async function POST(request: NextRequest) {
         data: {
           userId: user.id,
           token: sessionToken,
+          portal: body.portal,
           expiresAt,
           ipAddress: deviceInfo.ipAddress,
           userAgent: deviceInfo.userAgent,

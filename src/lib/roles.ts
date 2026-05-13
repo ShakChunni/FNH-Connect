@@ -77,6 +77,31 @@ export const INFERTILITY_RECEPTIONIST_ALLOWED_ROUTES = [
 
 export type PortalAccessType = "general" | "infertility";
 
+export function getAvailablePortals(role: string): PortalAccessType[] {
+  const normalizedRole = normalizeRole(role);
+
+  if (normalizedRole === SystemRole.RECEPTIONIST_INFERTILITY) {
+    return ["infertility"];
+  }
+
+  if (
+    normalizedRole === SystemRole.RECEPTIONIST ||
+    normalizedRole === SystemRole.SYSTEM_ADMIN ||
+    normalizedRole === SystemRole.ADMIN
+  ) {
+    return ["general", "infertility"];
+  }
+
+  return ["general"];
+}
+
+export function canAccessPortal(
+  role: string,
+  portal: PortalAccessType,
+): boolean {
+  return getAvailablePortals(role).includes(portal);
+}
+
 export function getReceptionistAllowedRoutes(
   role: string,
   portal: PortalAccessType = "general",
@@ -262,6 +287,13 @@ export function canPharmacistAccessPath(pathname: string): boolean {
 /**
  * Get default landing route for authenticated users by role
  */
-export function getDefaultRouteForRole(userRole: string): string {
+export function getDefaultRouteForRole(
+  userRole: string,
+  portal: PortalAccessType = "general",
+): string {
+  if (portal === "infertility") {
+    return "/infertility";
+  }
+
   return isPharmacistRole(userRole) ? "/medicine-inventory" : "/dashboard";
 }

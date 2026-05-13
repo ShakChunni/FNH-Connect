@@ -11,6 +11,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getAuthenticatedUserForAPI } from "@/lib/auth-validation";
+import { GENERAL_TO_INFERTILITY_TRANSFER_MARKER } from "@/lib/infertilityTransfer";
 
 export async function GET(request: NextRequest) {
   try {
@@ -201,8 +202,36 @@ export async function GET(request: NextRequest) {
         },
         include: {
           staff: { select: { fullName: true } },
-          payments: { select: { amount: true } },
-          cashMovements: { select: { amount: true, movementType: true } },
+          payments: {
+            where: {
+              OR: [
+                { notes: null },
+                {
+                  notes: {
+                    not: {
+                      contains: GENERAL_TO_INFERTILITY_TRANSFER_MARKER,
+                    },
+                  },
+                },
+              ],
+            },
+            select: { amount: true },
+          },
+          cashMovements: {
+            where: {
+              OR: [
+                { description: null },
+                {
+                  description: {
+                    not: {
+                      contains: GENERAL_TO_INFERTILITY_TRANSFER_MARKER,
+                    },
+                  },
+                },
+              ],
+            },
+            select: { amount: true, movementType: true },
+          },
         },
       }),
 

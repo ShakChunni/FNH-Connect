@@ -5,13 +5,14 @@ import { Pagination } from "@/components/pagination/Pagination";
 import TableRow from "./components/TableRow";
 import TableRowSkeleton from "./components/TableRowSkeleton";
 import PatientOverview from "./components/PatientOverview/PatientOverview";
-import { InfertilityPatientData, SortConfig } from "../../types";
+import { InfertilityPatientData, InfertilityTestData, SortConfig } from "../../types";
 import { getTableHeaders, TableHeader } from "./utils";
 
 interface PatientTableProps {
   tableData: InfertilityPatientData[];
   customOptions?: any;
   onEdit?: (patient: InfertilityPatientData) => void;
+  onEditInvestigation?: (test: InfertilityTestData) => void;
   onOrderInvestigation?: (patient: InfertilityPatientData) => void;
   onSetAdmitted?: (patient: InfertilityPatientData) => void;
   isStatusUpdating?: boolean;
@@ -23,6 +24,7 @@ const PatientTable: React.FC<PatientTableProps> = ({
   tableData = [],
   customOptions,
   onEdit,
+  onEditInvestigation,
   onOrderInvestigation,
   onSetAdmitted,
   isStatusUpdating = false,
@@ -286,6 +288,7 @@ const PatientTable: React.FC<PatientTableProps> = ({
         onClose={() => setIsOverviewOpen(false)}
         patient={selectedPatient}
         onOrderInvestigation={onOrderInvestigation}
+        onEditInvestigation={onEditInvestigation}
         onSetAdmitted={onSetAdmitted}
         isStatusUpdating={isStatusUpdating}
       />

@@ -117,13 +117,26 @@ const TableRow: React.FC<TableRowProps> = ({
             onClick={() => onPatientClick?.(row)}
           >
             <div className="text-gray-900 group-hover/name:text-emerald-600 transition-colors flex items-center gap-2">
-              {row.patientFullName}
+              <span>{row.patientFullName}</span>
+              <span
+                className={`inline-flex rounded-md px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${
+                  row.subjectType === "SPOUSE"
+                    ? "bg-rose-100 text-rose-700"
+                    : "bg-indigo-100 text-indigo-700"
+                }`}
+              >
+                {row.subjectLabel}
+              </span>
             </div>
-            {row.guardianName && (
+            {row.subjectType === "SPOUSE" ? (
               <div className="text-[10px] text-gray-500 leading-none mt-0.5">
-                Guardian: {row.guardianName}
+                Test for: {row.subjectName || row.guardianName || "Spouse"}
               </div>
-            )}
+            ) : row.guardianName ? (
+              <div className="text-[10px] text-gray-500 leading-none mt-0.5">
+                Spouse: {row.guardianName}
+              </div>
+            ) : null}
           </div>
         );
 

@@ -22,66 +22,6 @@ const COMPANY_INFO = {
 };
 
 /**
- * Draw a medical cross icon inside a circle
- */
-const drawMedicalIcon = (
-  doc: jsPDF,
-  x: number,
-  y: number,
-  size: number,
-  color: string = COLORS.primary,
-  opacity: number = 1
-) => {
-  const half = size / 2;
-  const crossWidth = size * 0.25;
-  const crossLength = size * 0.6;
-
-  doc.saveGraphicsState();
-  if (opacity < 1) {
-    doc.setGState(new (doc as any).GState({ opacity }));
-  }
-
-  // Circle
-  doc.setDrawColor(color);
-  doc.setLineWidth(size * 0.06);
-  doc.circle(x + half, y + half, half - size * 0.03, "S");
-
-  // Horizontal bar of cross
-  doc.setFillColor(color);
-  doc.rect(
-    x + half - crossLength / 2,
-    y + half - crossWidth / 2,
-    crossLength,
-    crossWidth,
-    "F"
-  );
-
-  // Vertical bar of cross
-  doc.rect(
-    x + half - crossWidth / 2,
-    y + half - crossLength / 2,
-    crossWidth,
-    crossLength,
-    "F"
-  );
-
-  doc.restoreGraphicsState();
-};
-
-/**
- * Draw a subtle medical icon watermark
- */
-const drawLogoWatermark = (doc: jsPDF) => {
-  const pageWidth = doc.internal.pageSize.width;
-  const pageHeight = doc.internal.pageSize.height;
-
-  const logoSize = 90;
-  const logoX = pageWidth / 2 - logoSize / 2;
-  const logoY = pageHeight * 0.7 - logoSize / 2;
-  drawMedicalIcon(doc, logoX, logoY, logoSize, COLORS.primary, 0.04);
-};
-
-/**
  * Draw status indicator
  */
 const drawStatusStamp = (doc: jsPDF, isPaid: boolean) => {
@@ -147,14 +87,9 @@ export const generateInfertilityTestReceipt = async (
     const isFirstPage = pageIndex === 0;
     const isLastPage = pageIndex === chunks.length - 1;
 
-    await drawLogoWatermark(doc);
-
     let currentY = 10;
 
     if (isFirstPage) {
-      // Header with medical icon
-      drawMedicalIcon(doc, pageWidth / 2 - 10, currentY, 20, COLORS.primary);
-
       currentY = 35;
       doc.setFont("helvetica", "bold");
       doc.setFontSize(22);

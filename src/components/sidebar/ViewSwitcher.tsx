@@ -1,26 +1,35 @@
 "use client";
 
 import { useEffect, useState, useRef, useCallback } from "react";
-import { LogOut } from "lucide-react";
+import { Baby, Building2, Check, LogOut } from "lucide-react";
+import type { PortalType } from "@/types/auth";
 
 const CONTAINER_BG = "var(--sidebar)"; // Dark navy
 
-type ViewMode = "logout";
+type ViewMode = "general" | "infertility" | "logout";
 
 interface ViewSwitcherProps {
   userRole: string;
   isExpanded: boolean;
   onToggle: (isOpen: boolean) => void;
   isOpen: boolean;
+  portal: PortalType | null;
+  availablePortals: PortalType[];
+  isSwitchingPortal?: boolean;
+  onSwitchPortal?: (portal: PortalType) => void | Promise<void>;
   onLogout?: () => void;
   parentRef?: React.RefObject<HTMLDivElement | null>;
 }
 
 export default function ViewSwitcher({
-  userRole,
+  userRole: _userRole,
   isExpanded,
   onToggle,
   isOpen,
+  portal,
+  availablePortals,
+  isSwitchingPortal = false,
+  onSwitchPortal,
   onLogout,
   parentRef,
 }: ViewSwitcherProps) {
@@ -78,22 +87,16 @@ export default function ViewSwitcher({
     };
   }, [isOpen, shouldRender]);
 
-  const views = [
-    {
-      id: "logout" as const,
-      label: "Logout",
-      subtitle: "Sign out of your account",
-      icon: LogOut,
-      available: true,
-      action: "logout" as const,
-    },
-  ];
-
-  const logoutView = views[0]; // Since only one view
-
-  if (!logoutView.available) {
-    return null;
-  }
+  const portalViews = availablePortals.map((availablePortal) => ({
+    id: availablePortal,
+    label:
+      availablePortal === "infertility" ? "HSI Center" : "Hospital Portal",
+    subtitle:
+      availablePortal === "infertility"
+        ? "Infertility patients and cash"
+        : "Admissions, pathology, and hospital operations",
+    icon: availablePortal === "infertility" ? Baby : Building2,
+  }));
 
   const handleClose = useCallback(() => {
     if (!isAnimating) {
@@ -119,6 +122,16 @@ export default function ViewSwitcher({
   }, [isOpen, isAnimating, parentRef, handleClose]);
 
   const handleViewSwitch = (viewId: ViewMode | "logout") => {
+    if (viewId === "general" || viewId === "infertility") {
+      if (viewId !== portal) {
+        Promise.resolve(onSwitchPortal?.(viewId)).catch((error) => {
+          console.error("[ViewSwitcher] Portal switch failed:", error);
+        });
+      }
+      handleClose();
+      return;
+    }
+
     if (viewId === "logout") {
       onLogout?.();
       handleClose();
@@ -144,24 +157,69 @@ export default function ViewSwitcher({
           style={{ background: CONTAINER_BG }}
         >
           <div className="p-3">
-            {logoutView && (
-              <button
-                onClick={() => handleViewSwitch("logout")}
-                className="w-full flex items-center gap-3 px-2 py-2 sm:p-3 rounded-xl transition-all duration-200 hover:cursor-pointer hover:bg-white/15 text-red-400 hover:text-red-300"
-              >
-                <div className="w-7 h-7 sm:w-9 sm:h-9 rounded-lg flex items-center justify-center bg-red-500/20">
-                  <logoutView.icon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            {portalViews.length > 1 && (
+              <div className="mb-2">
+                <p className="px-2 pb-2 text-[10px] font-semibold uppercase tracking-[0.22em] text-white/45">
+                  Switch Portal
+                </p>
+                <div className="space-y-1">
+                  {portalViews.map((view) => {
+                    const isActive = portal === view.id;
+                    const Icon = view.icon;
+
+                    return (
+                      <button
+                        key={view.id}
+                        onClick={() => handleViewSwitch(view.id)}
+                        disabled={isSwitchingPortal || isActive}
+                        className={`w-full flex items-center gap-3 px-2 py-2 sm:p-3 rounded-xl transition-all duration-200 ${
+                          isActive
+                            ? "bg-white/12 text-white"
+                            : "text-white/75 hover:bg-white/10 hover:text-white"
+                        } ${isSwitchingPortal ? "cursor-wait opacity-70" : "hover:cursor-pointer"}`}
+                      >
+                        <div
+                          className={`w-7 h-7 sm:w-9 sm:h-9 rounded-lg flex items-center justify-center ${
+                            view.id === "infertility"
+                              ? "bg-emerald-500/20 text-emerald-300"
+                              : "bg-blue-500/20 text-blue-300"
+                          }`}
+                        >
+                          <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                        </div>
+                        <div className="flex-1 text-left">
+                          <p className="font-semibold text-xs sm:text-sm">
+                            {view.label}
+                          </p>
+                          <p className="text-[9px] sm:text-[10px] opacity-75">
+                            {view.subtitle}
+                          </p>
+                        </div>
+                        {isActive && (
+                          <Check className="h-4 w-4 text-white/80" />
+                        )}
+                      </button>
+                    );
+                  })}
                 </div>
-                <div className="flex-1 text-left">
-                  <p className="font-semibold text-xs sm:text-sm">
-                    {logoutView.label}
-                  </p>
-                  <p className="text-[9px] sm:text-[10px] opacity-75">
-                    {logoutView.subtitle}
-                  </p>
-                </div>
-              </button>
+              </div>
             )}
+            <button
+              onClick={() => handleViewSwitch("logout")}
+              className="w-full flex items-center gap-3 px-2 py-2 sm:p-3 rounded-xl transition-all duration-200 hover:cursor-pointer hover:bg-white/15 text-red-400 hover:text-red-300"
+            >
+              <div className="w-7 h-7 sm:w-9 sm:h-9 rounded-lg flex items-center justify-center bg-red-500/20">
+                <LogOut className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              </div>
+              <div className="flex-1 text-left">
+                <p className="font-semibold text-xs sm:text-sm">
+                  Logout
+                </p>
+                <p className="text-[9px] sm:text-[10px] opacity-75">
+                  Sign out of your account
+                </p>
+              </div>
+            </button>
           </div>
         </div>
       )}

@@ -12,6 +12,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getAuthenticatedUserForAPI } from "@/lib/auth-validation";
 import { getSessionCashUTCDateRange } from "@/lib/timezone";
+import { GENERAL_TO_INFERTILITY_TRANSFER_MARKER } from "@/lib/infertilityTransfer";
 
 interface DepartmentBreakdown {
   departmentId: number;
@@ -125,10 +126,26 @@ export async function GET(request: NextRequest) {
         payments: {
           // Filter payments to only those within the date range
           where: {
-            paymentDate: {
-              gte: startDate,
-              lt: endDate,
-            },
+            AND: [
+              {
+                paymentDate: {
+                  gte: startDate,
+                  lt: endDate,
+                },
+              },
+              {
+                OR: [
+                  { notes: null },
+                  {
+                    notes: {
+                      not: {
+                        contains: GENERAL_TO_INFERTILITY_TRANSFER_MARKER,
+                      },
+                    },
+                  },
+                ],
+              },
+            ],
           },
           include: {
             paymentAllocations: {
@@ -147,11 +164,29 @@ export async function GET(request: NextRequest) {
         // Also fetch cash movements (date-filtered) to accurately calculate refunds
         cashMovements: {
           where: {
-            timestamp: {
-              gte: startDate,
-              lt: endDate,
-            },
-            movementType: "REFUND",
+            AND: [
+              {
+                timestamp: {
+                  gte: startDate,
+                  lt: endDate,
+                },
+              },
+              {
+                movementType: "REFUND",
+              },
+              {
+                OR: [
+                  { description: null },
+                  {
+                    description: {
+                      not: {
+                        contains: GENERAL_TO_INFERTILITY_TRANSFER_MARKER,
+                      },
+                    },
+                  },
+                ],
+              },
+            ],
           },
           select: {
             amount: true,
