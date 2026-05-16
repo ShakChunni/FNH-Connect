@@ -12,6 +12,7 @@ import { AdmissionTable } from "./components/PatientTable";
 import AdmissionSearch from "./components/AdmissionSearch";
 import { Filters, ExportActionBar } from "./components/filter";
 import { generateAdmissionReceipt } from "./utils/generateReceipt";
+import { useAuth } from "@/app/AuthContext";
 
 // Types and Hooks
 import {
@@ -59,6 +60,8 @@ const NewPatientButton: React.FC<{
 const GeneralAdmissionPage = React.memo(() => {
   // Ref for scrolling table container on pagination
   const tableContainerRef = useRef<HTMLDivElement>(null);
+
+  const { user } = useAuth();
 
   // Zustand store selectors
   const modals = useModalState();
@@ -122,12 +125,12 @@ const GeneralAdmissionPage = React.memo(() => {
     // Generate admission receipt after successful add
     setTimeout(async () => {
       try {
-        await generateAdmissionReceipt(data, "Staff");
+        await generateAdmissionReceipt(data, user?.fullName || "Staff");
       } catch (error) {
         console.error("Failed to generate admission receipt:", error);
       }
     }, 500);
-  }, []);
+  }, [user]);
 
   const handleCloseEdit = useCallback(() => {
     closeEditModal();

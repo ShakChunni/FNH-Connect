@@ -385,7 +385,7 @@ export const generateAdmissionReceipt = async (
   doc.setTextColor(COLORS.lightText);
   doc.setFontSize(7);
   doc.text(
-    "NB: This is a computer generated receipt.",
+    "NB: This is a computer generated admission form.",
     pageWidth / 2,
     pageHeight - 10,
     { align: "center" },
