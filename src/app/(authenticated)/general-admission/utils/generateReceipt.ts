@@ -170,8 +170,8 @@ export const generateAdmissionReceipt = async (
   // --- Patient Details Section ---
   const contentWidth = pageWidth - margin * 2;
   const boxPadding = 4;
-  const rowHeight = 5.5;
-  const labelWidth = 26;
+  const rowHeight = 6;
+  const labelWidth = 28;
   const col1Width = contentWidth * 0.5;
   const col1LabelX = margin + boxPadding;
   const col1ValueX = col1LabelX + labelWidth;
@@ -181,54 +181,44 @@ export const generateAdmissionReceipt = async (
   const valueMaxWidth1 = col1Width - labelWidth - boxPadding * 2;
   const valueMaxWidth2 = contentWidth * 0.5 - labelWidth - boxPadding * 2;
 
-  // Calculate dynamic box height based on content
   const patientAddr = data.patientAddress || "N/A";
   const complaint = data.chiefComplaint || "N/A";
   const docName = data.doctorName || "N/A";
 
   doc.setFontSize(10);
-  // Split Doctor Name
   const splitDocName = doc.splitTextToSize(docName, valueMaxWidth1);
-  // Split Address (now in col2)
   const splitAddr = doc.splitTextToSize(patientAddr, valueMaxWidth2);
-  // Split Complaint
   const splitComplaint = doc.splitTextToSize(
     complaint,
-    contentWidth - 38 - boxPadding * 2,
+    contentWidth - 42 - boxPadding * 2,
   );
 
-  // Rows:
-  // 1. Patient | Mobile
-  // 2. Age/Gender | Dept
-  // 3. Status | Ward
-  // 4. Consultant | Address (Merged)
-  // 5. Chief Complaint
-
-  const numFixedRows = 4; // Patient, Age/Gender, Status, Consultant/Address
+  const numFixedRows = 4;
   const dynamicBoxHeight =
     boxPadding * 2 +
     numFixedRows * rowHeight +
-    Math.max(0, splitAddr.length - 1) * (rowHeight - 1.5) + // extra height for address
-    Math.max(0, splitDocName.length - 1) * (rowHeight - 1.5) + // extra height for doc
-    splitComplaint.length * (rowHeight - 1.5) + // for chief complaint
-    (rowHeight - 1.5); // for the chief complaint row itself
+    Math.max(0, splitAddr.length - 1) * (rowHeight - 1.5) +
+    Math.max(0, splitDocName.length - 1) * (rowHeight - 1.5) +
+    splitComplaint.length * (rowHeight - 1.5) +
+    (rowHeight - 1.5);
 
   doc.setFillColor(248, 250, 252);
   doc.roundedRect(margin, currentY, contentWidth, dynamicBoxHeight, 2, 2, "F");
 
   doc.setDrawColor(COLORS.border);
-  doc.setLineWidth(0.3);
+  doc.setLineWidth(0.4);
   doc.roundedRect(margin, currentY, contentWidth, dynamicBoxHeight, 2, 2, "S");
 
   let pY = currentY + boxPadding + 3;
-  doc.setFontSize(10);
 
   // Row 1 - Patient Name & Mobile Number
   doc.setFont("helvetica", "bold");
+  doc.setFontSize(10);
   doc.setTextColor(COLORS.lightText);
   doc.text("Patient:", col1LabelX, pY);
   doc.setTextColor(COLORS.primary);
   doc.setFont("helvetica", "bold");
+  doc.setFontSize(11);
   const patientName = data.patientFullName || "N/A";
   doc.text(
     patientName.length > 28
@@ -239,36 +229,44 @@ export const generateAdmissionReceipt = async (
   );
 
   doc.setFont("helvetica", "bold");
+  doc.setFontSize(10);
   doc.setTextColor(COLORS.lightText);
   doc.text("Mobile:", col2LabelX, pY);
   doc.setTextColor(COLORS.primary);
-  doc.setFont("helvetica", "normal");
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(11);
   doc.text(data.patientPhone || "N/A", col2ValueX, pY);
 
   // Row 2 - Age/Gender & Department
   pY += rowHeight;
   doc.setFont("helvetica", "bold");
+  doc.setFontSize(10);
   doc.setTextColor(COLORS.lightText);
   doc.text("Age/Gender:", col1LabelX, pY);
   doc.setTextColor(COLORS.primary);
-  doc.setFont("helvetica", "normal");
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(11);
   const ageDisplay = data.patientAge ? `${data.patientAge} Y` : "N/A";
   doc.text(`${ageDisplay} / ${data.patientGender}`, col1ValueX, pY);
 
   doc.setFont("helvetica", "bold");
+  doc.setFontSize(10);
   doc.setTextColor(COLORS.lightText);
   doc.text("Department:", col2LabelX, pY);
   doc.setTextColor(COLORS.primary);
-  doc.setFont("helvetica", "normal");
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(11);
   doc.text(data.departmentName || "N/A", col2ValueX, pY);
 
   // Row 3 - Guardian & Ward
   pY += rowHeight;
   doc.setFont("helvetica", "bold");
+  doc.setFontSize(10);
   doc.setTextColor(COLORS.lightText);
   doc.text("Guardian:", col1LabelX, pY);
   doc.setTextColor(COLORS.primary);
-  doc.setFont("helvetica", "normal");
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(11);
   const guardianDisplay = data.guardianName || "N/A";
   doc.text(
     guardianDisplay.length > 24
@@ -279,10 +277,12 @@ export const generateAdmissionReceipt = async (
   );
 
   doc.setFont("helvetica", "bold");
+  doc.setFontSize(10);
   doc.setTextColor(COLORS.lightText);
   doc.text("Ward:", col2LabelX, pY);
   doc.setTextColor(COLORS.primary);
-  doc.setFont("helvetica", "normal");
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(11);
   let wardDisplay = data.ward || "N/A";
   if (data.seatNumber) {
     wardDisplay += ` (Seat: ${data.seatNumber})`;
@@ -292,12 +292,13 @@ export const generateAdmissionReceipt = async (
   // Row 4 - Consultant (Left) | Address (Right)
   pY += rowHeight;
 
-  // Consultant
   doc.setFont("helvetica", "bold");
+  doc.setFontSize(10);
   doc.setTextColor(COLORS.lightText);
   doc.text("Consultant:", col1LabelX, pY);
   doc.setTextColor(COLORS.primary);
-  doc.setFont("helvetica", "normal");
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(11);
 
   let docY = pY;
   if (splitDocName.length === 1) {
@@ -310,12 +311,13 @@ export const generateAdmissionReceipt = async (
     }
   }
 
-  // Address
   doc.setFont("helvetica", "bold");
+  doc.setFontSize(10);
   doc.setTextColor(COLORS.lightText);
   doc.text("Address:", col2LabelX, pY);
   doc.setTextColor(COLORS.primary);
-  doc.setFont("helvetica", "normal");
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(11);
 
   let addrY = pY;
   if (splitAddr.length === 1) {
@@ -333,11 +335,13 @@ export const generateAdmissionReceipt = async (
   // Row 5 - Chief Complaint
   pY += rowHeight;
   doc.setFont("helvetica", "bold");
+  doc.setFontSize(10);
   doc.setTextColor(COLORS.lightText);
   doc.text("Chief Complaint:", col1LabelX, pY);
   doc.setTextColor(COLORS.primary);
-  doc.setFont("helvetica", "normal");
-  doc.text(splitComplaint, col1LabelX + 38, pY);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(11);
+  doc.text(splitComplaint, col1LabelX + 42, pY);
 
   currentY += dynamicBoxHeight + 6;
 
@@ -546,8 +550,8 @@ export const generateAdmissionInvoice = async (
       // Patient Details Box
       const contentWidth = pageWidth - margin * 2;
       const boxPadding = 4;
-      const rowHeight = 5.5;
-      const labelWidth = 26;
+      const rowHeight = 6;
+      const labelWidth = 28;
       const col1Width = contentWidth * 0.5;
       const col1LabelX = margin + boxPadding;
       const col1ValueX = col1LabelX + labelWidth;
@@ -562,29 +566,19 @@ export const generateAdmissionInvoice = async (
       const docNameInv = data.doctorName || "N/A";
 
       doc.setFontSize(10);
-      // For Consultant (split if needed)
       const splitDocNameInv = doc.splitTextToSize(docNameInv, valueMaxWidth1);
-      // For Address (in col2 now)
       const splitAddrInv = doc.splitTextToSize(patientAddrInv, valueMaxWidth2);
-      // For Complaint
       const splitComplaintInv = doc.splitTextToSize(
         complaintInv,
-        contentWidth - 38 - boxPadding * 2,
+        contentWidth - 42 - boxPadding * 2,
       );
-
-      // Rows:
-      // 1. Patient | Mobile
-      // 2. Age/Gender | Dept
-      // 3. Status | Ward
-      // 4. Consultant | Address (Merged row)
-      // 5. Chief Complaint
 
       const numFixedRowsInv = 4;
       const dynamicBoxHeightInv =
         boxPadding * 2 +
         numFixedRowsInv * rowHeight +
-        Math.max(0, splitAddrInv.length - 1) * (rowHeight - 1.5) + // extra height for address
-        Math.max(0, splitDocNameInv.length - 1) * (rowHeight - 1.5) + // extra height for doc
+        Math.max(0, splitAddrInv.length - 1) * (rowHeight - 1.5) +
+        Math.max(0, splitDocNameInv.length - 1) * (rowHeight - 1.5) +
         splitComplaintInv.length * (rowHeight - 1.5) +
         (rowHeight - 1.5);
 
@@ -599,7 +593,7 @@ export const generateAdmissionInvoice = async (
         "F",
       );
       doc.setDrawColor(COLORS.border);
-      doc.setLineWidth(0.3);
+      doc.setLineWidth(0.4);
       doc.roundedRect(
         margin,
         currentY,
@@ -614,9 +608,12 @@ export const generateAdmissionInvoice = async (
 
       // Row 1
       doc.setFont("helvetica", "bold");
+      doc.setFontSize(10);
       doc.setTextColor(COLORS.lightText);
       doc.text("Patient:", col1LabelX, pY);
       doc.setTextColor(COLORS.primary);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(11);
       const patientNameInv = data.patientFullName || "N/A";
       doc.text(
         patientNameInv.length > 28
@@ -625,33 +622,44 @@ export const generateAdmissionInvoice = async (
         col1ValueX,
         pY,
       );
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(10);
       doc.setTextColor(COLORS.lightText);
       doc.text("Mobile:", col2LabelX, pY);
       doc.setTextColor(COLORS.primary);
-      doc.setFont("helvetica", "normal");
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(11);
       doc.text(data.patientPhone || "N/A", col2ValueX, pY);
 
       // Row 2
       pY += rowHeight;
       doc.setFont("helvetica", "bold");
+      doc.setFontSize(10);
       doc.setTextColor(COLORS.lightText);
       doc.text("Age/Gender:", col1LabelX, pY);
       doc.setTextColor(COLORS.primary);
-      doc.setFont("helvetica", "normal");
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(11);
       const ageDisplayInv = data.patientAge ? `${data.patientAge} Y` : "N/A";
       doc.text(`${ageDisplayInv} / ${data.patientGender}`, col1ValueX, pY);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(10);
       doc.setTextColor(COLORS.lightText);
       doc.text("Department:", col2LabelX, pY);
       doc.setTextColor(COLORS.primary);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(11);
       doc.text(data.departmentName || "N/A", col2ValueX, pY);
 
       // Row 3 - Guardian & Ward
       pY += rowHeight;
       doc.setFont("helvetica", "bold");
+      doc.setFontSize(10);
       doc.setTextColor(COLORS.lightText);
       doc.text("Guardian:", col1LabelX, pY);
       doc.setTextColor(COLORS.primary);
-      doc.setFont("helvetica", "normal");
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(11);
       const guardianDisplayInv = data.guardianName || "N/A";
       doc.text(
         guardianDisplayInv.length > 24
@@ -661,10 +669,12 @@ export const generateAdmissionInvoice = async (
         pY,
       );
       doc.setFont("helvetica", "bold");
+      doc.setFontSize(10);
       doc.setTextColor(COLORS.lightText);
       doc.text("Ward:", col2LabelX, pY);
       doc.setTextColor(COLORS.primary);
-      doc.setFont("helvetica", "normal");
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(11);
       let wardDisplayInv = data.ward || "N/A";
       if (data.seatNumber) wardDisplayInv += ` (Seat: ${data.seatNumber})`;
       doc.text(wardDisplayInv, col2ValueX, pY);
@@ -673,55 +683,56 @@ export const generateAdmissionInvoice = async (
       pY += rowHeight;
       const rowStartY = pY;
 
-      // Consultant
       doc.setFont("helvetica", "bold");
+      doc.setFontSize(10);
       doc.setTextColor(COLORS.lightText);
       doc.text("Consultant:", col1LabelX, pY);
       doc.setTextColor(COLORS.primary);
-      doc.setFont("helvetica", "normal");
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(11);
 
       let docY = pY;
       if (splitDocNameInv.length === 1) {
         doc.text(docNameInv, col1ValueX, pY);
       } else {
         doc.text(splitDocNameInv[0], col1ValueX, pY);
-        // Multiline support for doctor name
         if (splitDocNameInv.length > 1) {
           docY += rowHeight - 1.5;
           doc.text(splitDocNameInv.slice(1).join(" "), col1ValueX, docY);
         }
       }
 
-      // Address
       doc.setFont("helvetica", "bold");
+      doc.setFontSize(10);
       doc.setTextColor(COLORS.lightText);
       doc.text("Address:", col2LabelX, pY);
       doc.setTextColor(COLORS.primary);
-      doc.setFont("helvetica", "normal");
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(11);
 
       let addrY = pY;
       if (splitAddrInv.length === 1) {
         doc.text(patientAddrInv, col2ValueX, pY);
       } else {
         doc.text(splitAddrInv[0], col2ValueX, pY);
-        // Multiline address
         for (let j = 1; j < splitAddrInv.length; j++) {
           addrY += rowHeight - 1.5;
           doc.text(splitAddrInv[j], col2ValueX, addrY);
         }
       }
 
-      // Adjust pY to the greater of the two heights for next row
       pY = Math.max(docY, addrY);
 
-      // Row 5: Reference / Chief Complaint
+      // Row 5: Chief Complaint
       pY += rowHeight;
       doc.setFont("helvetica", "bold");
+      doc.setFontSize(10);
       doc.setTextColor(COLORS.lightText);
       doc.text("Chief Complaint:", col1LabelX, pY);
       doc.setTextColor(COLORS.primary);
-      doc.setFont("helvetica", "normal");
-      doc.text(splitComplaintInv, col1LabelX + 38, pY);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(11);
+      doc.text(splitComplaintInv, col1LabelX + 42, pY);
 
       currentY += dynamicBoxHeightInv + 6;
     } else {

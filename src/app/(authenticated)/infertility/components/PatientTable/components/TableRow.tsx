@@ -1,11 +1,12 @@
 import React, { useState } from "react";
-import { Edit2, Printer, Beaker, UserCheck, CheckCircle, XCircle } from "lucide-react";
+import { Edit2, FileText, Printer, Beaker, UserCheck, CheckCircle, XCircle } from "lucide-react";
 import { InfertilityPatientData } from "../../../types";
 import { TableHeader, formatDate } from "../utils";
 import { generateInfertilityReport } from "../../../utils/generateReport";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { useUpdateInfertilityPatientStatus } from "../../../hooks";
 import { useAuth } from "@/app/AuthContext";
+import InvestigationPrintDropdown from "./InvestigationPrintDropdown";
 
 interface TableRowProps {
   row: InfertilityPatientData;
@@ -110,10 +111,14 @@ const TableRow: React.FC<TableRowProps> = ({
             <button
               onClick={handlePrint}
               className="p-1.5 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-all cursor-pointer shadow-sm hover:shadow-md active:scale-95"
-              title="Print Report"
+              title="Print Case Report"
             >
-              <Printer size={16} />
+              <FileText size={16} />
             </button>
+            <InvestigationPrintDropdown
+              patientId={row.id}
+              testCount={row.testCount}
+            />
             <button
               onClick={(e) => {
                 e.stopPropagation();
