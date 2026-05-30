@@ -1,5 +1,5 @@
 import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
+import autoTable, { type Table } from "jspdf-autotable";
 import { AdmissionPatientData } from "../types";
 import { format } from "date-fns";
 
@@ -30,6 +30,14 @@ const loadImage = (src: string): Promise<HTMLImageElement> => {
     img.onload = () => resolve(img);
     img.onerror = (err) => reject(err);
   });
+};
+
+type AutoTableDocument = jsPDF & {
+  lastAutoTable?: Table;
+};
+
+const getLastTableFinalY = (doc: AutoTableDocument): number => {
+  return doc.lastAutoTable?.finalY ?? 0;
 };
 
 const drawHeader = async (doc: jsPDF, title: string, dateRange?: string) => {
@@ -84,8 +92,9 @@ const drawHeader = async (doc: jsPDF, title: string, dateRange?: string) => {
       align: "center",
     });
     currentY += 5;
+    doc.setFont("helvetica", "bold");
     doc.setFontSize(8);
-    doc.setTextColor(150);
+    doc.setTextColor(COLORS.text);
     doc.text(
       `Generated: ${format(new Date(), "PPpp")}`,
       pageWidth / 2,
@@ -116,7 +125,7 @@ const drawMetricBox = (
   doc.setDrawColor(COLORS.border);
   doc.roundedRect(x, y, width, height, 2, 2, "S");
 
-  doc.setFont("helvetica", "normal");
+  doc.setFont("helvetica", "bold");
   doc.setFontSize(8);
   doc.setTextColor(COLORS.lightText);
   doc.text(label, x + 5, y + 8);
@@ -367,7 +376,7 @@ export const generateAdmissionsReport = async (
     tableWidth: pageWidth / 2 - margin,
   });
 
-  currentY = (doc as any).lastAutoTable.finalY + 10;
+  currentY = getLastTableFinalY(doc) + 10;
 
   // ═══════════════════════════════════════════════════════════════
   // DEPARTMENT BREAKDOWN
@@ -423,7 +432,7 @@ export const generateAdmissionsReport = async (
     margin: { left: margin, right: margin },
   });
 
-  currentY = (doc as any).lastAutoTable.finalY + 10;
+  currentY = getLastTableFinalY(doc) + 10;
 
   // ═══════════════════════════════════════════════════════════════
   // DOCTOR-WISE BREAKDOWN
@@ -466,7 +475,7 @@ export const generateAdmissionsReport = async (
   // ═══════════════════════════════════════════════════════════════
 
   if (type === "detailed") {
-    currentY = (doc as any).lastAutoTable.finalY + 15;
+    currentY = getLastTableFinalY(doc) + 15;
 
     // Check if we need a new page
     if (currentY > doc.internal.pageSize.height - 60) {
@@ -480,9 +489,9 @@ export const generateAdmissionsReport = async (
     doc.text("Detailed Patient Records", margin, currentY);
     currentY += 3;
 
-    doc.setFont("helvetica", "normal");
+    doc.setFont("helvetica", "bold");
     doc.setFontSize(8);
-    doc.setTextColor(COLORS.lightText);
+    doc.setTextColor(COLORS.text);
     doc.text(`Total: ${data.length} patient(s)`, margin, currentY + 4);
     currentY += 8;
 
@@ -496,6 +505,7 @@ export const generateAdmissionsReport = async (
           "Patient",
           "Doctor",
           "Department",
+          "Created By",
           "Status",
           "Total",
           "Paid",
@@ -509,6 +519,7 @@ export const generateAdmissionsReport = async (
         item.patientFullName || "",
         item.doctorName || "Self",
         item.departmentName || "",
+        item.createdByName || "Unknown",
         item.status || "",
         (item.grandTotal || 0).toLocaleString(),
         (item.paidAmount || 0).toLocaleString(),
@@ -524,26 +535,30 @@ export const generateAdmissionsReport = async (
       styles: {
         fontSize: 7,
         cellPadding: 2,
+        textColor: COLORS.text,
+        fontStyle: "bold",
         overflow: "linebreak",
         cellWidth: "wrap",
       },
       columnStyles: {
         0: { cellWidth: 8 }, // #
-        1: { cellWidth: 20 }, // Adm No
-        2: { cellWidth: 14 }, // Date
-        3: { cellWidth: 25 }, // Patient
-        4: { cellWidth: 30 }, // Doctor (wraps)
-        5: { cellWidth: 22 }, // Department
-        6: { cellWidth: 14 }, // Status
-        7: { cellWidth: 16, halign: "right" }, // Total
-        8: { cellWidth: 14, halign: "right" }, // Paid
-        9: { cellWidth: 14, halign: "right" }, // Due
+        1: { cellWidth: 18 }, // Adm No
+        2: { cellWidth: 13 }, // Date
+        3: { cellWidth: 23 }, // Patient
+        4: { cellWidth: 24 }, // Doctor
+        5: { cellWidth: 20 }, // Department
+        6: { cellWidth: 22 }, // Created By
+        7: { cellWidth: 14 }, // Status
+        8: { cellWidth: 14, halign: "right" }, // Total
+        9: { cellWidth: 12, halign: "right" }, // Paid
+        10: { cellWidth: 12, halign: "right" }, // Due
       },
       margin: { left: margin, right: margin },
       didDrawPage: () => {
         // Add header to each page
+        doc.setFont("helvetica", "bold");
         doc.setFontSize(8);
-        doc.setTextColor(150);
+        doc.setTextColor(COLORS.text);
         doc.text(
           `${COMPANY_INFO.name} - Detailed Admissions Report`,
           margin,
@@ -553,7 +568,7 @@ export const generateAdmissionsReport = async (
     });
 
     // Summary totals at bottom
-    const finalY = (doc as any).lastAutoTable.finalY + 5;
+    const finalY = getLastTableFinalY(doc) + 5;
     doc.setFont("helvetica", "bold");
     doc.setFontSize(9);
     doc.setTextColor(COLORS.primary);
@@ -569,11 +584,12 @@ export const generateAdmissionsReport = async (
   // FOOTER ON ALL PAGES
   // ═══════════════════════════════════════════════════════════════
 
-  const pageCount = (doc as any).internal.getNumberOfPages();
+  const pageCount = doc.getNumberOfPages();
   for (let i = 1; i <= pageCount; i++) {
     doc.setPage(i);
+    doc.setFont("helvetica", "bold");
     doc.setFontSize(8);
-    doc.setTextColor(150);
+    doc.setTextColor(COLORS.text);
     const footerDate = format(new Date(), "PPpp");
     doc.text(
       `Generated on ${footerDate} - Page ${i} of ${pageCount}`,

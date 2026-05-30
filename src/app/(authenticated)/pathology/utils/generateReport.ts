@@ -1,5 +1,5 @@
 import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
+import autoTable, { type Table } from "jspdf-autotable";
 import { PathologyPatientData } from "../types";
 import { format } from "date-fns";
 import { PATHOLOGY_TESTS, getTestByCode } from "../constants/pathologyTests";
@@ -31,6 +31,33 @@ const loadImage = (src: string): Promise<HTMLImageElement> => {
     img.onload = () => resolve(img);
     img.onerror = (err) => reject(err);
   });
+};
+
+type AutoTableDocument = jsPDF & {
+  lastAutoTable?: Table;
+};
+
+const getLastTableFinalY = (doc: AutoTableDocument): number => {
+  return doc.lastAutoTable?.finalY ?? 0;
+};
+
+const extractTestNames = (testResults: unknown): string[] => {
+  if (Array.isArray(testResults)) {
+    return testResults.filter((test): test is string => typeof test === "string");
+  }
+
+  if (
+    testResults &&
+    typeof testResults === "object" &&
+    "tests" in testResults
+  ) {
+    const tests = testResults.tests;
+    if (Array.isArray(tests)) {
+      return tests.filter((test): test is string => typeof test === "string");
+    }
+  }
+
+  return [];
 };
 
 const drawHeader = async (doc: jsPDF, title: string, dateRange?: string) => {
@@ -85,8 +112,9 @@ const drawHeader = async (doc: jsPDF, title: string, dateRange?: string) => {
       align: "center",
     });
     currentY += 5;
+    doc.setFont("helvetica", "bold");
     doc.setFontSize(8);
-    doc.setTextColor(150);
+    doc.setTextColor(COLORS.text);
     doc.text(
       `Generated: ${format(new Date(), "PPpp")}`,
       pageWidth / 2,
@@ -397,16 +425,7 @@ export const generatePathologyReport = async (
 
   data.forEach((record) => {
     // testResults contains the selected test codes
-    let testCodes: string[] = [];
-    if (Array.isArray(record.testResults)) {
-      testCodes = record.testResults as string[];
-    } else if (
-      record.testResults &&
-      typeof record.testResults === "object" &&
-      Array.isArray((record.testResults as any).tests)
-    ) {
-      testCodes = (record.testResults as any).tests;
-    }
+    const testCodes = extractTestNames(record.testResults);
 
     testCodes.forEach((code: string) => {
       let testInfo = getTestByCode(code);
@@ -480,7 +499,7 @@ export const generatePathologyReport = async (
     margin: { left: margin, right: margin },
   });
 
-  currentY = (doc as any).lastAutoTable.finalY + 10;
+  currentY = getLastTableFinalY(doc) + 10;
 
   // ═══════════════════════════════════════════════════════════════
   // DOCTOR-WISE BREAKDOWN
@@ -523,7 +542,7 @@ export const generatePathologyReport = async (
   // ═══════════════════════════════════════════════════════════════
 
   if (type === "detailed") {
-    currentY = (doc as any).lastAutoTable.finalY + 15;
+    currentY = getLastTableFinalY(doc) + 15;
 
     // Check if we need a new page
     if (currentY > doc.internal.pageSize.height - 60) {
@@ -537,9 +556,9 @@ export const generatePathologyReport = async (
     doc.text("Detailed Test Records", margin, currentY);
     currentY += 3;
 
-    doc.setFont("helvetica", "normal");
+    doc.setFont("helvetica", "bold");
     doc.setFontSize(8);
-    doc.setTextColor(COLORS.lightText);
+    doc.setTextColor(COLORS.text);
     doc.text(`Total: ${data.length} record(s)`, margin, currentY + 4);
     currentY += 8;
 
@@ -553,6 +572,7 @@ export const generatePathologyReport = async (
           "Doctor",
           "Patient",
           "Tests",
+          "Created By",
           "Status",
           "Total",
           "Paid",
@@ -565,21 +585,10 @@ export const generatePathologyReport = async (
         format(new Date(item.testDate), "dd/MM/yy"),
         item.orderedBy || "Self",
         item.patientFullName || "",
-        (() => {
-          let testNames: string[] = [];
-          if (Array.isArray(item.testResults)) {
-            testNames = item.testResults as string[];
-          } else if (
-            item.testResults &&
-            typeof item.testResults === "object" &&
-            Array.isArray((item.testResults as any).tests)
-          ) {
-            testNames = (item.testResults as any).tests;
-          }
-          return testNames.length > 0
-            ? testNames.join(", ")
-            : item.testCategory || "";
-        })(),
+        extractTestNames(item.testResults).length > 0
+          ? extractTestNames(item.testResults).join(", ")
+          : item.testCategory || "",
+        item.createdByName || "Unknown",
         item.isCompleted ? "Completed" : "Pending",
         (item.grandTotal || 0).toLocaleString(),
         (item.paidAmount || 0).toLocaleString(),
@@ -595,25 +604,29 @@ export const generatePathologyReport = async (
       styles: {
         fontSize: 7,
         cellPadding: 2,
+        textColor: COLORS.text,
+        fontStyle: "bold",
         overflow: "linebreak",
         cellWidth: "wrap",
       },
       columnStyles: {
         0: { cellWidth: 7 },
-        1: { cellWidth: 18 },
+        1: { cellWidth: 17 },
         2: { cellWidth: 12 },
-        3: { cellWidth: 16 }, // Doctor info
-        4: { cellWidth: 26 }, // Patient info reduced slightly
-        5: { cellWidth: 32 }, // Tests widened slightly
-        6: { cellWidth: 18 },
-        7: { cellWidth: 15 },
-        8: { cellWidth: 14 },
-        9: { cellWidth: 14 },
+        3: { cellWidth: 15 },
+        4: { cellWidth: 24 },
+        5: { cellWidth: 29 },
+        6: { cellWidth: 22 },
+        7: { cellWidth: 17 },
+        8: { cellWidth: 13, halign: "right" },
+        9: { cellWidth: 12, halign: "right" },
+        10: { cellWidth: 12, halign: "right" },
       },
       margin: { left: margin, right: margin },
       didDrawPage: () => {
+        doc.setFont("helvetica", "bold");
         doc.setFontSize(8);
-        doc.setTextColor(150);
+        doc.setTextColor(COLORS.text);
         doc.text(
           `${COMPANY_INFO.name} - Detailed Pathology Report`,
           margin,
@@ -623,7 +636,7 @@ export const generatePathologyReport = async (
     });
 
     // Summary totals at bottom
-    const finalY = (doc as any).lastAutoTable.finalY + 5;
+    const finalY = getLastTableFinalY(doc) + 5;
     doc.setFont("helvetica", "bold");
     doc.setFontSize(9);
     doc.setTextColor(COLORS.primary);
@@ -639,11 +652,12 @@ export const generatePathologyReport = async (
   // FOOTER ON ALL PAGES
   // ═══════════════════════════════════════════════════════════════
 
-  const pageCount = (doc as any).internal.getNumberOfPages();
+  const pageCount = doc.getNumberOfPages();
   for (let i = 1; i <= pageCount; i++) {
     doc.setPage(i);
+    doc.setFont("helvetica", "bold");
     doc.setFontSize(8);
-    doc.setTextColor(150);
+    doc.setTextColor(COLORS.text);
     const footerDate = format(new Date(), "PPpp");
     doc.text(
       `Generated on ${footerDate} - Page ${i} of ${pageCount}`,

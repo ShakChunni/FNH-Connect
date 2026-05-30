@@ -106,24 +106,52 @@ const EditDataAdmission: React.FC<EditDataProps> = ({
   const { editAdmission, isLoading: isSubmitting } = useEditAdmissionData({
     onSuccess: () => {
       // Auto-print invoice after successful update
-      const invoiceData = {
+      const now = new Date().toISOString();
+      const staffId = user?.staffId ?? initialPatientData.lastModifiedBy;
+      const staffName = user?.fullName || "Staff";
+
+      const invoiceData: AdmissionPatientData = {
         id: initialPatientData.id,
         admissionNumber: initialPatientData.admissionNumber,
+        patientId: initialPatientData.patientId,
+        patientFirstName: patientData.firstName,
+        patientLastName: patientData.lastName || null,
         patientFullName: `${patientData.firstName} ${
           patientData.lastName || ""
         }`.trim(),
+        patientDateOfBirth:
+          patientData.dateOfBirth instanceof Date
+            ? patientData.dateOfBirth.toISOString()
+            : initialPatientData.patientDateOfBirth,
         patientGender: patientData.gender,
         patientAge: patientData.age,
         patientPhone: patientData.phoneNumber,
+        patientEmail: patientData.email,
+        patientBloodGroup: patientData.bloodGroup,
         patientAddress: patientData.address,
+        guardianName: patientData.guardianName,
+        guardianPhone: patientData.guardianPhone,
+        hospitalId: initialPatientData.hospitalId,
         departmentName: initialPatientData.departmentName,
+        hospitalName: initialPatientData.hospitalName,
+        hospitalAddress: initialPatientData.hospitalAddress,
+        hospitalPhone: initialPatientData.hospitalPhone,
+        hospitalEmail: initialPatientData.hospitalEmail,
+        hospitalWebsite: initialPatientData.hospitalWebsite,
+        hospitalType: initialPatientData.hospitalType,
+        departmentId: initialPatientData.departmentId,
+        doctorId: doctorData.id ?? initialPatientData.doctorId,
         doctorName: doctorData.fullName || initialPatientData.doctorName,
-        hospitalName: "FNH Hospital", // Hardcoded - only one hospital
+        doctorSpecialization: initialPatientData.doctorSpecialization,
         seatNumber: admissionInfo.seatNumber,
         ward: admissionInfo.ward,
         status: admissionInfo.status,
         dateAdmitted: initialPatientData.dateAdmitted,
         dateDischarged: initialPatientData.dateDischarged,
+        isDischarged: admissionInfo.status === "Discharged",
+        diagnosis: admissionInfo.diagnosis,
+        treatment: admissionInfo.treatment,
+        otType: admissionInfo.otType,
         admissionFee: financialData.admissionFee,
         serviceCharge: financialData.serviceCharge,
         seatRent: financialData.seatRent,
@@ -143,16 +171,19 @@ const EditDataAdmission: React.FC<EditDataProps> = ({
         dueAmount: financialData.dueAmount,
         remarks: admissionInfo.remarks,
         chiefComplaint: admissionInfo.chiefComplaint,
+        createdAt: initialPatientData.createdAt,
+        updatedAt: now,
+        createdBy: initialPatientData.createdBy,
+        lastModifiedBy: staffId,
+        createdByName: initialPatientData.createdByName || null,
+        lastModifiedByName: staffName,
       };
 
       // Dynamically import and generate invoice
       import("../../utils/generateReceipt").then(
         ({ generateAdmissionInvoice }) => {
           setTimeout(() => {
-            generateAdmissionInvoice(
-              invoiceData as any,
-              user?.fullName || "Staff"
-            );
+            generateAdmissionInvoice(invoiceData, staffName);
           }, 300);
         }
       );
