@@ -44,7 +44,7 @@
     "@types/lodash": "^4.17.20",
     "@types/lodash.debounce": "^4.0.9",
     "@types/node": "^20",
-    "@types/nodemailer": "^7.0.11",
+    "@types/nodemailer": "^8.0.0",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@types/react-window": "^1.8.8",
@@ -70,10 +70,10 @@
     "lodash.debounce": "^4.0.8",
     "lucide-react": "^0.544.0",
     "media-query": "^1.0.0",
-    "next": "15.5.13",
+    "next": "15.5.18",
     "node-cron": "^4.2.1",
     "node-device-detector": "^2.2.4",
-    "nodemailer": "^7.0.10",
+    "nodemailer": "^8.0.10",
     "postmark": "^4.0.5",
     "prisma": "^6.16.2",
     "radix-ui": "^1.4.3",
@@ -97,7 +97,9 @@
     "zustand": "^5.0.9"
   },
   "overrides": {
-    "minimatch": "^10.2.2"
+    "minimatch": "^10.2.2",
+    "uuid": "^11.1.1",
+    "postcss": "^8.5.12"
   },
   "devDependencies": {
     "babel-plugin-react-compiler": "^19.1.0-rc.3",
