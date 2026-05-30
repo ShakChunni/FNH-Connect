@@ -94,13 +94,14 @@ const AddNewDataPathology: React.FC<AddNewDataProps> = ({
         const staffId = user?.staffId ?? 0;
         const staffName = user?.fullName || "Staff";
         const orderedById = pathologyInfo.orderedById ?? 0;
+        const responseHospital = response.data.hospital;
 
         const receiptData: PathologyPatientData = {
           id: response.data.pathologyTest.id,
           patientId: response.data.patient.id,
-          hospitalId: response.data.hospital.id,
+          hospitalId: responseHospital?.id ?? 1,
           testNumber: response.data.displayId,
-          hospitalName: response.data.hospital.name,
+          hospitalName: responseHospital?.name ?? "Feroza Nursing Home",
           hospitalAddress: null,
           hospitalPhone: null,
           hospitalEmail: null,
