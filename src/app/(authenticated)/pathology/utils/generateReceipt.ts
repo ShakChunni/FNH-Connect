@@ -1,5 +1,5 @@
-import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
+import jsPDF, { GState } from "jspdf";
+import autoTable, { type Table } from "jspdf-autotable";
 import { PathologyPatientData } from "../types";
 import { PATHOLOGY_TESTS } from "../constants/pathologyTests";
 
@@ -30,6 +30,60 @@ const loadImage = (src: string): Promise<HTMLImageElement> => {
   });
 };
 
+type AutoTableDocument = jsPDF & {
+  lastAutoTable?: Table;
+};
+
+const getLastTableFinalY = (doc: AutoTableDocument): number => {
+  return doc.lastAutoTable?.finalY ?? 0;
+};
+
+const getCreatorName = (data: PathologyPatientData): string => {
+  return data.createdByName?.trim() || "Unknown";
+};
+
+const drawAuditFooter = (
+  doc: jsPDF,
+  options: {
+    footerY: number;
+    margin: number;
+    pageWidth: number;
+    leftLabel: string;
+    leftValue: string;
+    rightLabel: string;
+    rightValue: string;
+    timestampLabel: string;
+    timestamp: string;
+  },
+) => {
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(8);
+  doc.setTextColor(COLORS.text);
+  doc.text(options.leftLabel, options.margin, options.footerY + 5);
+
+  doc.setFontSize(9);
+  doc.setTextColor(COLORS.primary);
+  doc.text(options.leftValue, options.margin, options.footerY + 10);
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(8);
+  doc.setTextColor(COLORS.text);
+  doc.text(options.rightLabel, options.pageWidth - options.margin, options.footerY + 5, {
+    align: "right",
+  });
+
+  doc.setFontSize(9);
+  doc.setTextColor(COLORS.primary);
+  doc.text(options.rightValue, options.pageWidth - options.margin, options.footerY + 10, {
+    align: "right",
+  });
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(7);
+  doc.setTextColor(COLORS.text);
+  doc.text(`${options.timestampLabel}: ${options.timestamp}`, options.margin, options.footerY + 15);
+};
+
 /**
  * Draw a subtle logo watermark in the bottom half of the page
  */
@@ -40,7 +94,7 @@ const drawLogoWatermark = async (doc: jsPDF) => {
   try {
     const logo = await loadImage("/fnh-logo.png");
     doc.saveGraphicsState();
-    doc.setGState(new (doc as any).GState({ opacity: 0.04 }));
+    doc.setGState(new GState({ opacity: 0.04 }));
     const logoSize = 100;
     const logoX = pageWidth / 2 - logoSize / 2;
     const logoY = pageHeight * 0.7 - logoSize / 2;
@@ -60,7 +114,7 @@ const drawStatusStamp = (doc: jsPDF, isPaid: boolean) => {
   const margin = 15;
 
   doc.saveGraphicsState();
-  doc.setGState(new (doc as any).GState({ opacity: 0.5 }));
+  doc.setGState(new GState({ opacity: 0.5 }));
 
   doc.setFont("helvetica", "bold");
   doc.setFontSize(9);
@@ -293,7 +347,7 @@ export const generatePathologyReceipt = async (
       doc.setTextColor(COLORS.lightText);
       doc.text("Mobile:", col2LabelX, pY);
       doc.setTextColor(COLORS.primary);
-      doc.setFont("helvetica", "normal");
+      doc.setFont("helvetica", "bold");
       doc.text(data.mobileNumber || "N/A", col2ValueX, pY);
 
       // Row 2: Age/Gender | Consultation (Ref Dr)
@@ -302,14 +356,14 @@ export const generatePathologyReceipt = async (
       doc.setTextColor(COLORS.lightText);
       doc.text("Age/Gender:", col1LabelX, pY);
       doc.setTextColor(COLORS.primary);
-      doc.setFont("helvetica", "normal");
+      doc.setFont("helvetica", "bold");
       doc.text(`${ageDisplay} / ${data.patientGender}`, col1ValueX, pY);
 
       doc.setFont("helvetica", "bold");
       doc.setTextColor(COLORS.lightText);
       doc.text("Consultation:", col2LabelX, pY);
       doc.setTextColor(COLORS.primary);
-      doc.setFont("helvetica", "normal");
+      doc.setFont("helvetica", "bold");
 
       if (splitRefBy.length === 1) {
         doc.text(refBy, col2ValueX, pY);
@@ -325,7 +379,7 @@ export const generatePathologyReceipt = async (
       doc.setTextColor(COLORS.lightText);
       doc.text("Address:", col1LabelX, pY);
       doc.setTextColor(COLORS.primary);
-      doc.setFont("helvetica", "normal");
+      doc.setFont("helvetica", "bold");
 
       if (splitAddr.length === 1) {
         doc.text(patientAddr, col1ValueX, pY);
@@ -391,7 +445,7 @@ export const generatePathologyReceipt = async (
 
     // === TOTALS (Last Page Only) ===
     if (isLastPage) {
-      const finalY = (doc as any).lastAutoTable.finalY + 5;
+      const finalY = getLastTableFinalY(doc) + 5;
       let tY = finalY;
       const tLabelX = pageWidth - margin - 50;
       const tValX = pageWidth - margin - 5;
@@ -451,7 +505,7 @@ export const generatePathologyReceipt = async (
         const stampCenterY = finalY + stampRadius + 2;
 
         doc.saveGraphicsState();
-        doc.setGState(new (doc as any).GState({ opacity: 0.85 }));
+        doc.setGState(new GState({ opacity: 0.85 }));
 
         // Outer circle border
         doc.setDrawColor(200, 30, 30);
@@ -510,15 +564,6 @@ export const generatePathologyReceipt = async (
 
     // === FOOTER (All Pages) ===
     const footerY = pageHeight - 38;
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(8);
-    doc.setTextColor(COLORS.lightText);
-    doc.text("Report Created By", margin, footerY + 5);
-
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(COLORS.primary);
-    doc.text(printedBy, margin, footerY + 10);
-
     const printTime = new Date().toLocaleString("en-BD", {
       hour: "numeric",
       minute: "numeric",
@@ -527,10 +572,17 @@ export const generatePathologyReceipt = async (
       month: "short",
       year: "numeric",
     });
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(7);
-    doc.setTextColor(COLORS.lightText);
-    doc.text(`Generated on: ${printTime}`, margin, footerY + 14);
+    drawAuditFooter(doc, {
+      footerY,
+      margin,
+      pageWidth,
+      leftLabel: "Created By",
+      leftValue: getCreatorName(data),
+      rightLabel: "Printed By",
+      rightValue: printedBy,
+      timestampLabel: "Printed on",
+      timestamp: printTime,
+    });
 
     // Bottom Center Branding
     doc.setTextColor(COLORS.lightText);

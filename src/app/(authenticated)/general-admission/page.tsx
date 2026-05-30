@@ -125,7 +125,14 @@ const GeneralAdmissionPage = React.memo(() => {
     // Generate admission receipt after successful add
     setTimeout(async () => {
       try {
-        await generateAdmissionReceipt(data, user?.fullName || "Staff");
+        const staffName = user?.fullName || "Staff";
+        await generateAdmissionReceipt(
+          {
+            ...data,
+            createdByName: data.createdByName || staffName,
+          },
+          staffName,
+        );
       } catch (error) {
         console.error("Failed to generate admission receipt:", error);
       }

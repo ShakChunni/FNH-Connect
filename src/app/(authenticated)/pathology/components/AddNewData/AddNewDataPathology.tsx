@@ -28,6 +28,7 @@ import { useFetchDoctors } from "../../hooks";
 import { transformPathologyDataForApi } from "../../utils/formTransformers";
 import { useNotification } from "@/hooks/useNotification";
 import { serializeDateOfBirth } from "@/lib/dateOfBirth";
+import type { PathologyPatientData } from "../../types";
 
 interface AddNewDataProps {
   isOpen: boolean;
@@ -89,21 +90,40 @@ const AddNewDataPathology: React.FC<AddNewDataProps> = ({
           : "Self";
 
         // Construct PathologyPatientData from local form state + API response
-        const receiptData = {
+        const now = new Date().toISOString();
+        const staffId = user?.staffId ?? 0;
+        const staffName = user?.fullName || "Staff";
+        const orderedById = pathologyInfo.orderedById ?? 0;
+
+        const receiptData: PathologyPatientData = {
           id: response.data.pathologyTest.id,
           patientId: response.data.patient.id,
+          hospitalId: response.data.hospital.id,
           testNumber: response.data.displayId,
+          hospitalName: response.data.hospital.name,
+          hospitalAddress: null,
+          hospitalPhone: null,
+          hospitalEmail: null,
+          hospitalWebsite: null,
+          hospitalType: null,
+          patientFirstName: patientData.firstName,
+          patientLastName: patientData.lastName || null,
           patientFullName: `${patientData.firstName} ${
             patientData.lastName || ""
           }`.trim(),
           patientGender: patientData.gender,
           patientAge: patientData.age,
           patientDOB: serializeDateOfBirth(patientData.dateOfBirth),
-          address: patientData.address,
-          mobileNumber: patientData.phoneNumber,
-          guardianName: guardianData.name,
-          hospitalName: "FNH Hospital", // Hardcoded - only one hospital
-          testDate: new Date().toISOString(),
+          guardianName: guardianData.name || null,
+          guardianAge: guardianData.age,
+          guardianDOB: serializeDateOfBirth(guardianData.dateOfBirth),
+          guardianGender: guardianData.gender,
+          mobileNumber: patientData.phoneNumber || null,
+          email: patientData.email || null,
+          address: patientData.address || null,
+          bloodGroup: patientData.bloodGroup || null,
+          testDate: now,
+          reportDate: null,
           testCategory: "Multiple Tests",
           testResults: { tests: pathologyInfo.selectedTests },
           remarks: pathologyInfo.remarks,
@@ -115,18 +135,24 @@ const AddNewDataPathology: React.FC<AddNewDataProps> = ({
           grandTotal: pathologyInfo.grandTotal,
           paidAmount: pathologyInfo.paidAmount,
           dueAmount: pathologyInfo.dueAmount,
+          referredBy: orderedById,
           orderedBy: doctorName,
-          orderedById: pathologyInfo.orderedById,
+          orderedById,
+          doneById: pathologyInfo.doneById,
+          doneBy: null,
+          createdAt: now,
+          updatedAt: now,
+          createdBy: staffId,
+          lastModifiedBy: staffId,
+          createdByName: staffName,
+          lastModifiedByName: staffName,
         };
 
         // Dynamically import and generate receipt
         import("../../utils/generateReceipt").then(
           ({ generatePathologyReceipt }) => {
             setTimeout(() => {
-              generatePathologyReceipt(
-                receiptData as any,
-                user?.fullName || "Staff",
-              );
+              generatePathologyReceipt(receiptData, staffName);
             }, 300);
           },
         );

@@ -96,20 +96,41 @@ const EditDataPathology: React.FC<EditDataProps> = ({
         : "Self";
 
       // Auto-print receipt after successful update
-      const receiptData = {
+      const now = new Date().toISOString();
+      const staffId = user?.staffId ?? initialPatientData.lastModifiedBy;
+      const staffName = user?.fullName || "Staff";
+      const orderedById =
+        pathologyInfo.orderedById ?? initialPatientData.orderedById;
+
+      const receiptData: PathologyPatientData = {
         id: initialPatientData.id,
-        patientId: patientData.id,
+        patientId: patientData.id ?? initialPatientData.patientId,
+        hospitalId: initialPatientData.hospitalId,
         testNumber: initialPatientData.testNumber,
+        hospitalName: initialPatientData.hospitalName,
+        hospitalAddress: initialPatientData.hospitalAddress,
+        hospitalPhone: initialPatientData.hospitalPhone,
+        hospitalEmail: initialPatientData.hospitalEmail,
+        hospitalWebsite: initialPatientData.hospitalWebsite,
+        hospitalType: initialPatientData.hospitalType,
+        patientFirstName: patientData.firstName,
+        patientLastName: patientData.lastName || null,
         patientFullName: `${patientData.firstName} ${
           patientData.lastName || ""
         }`.trim(),
         patientGender: patientData.gender,
         patientAge: patientData.age,
         patientDOB: serializeDateOfBirth(patientData.dateOfBirth),
-        mobileNumber: patientData.phoneNumber,
-        guardianName: guardianData.name,
-        hospitalName: "FNH Hospital", // Hardcoded - only one hospital
+        guardianName: guardianData.name || null,
+        guardianAge: guardianData.age,
+        guardianDOB: serializeDateOfBirth(guardianData.dateOfBirth),
+        guardianGender: guardianData.gender,
+        mobileNumber: patientData.phoneNumber || null,
+        email: patientData.email || null,
+        address: patientData.address || null,
+        bloodGroup: patientData.bloodGroup || null,
         testDate: initialPatientData.testDate,
+        reportDate: initialPatientData.reportDate,
         testCategory: "Multiple Tests",
         testResults: { tests: pathologyInfo.selectedTests },
         remarks: pathologyInfo.remarks,
@@ -121,18 +142,24 @@ const EditDataPathology: React.FC<EditDataProps> = ({
         grandTotal: pathologyInfo.grandTotal,
         paidAmount: pathologyInfo.paidAmount,
         dueAmount: pathologyInfo.dueAmount,
+        referredBy: orderedById,
         orderedBy: doctorName,
-        orderedById: pathologyInfo.orderedById,
+        orderedById,
+        doneById: pathologyInfo.doneById,
+        doneBy: initialPatientData.doneBy,
+        createdAt: initialPatientData.createdAt,
+        updatedAt: now,
+        createdBy: initialPatientData.createdBy,
+        lastModifiedBy: staffId,
+        createdByName: initialPatientData.createdByName || null,
+        lastModifiedByName: staffName,
       };
 
       // Dynamically import and generate receipt
       import("../../utils/generateReceipt").then(
         ({ generatePathologyReceipt }) => {
           setTimeout(() => {
-            generatePathologyReceipt(
-              receiptData as any,
-              user?.fullName || "Staff",
-            );
+            generatePathologyReceipt(receiptData, staffName);
           }, 300);
         },
       );
