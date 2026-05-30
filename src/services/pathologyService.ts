@@ -8,6 +8,7 @@ import { Prisma } from "@prisma/client";
 import {
   formatRegistrationNumber,
   getTwoDigitYear,
+  parseRegistrationNumber,
 } from "@/lib/registrationNumber";
 import { SessionDeviceInfo } from "@/types/auth";
 import { shiftService } from "@/services/shiftService";
@@ -81,6 +82,33 @@ export interface PathologyData {
   isCompleted: boolean;
   orderedById: number | null; // Doctor who ordered the test
   doneById: number | null; // Staff who performed the test
+}
+
+async function getNextPathologyTestNumber(
+  tx: Prisma.TransactionClient,
+): Promise<string> {
+  const currentYear = getTwoDigitYear();
+  const prefix = `PATH-${currentYear}-`;
+
+  const latestTest = await tx.pathologyTest.findFirst({
+    where: {
+      testNumber: {
+        startsWith: prefix,
+      },
+    },
+    select: {
+      testNumber: true,
+    },
+    orderBy: {
+      testNumber: "desc",
+    },
+  });
+
+  const latestSequence = latestTest
+    ? parseRegistrationNumber(latestTest.testNumber)?.sequence ?? 0
+    : 0;
+
+  return formatRegistrationNumber("PATH", currentYear, latestSequence + 1);
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -357,26 +385,8 @@ export async function createPathologyPatient(
       });
     }
 
-    // 3. Generate unique test number (format: PATH-YY-XXXXX, e.g., PATH-25-00001)
-    const currentYear = getTwoDigitYear();
-    const yearStart = new Date(new Date().getFullYear(), 0, 1); // Jan 1 of current year
-    const yearEnd = new Date(new Date().getFullYear() + 1, 0, 1); // Jan 1 of next year
-
-    // Count pathology tests in the current year
-    const countThisYear = await tx.pathologyTest.count({
-      where: {
-        testDate: {
-          gte: yearStart,
-          lt: yearEnd,
-        },
-      },
-    });
-
-    const testNumber = formatRegistrationNumber(
-      "PATH",
-      currentYear,
-      countThisYear + 1,
-    );
+    // 3. Generate test number from the highest existing unique number.
+    const testNumber = await getNextPathologyTestNumber(tx);
 
     // 4. Validate orderedById - required field, must be provided from frontend
     if (!pathologyData.orderedById) {

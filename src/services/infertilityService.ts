@@ -11,6 +11,7 @@ import {
 import {
   formatRegistrationNumber,
   getTwoDigitYear,
+  parseRegistrationNumber,
 } from "@/lib/registrationNumber";
 import { SessionDeviceInfo } from "@/types/auth";
 import { infertilityShiftService } from "@/services/infertilityShiftService";
@@ -734,6 +735,33 @@ interface SerializedTestResults {
   tests: string[];
 }
 
+async function getNextInfertilityTestNumber(
+  tx: Prisma.TransactionClient,
+): Promise<string> {
+  const currentYear = getTwoDigitYear();
+  const prefix = `INFT-${currentYear}-`;
+
+  const latestTest = await tx.infertilityTest.findFirst({
+    where: {
+      testNumber: {
+        startsWith: prefix,
+      },
+    },
+    select: {
+      testNumber: true,
+    },
+    orderBy: {
+      testNumber: "desc",
+    },
+  });
+
+  const latestSequence = latestTest
+    ? parseRegistrationNumber(latestTest.testNumber)?.sequence ?? 0
+    : 0;
+
+  return formatRegistrationNumber("INFT", currentYear, latestSequence + 1);
+}
+
 interface FlattenedInfertilityTestRecord {
   id: number;
   infertilityPatientId: number;
@@ -1184,25 +1212,8 @@ export async function createInfertilityTest(
       throw new Error("HSI Center patient record not found");
     }
 
-    // 2. Generate test number: INFT-YY-XXXXX
-    const currentYear = getTwoDigitYear();
-    const yearStart = new Date(new Date().getFullYear(), 0, 1);
-    const yearEnd = new Date(new Date().getFullYear() + 1, 0, 1);
-
-    const countThisYear = await tx.infertilityTest.count({
-      where: {
-        testDate: {
-          gte: yearStart,
-          lt: yearEnd,
-        },
-      },
-    });
-
-    const testNumber = formatRegistrationNumber(
-      "INFT",
-      currentYear,
-      countThisYear + 1,
-    );
+    // 2. Generate test number from the highest existing unique number.
+    const testNumber = await getNextInfertilityTestNumber(tx);
 
     // Get Infertility Department ID (fallback to 1 if not explicitly created yet, or find by name)
     let department = await tx.department.findFirst({
