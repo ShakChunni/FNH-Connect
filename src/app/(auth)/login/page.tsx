@@ -19,6 +19,7 @@ import {
   Stethoscope,
   TestTubes,
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const APP_VERSION = "v1.1.2";
@@ -73,6 +74,16 @@ const introPortalMotion = {
     transition: PORTAL_EXIT_TRANSITION,
   },
 } as const;
+const introItemMotion = {
+  initial: { opacity: 0, y: 16, scale: 0.99 },
+  animate: { opacity: 1, y: 0, scale: 1 },
+  exit: {
+    opacity: 0,
+    y: -8,
+    scale: 0.995,
+    transition: PORTAL_EXIT_TRANSITION,
+  },
+} as const;
 const headerTextMotion = {
   initial: { opacity: 0, y: 8, filter: "blur(6px)" },
   animate: { opacity: 1, y: 0, filter: "blur(0px)" },
@@ -111,6 +122,8 @@ const PORTAL_LOGOS: Record<
     imageClassName: "scale-125",
   },
 };
+const GENERAL_FEATURE_ICONS = [Stethoscope, Users, ShieldCheck] as const;
+const INFERTILITY_FEATURE_ICONS = [Microscope, ShieldCheck, TestTubes] as const;
 
 function PortalLogo({
   portal,
@@ -215,6 +228,80 @@ function CompactPortalRail({
           {description}
         </p>
       </div>
+    </motion.div>
+  );
+}
+
+function PortalGhostLogo({ portal }: { portal: PortalType }) {
+  const logo = PORTAL_LOGOS[portal];
+
+  return (
+    <motion.div
+      aria-hidden="true"
+      initial={{ opacity: 0, scale: 0.92, rotate: portal === "general" ? -4 : 4 }}
+      animate={{ opacity: 0.08, scale: 1, rotate: 0 }}
+      exit={{ opacity: 0, scale: 0.96, transition: PORTAL_EXIT_TRANSITION }}
+      transition={{ duration: 0.9, ease: SOFT_EASE }}
+      className={cn(
+        "pointer-events-none absolute top-1/2 -translate-y-1/2",
+        portal === "general" ? "-right-12" : "-left-12",
+      )}
+    >
+      <Image
+        src={logo.src}
+        alt=""
+        width={logo.width}
+        height={logo.height}
+        className="h-72 w-72 object-contain opacity-80 saturate-125"
+      />
+    </motion.div>
+  );
+}
+
+function FeatureIconRow({
+  icons,
+  portal,
+}: {
+  icons: readonly LucideIcon[];
+  portal: PortalType;
+}) {
+  return (
+    <motion.div
+      {...introItemMotion}
+      transition={{ duration: 0.52, ease: SOFT_EASE }}
+      className="-mx-2 hidden overflow-visible px-2 py-2 lg:flex gap-3"
+    >
+      {icons.map((Icon, index) => (
+        <motion.div
+          key={`${portal}-feature-${index}`}
+          initial={{ opacity: 0, y: 12, scale: 0.94 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          transition={{
+            duration: 0.48,
+            delay: 0.18 + index * 0.07,
+            ease: SOFT_EASE,
+          }}
+          className={cn(
+            "group/icon relative flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-2xl border bg-white/[0.055] shadow-[0_18px_34px_-24px_rgba(0,0,0,0.8)] backdrop-blur-xl transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-1 hover:scale-[1.04]",
+            portal === "infertility"
+              ? "border-emerald-300/10 hover:border-emerald-300/35 hover:bg-emerald-400/10 hover:shadow-[0_18px_36px_-22px_rgba(16,185,129,0.75)]"
+              : "border-blue-300/10 hover:border-blue-300/35 hover:bg-blue-400/10 hover:shadow-[0_18px_36px_-22px_rgba(59,130,246,0.75)]",
+          )}
+        >
+          <div
+            className={cn(
+              "absolute inset-x-2 top-1 h-px opacity-0 transition-opacity duration-500 group-hover/icon:opacity-100",
+              portal === "infertility" ? "bg-emerald-200/55" : "bg-blue-200/55",
+            )}
+          />
+          <Icon
+            className={cn(
+              "h-5 w-5 transition-transform duration-500 group-hover/icon:scale-110",
+              portal === "infertility" ? "text-emerald-300" : "text-blue-300",
+            )}
+          />
+        </motion.div>
+      ))}
     </motion.div>
   );
 }
@@ -349,6 +436,13 @@ function LoginPageDesktop() {
           >
             {/* Background & Lighting Decor */}
             <div className="absolute inset-0 bg-gradient-to-br from-[#1e293b] via-[#0f172a] to-[#020617] z-0" />
+            <div
+              className="absolute inset-0 z-0 opacity-0 transition-opacity duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:opacity-100"
+              style={{
+                background:
+                  "radial-gradient(circle at 28% 22%, rgba(96,165,250,0.18), transparent 36%), radial-gradient(circle at 72% 70%, rgba(14,165,233,0.12), transparent 34%)",
+              }}
+            />
             <div className="absolute inset-0 opacity-0 group-hover:opacity-10 transition-opacity duration-500 bg-gradient-to-tr from-blue-500 via-transparent to-transparent z-0" />
 
             {selectedPortal === "infertility" ? (
@@ -423,36 +517,39 @@ function LoginPageDesktop() {
                         ...INTRO_PORTAL_TRANSITION,
                         delay: selectedPortal ? 0.22 : 0.08,
                       }}
-                      className="absolute inset-0 flex flex-col justify-center will-change-[opacity,transform,filter]"
+                      className="absolute inset-0 flex flex-col justify-center overflow-visible will-change-[opacity,transform,filter]"
                     >
-                      <div className="w-[28rem] space-y-8">
-                        <div className="max-w-md">
-                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-[10px] font-black uppercase tracking-[0.3em] mb-8">
-                          <Building2 className="w-3 h-3" /> System Primary
-                        </div>
-                        <h2 className="text-5xl lg:text-7xl font-black text-white leading-[0.9] mb-8 tracking-tighter">
-                          General <br />
-                          <span className="text-blue-600">Operations.</span>
-                        </h2>
-                        <p className="text-lg text-slate-400 leading-relaxed font-medium">
-                          Manage admissions, pathology, and hospital-wide patient records in one unified interface.
-                        </p>
-                        </div>
+                      <PortalGhostLogo portal="general" />
+                      <div className="relative z-10 w-[28rem] space-y-7">
+                        <motion.div
+                          {...introItemMotion}
+                          transition={{ duration: 0.5, ease: SOFT_EASE }}
+                          className="max-w-md"
+                        >
+                          <div className="mb-8 inline-flex items-center gap-2 rounded-full border border-blue-400/20 bg-blue-400/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.3em] text-blue-300 shadow-[0_12px_30px_-22px_rgba(59,130,246,0.9)] backdrop-blur-xl">
+                            <Building2 className="w-3 h-3" /> System Primary
+                          </div>
+                          <h2 className="mb-8 text-5xl font-black leading-[0.9] tracking-tighter text-white lg:text-7xl">
+                            General <br />
+                            <span className="text-blue-500">Operations.</span>
+                          </h2>
+                          <p className="text-lg font-medium leading-relaxed text-slate-400">
+                            Manage admissions, pathology, and hospital-wide patient records in one unified interface.
+                          </p>
+                        </motion.div>
 
-                        <div className="hidden lg:flex gap-4">
-                          {[Stethoscope, Users, ShieldCheck].map((Icon, i) => (
-                            <div
-                              key={i}
-                              className="p-4 rounded-3xl bg-white/5 border border-white/5 group-hover:border-blue-500/30 transition-all duration-500 group-hover:bg-blue-500/10 group-hover:scale-110"
-                            >
-                              <Icon className="w-5 h-5 text-blue-500" />
-                            </div>
-                          ))}
-                        </div>
+                        <FeatureIconRow
+                          icons={GENERAL_FEATURE_ICONS}
+                          portal="general"
+                        />
 
-                        <div className="lg:hidden flex items-center gap-2 text-blue-500 font-bold text-sm uppercase tracking-widest animate-pulse">
+                        <motion.div
+                          {...introItemMotion}
+                          transition={{ duration: 0.5, delay: 0.22, ease: SOFT_EASE }}
+                          className="lg:hidden flex items-center gap-2 text-blue-500 font-bold text-sm uppercase tracking-widest animate-pulse"
+                        >
                           Tap to Enter <ArrowRight className="w-4 h-4" />
-                        </div>
+                        </motion.div>
                       </div>
                     </motion.div>
                   )}
@@ -489,6 +586,13 @@ function LoginPageDesktop() {
           >
             {/* Background & Lighting Decor */}
             <div className="absolute inset-0 bg-gradient-to-br from-[#111827] via-[#064e3b] to-[#022c22] z-0" />
+            <div
+              className="absolute inset-0 z-0 opacity-0 transition-opacity duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:opacity-100"
+              style={{
+                background:
+                  "radial-gradient(circle at 72% 22%, rgba(52,211,153,0.2), transparent 36%), radial-gradient(circle at 24% 72%, rgba(20,184,166,0.12), transparent 34%)",
+              }}
+            />
             <div className="absolute inset-0 opacity-0 group-hover:opacity-10 transition-opacity duration-500 bg-gradient-to-tl from-emerald-500 via-transparent to-transparent z-0" />
 
             {selectedPortal === "general" ? (
@@ -564,36 +668,39 @@ function LoginPageDesktop() {
                         ...INTRO_PORTAL_TRANSITION,
                         delay: selectedPortal ? 0.22 : 0.08,
                       }}
-                      className="absolute inset-0 flex flex-col items-end justify-center text-right will-change-[opacity,transform,filter] lg:items-start lg:text-left"
+                      className="absolute inset-0 flex flex-col items-end justify-center overflow-visible text-right will-change-[opacity,transform,filter] lg:items-start lg:text-left"
                     >
-                      <div className="w-[28rem] space-y-8">
-                        <div className="max-w-md">
-                          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-black uppercase tracking-[0.3em] mb-8">
+                      <PortalGhostLogo portal="infertility" />
+                      <div className="relative z-10 w-[28rem] space-y-7">
+                        <motion.div
+                          {...introItemMotion}
+                          transition={{ duration: 0.5, ease: SOFT_EASE }}
+                          className="max-w-md"
+                        >
+                          <div className="mb-8 inline-flex items-center gap-2 rounded-full border border-emerald-300/20 bg-emerald-400/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.3em] text-emerald-300 shadow-[0_12px_30px_-22px_rgba(16,185,129,0.9)] backdrop-blur-xl">
                             <Microscope className="w-3 h-3" /> Infertility Care
                           </div>
-                           <h2 className="text-5xl lg:text-7xl font-black text-white leading-[0.9] mb-8 tracking-tighter">
+                           <h2 className="mb-8 text-5xl font-black leading-[0.9] tracking-tighter text-white lg:text-7xl">
                              HSI Center <br />
                              <span className="text-emerald-500">Unit.</span>
                            </h2>
-                           <p className="text-lg text-slate-400 leading-relaxed font-medium">
+                           <p className="text-lg font-medium leading-relaxed text-slate-400">
                              Dedicated tools for HSI diagnostics, treatment planning, and specialized management.
                            </p>
-                        </div>
+                        </motion.div>
 
-                        <div className="hidden lg:flex gap-4">
-                          {[Microscope, ShieldCheck, TestTubes].map((Icon, i) => (
-                            <div
-                              key={i}
-                              className="p-4 rounded-3xl bg-white/5 border border-white/5 group-hover:border-emerald-500/30 transition-all duration-500 group-hover:bg-emerald-500/10 group-hover:scale-110"
-                            >
-                              <Icon className="w-5 h-5 text-emerald-500" />
-                            </div>
-                          ))}
-                        </div>
+                        <FeatureIconRow
+                          icons={INFERTILITY_FEATURE_ICONS}
+                          portal="infertility"
+                        />
 
-                        <div className="lg:hidden flex items-center gap-2 text-emerald-500 font-bold text-sm uppercase tracking-widest animate-pulse">
+                        <motion.div
+                          {...introItemMotion}
+                          transition={{ duration: 0.5, delay: 0.22, ease: SOFT_EASE }}
+                          className="lg:hidden flex items-center gap-2 text-emerald-500 font-bold text-sm uppercase tracking-widest animate-pulse"
+                        >
                           <ArrowLeft className="w-4 h-4" /> Tap to Enter
-                        </div>
+                        </motion.div>
                       </div>
                     </motion.div>
                   )}
