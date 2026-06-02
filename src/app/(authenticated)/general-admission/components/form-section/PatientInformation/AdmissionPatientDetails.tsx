@@ -236,7 +236,7 @@ const AdmissionPatientDetails: React.FC = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className="block text-gray-700 text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2">
-              Guardian Name
+              Guardian Name<span className="text-red-500">*</span>
             </label>
             <input
               type="text"

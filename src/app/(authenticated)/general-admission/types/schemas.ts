@@ -52,7 +52,7 @@ export const patientSchema = z.object({
   phoneNumber: z.string(),
   email: z.string(),
   bloodGroup: z.string(),
-  guardianName: z.string(),
+  guardianName: z.string().min(1, "Guardian name is required"),
   guardianPhone: z.string(),
 });
 

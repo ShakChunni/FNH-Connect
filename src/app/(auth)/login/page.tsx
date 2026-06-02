@@ -1,19 +1,17 @@
 "use client";
 
 import React, { useState, useCallback } from "react";
-import Image from "next/image";
-import { motion, AnimatePresence, LayoutGroup } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/app/AuthContext";
 import { LoginForm } from "./components";
+import { MobileLogin } from "./components/MobileLogin";
 import { fetchWithCSRF } from "@/lib/fetchWithCSRF";
 import type { LoginFormData, LoginResponse } from "./types";
 import type { PortalType } from "@/types/auth";
-import { FaWhatsapp } from "react-icons/fa";
 import {
   Building2,
   Microscope,
   ShieldCheck,
-  Activity,
   Users,
   ArrowLeft,
   ArrowRight,
@@ -22,9 +20,24 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const ADMIN_WHATSAPP = "+61421705876";
+const APP_VERSION = "v1.1.2";
 
 export default function LoginPage() {
+  return (
+    <>
+      {/* Mobile (< lg): new segmented-control layout */}
+      <div className="lg:hidden">
+        <MobileLogin />
+      </div>
+      {/* Desktop (lg+): original two-panel split-screen layout, untouched */}
+      <div className="hidden w-full lg:block">
+        <LoginPageDesktop />
+      </div>
+    </>
+  );
+}
+
+function LoginPageDesktop() {
   const { login } = useAuth();
   const [selectedPortal, setSelectedPortal] = useState<PortalType | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -104,11 +117,6 @@ export default function LoginPage() {
     [login],
   );
 
-  const openWhatsApp = () => {
-    const number = ADMIN_WHATSAPP.replace(/[^0-9]/g, "");
-    window.open(`https://wa.me/${number}`, "_blank");
-  };
-
   const handlePortalClick = (portal: PortalType) => {
     if (selectedPortal !== portal) {
       setSelectedPortal(portal);
@@ -116,42 +124,48 @@ export default function LoginPage() {
     }
   };
 
-  // Shared transition settings for all portal elements
-  const springTransition = {
-    type: "spring" as const,
-    stiffness: 260,
-    damping: 30,
-    mass: 1,
+  const panelTransition = {
+    duration: 0.64,
+    ease: [0.22, 1, 0.36, 1] as const,
   };
 
   return (
-    <LayoutGroup>
       <div className="w-full flex items-center justify-center p-0 sm:p-4 lg:p-6 min-h-screen lg:min-h-0">
         <div className="w-full max-w-[1280px] bg-slate-950 rounded-[2.5rem] shadow-[0_32px_64px_-16px_rgba(0,0,0,0.6)] overflow-hidden flex flex-col lg:flex-row relative min-h-[700px] lg:h-[820px] border border-white/5">
           {/* ═══════════════ LEFT PANEL: GENERAL HOSPITAL ═══════════════ */}
           <motion.div
-            layout
-            transition={springTransition}
             onClick={() => handlePortalClick("general")}
             whileHover={!selectedPortal ? { scale: 1.005 } : {}}
+            animate={{
+              flexBasis:
+                selectedPortal === "general"
+                  ? "calc(100% - 11rem)"
+                  : selectedPortal === "infertility"
+                    ? "11rem"
+                    : "50%",
+              opacity: selectedPortal === "infertility" ? 0.62 : 1,
+              filter:
+                selectedPortal === "infertility"
+                  ? "grayscale(1)"
+                  : "grayscale(0)",
+            }}
+            transition={panelTransition}
             className={cn(
-              "relative flex flex-col transition-opacity duration-700 ease-out cursor-pointer group overflow-hidden",
+              "relative min-w-0 flex-none flex flex-col h-full cursor-pointer group overflow-hidden",
               selectedPortal === "general"
-                ? "h-full lg:w-full z-20 cursor-default"
+                ? "h-full z-20 cursor-default"
                 : selectedPortal === "infertility"
-                  ? "h-[72px] shrink-0 lg:h-full lg:w-[12%] opacity-60 grayscale hover:grayscale-0 hover:opacity-100"
-                  : "flex-1 h-1/2 lg:h-full lg:w-1/2",
+                  ? "z-10"
+                  : "z-10",
             )}
           >
             {/* Background & Lighting Decor */}
             <div className="absolute inset-0 bg-gradient-to-br from-[#1e293b] via-[#0f172a] to-[#020617] z-0" />
             <div className="absolute inset-0 opacity-0 group-hover:opacity-10 transition-opacity duration-500 bg-gradient-to-tr from-blue-500 via-transparent to-transparent z-0" />
 
-            <div className={cn("relative z-10 flex flex-col h-full transition-all duration-700", selectedPortal === "infertility" ? "p-3 lg:p-14 justify-center lg:justify-start" : "p-6 lg:p-14")}>
+            <div className={cn("relative z-10 flex flex-col h-full transition-[padding] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]", selectedPortal === "infertility" ? "p-3 lg:p-6 justify-center lg:justify-start" : "p-6 lg:p-14")}>
               {/* Header */}
               <motion.div
-                layout
-                transition={springTransition}
                 className={cn(
                   "flex items-center gap-4",
                   selectedPortal === "infertility"
@@ -172,9 +186,10 @@ export default function LoginPage() {
                 </div>
                 {selectedPortal !== "infertility" && (
                   <motion.div
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: -10 }}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.2 }}
                   >
                     <h1 className="text-xl lg:text-2xl font-black text-white tracking-tight uppercase">
                       FNH <span className="text-blue-500">Connect</span>
@@ -191,14 +206,15 @@ export default function LoginPage() {
                   {selectedPortal === "general" ? (
                     <motion.div
                       key="general-active"
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: 10 }}
-                      transition={{ duration: 0.3 }}
-                      className="w-full max-w-md mx-auto"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.24, delay: 0.22 }}
+                      className="w-full max-w-md mx-auto will-change-opacity"
                       onClick={(e) => e.stopPropagation()}
                     >
                       <button
+                        type="button"
                         onClick={() => setSelectedPortal(null)}
                         className="group/back mb-10 flex items-center gap-2 text-white/50 hover:text-white transition-all font-bold text-[10px] uppercase tracking-[0.3em] bg-white/5 px-4 py-2 rounded-full border border-white/5 hover:border-white/20"
                       >
@@ -215,23 +231,25 @@ export default function LoginPage() {
                         </p>
                       </div>
                       <div className="bg-[#0f172a]/90 backdrop-blur-3xl border border-blue-500/20 p-6 lg:p-8 rounded-[2.5rem] shadow-[0_0_40px_-15px_rgba(59,130,246,0.3)] relative overflow-hidden group/form">
-                        <div className="absolute inset-0 bg-gradient-to-br from-blue-600/10 via-transparent to-transparent opacity-50" />
-                        <LoginForm
-                          onSubmit={handleLogin}
-                          isLoading={isLoading}
-                          error={error}
-                          portal="general"
-                        />
+                        <div className="absolute inset-0 bg-gradient-to-br from-blue-600/10 via-transparent to-transparent opacity-50 pointer-events-none" />
+                        <div className="relative z-10">
+                          <LoginForm
+                            onSubmit={handleLogin}
+                            isLoading={isLoading}
+                            error={error}
+                            portal="general"
+                          />
+                        </div>
                       </div>
                     </motion.div>
                   ) : selectedPortal === "infertility" ? null : (
                     <motion.div
                       key="general-intro"
-                      initial={{ opacity: 0, scale: 0.98 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0.98 }}
-                      transition={{ duration: 0.3 }}
-                      className="space-y-8"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.2, delay: selectedPortal ? 0.16 : 0 }}
+                      className="space-y-8 will-change-opacity"
                     >
                       <div className="max-w-md">
                         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-[10px] font-black uppercase tracking-[0.3em] mb-8">
@@ -271,28 +289,38 @@ export default function LoginPage() {
 
           {/* ═══════════════ RIGHT PANEL: INFERTILITY ═══════════════ */}
           <motion.div
-            layout
-            transition={springTransition}
             onClick={() => handlePortalClick("infertility")}
             whileHover={!selectedPortal ? { scale: 1.005 } : {}}
+            animate={{
+              flexBasis:
+                selectedPortal === "infertility"
+                  ? "calc(100% - 11rem)"
+                  : selectedPortal === "general"
+                    ? "11rem"
+                    : "50%",
+              opacity: selectedPortal === "general" ? 0.62 : 1,
+              filter:
+                selectedPortal === "general"
+                  ? "grayscale(1)"
+                  : "grayscale(0)",
+            }}
+            transition={panelTransition}
             className={cn(
-              "relative flex flex-col transition-opacity duration-700 ease-out cursor-pointer group overflow-hidden",
+              "relative min-w-0 flex-none flex flex-col h-full cursor-pointer group overflow-hidden",
               selectedPortal === "infertility"
-                ? "h-full lg:w-full z-20 cursor-default"
+                ? "h-full z-20 cursor-default"
                 : selectedPortal === "general"
-                  ? "h-[72px] shrink-0 lg:h-full lg:w-[12%] opacity-60 grayscale hover:grayscale-0 hover:opacity-100"
-                  : "flex-1 h-1/2 lg:h-full lg:w-1/2",
+                  ? "z-10"
+                  : "z-10",
             )}
           >
             {/* Background & Lighting Decor */}
             <div className="absolute inset-0 bg-gradient-to-br from-[#111827] via-[#064e3b] to-[#022c22] z-0" />
             <div className="absolute inset-0 opacity-0 group-hover:opacity-10 transition-opacity duration-500 bg-gradient-to-tl from-emerald-500 via-transparent to-transparent z-0" />
 
-            <div className={cn("relative z-10 flex flex-col h-full transition-all duration-700", selectedPortal === "general" ? "p-3 lg:p-14 justify-center lg:justify-start" : "p-6 lg:p-14")}>
+            <div className={cn("relative z-10 flex flex-col h-full transition-[padding] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]", selectedPortal === "general" ? "p-3 lg:p-6 justify-center lg:justify-start" : "p-6 lg:p-14")}>
               {/* Header */}
               <motion.div
-                layout
-                transition={springTransition}
                 className={cn(
                   "flex items-center gap-4",
                   selectedPortal === "general"
@@ -313,9 +341,10 @@ export default function LoginPage() {
                 </div>
                 {selectedPortal !== "general" && (
                   <motion.div
-                    initial={{ opacity: 0, x: 10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: 10 }}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.2 }}
                     className="text-right"
                   >
                     <h1 className="text-xl lg:text-2xl font-black text-white tracking-tight uppercase">
@@ -333,14 +362,15 @@ export default function LoginPage() {
                   {selectedPortal === "infertility" ? (
                     <motion.div
                       key="infertility-active"
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: 10 }}
-                      transition={{ duration: 0.3 }}
-                      className="w-full max-w-md mx-auto"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.24, delay: 0.22 }}
+                      className="w-full max-w-md mx-auto will-change-opacity"
                       onClick={(e) => e.stopPropagation()}
                     >
                       <button
+                        type="button"
                         onClick={() => setSelectedPortal(null)}
                         className="group/back mb-10 flex items-center gap-2 text-white/50 hover:text-white transition-all font-bold text-[10px] uppercase tracking-[0.3em] bg-white/5 px-4 py-2 rounded-full border border-white/5 hover:border-white/20"
                       >
@@ -357,23 +387,25 @@ export default function LoginPage() {
                          </p>
                       </div>
                       <div className="bg-[#022c22]/90 backdrop-blur-3xl border border-emerald-500/20 p-6 lg:p-8 rounded-[2.5rem] shadow-[0_0_40px_-15px_rgba(16,185,129,0.3)] relative overflow-hidden group/form">
-                        <div className="absolute inset-0 bg-gradient-to-br from-emerald-600/10 via-transparent to-transparent opacity-50" />
-                        <LoginForm
-                          onSubmit={handleLogin}
-                          isLoading={isLoading}
-                          error={error}
-                          portal="infertility"
-                        />
+                        <div className="absolute inset-0 bg-gradient-to-br from-emerald-600/10 via-transparent to-transparent opacity-50 pointer-events-none" />
+                        <div className="relative z-10">
+                          <LoginForm
+                            onSubmit={handleLogin}
+                            isLoading={isLoading}
+                            error={error}
+                            portal="infertility"
+                          />
+                        </div>
                       </div>
                     </motion.div>
                   ) : selectedPortal === "general" ? null : (
                     <motion.div
                       key="infertility-intro"
-                      initial={{ opacity: 0, scale: 0.98 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0.98 }}
-                      transition={{ duration: 0.3 }}
-                      className="space-y-8 flex flex-col items-end lg:items-start text-right lg:text-left"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.2, delay: selectedPortal ? 0.16 : 0 }}
+                      className="space-y-8 flex flex-col items-end lg:items-start text-right lg:text-left will-change-opacity"
                     >
                       <div className="max-w-md">
                         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-black uppercase tracking-[0.3em] mb-8">
@@ -411,29 +443,12 @@ export default function LoginPage() {
             <div className="absolute top-0 left-0 w-64 h-64 bg-emerald-600/10 rounded-full blur-[120px] -ml-32 -mt-32 group-hover:bg-emerald-600/30 group-hover:scale-150 transition-all duration-1000" />
           </motion.div>
 
-          {/* ═══════════════ FOOTER SUPPORT ═══════════════ */}
-          {!selectedPortal && (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="absolute bottom-8 left-0 right-0 z-30 flex justify-center pointer-events-none"
-            >
-              <div className="bg-slate-900/40 backdrop-blur-3xl border border-white/10 px-8 py-3 rounded-full pointer-events-auto shadow-2xl">
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    openWhatsApp();
-                  }}
-                  className="flex items-center gap-4 text-[10px] font-black text-white/60 hover:text-white transition-all duration-300 group uppercase tracking-[0.3em]"
-                >
-                  <FaWhatsapp className="w-4 h-4 text-[#25D366] group-hover:scale-125 transition-transform" />
-                  <span>Support: F.M. Ashfaq (+61 421 705 876)</span>
-                </button>
-              </div>
-            </motion.div>
-          )}
+          <div className="pointer-events-none absolute bottom-6 left-0 right-0 z-30 flex justify-center">
+            <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-white/30">
+              {APP_VERSION}
+            </p>
+          </div>
         </div>
       </div>
-    </LayoutGroup>
   );
 }

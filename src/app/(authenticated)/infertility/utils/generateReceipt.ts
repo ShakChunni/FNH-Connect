@@ -1,4 +1,4 @@
-import jsPDF from "jspdf";
+import jsPDF, { GState } from "jspdf";
 import autoTable from "jspdf-autotable";
 import { InfertilityTestData } from "../types";
 import { PATHOLOGY_TESTS } from "../../pathology/constants/pathologyTests";
@@ -19,6 +19,36 @@ const COMPANY_INFO = {
     "1257, Sholakia, Khorompatti Kishoreganj Sadar, Kishoreganj Dhaka, Bangladesh",
   phone: "Mobile: +8801726219350, +8801701295016, +8801787993086",
   department: "HSI Center",
+};
+
+const loadImage = (src: string): Promise<HTMLImageElement> => {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.src = src;
+    img.onload = () => resolve(img);
+    img.onerror = (err) => reject(err);
+  });
+};
+
+/**
+ * Draw a subtle logo watermark in the bottom half of the page
+ */
+const drawLogoWatermark = async (doc: jsPDF) => {
+  const pageWidth = doc.internal.pageSize.width;
+  const pageHeight = doc.internal.pageSize.height;
+
+  try {
+    const logo = await loadImage("/hsi-logo.png");
+    doc.saveGraphicsState();
+    doc.setGState(new GState({ opacity: 0.04 }));
+    const logoSize = 100;
+    const logoX = pageWidth / 2 - logoSize / 2;
+    const logoY = pageHeight * 0.7 - logoSize / 2;
+    doc.addImage(logo, "PNG", logoX, logoY, logoSize, logoSize);
+    doc.restoreGraphicsState();
+  } catch (e) {
+    // Silently fail if logo not available
+  }
 };
 
 /**
@@ -87,9 +117,21 @@ export const generateInfertilityTestReceipt = async (
     const isFirstPage = pageIndex === 0;
     const isLastPage = pageIndex === chunks.length - 1;
 
+    // Draw subtle logo watermark on every page
+    await drawLogoWatermark(doc);
+
     let currentY = 10;
 
     if (isFirstPage) {
+      // Header logo
+      try {
+        const logo = await loadImage("/hsi-logo.png");
+        const logoW = 20;
+        const logoH = 20;
+        const logoX = pageWidth / 2 - logoW / 2;
+        doc.addImage(logo, "PNG", logoX, 10, logoW, logoH);
+      } catch (e) {}
+
       currentY = 35;
       doc.setFont("helvetica", "bold");
       doc.setFontSize(22);

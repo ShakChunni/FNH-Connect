@@ -23,6 +23,15 @@ const COMPANY_INFO = {
   department: "HSI Center",
 };
 
+const loadImage = (src: string): Promise<HTMLImageElement> => {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.src = src;
+    img.onload = () => resolve(img);
+    img.onerror = (err) => reject(err);
+  });
+};
+
 /**
  * Format date in a clean readable format with time
  */
@@ -88,7 +97,16 @@ export const generateInfertilityReport = async (
 
   // === HEADER SECTION ===
 
-  let currentY = 28;
+  // Header logo
+  try {
+    const logo = await loadImage("/hsi-logo.png");
+    const logoW = 18;
+    const logoH = 18;
+    const logoX = pageWidth / 2 - logoW / 2;
+    doc.addImage(logo, "PNG", logoX, 8, logoW, logoH);
+  } catch (e) {}
+
+  let currentY = 30;
 
   // Hospital Name
   doc.setFont("helvetica", "bold");

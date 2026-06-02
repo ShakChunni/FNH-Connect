@@ -111,6 +111,9 @@ const AddNewDataAdmission: React.FC<AddNewDataProps> = ({
     if (!patientData.address?.trim()) {
       errors.push("Patient address is required");
     }
+    if (!patientData.guardianName?.trim()) {
+      errors.push("Guardian name is required");
+    }
     if (!departmentData.id) {
       errors.push("Department is required");
     }
@@ -134,6 +137,7 @@ const AddNewDataAdmission: React.FC<AddNewDataProps> = ({
     patientData.phoneNumber,
     patientData.dateOfBirth,
     patientData.address,
+    patientData.guardianName,
     departmentData.id,
     doctorData.id,
     validationStatus,

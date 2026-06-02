@@ -50,6 +50,5 @@ export const LOGIN_VALIDATION = {
   },
   password: {
     required: "Password is required",
-    minLength: "Password must be at least 8 characters",
   },
 } as const;
