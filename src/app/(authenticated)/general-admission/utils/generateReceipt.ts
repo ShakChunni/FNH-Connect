@@ -54,8 +54,8 @@ const drawAuditFooter = (
     pageWidth: number;
     leftLabel: string;
     leftValue: string;
-    rightLabel: string;
-    rightValue: string;
+    rightLabel?: string;
+    rightValue?: string;
     timestampLabel: string;
     timestamp: string;
   },
@@ -69,23 +69,35 @@ const drawAuditFooter = (
   doc.setTextColor(COLORS.primary);
   doc.text(options.leftValue, options.margin, options.footerY + 10);
 
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(8);
-  doc.setTextColor(COLORS.text);
-  doc.text(options.rightLabel, options.pageWidth - options.margin, options.footerY + 5, {
-    align: "right",
-  });
+  if (options.rightLabel && options.rightValue) {
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8);
+    doc.setTextColor(COLORS.text);
+    doc.text(
+      options.rightLabel,
+      options.pageWidth - options.margin,
+      options.footerY + 5,
+      { align: "right" },
+    );
 
-  doc.setFontSize(9);
-  doc.setTextColor(COLORS.primary);
-  doc.text(options.rightValue, options.pageWidth - options.margin, options.footerY + 10, {
-    align: "right",
-  });
+    doc.setFontSize(9);
+    doc.setTextColor(COLORS.primary);
+    doc.text(
+      options.rightValue,
+      options.pageWidth - options.margin,
+      options.footerY + 10,
+      { align: "right" },
+    );
+  }
 
   doc.setFont("helvetica", "bold");
   doc.setFontSize(7);
   doc.setTextColor(COLORS.text);
-  doc.text(`${options.timestampLabel}: ${options.timestamp}`, options.margin, options.footerY + 15);
+  doc.text(
+    `${options.timestampLabel}: ${options.timestamp}`,
+    options.margin,
+    options.footerY + 15,
+  );
 };
 
 /**
@@ -431,8 +443,6 @@ export const generateAdmissionReceipt = async (
     pageWidth,
     leftLabel: "Admitted By",
     leftValue: getCreatorName(data),
-    rightLabel: "Printed By",
-    rightValue: printedBy,
     timestampLabel: "Printed on",
     timestamp: printTime,
   });

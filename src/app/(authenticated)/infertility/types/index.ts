@@ -329,6 +329,10 @@ export interface InfertilityPatientData {
   status: string | null;
   notes: string | null;
   testCount?: number;
+  createdBy?: number | null;
+  createdByName?: string | null;
+  lastModifiedBy?: number | null;
+  lastModifiedByName?: string | null;
   createdAt: string;
   updatedAt: string;
 }

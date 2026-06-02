@@ -18,7 +18,6 @@ const COMPANY_INFO = {
   address:
     "1257, Sholakia, Khorompatti Kishoreganj Sadar, Kishoreganj Dhaka, Bangladesh",
   phone: "Mobile: +8801726219350, +8801701295016, +8801787993086",
-  department: "HSI Center",
 };
 
 const loadImage = (src: string): Promise<HTMLImageElement> => {
@@ -70,6 +69,60 @@ const drawStatusStamp = (doc: jsPDF, isPaid: boolean) => {
   });
 
   doc.restoreGraphicsState();
+};
+
+const drawAuditFooter = (
+  doc: jsPDF,
+  options: {
+    footerY: number;
+    margin: number;
+    pageWidth: number;
+    leftLabel: string;
+    leftValue: string;
+    rightLabel?: string;
+    rightValue?: string;
+    timestampLabel: string;
+    timestamp: string;
+  },
+) => {
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(8);
+  doc.setTextColor(COLORS.text);
+  doc.text(options.leftLabel, options.margin, options.footerY + 5);
+
+  doc.setFontSize(9);
+  doc.setTextColor(COLORS.primary);
+  doc.text(options.leftValue, options.margin, options.footerY + 10);
+
+  if (options.rightLabel && options.rightValue) {
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8);
+    doc.setTextColor(COLORS.text);
+    doc.text(
+      options.rightLabel,
+      options.pageWidth - options.margin,
+      options.footerY + 5,
+      { align: "right" },
+    );
+
+    doc.setFontSize(9);
+    doc.setTextColor(COLORS.primary);
+    doc.text(
+      options.rightValue,
+      options.pageWidth - options.margin,
+      options.footerY + 10,
+      { align: "right" },
+    );
+  }
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(7);
+  doc.setTextColor(COLORS.text);
+  doc.text(
+    `${options.timestampLabel}: ${options.timestamp}`,
+    options.margin,
+    options.footerY + 15,
+  );
 };
 
 export const generateInfertilityTestReceipt = async (
@@ -148,7 +201,6 @@ export const generateInfertilityTestReceipt = async (
       currentY += 4;
       doc.setFont("helvetica", "bold");
       doc.setTextColor(COLORS.accent);
-      doc.text(COMPANY_INFO.department, pageWidth / 2, currentY, { align: "center" });
       currentY += 6;
 
       doc.setDrawColor(COLORS.border);
@@ -199,19 +251,28 @@ export const generateInfertilityTestReceipt = async (
       let pY = currentY + boxPadding + 3;
 
       doc.setFont("helvetica", "bold");
+      doc.setFontSize(10);
+      doc.setTextColor(COLORS.lightText);
       doc.text("Patient:", col1X, pY);
-      doc.setFont("helvetica", "normal");
+      doc.setTextColor(COLORS.primary);
+      doc.setFontSize(11);
       doc.text(data.patientFullName || "N/A", col1ValX, pY);
 
       doc.setFont("helvetica", "bold");
+      doc.setFontSize(10);
+      doc.setTextColor(COLORS.lightText);
       doc.text("Case #:", col2X, pY);
-      doc.setFont("helvetica", "normal");
+      doc.setTextColor(COLORS.primary);
+      doc.setFontSize(11);
       doc.text(data.caseNumber || "N/A", col2ValX, pY);
 
       pY += rowHeight;
       doc.setFont("helvetica", "bold");
+      doc.setFontSize(10);
+      doc.setTextColor(COLORS.lightText);
       doc.text("Subject:", col1X, pY);
-      doc.setFont("helvetica", "normal");
+      doc.setTextColor(COLORS.primary);
+      doc.setFontSize(11);
       doc.text(
         data.subjectName
           ? `${data.subjectLabel} - ${data.subjectName}`
@@ -221,20 +282,29 @@ export const generateInfertilityTestReceipt = async (
       );
 
       doc.setFont("helvetica", "bold");
+      doc.setFontSize(10);
+      doc.setTextColor(COLORS.lightText);
       doc.text("Mobile:", col2X, pY);
-      doc.setFont("helvetica", "normal");
+      doc.setTextColor(COLORS.primary);
+      doc.setFontSize(11);
       doc.text(data.mobileNumber || "N/A", col2ValX, pY);
 
       pY += rowHeight;
       doc.setFont("helvetica", "bold");
+      doc.setFontSize(10);
+      doc.setTextColor(COLORS.lightText);
       doc.text("Age/Gender:", col1X, pY);
-      doc.setFont("helvetica", "normal");
+      doc.setTextColor(COLORS.primary);
+      doc.setFontSize(11);
       const age = data.patientAge ? `${data.patientAge}Y` : "N/A";
       doc.text(`${age} / ${data.patientGender || "N/A"}`, col1ValX, pY);
 
       doc.setFont("helvetica", "bold");
+      doc.setFontSize(10);
+      doc.setTextColor(COLORS.lightText);
       doc.text("Ordered By:", col2X, pY);
-      doc.setFont("helvetica", "normal");
+      doc.setTextColor(COLORS.primary);
+      doc.setFontSize(11);
       doc.text(data.orderedBy || "Self", col2ValX, pY);
 
       currentY += 31;
@@ -253,16 +323,30 @@ export const generateInfertilityTestReceipt = async (
     // Table
     autoTable(doc, {
       startY: currentY,
-      head: [["#", "Investigation", "Amount (BDT)"]],
+      head: [["SN", "Investigation", "Amount (BDT)"]],
       body: currentChunk,
       theme: "plain",
-      headStyles: { fillColor: COLORS.primary, textColor: 255, fontStyle: "bold" },
-      bodyStyles: { fontSize: 10, cellPadding: 3 },
+      headStyles: {
+        fillColor: COLORS.primary,
+        textColor: 255,
+        fontStyle: "bold",
+        halign: "left",
+        cellPadding: 5,
+      },
+      bodyStyles: {
+        textColor: COLORS.text,
+        cellPadding: 3,
+        fontSize: 10,
+        valign: "middle",
+      },
       columnStyles: {
-        0: { cellWidth: 15, halign: "center", fontStyle: "bold" },
+        0: { cellWidth: 15, halign: "center", fontStyle: "bold", fontSize: 12 },
+        1: { cellWidth: "auto", fontStyle: "bold" },
         2: { cellWidth: 40, halign: "right", fontStyle: "bold" },
       },
-      alternateRowStyles: { fillColor: [248, 250, 252] },
+      alternateRowStyles: {
+        fillColor: [248, 250, 252],
+      },
       margin: { left: margin, right: margin },
     });
 
@@ -274,13 +358,17 @@ export const generateInfertilityTestReceipt = async (
 
       doc.setFontSize(11);
       doc.setFont("helvetica", "bold");
+      doc.setTextColor(COLORS.lightText);
       doc.text("Sub Total", tLabelX, tY, { align: "right" });
+      doc.setTextColor(COLORS.primary);
       doc.text(`${Number(data.testCharge).toLocaleString()}`, tValX, tY, { align: "right" });
       tY += 6;
 
       if (data.discountAmount && Number(data.discountAmount) > 0) {
         doc.setFont("helvetica", "normal");
+        doc.setTextColor(COLORS.lightText);
         doc.text("Discount", tLabelX, tY, { align: "right" });
+        doc.setTextColor(COLORS.primary);
         doc.text(`- ${Number(data.discountAmount).toLocaleString()}`, tValX, tY, { align: "right" });
         tY += 6;
       }
@@ -291,36 +379,64 @@ export const generateInfertilityTestReceipt = async (
 
       doc.setFont("helvetica", "bold");
       doc.setFontSize(13);
+      doc.setTextColor(COLORS.primary);
       doc.text("Net Total:", tLabelX, tY, { align: "right" });
       doc.text(`${Number(data.grandTotal).toLocaleString()}`, tValX, tY, { align: "right" });
       tY += 7;
 
+      doc.setFont("helvetica", "bold");
       doc.setFontSize(11);
-      doc.text("Paid:", tLabelX, tY, { align: "right" });
+      doc.setTextColor(COLORS.lightText);
+      doc.text("Paid Amount:", tLabelX, tY, { align: "right" });
       doc.setTextColor(22, 128, 61);
       doc.text(`${Number(data.paidAmount).toLocaleString()}`, tValX, tY, { align: "right" });
       tY += 6;
 
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(11);
+
       if (Number(data.dueAmount) > 0) {
-        // DUE STAMP
+        // === LEFT-SIDE DUE STAMP/SEAL (Double-ring) ===
         const stampRadius = 18;
-        const stampX = margin + stampRadius + 8;
-        const stampY = finalY + stampRadius + 2;
+        const stampCenterX = margin + stampRadius + 8;
+        const stampCenterY = finalY + stampRadius + 2;
+
         doc.saveGraphicsState();
         doc.setGState(new (doc as any).GState({ opacity: 0.85 }));
+
+        // Outer circle border
         doc.setDrawColor(200, 30, 30);
         doc.setLineWidth(1.8);
-        doc.circle(stampX, stampY, stampRadius, "S");
+        doc.circle(stampCenterX, stampCenterY, stampRadius, "S");
+
+        // Inner circle border (double-ring seal effect)
+        doc.setLineWidth(0.6);
+        doc.circle(stampCenterX, stampCenterY, stampRadius - 3, "S");
+
+        // "DUE" text
+        doc.setFont("helvetica", "bold");
         doc.setFontSize(24);
         doc.setTextColor(200, 30, 30);
-        doc.text("DUE", stampX, stampY + 3, { align: "center" });
+        doc.text("DUE", stampCenterX, stampCenterY + 3, { align: "center" });
+
+        // Decorative lines above and below
+        const lineHalfW = 10;
+        doc.setLineWidth(0.5);
+        doc.line(stampCenterX - lineHalfW, stampCenterY - 7, stampCenterX + lineHalfW, stampCenterY - 7);
+        doc.line(stampCenterX - lineHalfW, stampCenterY + 7, stampCenterX + lineHalfW, stampCenterY + 7);
+
         doc.restoreGraphicsState();
 
+        // Right-side due label + value
         doc.setFont("helvetica", "bold");
-        doc.setTextColor(220, 38, 38);
+        doc.setFontSize(12);
+        doc.setTextColor(COLORS.lightText);
         doc.text("Due Amount:", tLabelX, tY, { align: "right" });
+        doc.setTextColor(220, 38, 38);
         doc.text(`${Number(data.dueAmount).toLocaleString()}`, tValX, tY, { align: "right" });
       } else {
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(11);
         doc.setTextColor(22, 128, 61);
         doc.text("PAID", tValX, tY, { align: "right" });
       }
@@ -328,6 +444,7 @@ export const generateInfertilityTestReceipt = async (
       if (data.remarks) {
         const remarkY = finalY + 5;
         doc.setFontSize(9);
+        doc.setFont("helvetica", "bold");
         doc.setTextColor(COLORS.primary);
         doc.text("Remarks:", margin, remarkY);
         doc.setFont("helvetica", "italic");
@@ -339,16 +456,39 @@ export const generateInfertilityTestReceipt = async (
 
     // Footer
     const footerY = pageHeight - 30;
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(8);
-    doc.setTextColor(COLORS.lightText);
-    doc.text("Processed By", margin, footerY);
-    doc.setFont("helvetica", "bold");
-    doc.text(printedBy, margin, footerY + 5);
-    doc.setFont("helvetica", "normal");
-    doc.text(`Generated on: ${new Date().toLocaleString("en-BD")}`, margin, footerY + 10);
+    const printTime = new Date().toLocaleString("en-BD", {
+      hour: "numeric",
+      minute: "numeric",
+      hour12: true,
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    });
+    drawAuditFooter(doc, {
+      footerY,
+      margin,
+      pageWidth,
+      leftLabel: "Collected By",
+      leftValue: data.createdByName?.trim() || "Unknown",
+      timestampLabel: "Printed on",
+      timestamp: printTime,
+    });
 
-    doc.text("NB: Computer generated invoice.", pageWidth / 2, pageHeight - 10, { align: "center" });
+    doc.setTextColor(COLORS.lightText);
+    doc.setFontSize(7);
+    doc.text(
+      "NB: This is a computer generated invoice.",
+      pageWidth / 2,
+      pageHeight - 10,
+      { align: "center" },
+    );
+    doc.text(
+      "Thank you for choosing HSI Center",
+      pageWidth / 2,
+      pageHeight - 6,
+      { align: "center" },
+    );
+
     drawStatusStamp(doc, isPaid);
   }
 
