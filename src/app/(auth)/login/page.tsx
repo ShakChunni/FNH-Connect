@@ -361,30 +361,21 @@ function LoginPageDesktop() {
             <div className="relative z-10 flex h-full flex-col p-6 lg:p-14">
               {/* Header */}
               <motion.div
-                className={cn(
-                  "flex items-center gap-4",
-                  selectedPortal === "infertility"
-                    ? "justify-center lg:mt-8"
-                    : "justify-start",
-                )}
+                className="flex items-center justify-start gap-4"
               >
                 <PortalLogo portal="general" />
-                <AnimatePresence initial={false}>
-                  {selectedPortal !== "infertility" && (
-                    <motion.div
-                      key="general-title"
-                      {...headerTextMotion}
-                      transition={HEADER_TEXT_TRANSITION}
-                    >
-                      <h1 className="text-xl lg:text-2xl font-black text-white tracking-tight uppercase">
-                        FNH <span className="text-blue-500">Connect</span>
-                      </h1>
-                      <p className="text-[10px] font-bold text-blue-400/60 uppercase tracking-[0.3em]">
-                        Hospital Management
-                      </p>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+                <motion.div
+                  key="general-title"
+                  {...headerTextMotion}
+                  transition={HEADER_TEXT_TRANSITION}
+                >
+                  <h1 className="text-xl lg:text-2xl font-black text-white tracking-tight uppercase">
+                    FNH <span className="text-blue-500">Connect</span>
+                  </h1>
+                  <p className="text-[10px] font-bold text-blue-400/60 uppercase tracking-[0.3em]">
+                    Hospital Management
+                  </p>
+                </motion.div>
               </motion.div>
 
               <div className="relative flex-1 overflow-hidden">
@@ -510,31 +501,22 @@ function LoginPageDesktop() {
             <div className="relative z-10 flex h-full flex-col p-6 lg:p-14">
               {/* Header */}
               <motion.div
-                className={cn(
-                  "flex items-center gap-4",
-                  selectedPortal === "general"
-                    ? "justify-center lg:mt-8"
-                    : "justify-start lg:justify-end lg:flex-row-reverse",
-                )}
+                className="flex items-center gap-4 justify-start lg:justify-end lg:flex-row-reverse"
               >
                 <PortalLogo portal="infertility" />
-                <AnimatePresence initial={false}>
-                  {selectedPortal !== "general" && (
-                    <motion.div
-                      key="infertility-title"
-                      {...headerTextMotion}
-                      transition={HEADER_TEXT_TRANSITION}
-                      className="text-right"
-                    >
-                      <h1 className="text-xl lg:text-2xl font-black text-white tracking-tight uppercase">
-                         HSI <span className="text-emerald-500">Center</span>
-                      </h1>
-                      <p className="text-[10px] font-bold text-emerald-400/60 uppercase tracking-[0.3em]">
-                         Infertility Portal
-                      </p>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+                <motion.div
+                  key="infertility-title"
+                  {...headerTextMotion}
+                  transition={HEADER_TEXT_TRANSITION}
+                  className="text-right"
+                >
+                  <h1 className="text-xl lg:text-2xl font-black text-white tracking-tight uppercase">
+                     HSI <span className="text-emerald-500">Center</span>
+                  </h1>
+                  <p className="text-[10px] font-bold text-emerald-400/60 uppercase tracking-[0.3em]">
+                     Infertility Portal
+                  </p>
+                </motion.div>
               </motion.div>
 
               <div className="relative flex-1 overflow-hidden">
