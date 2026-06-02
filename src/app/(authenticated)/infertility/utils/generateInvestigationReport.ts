@@ -254,13 +254,38 @@ export const generateInfertilityInvestigationReport = async (
   }
 
   // Footer on all pages
-  const pageCount = (doc as any).internal.getNumberOfPages();
+  const pageCount = doc.getNumberOfPages();
   for (let i = 1; i <= pageCount; i++) {
     doc.setPage(i);
+    doc.setFont("helvetica", "bold");
     doc.setFontSize(8);
-    doc.setTextColor(150);
-    doc.text(`Generated on ${format(new Date(), "PPpp")} - Page ${i} of ${pageCount}`, pageWidth / 2, doc.internal.pageSize.height - 10, { align: "center" });
+    doc.setTextColor(COLORS.text);
+    const footerDate = format(new Date(), "PPpp");
+    doc.text(
+      `Generated on ${footerDate} - Page ${i} of ${pageCount}`,
+      pageWidth / 2,
+      doc.internal.pageSize.height - 8,
+      { align: "center" }
+    );
   }
+
+  // Bottom center branding on the last page
+  doc.setPage(pageCount);
+  doc.setTextColor(COLORS.lightText);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(7);
+  doc.text(
+    "NB: This is a computer generated investigation report.",
+    pageWidth / 2,
+    doc.internal.pageSize.height - 22,
+    { align: "center" }
+  );
+  doc.text(
+    "Thank you for choosing HSI Center",
+    pageWidth / 2,
+    doc.internal.pageSize.height - 18,
+    { align: "center" }
+  );
 
   window.open(URL.createObjectURL(doc.output("blob")), "_blank");
 };

@@ -31,7 +31,6 @@ const BACKGROUND_BLUR_BASE_CLASS =
 const BACKGROUND_BLUR_SECONDARY_CLASS =
   "fixed bottom-[-20%] right-[-10%] w-[50%] h-[50%] rounded-full blur-[120px] pointer-events-none opacity-50";
 const PANEL_TRANSITION = {
-  flexBasis: { duration: 1.08, ease: SOFT_EASE },
   opacity: { duration: 0.9, ease: SOFT_EASE },
   scale: { duration: 0.7, ease: SOFT_EASE },
 } as const;
@@ -408,25 +407,30 @@ function LoginPageDesktop() {
     }
   };
 
+  const portalColumns =
+    selectedPortal === "general"
+      ? "calc(100% - 11rem) 11rem"
+      : selectedPortal === "infertility"
+        ? "11rem calc(100% - 11rem)"
+        : "50% 50%";
+
   return (
       <div className="w-full flex items-center justify-center p-0 sm:p-4 lg:p-6 min-h-screen lg:min-h-0">
-        <div className="w-full max-w-[1280px] bg-slate-950 rounded-[2.5rem] shadow-[0_32px_64px_-16px_rgba(0,0,0,0.6)] overflow-hidden flex flex-col lg:flex-row relative min-h-[700px] lg:h-[820px] border border-white/5">
+        <div
+          className="relative grid w-full max-w-[1280px] min-h-[700px] lg:h-[820px] overflow-hidden rounded-[2.5rem] border border-white/5 bg-slate-950 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.6)] transition-[grid-template-columns] duration-[1080ms] ease-[cubic-bezier(0.16,1,0.3,1)] will-change-[grid-template-columns]"
+          style={{ gridTemplateColumns: portalColumns }}
+        >
           {/* ═══════════════ LEFT PANEL: GENERAL HOSPITAL ═══════════════ */}
           <motion.div
+            initial={false}
             onClick={() => handlePortalClick("general")}
             whileHover={!selectedPortal ? { scale: 1.005 } : {}}
             animate={{
-              flexBasis:
-                selectedPortal === "general"
-                  ? "calc(100% - 11rem)"
-                  : selectedPortal === "infertility"
-                    ? "11rem"
-                    : "50%",
               opacity: selectedPortal === "infertility" ? 0.62 : 1,
             }}
             transition={PANEL_TRANSITION}
             className={cn(
-              "relative min-w-0 flex-none flex flex-col h-full cursor-pointer group overflow-hidden will-change-[flex-basis,opacity]",
+              "relative min-w-0 flex flex-col h-full cursor-pointer group overflow-hidden will-change-[opacity]",
               selectedPortal === "general"
                 ? "h-full z-20 cursor-default"
                 : selectedPortal === "infertility"
@@ -473,7 +477,7 @@ function LoginPageDesktop() {
               </motion.div>
 
               <div className="relative flex-1 overflow-hidden">
-                <AnimatePresence initial={false} mode="popLayout">
+                <AnimatePresence initial={selectedPortal !== null} mode="popLayout">
                   {selectedPortal === "general" ? (
                     <motion.div
                       key="general-active"
@@ -563,20 +567,15 @@ function LoginPageDesktop() {
 
           {/* ═══════════════ RIGHT PANEL: INFERTILITY ═══════════════ */}
           <motion.div
+            initial={false}
             onClick={() => handlePortalClick("infertility")}
             whileHover={!selectedPortal ? { scale: 1.005 } : {}}
             animate={{
-              flexBasis:
-                selectedPortal === "infertility"
-                  ? "calc(100% - 11rem)"
-                  : selectedPortal === "general"
-                    ? "11rem"
-                    : "50%",
               opacity: selectedPortal === "general" ? 0.62 : 1,
             }}
             transition={PANEL_TRANSITION}
             className={cn(
-              "relative min-w-0 flex-none flex flex-col h-full cursor-pointer group overflow-hidden will-change-[flex-basis,opacity]",
+              "relative min-w-0 flex flex-col h-full cursor-pointer group overflow-hidden will-change-[opacity]",
               selectedPortal === "infertility"
                 ? "h-full z-20 cursor-default"
                 : selectedPortal === "general"
@@ -624,7 +623,7 @@ function LoginPageDesktop() {
               </motion.div>
 
               <div className="relative flex-1 overflow-hidden">
-                <AnimatePresence initial={false} mode="popLayout">
+                <AnimatePresence initial={selectedPortal !== null} mode="popLayout">
                   {selectedPortal === "infertility" ? (
                     <motion.div
                       key="infertility-active"

@@ -19,7 +19,7 @@ const COMPANY_INFO = {
   name: "HSI Center",
   address:
     "1257, Sholakia, Khorompatti Kishoreganj Sadar, Kishoreganj Dhaka, Bangladesh",
-  phone: "+8801726219350, +8801701295016, +8801787993086",
+  phone: "Mobile: +8801726219350, +8801701295016, +8801787993086",
 };
 
 const loadImage = (src: string): Promise<HTMLImageElement> => {
@@ -153,54 +153,51 @@ export const generateInfertilityReport = async (
   // Header logo
   try {
     const logo = await loadImage("/hsi-logo.png");
-    const logoW = 18;
-    const logoH = 18;
+    const logoW = 20;
+    const logoH = 20;
     const logoX = pageWidth / 2 - logoW / 2;
-    doc.addImage(logo, "PNG", logoX, 8, logoW, logoH);
+    doc.addImage(logo, "PNG", logoX, 10, logoW, logoH);
   } catch (e) {}
 
-  let currentY = 30;
+  let currentY = 35;
 
   // Hospital Name
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(18);
+  doc.setFontSize(22);
   doc.setTextColor(COLORS.primary);
   doc.text(COMPANY_INFO.name, pageWidth / 2, currentY, { align: "center" });
-  currentY += 5;
-
-  // Department
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(9);
-  doc.setTextColor(COLORS.indigo);
-  currentY += 4;
+  currentY += 7;
 
   // Address
   doc.setFont("helvetica", "normal");
-  doc.setFontSize(7);
+  doc.setFontSize(9);
   doc.setTextColor(COLORS.lightText);
   doc.text(COMPANY_INFO.address, pageWidth / 2, currentY, { align: "center" });
-  currentY += 6;
+  currentY += 5;
+  doc.text(COMPANY_INFO.phone, pageWidth / 2, currentY, { align: "center" });
+  currentY += 8;
 
   // Divider
   doc.setDrawColor(COLORS.border);
   doc.setLineWidth(0.5);
   doc.line(margin, currentY, pageWidth - margin, currentY);
-  currentY += 6;
+  currentY += 8;
 
   // Report Title
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(12);
+  doc.setFontSize(16);
   doc.setTextColor(COLORS.primary);
-  doc.text("Case Report", pageWidth / 2, currentY, {
-    align: "center",
-  });
-  currentY += 5;
+  doc.text("Case Report", pageWidth / 2, currentY, { align: "center" });
+  currentY += 8;
 
   // Case ID and Date Row
-  doc.setFontSize(8);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(10);
+  doc.setTextColor(COLORS.primary);
+  doc.text(`#${data.caseNumber || `INF-${data.id}`}`, margin, currentY);
+
   doc.setFont("helvetica", "normal");
   doc.setTextColor(COLORS.text);
-  doc.text(`#${data.caseNumber || `INF-${data.id}`}`, margin, currentY);
   doc.text(
     `Report Date: ${formatDate(new Date().toISOString())}`,
     pageWidth - margin,
@@ -209,7 +206,7 @@ export const generateInfertilityReport = async (
       align: "right",
     }
   );
-  currentY += 8;
+  currentY += 10;
 
   /**
    * Proactive page break check
@@ -238,9 +235,9 @@ export const generateInfertilityReport = async (
 
   const col1X = margin + 5;
   const col2X = pageWidth / 2 + 5;
-  const labelWidth = 26;
+  const labelWidth = 28;
 
-  doc.setFontSize(8);
+  doc.setFontSize(10);
   let detailY = patientContentY + 2;
 
   // Row 1
@@ -248,18 +245,25 @@ export const generateInfertilityReport = async (
   doc.setTextColor(COLORS.lightText);
   doc.text("Name:", col1X, detailY);
   doc.setTextColor(COLORS.primary);
+  doc.setFontSize(11);
   doc.text(data.patientFullName || "N/A", col1X + labelWidth, detailY);
 
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(10);
   doc.setTextColor(COLORS.lightText);
   doc.text("Gender:", col2X, detailY);
   doc.setTextColor(COLORS.primary);
+  doc.setFontSize(11);
   doc.text(data.patientGender || "N/A", col2X + labelWidth, detailY);
 
   // Row 2
-  detailY += 5;
+  detailY += 6;
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(10);
   doc.setTextColor(COLORS.lightText);
   doc.text("Age:", col1X, detailY);
   doc.setTextColor(COLORS.primary);
+  doc.setFontSize(11);
   doc.text(
     data.patientAge
       ? `${data.patientAge} Years`
@@ -268,28 +272,40 @@ export const generateInfertilityReport = async (
     detailY
   );
 
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(10);
   doc.setTextColor(COLORS.lightText);
   doc.text("Blood Group:", col2X, detailY);
   doc.setTextColor(COLORS.primary);
+  doc.setFontSize(11);
   doc.text(data.bloodGroup || "N/A", col2X + labelWidth, detailY);
 
   // Row 3
-  detailY += 5;
+  detailY += 6;
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(10);
   doc.setTextColor(COLORS.lightText);
   doc.text("Mobile:", col1X, detailY);
   doc.setTextColor(COLORS.primary);
+  doc.setFontSize(11);
   doc.text(data.mobileNumber || "N/A", col1X + labelWidth, detailY);
 
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(10);
   doc.setTextColor(COLORS.lightText);
   doc.text("Occupation:", col2X, detailY);
   doc.setTextColor(COLORS.primary);
+  doc.setFontSize(11);
   doc.text(data.patientOccupation || "N/A", col2X + labelWidth, detailY);
 
   // Row 4
-  detailY += 5;
+  detailY += 6;
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(10);
   doc.setTextColor(COLORS.lightText);
   doc.text("Address:", col1X, detailY);
   doc.setTextColor(COLORS.primary);
+  doc.setFontSize(11);
   const addressText = data.address || "N/A";
   const truncatedAddress =
     addressText.length > 70
@@ -314,18 +330,22 @@ export const generateInfertilityReport = async (
   );
 
   let sDetailY = spouseContentY + 2;
-  doc.setFontSize(8);
+  doc.setFontSize(10);
 
   // Row 1
   doc.setFont("helvetica", "bold");
   doc.setTextColor(COLORS.lightText);
   doc.text("Name:", col1X, sDetailY);
   doc.setTextColor(COLORS.primary);
+  doc.setFontSize(11);
   doc.text(data.husbandName || "N/A", col1X + labelWidth, sDetailY);
 
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(10);
   doc.setTextColor(COLORS.lightText);
   doc.text("Age:", col2X, sDetailY);
   doc.setTextColor(COLORS.primary);
+  doc.setFontSize(11);
   doc.text(
     data.husbandAge
       ? `${data.husbandAge} Years`
@@ -335,15 +355,21 @@ export const generateInfertilityReport = async (
   );
 
   // Row 2
-  sDetailY += 5;
+  sDetailY += 6;
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(10);
   doc.setTextColor(COLORS.lightText);
   doc.text("Occupation:", col1X, sDetailY);
   doc.setTextColor(COLORS.primary);
+  doc.setFontSize(11);
   doc.text(data.husbandOccupation || "N/A", col1X + labelWidth, sDetailY);
 
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(10);
   doc.setTextColor(COLORS.lightText);
   doc.text("Contact:", col2X, sDetailY);
   doc.setTextColor(COLORS.primary);
+  doc.setFontSize(11);
   doc.text(data.husbandPhone || "N/A", col2X + labelWidth, sDetailY);
 
   currentY += spouseBoxHeight + 6;
@@ -363,52 +389,68 @@ export const generateInfertilityReport = async (
   );
 
   let fDetailY = fertilityContentY + 2;
-  doc.setFontSize(8);
+  doc.setFontSize(10);
 
   const col3X = pageWidth / 3 + 5;
   const col4X = (2 * pageWidth) / 3 + 5;
-  const labelWidth2 = 28;
+  const labelWidth2 = 30;
 
   // Row 1
   doc.setFont("helvetica", "bold");
   doc.setTextColor(COLORS.lightText);
   doc.text("Years Married:", col1X, fDetailY);
   doc.setTextColor(COLORS.primary);
+  doc.setFontSize(11);
   doc.text(
     data.yearsMarried ? `${data.yearsMarried} Year(s)` : "N/A",
     col1X + labelWidth2,
     fDetailY
   );
 
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(10);
   doc.setTextColor(COLORS.lightText);
   doc.text("Years Trying:", col3X, fDetailY);
   doc.setTextColor(COLORS.primary);
+  doc.setFontSize(11);
   doc.text(
     data.yearsTrying ? `${data.yearsTrying} Year(s)` : "N/A",
     col3X + labelWidth2,
     fDetailY
   );
 
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(10);
   doc.setTextColor(COLORS.lightText);
   doc.text("Type:", col4X, fDetailY);
   doc.setTextColor(COLORS.primary);
+  doc.setFontSize(11);
   doc.text(data.infertilityType || "N/A", col4X + 12, fDetailY);
 
   // Row 2
-  fDetailY += 5;
+  fDetailY += 6;
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(10);
   doc.setTextColor(COLORS.lightText);
   doc.text("Gravida (G):", col1X, fDetailY);
   doc.setTextColor(COLORS.primary);
+  doc.setFontSize(11);
   doc.text(data.gravida || "N/A", col1X + labelWidth2, fDetailY);
 
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(10);
   doc.setTextColor(COLORS.lightText);
   doc.text("Para (P):", col3X, fDetailY);
   doc.setTextColor(COLORS.primary);
+  doc.setFontSize(11);
   doc.text(data.para || "N/A", col3X + labelWidth2, fDetailY);
 
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(10);
   doc.setTextColor(COLORS.lightText);
   doc.text("Referral:", col4X, fDetailY);
   doc.setTextColor(COLORS.primary);
+  doc.setFontSize(11);
   const referralText = (data.referralSource || "Self").substring(0, 15);
   doc.text(referralText, col4X + 15, fDetailY);
 
@@ -429,29 +471,39 @@ export const generateInfertilityReport = async (
   );
 
   let pDetailY = physicalContentY + 2;
-  doc.setFontSize(8);
+  doc.setFontSize(10);
 
   // Single Row - all measurements
   doc.setFont("helvetica", "bold");
   doc.setTextColor(COLORS.lightText);
   doc.text("Weight:", col1X, pDetailY);
   doc.setTextColor(COLORS.primary);
-  doc.text(data.weight ? `${data.weight} kg` : "N/A", col1X + 16, pDetailY);
+  doc.setFontSize(11);
+  doc.text(data.weight ? `${data.weight} kg` : "N/A", col1X + 18, pDetailY);
 
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(10);
   doc.setTextColor(COLORS.lightText);
-  doc.text("Height:", col1X + 42, pDetailY);
+  doc.text("Height:", col1X + 46, pDetailY);
   doc.setTextColor(COLORS.primary);
-  doc.text(data.height ? `${data.height} cm` : "N/A", col1X + 58, pDetailY);
+  doc.setFontSize(11);
+  doc.text(data.height ? `${data.height} cm` : "N/A", col1X + 62, pDetailY);
 
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(10);
   doc.setTextColor(COLORS.lightText);
   doc.text("BMI:", col2X, pDetailY);
   doc.setTextColor(COLORS.primary);
-  doc.text(data.bmi ? data.bmi.toFixed(1) : "N/A", col2X + 12, pDetailY);
+  doc.setFontSize(11);
+  doc.text(data.bmi ? data.bmi.toFixed(1) : "N/A", col2X + 14, pDetailY);
 
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(10);
   doc.setTextColor(COLORS.lightText);
-  doc.text("Blood Pressure:", col2X + 32, pDetailY);
+  doc.text("Blood Pressure:", col2X + 36, pDetailY);
   doc.setTextColor(COLORS.primary);
-  doc.text(data.bloodPressure || "N/A", col2X + 60, pDetailY);
+  doc.setFontSize(11);
+  doc.text(data.bloodPressure || "N/A", col2X + 68, pDetailY);
 
   currentY += physicalBoxHeight + 6;
 
@@ -471,7 +523,7 @@ export const generateInfertilityReport = async (
     );
 
     doc.setFont("helvetica", "normal");
-    doc.setFontSize(8);
+    doc.setFontSize(10);
     doc.setTextColor(COLORS.text);
     const complaintText = doc.splitTextToSize(
       data.chiefComplaint,
@@ -518,7 +570,7 @@ export const generateInfertilityReport = async (
 
     // Draw history items inside the box
     let histY = currentY + 12;
-    doc.setFontSize(7);
+    doc.setFontSize(9);
 
     historyItems.forEach(([label, value]) => {
       doc.setFont("helvetica", "bold");
@@ -558,46 +610,52 @@ export const generateInfertilityReport = async (
   );
 
   let tDetailY = treatmentContentY + 2;
-  doc.setFontSize(7);
+  doc.setFontSize(10);
 
   doc.setFont("helvetica", "bold");
   doc.setTextColor(COLORS.lightText);
   doc.text("Treatment Plan:", col1X, tDetailY);
-  doc.setFont("helvetica", "normal");
   doc.setTextColor(COLORS.primary);
+  doc.setFontSize(11);
   const planText = (data.treatmentPlan || "Initial assessment phase").substring(
     0,
     60
   );
-  doc.text(planText, col1X + 28, tDetailY);
+  doc.text(planText, col1X + 32, tDetailY);
 
-  tDetailY += 5;
+  tDetailY += 6;
   doc.setFont("helvetica", "bold");
+  doc.setFontSize(10);
   doc.setTextColor(COLORS.lightText);
   doc.text("Medications:", col1X, tDetailY);
-  doc.setFont("helvetica", "normal");
   doc.setTextColor(COLORS.primary);
+  doc.setFontSize(11);
   const medsText = (data.medications || "No medications prescribed").substring(
     0,
     65
   );
-  doc.text(medsText, col1X + 24, tDetailY);
+  doc.text(medsText, col1X + 28, tDetailY);
 
-  tDetailY += 5;
+  tDetailY += 6;
   doc.setFont("helvetica", "bold");
+  doc.setFontSize(10);
   doc.setTextColor(COLORS.lightText);
   doc.text("Next Appointment:", col1X, tDetailY);
   doc.setTextColor(COLORS.primary);
+  doc.setFontSize(11);
   doc.text(
     data.nextAppointment ? formatDate(data.nextAppointment) : "To be scheduled",
-    col1X + 32,
+    col1X + 36,
     tDetailY
   );
 
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(10);
   doc.setTextColor(COLORS.lightText);
   doc.text("Status:", col2X, tDetailY);
   doc.setTextColor(data.status === "Active" ? COLORS.success : COLORS.primary);
-  doc.text(data.status || "Active", col2X + 14, tDetailY);
+  doc.setFontSize(11);
+  doc.text(data.status || "Active", col2X + 18, tDetailY);
 
   currentY += treatmentBoxHeight + 6;
 
@@ -617,7 +675,7 @@ export const generateInfertilityReport = async (
     );
 
     doc.setFont("helvetica", "italic");
-    doc.setFontSize(7);
+    doc.setFontSize(10);
     doc.setTextColor(COLORS.text);
     const notesText = doc.splitTextToSize(
       data.notes,
@@ -644,30 +702,40 @@ export const generateInfertilityReport = async (
     );
 
     let hDetailY = hospitalContentY + 2;
-    doc.setFontSize(7);
+    doc.setFontSize(10);
 
     doc.setFont("helvetica", "bold");
     doc.setTextColor(COLORS.lightText);
     doc.text("Hospital:", col1X, hDetailY);
     doc.setTextColor(COLORS.primary);
-    doc.text(data.hospitalName, col1X + 18, hDetailY);
+    doc.setFontSize(11);
+    doc.text(data.hospitalName, col1X + 22, hDetailY);
 
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(10);
     doc.setTextColor(COLORS.lightText);
     doc.text("Type:", col2X, hDetailY);
     doc.setTextColor(COLORS.primary);
-    doc.text(data.hospitalType || "N/A", col2X + 12, hDetailY);
+    doc.setFontSize(11);
+    doc.text(data.hospitalType || "N/A", col2X + 16, hDetailY);
 
-    hDetailY += 5;
+    hDetailY += 6;
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(10);
     doc.setTextColor(COLORS.lightText);
     doc.text("Contact:", col1X, hDetailY);
     doc.setTextColor(COLORS.primary);
-    doc.text(data.hospitalPhone || "N/A", col1X + 18, hDetailY);
+    doc.setFontSize(11);
+    doc.text(data.hospitalPhone || "N/A", col1X + 22, hDetailY);
 
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(10);
     doc.setTextColor(COLORS.lightText);
     doc.text("Address:", col2X, hDetailY);
     doc.setTextColor(COLORS.primary);
+    doc.setFontSize(11);
     const hospAddr = (data.hospitalAddress || "N/A").substring(0, 40);
-    doc.text(hospAddr, col2X + 16, hDetailY);
+    doc.text(hospAddr, col2X + 20, hDetailY);
 
     currentY += hospitalBoxHeight + 6;
   }
@@ -700,15 +768,15 @@ export const generateInfertilityReport = async (
   doc.setFont("helvetica", "normal");
   doc.setFontSize(7);
   doc.text(
-    "This is a computer-generated medical report from the HSI Center Management System",
+    "NB: This is a computer generated medical report.",
     pageWidth / 2,
-    pageHeight - 12,
+    pageHeight - 10,
     { align: "center" }
   );
   doc.text(
-    "HSI Center",
+    "Thank you for choosing HSI Center",
     pageWidth / 2,
-    pageHeight - 8,
+    pageHeight - 6,
     { align: "center" }
   );
 
