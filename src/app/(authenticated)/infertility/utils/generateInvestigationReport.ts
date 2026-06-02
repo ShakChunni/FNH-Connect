@@ -23,10 +23,29 @@ const COMPANY_INFO = {
   department: "HSI Center",
 };
 
-const drawHeader = (doc: jsPDF, title: string, dateRange?: string) => {
+const loadImage = (src: string): Promise<HTMLImageElement> => {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.src = src;
+    img.onload = () => resolve(img);
+    img.onerror = (err) => reject(err);
+  });
+};
+
+const drawHeader = async (doc: jsPDF, title: string, dateRange?: string) => {
   const pageWidth = doc.internal.pageSize.width;
   const margin = 15;
-  let currentY = 35;
+  let currentY = 10;
+
+  try {
+    const logo = await loadImage("/hsi-logo.png");
+    const logoW = 20;
+    const logoH = 20;
+    const logoX = pageWidth / 2 - logoW / 2;
+    doc.addImage(logo, "PNG", logoX, currentY, logoW, logoH);
+  } catch (e) {}
+
+  currentY = 35;
   doc.setFont("helvetica", "bold");
   doc.setFontSize(22);
   doc.setTextColor(COLORS.primary);

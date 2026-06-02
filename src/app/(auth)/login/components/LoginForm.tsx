@@ -4,7 +4,7 @@ import React, { useState, useCallback } from "react";
 import { PasswordInput } from "./PasswordInput";
 import { LoginError } from "./LoginError";
 import { LoginLoading } from "./LoginLoading";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import {
   LOGIN_VALIDATION,
   type LoginFormData,
@@ -55,9 +55,6 @@ export function LoginForm({
         case "password":
           if (!value) {
             return LOGIN_VALIDATION.password.required;
-          }
-          if (value.length < 8) {
-            return LOGIN_VALIDATION.password.minLength;
           }
           return undefined;
 
@@ -153,7 +150,12 @@ export function LoginForm({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 py-2">
+    <form
+      onSubmit={handleSubmit}
+      onClick={(e) => e.stopPropagation()}
+      noValidate
+      className="space-y-4 py-2"
+    >
       {/* Error Message - Smooth animated */}
       <LoginError
         message={submitError}
@@ -231,7 +233,7 @@ export function LoginForm({
         <button
           type="submit"
           disabled={isLoading}
-          className={`w-full h-12 px-4 text-white font-bold rounded-xl shadow-lg hover:shadow-xl hover:scale-[1.01] active:scale-[0.98] focus:ring-4 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 cursor-pointer ${
+          className={`w-full h-12 px-4 text-white font-bold rounded-xl shadow-lg hover:shadow-xl hover:scale-[1.01] active:scale-[0.98] focus:ring-4 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 cursor-pointer select-none ${
             portal === "infertility"
               ? "bg-emerald-600 hover:bg-emerald-500 focus:ring-emerald-500/20 shadow-emerald-900/20"
               : "bg-blue-600 hover:bg-blue-500 focus:ring-blue-500/20 shadow-blue-900/20"

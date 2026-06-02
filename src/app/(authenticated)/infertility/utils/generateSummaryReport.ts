@@ -17,11 +17,20 @@ const formatDate = (dateStr: string | null): string => {
   });
 };
 
-export function generateInfertilitySummaryReport(
+const loadImage = (src: string): Promise<HTMLImageElement> => {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.src = src;
+    img.onload = () => resolve(img);
+    img.onerror = (err) => reject(err);
+  });
+};
+
+export async function generateInfertilitySummaryReport(
   patients: InfertilityPatientData[],
   staffName: string,
   detailed: boolean = false
-): void {
+): Promise<void> {
   const doc = new jsPDF("landscape");
 
   // Colors
@@ -33,10 +42,18 @@ export function generateInfertilitySummaryReport(
   doc.setFillColor(primaryBlue[0], primaryBlue[1], primaryBlue[2]);
   doc.rect(0, 0, 297, 30, "F");
 
+  // Header logo
+  try {
+    const logo = await loadImage("/hsi-logo.png");
+    const logoW = 18;
+    const logoH = 18;
+    doc.addImage(logo, "PNG", 10, 6, logoW, logoH);
+  } catch (e) {}
+
   doc.setTextColor(255, 255, 255);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(18);
-  doc.text("HSI Center", 20, 15);
+  doc.text("HSI Center", 36, 15);
 
   doc.setFontSize(12);
   doc.setFont("helvetica", "normal");
@@ -44,7 +61,7 @@ export function generateInfertilitySummaryReport(
       detailed
       ? "Patients - Detailed Report"
       : "Patients - Summary Report",
-    20,
+    36,
     23
   );
 
