@@ -57,7 +57,11 @@ const InvestigationPrintDropdown: React.FC<InvestigationPrintDropdownProps> = ({
     setIsOpen(!isOpen);
   };
 
-  const handleSelect = (investigation: InfertilityTestData) => {
+  const handleSelect = (
+    e: React.MouseEvent,
+    investigation: InfertilityTestData,
+  ) => {
+    e.stopPropagation();
     setIsOpen(false);
     generateInfertilityTestReceipt(investigation, user?.fullName || "Staff");
     showNotification("Generating investigation receipt...", "success");
@@ -124,7 +128,7 @@ const InvestigationPrintDropdown: React.FC<InvestigationPrintDropdownProps> = ({
             investigations.map((investigation) => (
               <button
                 key={investigation.id}
-                onClick={() => handleSelect(investigation)}
+                onClick={(e) => handleSelect(e, investigation)}
                 className="w-full px-3 py-2 text-left flex items-center justify-between gap-2 hover:bg-gray-50 transition-colors cursor-pointer"
               >
                 <div className="flex items-center gap-2 min-w-0">
