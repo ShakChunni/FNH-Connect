@@ -50,8 +50,8 @@ const drawAuditFooter = (
     pageWidth: number;
     leftLabel: string;
     leftValue: string;
-    rightLabel: string;
-    rightValue: string;
+    rightLabel?: string;
+    rightValue?: string;
     timestampLabel: string;
     timestamp: string;
   },
@@ -65,23 +65,39 @@ const drawAuditFooter = (
   doc.setTextColor(COLORS.primary);
   doc.text(options.leftValue, options.margin, options.footerY + 10);
 
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(8);
-  doc.setTextColor(COLORS.text);
-  doc.text(options.rightLabel, options.pageWidth - options.margin, options.footerY + 5, {
-    align: "right",
-  });
+  if (options.rightLabel && options.rightValue) {
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8);
+    doc.setTextColor(COLORS.text);
+    doc.text(
+      options.rightLabel,
+      options.pageWidth - options.margin,
+      options.footerY + 5,
+      {
+        align: "right",
+      },
+    );
 
-  doc.setFontSize(9);
-  doc.setTextColor(COLORS.primary);
-  doc.text(options.rightValue, options.pageWidth - options.margin, options.footerY + 10, {
-    align: "right",
-  });
+    doc.setFontSize(9);
+    doc.setTextColor(COLORS.primary);
+    doc.text(
+      options.rightValue,
+      options.pageWidth - options.margin,
+      options.footerY + 10,
+      {
+        align: "right",
+      },
+    );
+  }
 
   doc.setFont("helvetica", "bold");
   doc.setFontSize(7);
   doc.setTextColor(COLORS.text);
-  doc.text(`${options.timestampLabel}: ${options.timestamp}`, options.margin, options.footerY + 15);
+  doc.text(
+    `${options.timestampLabel}: ${options.timestamp}`,
+    options.margin,
+    options.footerY + 15,
+  );
 };
 
 /**
@@ -434,7 +450,7 @@ export const generatePathologyReceipt = async (
       },
       columnStyles: {
         0: { cellWidth: 15, halign: "center", fontStyle: "bold", fontSize: 12 },
-        1: { cellWidth: "auto" },
+        1: { cellWidth: "auto", fontStyle: "bold" },
         2: { cellWidth: 40, halign: "right", fontStyle: "bold" },
       },
       alternateRowStyles: {
@@ -525,8 +541,18 @@ export const generatePathologyReceipt = async (
         // Small decorative lines above and below text
         const lineHalfW = 10;
         doc.setLineWidth(0.5);
-        doc.line(stampCenterX - lineHalfW, stampCenterY - 7, stampCenterX + lineHalfW, stampCenterY - 7);
-        doc.line(stampCenterX - lineHalfW, stampCenterY + 7, stampCenterX + lineHalfW, stampCenterY + 7);
+        doc.line(
+          stampCenterX - lineHalfW,
+          stampCenterY - 7,
+          stampCenterX + lineHalfW,
+          stampCenterY - 7,
+        );
+        doc.line(
+          stampCenterX - lineHalfW,
+          stampCenterY + 7,
+          stampCenterX + lineHalfW,
+          stampCenterY + 7,
+        );
 
         doc.restoreGraphicsState();
 
@@ -578,8 +604,6 @@ export const generatePathologyReceipt = async (
       pageWidth,
       leftLabel: "Created By",
       leftValue: getCreatorName(data),
-      rightLabel: "Printed By",
-      rightValue: printedBy,
       timestampLabel: "Printed on",
       timestamp: printTime,
     });

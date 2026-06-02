@@ -20,7 +20,6 @@ const COMPANY_INFO = {
   address:
     "1257, Sholakia, Khorompatti Kishoreganj Sadar, Kishoreganj Dhaka, Bangladesh",
   phone: "+8801726219350, +8801701295016, +8801787993086",
-  department: "HSI Center",
 };
 
 const loadImage = (src: string): Promise<HTMLImageElement> => {
@@ -60,6 +59,60 @@ const calculateAge = (dob: string | null | undefined): string => {
 /**
  * Draw a section box with title
  */
+const drawAuditFooter = (
+  doc: jsPDF,
+  options: {
+    footerY: number;
+    margin: number;
+    pageWidth: number;
+    leftLabel: string;
+    leftValue: string;
+    rightLabel?: string;
+    rightValue?: string;
+    timestampLabel: string;
+    timestamp: string;
+  },
+) => {
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(8);
+  doc.setTextColor(COLORS.text);
+  doc.text(options.leftLabel, options.margin, options.footerY + 5);
+
+  doc.setFontSize(9);
+  doc.setTextColor(COLORS.primary);
+  doc.text(options.leftValue, options.margin, options.footerY + 10);
+
+  if (options.rightLabel && options.rightValue) {
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8);
+    doc.setTextColor(COLORS.text);
+    doc.text(
+      options.rightLabel,
+      options.pageWidth - options.margin,
+      options.footerY + 5,
+      { align: "right" },
+    );
+
+    doc.setFontSize(9);
+    doc.setTextColor(COLORS.primary);
+    doc.text(
+      options.rightValue,
+      options.pageWidth - options.margin,
+      options.footerY + 10,
+      { align: "right" },
+    );
+  }
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(7);
+  doc.setTextColor(COLORS.text);
+  doc.text(
+    `${options.timestampLabel}: ${options.timestamp}`,
+    options.margin,
+    options.footerY + 15,
+  );
+};
+
 const drawSectionBox = (
   doc: jsPDF,
   title: string,
@@ -119,9 +172,6 @@ export const generateInfertilityReport = async (
   doc.setFont("helvetica", "bold");
   doc.setFontSize(9);
   doc.setTextColor(COLORS.indigo);
-  doc.text(COMPANY_INFO.department, pageWidth / 2, currentY, {
-    align: "center",
-  });
   currentY += 4;
 
   // Address
@@ -623,20 +673,7 @@ export const generateInfertilityReport = async (
   }
 
   // === FOOTER ===
-  const footerY = pageHeight - 35; // Increased bottom margin
-
-  // Left side - Prepared By
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(7);
-  doc.setTextColor(COLORS.lightText);
-  doc.text("Prepared By", margin + 18, footerY, { align: "center" });
-
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(8);
-  doc.setTextColor(COLORS.primary);
-  doc.text(printedBy, margin + 18, footerY + 4, { align: "center" });
-
-  // Print timestamp
+  const footerY = pageHeight - 38;
   const printTime = new Date().toLocaleString("en-BD", {
     hour: "numeric",
     minute: "numeric",
@@ -645,46 +682,33 @@ export const generateInfertilityReport = async (
     month: "short",
     year: "numeric",
   });
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(6);
-  doc.setTextColor(COLORS.lightText);
-  doc.text(printTime, margin + 18, footerY + 8, { align: "center" });
 
-  // Right side - Record timestamps
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(7);
-  doc.setTextColor(COLORS.lightText);
-  doc.text("Record Created", pageWidth - margin - 22, footerY, {
-    align: "center",
+  drawAuditFooter(doc, {
+    footerY,
+    margin,
+    pageWidth,
+    leftLabel: "Admitted By",
+    leftValue: data.createdByName?.trim() || "Unknown",
+    rightLabel: "Record Created",
+    rightValue: formatDate(data.createdAt),
+    timestampLabel: "Printed on",
+    timestamp: printTime,
   });
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(7);
-  doc.text(formatDate(data.createdAt), pageWidth - margin - 22, footerY + 4, {
-    align: "center",
-  });
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(6);
-  doc.text(
-    `Updated: ${formatDate(data.updatedAt)}`,
-    pageWidth - margin - 22,
-    footerY + 8,
-    { align: "center" }
-  );
 
   // Bottom center branding
   doc.setTextColor(COLORS.lightText);
   doc.setFont("helvetica", "normal");
-  doc.setFontSize(6);
+  doc.setFontSize(7);
   doc.text(
-    "This is a computer-generated medical report from the Woman's Own Medicine (WOM) System",
+    "This is a computer-generated medical report from the HSI Center Management System",
     pageWidth / 2,
-    pageHeight - 12, // Increased safety margin
+    pageHeight - 12,
     { align: "center" }
   );
   doc.text(
     "HSI Center",
     pageWidth / 2,
-    pageHeight - 8, // Increased safety margin
+    pageHeight - 8,
     { align: "center" }
   );
 

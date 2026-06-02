@@ -145,7 +145,7 @@ export async function getInfertilityPatients(filters: InfertilityFilters) {
   const skip = (page - 1) * limit;
 
   // Execute count and data queries in parallel
-  const [total, data] = await Promise.all([
+  const [total, rows] = await Promise.all([
     prisma.infertilityPatient.count({ where }),
     prisma.infertilityPatient.findMany({
       where,
@@ -182,6 +182,16 @@ export async function getInfertilityPatients(filters: InfertilityFilters) {
             website: true,
           },
         },
+        createdByStaff: {
+          select: {
+            fullName: true,
+          },
+        },
+        modifiedByStaff: {
+          select: {
+            fullName: true,
+          },
+        },
         _count: {
           select: {
             tests: true,
@@ -197,6 +207,12 @@ export async function getInfertilityPatients(filters: InfertilityFilters) {
   ]);
 
   const totalPages = Math.ceil(total / limit);
+
+  const data = rows.map((row) => ({
+    ...row,
+    createdByName: row.createdByStaff?.fullName ?? null,
+    lastModifiedByName: row.modifiedByStaff?.fullName ?? null,
+  }));
 
   return {
     data,
