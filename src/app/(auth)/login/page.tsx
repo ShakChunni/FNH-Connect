@@ -32,7 +32,6 @@ const BACKGROUND_BLUR_SECONDARY_CLASS =
 const PANEL_TRANSITION = {
   flexBasis: { duration: 1.08, ease: SOFT_EASE },
   opacity: { duration: 0.9, ease: SOFT_EASE },
-  filter: { duration: 1.08, ease: SOFT_EASE },
   scale: { duration: 0.7, ease: SOFT_EASE },
 } as const;
 const ACTIVE_PORTAL_TRANSITION = {
@@ -106,10 +105,10 @@ const PORTAL_LOGOS: Record<
   infertility: {
     src: "/hsi-logo.png",
     alt: "HSI Center logo",
-    width: 1254,
-    height: 1254,
-    wrapperClassName: "border-emerald-300/50 bg-white/95",
-    imageClassName: "scale-110",
+    width: 500,
+    height: 500,
+    wrapperClassName: "border-emerald-300/30 bg-emerald-950/25",
+    imageClassName: "scale-125",
   },
 };
 
@@ -197,16 +196,15 @@ function CompactPortalRail({
   return (
     <motion.div
       key={`${portal}-rail`}
-      initial={{ opacity: 0, scale: 0.96, filter: "blur(8px)" }}
-      animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
+      initial={{ opacity: 0, scale: 0.985 }}
+      animate={{ opacity: 1, scale: 1 }}
       exit={{
         opacity: 0,
-        scale: 0.98,
-        filter: "blur(8px)",
+        scale: 0.99,
         transition: PORTAL_EXIT_TRANSITION,
       }}
-      transition={{ duration: 0.56, delay: 0.24, ease: SOFT_EASE }}
-      className="absolute inset-0 flex flex-col items-center justify-center gap-4 px-4 text-center will-change-[opacity,transform,filter]"
+      transition={{ duration: 0.38, ease: SOFT_EASE }}
+      className="absolute inset-0 flex flex-col items-center justify-center gap-4 px-4 text-center will-change-[opacity,transform]"
     >
       <PortalLogo portal={portal} size="rail" />
       <div className="space-y-1">
@@ -338,14 +336,10 @@ function LoginPageDesktop() {
                     ? "11rem"
                     : "50%",
               opacity: selectedPortal === "infertility" ? 0.62 : 1,
-              filter:
-                selectedPortal === "infertility"
-                  ? "grayscale(1)"
-                  : "grayscale(0)",
             }}
             transition={PANEL_TRANSITION}
             className={cn(
-              "relative min-w-0 flex-none flex flex-col h-full cursor-pointer group overflow-hidden will-change-[flex-basis,opacity,filter]",
+              "relative min-w-0 flex-none flex flex-col h-full cursor-pointer group overflow-hidden will-change-[flex-basis,opacity]",
               selectedPortal === "general"
                 ? "h-full z-20 cursor-default"
                 : selectedPortal === "infertility"
@@ -357,7 +351,14 @@ function LoginPageDesktop() {
             <div className="absolute inset-0 bg-gradient-to-br from-[#1e293b] via-[#0f172a] to-[#020617] z-0" />
             <div className="absolute inset-0 opacity-0 group-hover:opacity-10 transition-opacity duration-500 bg-gradient-to-tr from-blue-500 via-transparent to-transparent z-0" />
 
-            <div className={cn("relative z-10 flex flex-col h-full transition-[padding] duration-[900ms] ease-[cubic-bezier(0.16,1,0.3,1)]", selectedPortal === "infertility" ? "p-3 lg:p-6 justify-center lg:justify-start" : "p-6 lg:p-14")}>
+            {selectedPortal === "infertility" ? (
+              <CompactPortalRail
+                portal="general"
+                label="FNH"
+                description="General Portal"
+              />
+            ) : (
+            <div className="relative z-10 flex h-full flex-col p-6 lg:p-14">
               {/* Header */}
               <motion.div
                 className={cn(
@@ -423,12 +424,6 @@ function LoginPageDesktop() {
                         </div>
                       </div>
                     </motion.div>
-                  ) : selectedPortal === "infertility" ? (
-                    <CompactPortalRail
-                      portal="general"
-                      label="FNH"
-                      description="General Portal"
-                    />
                   ) : (
                     <motion.div
                       key="general-intro"
@@ -473,6 +468,7 @@ function LoginPageDesktop() {
                 </AnimatePresence>
               </div>
             </div>
+            )}
             {/* Hover Decor */}
             <div className="absolute bottom-0 right-0 w-64 h-64 bg-blue-600/10 rounded-full blur-[120px] -mr-32 -mb-32 group-hover:bg-blue-600/30 group-hover:scale-150 transition-all duration-1000" />
           </motion.div>
@@ -489,14 +485,10 @@ function LoginPageDesktop() {
                     ? "11rem"
                     : "50%",
               opacity: selectedPortal === "general" ? 0.62 : 1,
-              filter:
-                selectedPortal === "general"
-                  ? "grayscale(1)"
-                  : "grayscale(0)",
             }}
             transition={PANEL_TRANSITION}
             className={cn(
-              "relative min-w-0 flex-none flex flex-col h-full cursor-pointer group overflow-hidden will-change-[flex-basis,opacity,filter]",
+              "relative min-w-0 flex-none flex flex-col h-full cursor-pointer group overflow-hidden will-change-[flex-basis,opacity]",
               selectedPortal === "infertility"
                 ? "h-full z-20 cursor-default"
                 : selectedPortal === "general"
@@ -508,7 +500,14 @@ function LoginPageDesktop() {
             <div className="absolute inset-0 bg-gradient-to-br from-[#111827] via-[#064e3b] to-[#022c22] z-0" />
             <div className="absolute inset-0 opacity-0 group-hover:opacity-10 transition-opacity duration-500 bg-gradient-to-tl from-emerald-500 via-transparent to-transparent z-0" />
 
-            <div className={cn("relative z-10 flex flex-col h-full transition-[padding] duration-[900ms] ease-[cubic-bezier(0.16,1,0.3,1)]", selectedPortal === "general" ? "p-3 lg:p-6 justify-center lg:justify-start" : "p-6 lg:p-14")}>
+            {selectedPortal === "general" ? (
+              <CompactPortalRail
+                portal="infertility"
+                label="HSI"
+                description="Specialty Portal"
+              />
+            ) : (
+            <div className="relative z-10 flex h-full flex-col p-6 lg:p-14">
               {/* Header */}
               <motion.div
                 className={cn(
@@ -575,12 +574,6 @@ function LoginPageDesktop() {
                         </div>
                       </div>
                     </motion.div>
-                  ) : selectedPortal === "general" ? (
-                    <CompactPortalRail
-                      portal="infertility"
-                      label="HSI"
-                      description="Specialty Portal"
-                    />
                   ) : (
                     <motion.div
                       key="infertility-intro"
@@ -625,6 +618,7 @@ function LoginPageDesktop() {
                 </AnimatePresence>
               </div>
             </div>
+            )}
             {/* Hover Decor */}
             <div className="absolute top-0 left-0 w-64 h-64 bg-emerald-600/10 rounded-full blur-[120px] -ml-32 -mt-32 group-hover:bg-emerald-600/30 group-hover:scale-150 transition-all duration-1000" />
           </motion.div>
