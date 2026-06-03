@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useCallback, useMemo, useRef } from "react";
-import { createPortal } from "react-dom";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { ClientPortal } from "@/components/ui/ClientPortal";
 
 // Modular Components
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -223,27 +223,25 @@ const PathologyManagement = React.memo(() => {
       <ExportActionBar data={tableData} />
 
       {/* Add New Data Portal */}
-      {(modals.isAddOpen || modals.isAddClosing) &&
-        typeof window !== "undefined" &&
-        createPortal(
+      {(modals.isAddOpen || modals.isAddClosing) && (
+        <ClientPortal>
           <AddNewDataPathology
             isOpen={modals.isAddOpen && !modals.isAddClosing}
             onClose={actions.closeAddModal}
-          />,
-          document.body,
-        )}
+          />
+        </ClientPortal>
+      )}
 
       {/* Edit Data Portal */}
       {(modals.isEditOpen || modals.isEditClosing) &&
-        modals.selectedPatient &&
-        typeof window !== "undefined" &&
-        createPortal(
-          <EditDataPathology
-            isOpen={modals.isEditOpen && !modals.isEditClosing}
-            onClose={actions.closeEditModal}
-            patientData={modals.selectedPatient}
-          />,
-          document.body,
+        modals.selectedPatient && (
+          <ClientPortal>
+            <EditDataPathology
+              isOpen={modals.isEditOpen && !modals.isEditClosing}
+              onClose={actions.closeEditModal}
+              patientData={modals.selectedPatient}
+            />
+          </ClientPortal>
         )}
     </div>
   );

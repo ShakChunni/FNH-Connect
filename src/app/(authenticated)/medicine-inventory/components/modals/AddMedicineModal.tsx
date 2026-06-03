@@ -23,6 +23,7 @@ import {
 import { ModalHeader } from "@/components/ui/ModalHeader";
 import { ModalFooter } from "@/components/ui/ModalFooter";
 import { useNotification } from "@/hooks/useNotification";
+import { useIsMobile } from "@/hooks/useIsMobile";
 import { useAddMedicineData, useAddGroupData } from "../../hooks";
 import { useUIStore } from "../../stores";
 import { GroupSearch } from "../shared";
@@ -57,6 +58,8 @@ const AddMedicineModal: React.FC<AddMedicineModalProps> = ({
   onClose,
   onSuccess,
 }) => {
+  const isMobile = useIsMobile();
+
   const popupRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
@@ -446,11 +449,7 @@ const AddMedicineModal: React.FC<AddMedicineModalProps> = ({
                         <div
                           className="overflow-y-auto p-2"
                           style={{
-                            maxHeight:
-                              typeof window !== "undefined" &&
-                              window.innerWidth < 640
-                                ? "220px"
-                                : "280px",
+                            maxHeight: isMobile ? "220px" : "280px",
                           }}
                         >
                           {DOSAGE_FORMS.map((form) => (

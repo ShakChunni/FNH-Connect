@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useCallback, useMemo, useRef, useState } from "react";
-import { createPortal } from "react-dom";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { ClientPortal } from "@/components/ui/ClientPortal";
 
 // Modular Components
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -272,39 +272,35 @@ const InfertilityManagement = React.memo(() => {
       />
 
       {/* Portals */}
-      {(modals.isAddOpen || modals.isAddClosing) &&
-        typeof window !== "undefined" &&
-        createPortal(
+      {(modals.isAddOpen || modals.isAddClosing) && (
+        <ClientPortal>
           <AddNewDataInfertility
             isOpen={modals.isAddOpen && !modals.isAddClosing}
             onClose={actions.closeAddModal}
-          />,
-          document.body
-        )}
+          />
+        </ClientPortal>
+      )}
 
       {(modals.isEditOpen || modals.isEditClosing) &&
-        modals.selectedPatient &&
-        typeof window !== "undefined" &&
-        createPortal(
-          <EditDataInfertility
-            isOpen={modals.isEditOpen && !modals.isEditClosing}
-            onClose={actions.closeEditModal}
-            patientData={modals.selectedPatient}
-          />,
-          document.body
+        modals.selectedPatient && (
+          <ClientPortal>
+            <EditDataInfertility
+              isOpen={modals.isEditOpen && !modals.isEditClosing}
+              onClose={actions.closeEditModal}
+              patientData={modals.selectedPatient}
+            />
+          </ClientPortal>
         )}
 
-      {isEditInvestigationOpen &&
-        selectedInvestigation &&
-        typeof window !== "undefined" &&
-        createPortal(
+      {isEditInvestigationOpen && selectedInvestigation && (
+        <ClientPortal>
           <EditInvestigationModal
             isOpen={isEditInvestigationOpen}
             onClose={() => setIsEditInvestigationOpen(false)}
             investigationData={selectedInvestigation}
-          />,
-          document.body
-        )}
+          />
+        </ClientPortal>
+      )}
     </div>
   );
 });

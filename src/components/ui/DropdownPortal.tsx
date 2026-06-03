@@ -1,8 +1,9 @@
 "use client";
 
-import { ReactNode, useRef, useEffect, useState } from "react";
+import { ReactNode, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
+import { useMounted } from "@/hooks/useMounted";
 import { useDynamicDropdownPosition } from "@/hooks/use-dynamic-dropdown-position";
 import type { DropdownPortalProps } from "../../types/dropdownPortal";
 
@@ -27,7 +28,7 @@ export function DropdownPortal({
   withContainerStyles = true,
 }: DropdownPortalProps) {
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const [mounted, setMounted] = useState(false);
+  const mounted = useMounted();
 
   // Store onClose in a ref so it doesn't trigger effect re-runs
   // This allows consumers to pass inline functions like `onClose={() => setIsOpen(false)}`
@@ -44,12 +45,6 @@ export function DropdownPortal({
     onClose,
     matchButtonWidth,
   );
-
-  // Track if component is mounted (for portal)
-  useEffect(() => {
-    setMounted(true);
-    return () => setMounted(false);
-  }, []);
 
   // Close dropdown on click outside
   useEffect(() => {
@@ -120,7 +115,6 @@ export function DropdownPortal({
   return (
     <>
       {mounted &&
-        typeof window !== "undefined" &&
         createPortal(dropdownContent, document.body)}
     </>
   );

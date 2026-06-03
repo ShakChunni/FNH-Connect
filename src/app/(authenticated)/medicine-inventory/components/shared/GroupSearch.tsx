@@ -13,7 +13,7 @@ import React, {
   useMemo,
 } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { createPortal } from "react-dom";
+import { ClientPortal } from "@/components/ui/ClientPortal";
 import { Layers, Loader2, PlusCircle, X, Check } from "lucide-react";
 import { useFetchMedicineGroups } from "../../hooks";
 import type { MedicineGroup } from "../../types";
@@ -212,9 +212,8 @@ export const GroupSearch: React.FC<GroupSearchProps> = ({
       </div>
 
       {/* Dropdown Portal */}
-      {typeof window !== "undefined" &&
-        isOpen &&
-        createPortal(
+      {isOpen && (
+        <ClientPortal>
           <AnimatePresence>
             <motion.div
               ref={dropdownRef}
@@ -305,9 +304,9 @@ export const GroupSearch: React.FC<GroupSearchProps> = ({
                 </div>
               )}
             </motion.div>
-          </AnimatePresence>,
-          document.body,
-        )}
+          </AnimatePresence>
+        </ClientPortal>
+      )}
     </div>
   );
 };

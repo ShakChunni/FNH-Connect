@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useState, useRef, useCallback, useMemo } from "react";
+import React, { useState, useRef, useCallback, useMemo, useEffect } from "react";
 import { ChevronDown, Check, AlertTriangle } from "lucide-react";
+import { useIsMobile } from "@/hooks/useIsMobile";
 import { DropdownPortal } from "@/components/ui/DropdownPortal";
 
 export interface StatusOption {
@@ -80,6 +81,8 @@ const AdmissionStatusDropdown: React.FC<AdmissionStatusDropdownProps> = ({
   showConfirmation = false,
   getWarningMessage,
 }) => {
+  const isMobile = useIsMobile();
+
   const [isOpen, setIsOpen] = useState(false);
   const [pendingSelection, setPendingSelection] = useState<string | null>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -226,10 +229,7 @@ const AdmissionStatusDropdown: React.FC<AdmissionStatusDropdownProps> = ({
           <div
             className="overflow-y-auto p-1"
             style={{
-              maxHeight:
-                typeof window !== "undefined" && window.innerWidth < 640
-                  ? "220px"
-                  : "280px",
+              maxHeight: isMobile ? "220px" : "280px",
             }}
           >
             {options.map((opt) => {

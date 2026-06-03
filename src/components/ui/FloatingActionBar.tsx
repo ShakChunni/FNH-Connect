@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import { createPortal } from "react-dom";
+import { ClientPortal } from "@/components/ui/ClientPortal";
 import { motion, AnimatePresence } from "framer-motion";
 import { CheckCheck, ChevronDown, XCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -38,14 +38,9 @@ export function FloatingActionBar({
   className,
   itemLabel,
 }: FloatingActionBarProps) {
-  const [mounted, setMounted] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   // Close menu on outside click
   useEffect(() => {
@@ -88,20 +83,19 @@ export function FloatingActionBar({
     return selectedCount === 1 ? "item" : "items";
   };
 
-  if (!mounted) return null;
-
-  return createPortal(
-    <AnimatePresence>
-      {shouldShow && (
-        <div className="fixed bottom-6 left-0 right-0 z-50 flex justify-center pointer-events-none px-4">
-          <motion.div
-            layout
-            initial={{ opacity: 0, y: 50, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 50, scale: 0.95 }}
-            transition={{
-              layout: { duration: 0.2, ease: "easeOut" },
-              opacity: { duration: 0.2 },
+  return (
+    <ClientPortal>
+      <AnimatePresence>
+        {shouldShow && (
+          <div className="fixed bottom-6 left-0 right-0 z-50 flex justify-center pointer-events-none px-4">
+            <motion.div
+              layout
+              initial={{ opacity: 0, y: 50, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 50, scale: 0.95 }}
+              transition={{
+                layout: { duration: 0.2, ease: "easeOut" },
+                opacity: { duration: 0.2 },
               y: { type: "spring", stiffness: 300, damping: 30 },
               scale: { type: "spring", stiffness: 300, damping: 30 },
             }}
@@ -270,7 +264,7 @@ export function FloatingActionBar({
           </motion.div>
         </div>
       )}
-    </AnimatePresence>,
-    document.body
+      </AnimatePresence>
+    </ClientPortal>
   );
 }

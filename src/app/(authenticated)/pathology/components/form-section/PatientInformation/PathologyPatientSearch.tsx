@@ -6,7 +6,7 @@ import React, {
   useMemo,
 } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { createPortal } from "react-dom";
+import { ClientPortal } from "@/components/ui/ClientPortal";
 import { User, Loader2, PlusCircle, X, UserCheck } from "lucide-react";
 import {
   useFetchPathologyPatients,
@@ -386,8 +386,9 @@ const PathologyPatientSearch: React.FC = () => {
           )}
         </div>
       </div>
-      {typeof window !== "undefined" &&
-        createPortal(dropdownContent, document.body)}
+      <ClientPortal>
+        {dropdownContent}
+      </ClientPortal>
     </>
   );
 };
