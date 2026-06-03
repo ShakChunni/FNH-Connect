@@ -8,6 +8,7 @@ import React, {
   memo,
 } from "react";
 import { ChevronDown, UserCircle2, Stethoscope, Search } from "lucide-react";
+import { useIsMobile } from "@/hooks/useIsMobile";
 import { DropdownPortal } from "@/components/ui/DropdownPortal";
 import { useFetchDoctors } from "../../../hooks";
 import type { Doctor } from "../../../types";
@@ -79,6 +80,8 @@ const DoctorDropdown: React.FC<DoctorDropdownProps> = ({
   disabled = false,
   inputClassName = "",
 }) => {
+  const isMobile = useIsMobile();
+
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -238,10 +241,7 @@ const DoctorDropdown: React.FC<DoctorDropdownProps> = ({
           <div
             className="overflow-y-auto p-2"
             style={{
-              maxHeight:
-                typeof window !== "undefined" && window.innerWidth < 640
-                  ? "220px"
-                  : "280px",
+              maxHeight: isMobile ? "220px" : "280px",
             }}
           >
             {/* Self Option - only show if Self entry exists and matches search */}

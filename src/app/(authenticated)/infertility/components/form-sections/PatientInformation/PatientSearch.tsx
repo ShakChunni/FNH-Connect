@@ -7,7 +7,7 @@ import React, {
   useMemo,
 } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { createPortal } from "react-dom";
+import { ClientPortal } from "@/components/ui/ClientPortal";
 import { User, Building2, Loader2, Info, PlusCircle, X } from "lucide-react";
 import { useFetchPatientInformation } from "../../../hooks";
 import {
@@ -397,8 +397,9 @@ const PatientSearch: React.FC = () => {
           )}
         </div>
       </div>
-      {typeof window !== "undefined" &&
-        createPortal(dropdownContent, document.body)}
+      <ClientPortal>
+        {dropdownContent}
+      </ClientPortal>
     </>
   );
 };

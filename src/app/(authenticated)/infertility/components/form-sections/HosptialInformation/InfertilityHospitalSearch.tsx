@@ -6,7 +6,7 @@ import React, {
   useMemo,
 } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { createPortal } from "react-dom";
+import { ClientPortal } from "@/components/ui/ClientPortal";
 import { Building2, PlusCircle, Loader2, Info, X } from "lucide-react";
 import { useFetchHospitalInformation } from "../../../hooks";
 import { Hospital, HospitalData } from "../../../types";
@@ -330,8 +330,9 @@ const InfertilityHospitalSearch: React.FC = () => {
           </button>
         )}
       </div>
-      {typeof window !== "undefined" &&
-        createPortal(dropdownContent, document.body)}
+      <ClientPortal>
+        {dropdownContent}
+      </ClientPortal>
     </>
   );
 };

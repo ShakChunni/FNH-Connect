@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useCallback, useMemo } from "react";
-import { createPortal } from "react-dom";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { ClientPortal } from "@/components/ui/ClientPortal";
 
 // Modular Components
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -146,15 +146,14 @@ const PatientRecordsPage = React.memo(() => {
 
       {/* Edit Patient Modal Portal */}
       {(modals.isEditOpen || modals.isEditClosing) &&
-        modals.selectedPatient &&
-        typeof window !== "undefined" &&
-        createPortal(
-          <EditPatientModal
-            isOpen={modals.isEditOpen && !modals.isEditClosing}
-            onClose={actions.closeEditModal}
-            patientData={modals.selectedPatient}
-          />,
-          document.body,
+        modals.selectedPatient && (
+          <ClientPortal>
+            <EditPatientModal
+              isOpen={modals.isEditOpen && !modals.isEditClosing}
+              onClose={actions.closeEditModal}
+              patientData={modals.selectedPatient}
+            />
+          </ClientPortal>
         )}
     </div>
   );

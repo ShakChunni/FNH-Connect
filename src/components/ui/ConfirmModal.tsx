@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { createPortal } from "react-dom";
+import { ClientPortal } from "@/components/ui/ClientPortal";
 import { motion, AnimatePresence } from "framer-motion";
 import { AlertTriangle, Ban, CheckCircle, Info, Trash2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -92,15 +92,7 @@ export function ConfirmModal({
   variant = "default",
   icon,
 }: ConfirmModalProps) {
-  const [mounted, setMounted] = useState(false);
-
   useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  useEffect(() => {
-    if (!mounted) return;
-
     if (isOpen) {
       preserveLockBodyScroll();
     } else {
@@ -110,28 +102,27 @@ export function ConfirmModal({
     return () => {
       preserveUnlockBodyScroll();
     };
-  }, [isOpen, mounted]);
+  }, [isOpen]);
 
-  if (!mounted) return null;
+  return (
+    <ClientPortal>
+      <AnimatePresence>
+        {isOpen && (
+          <div className="fixed inset-0 z-9999 flex items-center justify-center p-4 overflow-hidden">
+            <motion.div
+              className="fixed inset-0 bg-[#09090b]/50"
+              variants={backdropVariants}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
+              onClick={onClose}
+            />
 
-  return createPortal(
-    <AnimatePresence>
-      {isOpen && (
-        <div className="fixed inset-0 z-9999 flex items-center justify-center p-4 overflow-hidden">
-          <motion.div
-            className="fixed inset-0 bg-[#09090b]/50"
-            variants={backdropVariants}
-            initial="hidden"
-            animate="visible"
-            exit="exit"
-            onClick={onClose}
-          />
-
-          <motion.div
-            className="relative w-full max-w-[420px] shadow-2xl flex flex-col overflow-hidden bg-white"
-            style={{
-              borderRadius: "28px",
-            }}
+            <motion.div
+              className="relative w-full max-w-[420px] shadow-2xl flex flex-col overflow-hidden bg-white"
+              style={{
+                borderRadius: "28px",
+              }}
             variants={modalVariants}
             initial="hidden"
             animate="visible"
@@ -191,8 +182,8 @@ export function ConfirmModal({
           </motion.div>
         </div>
       )}
-    </AnimatePresence>,
-    document.body
+      </AnimatePresence>
+    </ClientPortal>
   );
 }
 

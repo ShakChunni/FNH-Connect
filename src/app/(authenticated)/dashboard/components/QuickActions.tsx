@@ -48,16 +48,6 @@ const allQuickActions: QuickActionItem[] = [
     hoverBgColor: "hover:bg-teal-100",
   },
   {
-    id: "infertility",
-    label: "HSI Center",
-    description: "Fertility treatments",
-    href: "/infertility",
-    icon: Baby,
-    color: "text-pink-600",
-    bgColor: "bg-pink-50",
-    hoverBgColor: "hover:bg-pink-100",
-  },
-  {
     id: "pathology",
     label: "Pathology",
     description: "Lab & test results",

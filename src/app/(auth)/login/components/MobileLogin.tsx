@@ -18,7 +18,7 @@ import { cn } from "@/lib/utils";
 import type { LoginFormData, LoginResponse } from "../types";
 import type { PortalType } from "@/types/auth";
 
-const APP_VERSION = "v1.1.2";
+const APP_VERSION = "v1.1.3";
 
 const PORTAL_META: Record<
   PortalType,

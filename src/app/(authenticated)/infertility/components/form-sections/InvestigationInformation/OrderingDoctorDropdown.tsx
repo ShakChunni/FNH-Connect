@@ -7,6 +7,7 @@ import React, {
   memo,
 } from "react";
 import { ChevronDown, UserCircle2, Stethoscope, Search } from "lucide-react";
+import { useIsMobile } from "@/hooks/useIsMobile";
 import { DropdownPortal } from "@/components/ui/DropdownPortal";
 import { useFetchDoctors } from "../../../hooks";
 
@@ -84,6 +85,8 @@ const OrderingDoctorDropdown: React.FC<OrderingDoctorDropdownProps> = ({
   disabled = false,
   inputClassName = "",
 }) => {
+  const isMobile = useIsMobile();
+
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -244,10 +247,7 @@ const OrderingDoctorDropdown: React.FC<OrderingDoctorDropdownProps> = ({
           <div
             className="overflow-y-auto p-2"
             style={{
-              maxHeight:
-                typeof window !== "undefined" && window.innerWidth < 640
-                  ? "220px"
-                  : "280px",
+              maxHeight: isMobile ? "220px" : "280px",
             }}
           >
             {isLoading ? (

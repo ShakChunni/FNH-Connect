@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useCallback, useMemo, useRef } from "react";
-import { createPortal } from "react-dom";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { ClientPortal } from "@/components/ui/ClientPortal";
 
 // Modular Components
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -229,28 +229,24 @@ const GeneralAdmissionPage = React.memo(() => {
       <ExportActionBar data={admissions} />
 
       {/* Add New Data Portal */}
-
-      {typeof window !== "undefined" &&
-        createPortal(
-          <AddNewDataAdmission
-            isOpen={modals.isAddModalOpen}
-            onClose={handleCloseAdd}
-            onSuccess={handleAddSuccess}
-          />,
-          document.body
-        )}
+      <ClientPortal>
+        <AddNewDataAdmission
+          isOpen={modals.isAddModalOpen}
+          onClose={handleCloseAdd}
+          onSuccess={handleAddSuccess}
+        />
+      </ClientPortal>
 
       {/* Edit Data Portal */}
-      {modals.editingPatient &&
-        typeof window !== "undefined" &&
-        createPortal(
+      {modals.editingPatient && (
+        <ClientPortal>
           <EditDataAdmission
             isOpen={modals.isEditModalOpen}
             onClose={handleCloseEdit}
             patientData={modals.editingPatient}
-          />,
-          document.body
-        )}
+          />
+        </ClientPortal>
+      )}
     </div>
   );
 });

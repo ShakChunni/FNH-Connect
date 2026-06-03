@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useCallback } from "react";
-import { createPortal } from "react-dom";
+import { ClientPortal } from "@/components/ui/ClientPortal";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, RotateCcw, SlidersHorizontal } from "lucide-react";
 import { useInfertilityTestFilterStore } from "../../stores/testFilterStore";
@@ -113,6 +113,9 @@ export const Filters: React.FC = () => {
     </AnimatePresence>
   );
 
-  if (typeof window === "undefined") return null;
-  return createPortal(panelContent, document.body);
+  return (
+    <ClientPortal>
+      {panelContent}
+    </ClientPortal>
+  );
 };

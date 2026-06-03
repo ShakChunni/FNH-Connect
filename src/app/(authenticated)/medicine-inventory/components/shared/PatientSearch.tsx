@@ -13,7 +13,7 @@ import React, {
   useMemo,
 } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { createPortal } from "react-dom";
+import { ClientPortal } from "@/components/ui/ClientPortal";
 import { User, Loader2, X, Check, Phone } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/axios";
@@ -259,9 +259,8 @@ export const PatientSearch: React.FC<PatientSearchProps> = ({
       )}
 
       {/* Dropdown Portal */}
-      {typeof window !== "undefined" &&
-        isOpen &&
-        createPortal(
+      {isOpen && (
+        <ClientPortal>
           <AnimatePresence>
             <motion.div
               ref={dropdownRef}
@@ -348,9 +347,9 @@ export const PatientSearch: React.FC<PatientSearchProps> = ({
                 </div>
               )}
             </motion.div>
-          </AnimatePresence>,
-          document.body,
-        )}
+          </AnimatePresence>
+        </ClientPortal>
+      )}
     </div>
   );
 };

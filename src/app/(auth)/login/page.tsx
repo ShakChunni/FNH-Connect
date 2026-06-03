@@ -22,7 +22,7 @@ import {
 import type { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const APP_VERSION = "v1.1.2";
+const APP_VERSION = "v1.1.3";
 const SOFT_EASE = [0.16, 1, 0.3, 1] as const;
 const BACKGROUND_TRANSITION_CLASS =
   "transition-colors duration-[1400ms] ease-[cubic-bezier(0.16,1,0.3,1)]";
