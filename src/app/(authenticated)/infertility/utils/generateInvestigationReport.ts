@@ -117,7 +117,8 @@ const drawMetricBox = (
 export const generateInfertilityInvestigationReport = async (
   data: InfertilityTestData[],
   type: "summary" | "detailed",
-  filters?: { startDate?: Date | null; endDate?: Date | null; dateRange?: string }
+  filters?: { startDate?: Date | null; endDate?: Date | null; dateRange?: string },
+  printedBy: string = "Staff"
 ) => {
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.width;
@@ -255,16 +256,16 @@ export const generateInfertilityInvestigationReport = async (
 
   // Footer on all pages
   const pageCount = doc.getNumberOfPages();
+  const pageHeight = doc.internal.pageSize.height;
   for (let i = 1; i <= pageCount; i++) {
     doc.setPage(i);
     doc.setFont("helvetica", "bold");
     doc.setFontSize(8);
     doc.setTextColor(COLORS.text);
-    const footerDate = format(new Date(), "PPpp");
     doc.text(
-      `Generated on ${footerDate} - Page ${i} of ${pageCount}`,
+      `Page ${i} of ${pageCount}`,
       pageWidth / 2,
-      doc.internal.pageSize.height - 8,
+      pageHeight - 8,
       { align: "center" }
     );
   }
@@ -277,15 +278,52 @@ export const generateInfertilityInvestigationReport = async (
   doc.text(
     "NB: This is a computer generated investigation report.",
     pageWidth / 2,
-    doc.internal.pageSize.height - 22,
+    pageHeight - 26,
     { align: "center" }
   );
   doc.text(
     "Thank you for choosing HSI Center",
     pageWidth / 2,
-    doc.internal.pageSize.height - 18,
+    pageHeight - 22,
     { align: "center" }
   );
+
+  // Collected by info on the last page - left side
+  const printTime = new Date().toLocaleString("en-BD", {
+    hour: "numeric",
+    minute: "numeric",
+    hour12: true,
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+
+  // Use the most frequent createdByName from data, fallback to printedBy
+  const creatorCounts = new Map<string, number>();
+  data.forEach((item) => {
+    const name = item.createdByName?.trim();
+    if (name) {
+      creatorCounts.set(name, (creatorCounts.get(name) || 0) + 1);
+    }
+  });
+  const mostFrequentCreator =
+    Array.from(creatorCounts.entries()).sort((a, b) => b[1] - a[1])[0]?.[0] ||
+    printedBy;
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(7);
+  doc.setTextColor(COLORS.lightText);
+  doc.text("Collected by:", margin, pageHeight - 18);
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(8);
+  doc.setTextColor(COLORS.primary);
+  doc.text(mostFrequentCreator, margin, pageHeight - 14);
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(7);
+  doc.setTextColor(COLORS.lightText);
+  doc.text(`Printed on: ${printTime}`, margin, pageHeight - 10);
 
   window.open(URL.createObjectURL(doc.output("blob")), "_blank");
 };

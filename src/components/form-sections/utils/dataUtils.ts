@@ -72,6 +72,10 @@ export const normalizePatientData = (
     status: row.status,
     notes: row.notes,
     testCount: row._count?.tests ?? 0,
+    createdBy: row.createdBy ?? null,
+    createdByName: row.createdByName ?? null,
+    lastModifiedBy: row.lastModifiedBy ?? null,
+    lastModifiedByName: row.lastModifiedByName ?? null,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
   }));

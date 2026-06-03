@@ -1,5 +1,6 @@
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import { format } from "date-fns";
 import { InfertilityPatientData } from "../types";
 
 // FNH Brand Colors
@@ -59,59 +60,6 @@ const calculateAge = (dob: string | null | undefined): string => {
 /**
  * Draw a section box with title
  */
-const drawAuditFooter = (
-  doc: jsPDF,
-  options: {
-    footerY: number;
-    margin: number;
-    pageWidth: number;
-    leftLabel: string;
-    leftValue: string;
-    rightLabel?: string;
-    rightValue?: string;
-    timestampLabel: string;
-    timestamp: string;
-  },
-) => {
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(8);
-  doc.setTextColor(COLORS.text);
-  doc.text(options.leftLabel, options.margin, options.footerY + 5);
-
-  doc.setFontSize(9);
-  doc.setTextColor(COLORS.primary);
-  doc.text(options.leftValue, options.margin, options.footerY + 10);
-
-  if (options.rightLabel && options.rightValue) {
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(8);
-    doc.setTextColor(COLORS.text);
-    doc.text(
-      options.rightLabel,
-      options.pageWidth - options.margin,
-      options.footerY + 5,
-      { align: "right" },
-    );
-
-    doc.setFontSize(9);
-    doc.setTextColor(COLORS.primary);
-    doc.text(
-      options.rightValue,
-      options.pageWidth - options.margin,
-      options.footerY + 10,
-      { align: "right" },
-    );
-  }
-
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(7);
-  doc.setTextColor(COLORS.text);
-  doc.text(
-    `${options.timestampLabel}: ${options.timestamp}`,
-    options.margin,
-    options.footerY + 15,
-  );
-};
 
 const drawSectionBox = (
   doc: jsPDF,
@@ -222,7 +170,7 @@ export const generateInfertilityReport = async (
   };
 
   // === 1. PATIENT INFORMATION BOX ===
-  const patientBoxHeight = 32;
+  const patientBoxHeight = 38;
   ensureSpace(patientBoxHeight);
   const patientContentY = drawSectionBox(
     doc,
@@ -298,7 +246,7 @@ export const generateInfertilityReport = async (
   doc.setFontSize(11);
   doc.text(data.patientOccupation || "N/A", col2X + labelWidth, detailY);
 
-  // Row 4
+  // Row 4 - Address (wrapped)
   detailY += 6;
   doc.setFont("helvetica", "bold");
   doc.setFontSize(10);
@@ -307,11 +255,8 @@ export const generateInfertilityReport = async (
   doc.setTextColor(COLORS.primary);
   doc.setFontSize(11);
   const addressText = data.address || "N/A";
-  const truncatedAddress =
-    addressText.length > 70
-      ? addressText.substring(0, 70) + "..."
-      : addressText;
-  doc.text(truncatedAddress, col1X + labelWidth, detailY);
+  const addressLines = doc.splitTextToSize(addressText, pageWidth - margin * 2 - labelWidth - 10);
+  doc.text(addressLines.slice(0, 2), col1X + labelWidth, detailY);
 
   currentY += patientBoxHeight + 6;
 
@@ -451,8 +396,9 @@ export const generateInfertilityReport = async (
   doc.text("Referral:", col4X, fDetailY);
   doc.setTextColor(COLORS.primary);
   doc.setFontSize(11);
-  const referralText = (data.referralSource || "Self").substring(0, 15);
-  doc.text(referralText, col4X + 15, fDetailY);
+  const referralText = data.referralSource || "Self";
+  const referralLines = doc.splitTextToSize(referralText, pageWidth - col4X - 20);
+  doc.text(referralLines[0], col4X + 15, fDetailY);
 
   currentY += fertilityBoxHeight + 6;
 
@@ -509,7 +455,7 @@ export const generateInfertilityReport = async (
 
   // === 5. CHIEF COMPLAINT BOX ===
   if (data.chiefComplaint) {
-    const complaintBoxHeight = 16;
+    const complaintBoxHeight = 22;
     ensureSpace(complaintBoxHeight);
     const complaintContentY = drawSectionBox(
       doc,
@@ -529,7 +475,7 @@ export const generateInfertilityReport = async (
       data.chiefComplaint,
       pageWidth - margin * 2 - 12
     );
-    doc.text(complaintText.slice(0, 2), col1X, complaintContentY + 2);
+    doc.text(complaintText.slice(0, 3), col1X, complaintContentY + 2);
 
     currentY += complaintBoxHeight + 6;
   }
@@ -547,7 +493,7 @@ export const generateInfertilityReport = async (
 
   if (historyItems.length > 0) {
     // Calculate dynamic height based on content
-    const historyBoxHeight = 12 + historyItems.length * 10;
+    const historyBoxHeight = 12 + historyItems.length * 18;
     ensureSpace(historyBoxHeight);
 
     // Draw background box
@@ -579,24 +525,20 @@ export const generateInfertilityReport = async (
 
       doc.setFont("helvetica", "normal");
       doc.setTextColor(COLORS.text);
-      // Truncate long values
-      const maxLen = 100;
-      const displayValue =
-        value.length > maxLen ? value.substring(0, maxLen) + "..." : value;
       const lines = doc.splitTextToSize(
-        displayValue,
+        value,
         pageWidth - margin * 2 - 45
       );
-      doc.text(lines[0], col1X + 38, histY);
+      doc.text(lines.slice(0, 3), col1X + 38, histY);
 
-      histY += 8;
+      histY += lines.length > 2 ? 16 : lines.length > 1 ? 12 : 8;
     });
 
     currentY += historyBoxHeight + 6;
   }
 
   // === 7. TREATMENT PLAN BOX ===
-  const treatmentBoxHeight = 26;
+  const treatmentBoxHeight = 48;
   ensureSpace(treatmentBoxHeight);
   const treatmentContentY = drawSectionBox(
     doc,
@@ -617,26 +559,22 @@ export const generateInfertilityReport = async (
   doc.text("Treatment Plan:", col1X, tDetailY);
   doc.setTextColor(COLORS.primary);
   doc.setFontSize(11);
-  const planText = (data.treatmentPlan || "Initial assessment phase").substring(
-    0,
-    60
-  );
-  doc.text(planText, col1X + 32, tDetailY);
+  const planText = data.treatmentPlan || "Initial assessment phase";
+  const planLines = doc.splitTextToSize(planText, pageWidth - margin * 2 - 38);
+  doc.text(planLines.slice(0, 3), col1X + 32, tDetailY);
 
-  tDetailY += 6;
+  tDetailY += planLines.length > 2 ? 16 : planLines.length > 1 ? 12 : 6;
   doc.setFont("helvetica", "bold");
   doc.setFontSize(10);
   doc.setTextColor(COLORS.lightText);
   doc.text("Medications:", col1X, tDetailY);
   doc.setTextColor(COLORS.primary);
   doc.setFontSize(11);
-  const medsText = (data.medications || "No medications prescribed").substring(
-    0,
-    65
-  );
-  doc.text(medsText, col1X + 28, tDetailY);
+  const medsText = data.medications || "No medications prescribed";
+  const medsLines = doc.splitTextToSize(medsText, pageWidth - margin * 2 - 34);
+  doc.text(medsLines.slice(0, 3), col1X + 28, tDetailY);
 
-  tDetailY += 6;
+  tDetailY += medsLines.length > 2 ? 16 : medsLines.length > 1 ? 12 : 6;
   doc.setFont("helvetica", "bold");
   doc.setFontSize(10);
   doc.setTextColor(COLORS.lightText);
@@ -661,7 +599,7 @@ export const generateInfertilityReport = async (
 
   // === 8. CLINICAL NOTES BOX (if exists) ===
   if (data.notes) {
-    const notesBoxHeight = 22;
+    const notesBoxHeight = 36;
     ensureSpace(notesBoxHeight);
     const notesContentY = drawSectionBox(
       doc,
@@ -681,14 +619,14 @@ export const generateInfertilityReport = async (
       data.notes,
       pageWidth - margin * 2 - 12
     );
-    doc.text(notesText.slice(0, 2), col1X, notesContentY + 2);
+    doc.text(notesText.slice(0, 4), col1X, notesContentY + 2);
 
     currentY += notesBoxHeight + 6;
   }
 
   // === 9. REFERRING HOSPITAL BOX (if exists) ===
   if (data.hospitalName) {
-    const hospitalBoxHeight = 24;
+    const hospitalBoxHeight = 36;
     ensureSpace(hospitalBoxHeight);
     const hospitalContentY = drawSectionBox(
       doc,
@@ -734,14 +672,48 @@ export const generateInfertilityReport = async (
     doc.text("Address:", col2X, hDetailY);
     doc.setTextColor(COLORS.primary);
     doc.setFontSize(11);
-    const hospAddr = (data.hospitalAddress || "N/A").substring(0, 40);
-    doc.text(hospAddr, col2X + 20, hDetailY);
+    const hospAddr = data.hospitalAddress || "N/A";
+    const hospAddrLines = doc.splitTextToSize(hospAddr, pageWidth - col2X - 25);
+    doc.text(hospAddrLines.slice(0, 3), col2X + 20, hDetailY);
 
     currentY += hospitalBoxHeight + 6;
   }
 
   // === FOOTER ===
-  const footerY = pageHeight - 38;
+  // Footer on all pages - matching investigation report style
+  const pageCount = doc.getNumberOfPages();
+  for (let i = 1; i <= pageCount; i++) {
+    doc.setPage(i);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8);
+    doc.setTextColor(COLORS.text);
+    doc.text(
+      `Page ${i} of ${pageCount}`,
+      pageWidth / 2,
+      pageHeight - 8,
+      { align: "center" }
+    );
+  }
+
+  // Bottom center branding on the last page
+  doc.setPage(pageCount);
+  doc.setTextColor(COLORS.lightText);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(7);
+  doc.text(
+    "NB: This is a computer generated medical report.",
+    pageWidth / 2,
+    pageHeight - 26,
+    { align: "center" }
+  );
+  doc.text(
+    "Thank you for choosing HSI Center",
+    pageWidth / 2,
+    pageHeight - 22,
+    { align: "center" }
+  );
+
+  // Collected by info on the last page - left side
   const printTime = new Date().toLocaleString("en-BD", {
     hour: "numeric",
     minute: "numeric",
@@ -751,34 +723,20 @@ export const generateInfertilityReport = async (
     year: "numeric",
   });
 
-  drawAuditFooter(doc, {
-    footerY,
-    margin,
-    pageWidth,
-    leftLabel: "Admitted By",
-    leftValue: data.createdByName?.trim() || "Unknown",
-    rightLabel: "Record Created",
-    rightValue: formatDate(data.createdAt),
-    timestampLabel: "Printed on",
-    timestamp: printTime,
-  });
-
-  // Bottom center branding
-  doc.setTextColor(COLORS.lightText);
-  doc.setFont("helvetica", "normal");
+  doc.setFont("helvetica", "bold");
   doc.setFontSize(7);
-  doc.text(
-    "NB: This is a computer generated medical report.",
-    pageWidth / 2,
-    pageHeight - 10,
-    { align: "center" }
-  );
-  doc.text(
-    "Thank you for choosing HSI Center",
-    pageWidth / 2,
-    pageHeight - 6,
-    { align: "center" }
-  );
+  doc.setTextColor(COLORS.lightText);
+  doc.text("Collected by:", margin, pageHeight - 18);
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(8);
+  doc.setTextColor(COLORS.primary);
+  doc.text(data.createdByName?.trim() || printedBy, margin, pageHeight - 14);
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(7);
+  doc.setTextColor(COLORS.lightText);
+  doc.text(`Printed on: ${printTime}`, margin, pageHeight - 10);
 
   // Auto Print & Preview
   doc.autoPrint();

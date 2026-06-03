@@ -192,6 +192,10 @@ export interface InfertilityPatient {
   treatmentPlan: string | null;
   medications: string | null;
   notes: string | null;
+  createdBy?: number | null;
+  createdByName?: string | null;
+  lastModifiedBy?: number | null;
+  lastModifiedByName?: string | null;
   createdAt: string;
   updatedAt: string;
 }
