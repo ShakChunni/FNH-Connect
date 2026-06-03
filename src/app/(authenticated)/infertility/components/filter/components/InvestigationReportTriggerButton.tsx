@@ -64,13 +64,14 @@ export const InvestigationReportTriggerButton: React.FC<ReportTriggerButtonProps
         exportInvestigationsToCSV(data);
       } else {
         await generateInfertilityInvestigationReport(
-          data, 
+          data,
           type === "financial" ? "summary" : type, // financial uses summary layout but logic is same
-          { 
-            startDate: filters.startDate, 
+          {
+            startDate: filters.startDate,
             endDate: filters.endDate,
-            dateRange: filters.dateRange 
-          }
+            dateRange: filters.dateRange,
+          },
+          user?.fullName || "Staff"
         );
       }
 
