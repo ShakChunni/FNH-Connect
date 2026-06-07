@@ -1,1 +1,240 @@
-[]
+[
+  {
+    "Operation Name": "LUCS Ot medicine",
+    "Package Code": "LUCS_OT_MEDICINE",
+    "Medicines": [
+      {
+        "Medicine Name": "IV Cannula",
+        "Generic Name": "",
+        "Group": "LUCS Ot medicine",
+        "Company Name": "",
+        "Qty": 1,
+        "Price": 0
+      },
+      {
+        "Medicine Name": "Seline Set",
+        "Generic Name": "",
+        "Group": "LUCS Ot medicine",
+        "Company Name": "",
+        "Qty": 1,
+        "Price": 0
+      },
+      {
+        "Medicine Name": "Inf H/s",
+        "Generic Name": "",
+        "Group": "LUCS Ot medicine",
+        "Company Name": "",
+        "Qty": 1,
+        "Price": 0
+      },
+      {
+        "Medicine Name": "DNS",
+        "Generic Name": "",
+        "Group": "LUCS Ot medicine",
+        "Company Name": "",
+        "Qty": 1,
+        "Price": 0
+      },
+      {
+        "Medicine Name": "Inj Esoral",
+        "Generic Name": "",
+        "Group": "LUCS Ot medicine",
+        "Company Name": "",
+        "Qty": 1,
+        "Price": 0
+      },
+      {
+        "Medicine Name": "Inj Topcef",
+        "Generic Name": "",
+        "Group": "LUCS Ot medicine",
+        "Company Name": "",
+        "Qty": 1,
+        "Price": 0
+      },
+      {
+        "Medicine Name": "Inj vergon",
+        "Generic Name": "",
+        "Group": "LUCS Ot medicine",
+        "Company Name": "",
+        "Qty": 1,
+        "Price": 0
+      },
+      {
+        "Medicine Name": "Inj Metro",
+        "Generic Name": "",
+        "Group": "LUCS Ot medicine",
+        "Company Name": "",
+        "Qty": 1,
+        "Price": 0
+      },
+      {
+        "Medicine Name": "Inj Ultra Caine",
+        "Generic Name": "",
+        "Group": "LUCS Ot medicine",
+        "Company Name": "",
+        "Qty": 1,
+        "Price": 0
+      },
+      {
+        "Medicine Name": "Inj Duratocin",
+        "Generic Name": "",
+        "Group": "LUCS Ot medicine",
+        "Company Name": "",
+        "Qty": 1,
+        "Price": 0
+      },
+      {
+        "Medicine Name": "Inj Linda/Ds",
+        "Generic Name": "",
+        "Group": "LUCS Ot medicine",
+        "Company Name": "",
+        "Qty": 1,
+        "Price": 0
+      },
+      {
+        "Medicine Name": "Spinal Nedle",
+        "Generic Name": "",
+        "Group": "LUCS Ot medicine",
+        "Company Name": "",
+        "Qty": 1,
+        "Price": 0
+      },
+      {
+        "Medicine Name": "F Cathertar",
+        "Generic Name": "",
+        "Group": "LUCS Ot medicine",
+        "Company Name": "",
+        "Qty": 1,
+        "Price": 0
+      },
+      {
+        "Medicine Name": "Urin Bag",
+        "Generic Name": "",
+        "Group": "LUCS Ot medicine",
+        "Company Name": "",
+        "Qty": 1,
+        "Price": 0
+      },
+      {
+        "Medicine Name": "Gloves",
+        "Generic Name": "",
+        "Group": "LUCS Ot medicine",
+        "Company Name": "",
+        "Qty": 1,
+        "Price": 0
+      },
+      {
+        "Medicine Name": "Hexicol 100 ML",
+        "Generic Name": "",
+        "Group": "LUCS Ot medicine",
+        "Company Name": "",
+        "Qty": 1,
+        "Price": 0
+      },
+      {
+        "Medicine Name": "Viodin 100 ML",
+        "Generic Name": "",
+        "Group": "LUCS Ot medicine",
+        "Company Name": "",
+        "Qty": 1,
+        "Price": 0
+      },
+      {
+        "Medicine Name": "Syring 5 ML",
+        "Generic Name": "",
+        "Group": "LUCS Ot medicine",
+        "Company Name": "",
+        "Qty": 1,
+        "Price": 0
+      },
+      {
+        "Medicine Name": "Syring 3 ML",
+        "Generic Name": "",
+        "Group": "LUCS Ot medicine",
+        "Company Name": "",
+        "Qty": 1,
+        "Price": 0
+      },
+      {
+        "Medicine Name": "Mitsu 180 cm",
+        "Generic Name": "",
+        "Group": "LUCS Ot medicine",
+        "Company Name": "",
+        "Qty": 1,
+        "Price": 0
+      },
+      {
+        "Medicine Name": "Nichepore",
+        "Generic Name": "",
+        "Group": "LUCS Ot medicine",
+        "Company Name": "",
+        "Qty": 1,
+        "Price": 0
+      },
+      {
+        "Medicine Name": "BP Blade 20",
+        "Generic Name": "",
+        "Group": "LUCS Ot medicine",
+        "Company Name": "",
+        "Qty": 1,
+        "Price": 0
+      },
+      {
+        "Medicine Name": "Cap Duracef 400 mg",
+        "Generic Name": "",
+        "Group": "Oral Item",
+        "Company Name": "",
+        "Qty": 1,
+        "Price": 0
+      },
+      {
+        "Medicine Name": "Cap. Maxpro 20 mg",
+        "Generic Name": "",
+        "Group": "Oral Item",
+        "Company Name": "",
+        "Qty": 1,
+        "Price": 0
+      },
+      {
+        "Medicine Name": "Cap. Flucloxin 500 Mg",
+        "Generic Name": "",
+        "Group": "Oral Item",
+        "Company Name": "",
+        "Qty": 1,
+        "Price": 0
+      },
+      {
+        "Medicine Name": "Tab. Sedil 0.5 Mg",
+        "Generic Name": "",
+        "Group": "Oral Item",
+        "Company Name": "",
+        "Qty": 1,
+        "Price": 0
+      },
+      {
+        "Medicine Name": "Tab. Metro 400 mg",
+        "Generic Name": "",
+        "Group": "Oral Item",
+        "Company Name": "",
+        "Qty": 1,
+        "Price": 0
+      },
+      {
+        "Medicine Name": "Tab. Napa 500 mg",
+        "Generic Name": "",
+        "Group": "Oral Item",
+        "Company Name": "",
+        "Qty": 1,
+        "Price": 0
+      },
+      {
+        "Medicine Name": "Tab. Cevit",
+        "Generic Name": "",
+        "Group": "Oral Item",
+        "Company Name": "",
+        "Qty": 1,
+        "Price": 0
+      }
+    ]
+  }
+]
