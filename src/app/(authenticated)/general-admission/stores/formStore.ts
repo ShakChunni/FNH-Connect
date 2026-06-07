@@ -14,6 +14,7 @@ import {
   FinancialData,
   ValidationStatus,
   AdmissionPatientData,
+  AdmissionMedicineChargeItem,
 } from "../types";
 import { parseDateOfBirth } from "@/lib/dateOfBirth";
 
@@ -29,6 +30,7 @@ interface FormState {
   admissionInfo: AdmissionInfo;
   financialData: FinancialData;
   validationStatus: ValidationStatus;
+  medicineChargeItems: AdmissionMedicineChargeItem[];
 }
 
 interface FormActions {
@@ -47,6 +49,13 @@ interface FormActions {
     value: FinancialData[K],
   ) => void;
   setValidationStatus: (status: Partial<ValidationStatus>) => void;
+  setMedicineChargeItems: (items: AdmissionMedicineChargeItem[]) => void;
+  updateMedicineChargeItem: (
+    index: number,
+    patch: Partial<AdmissionMedicineChargeItem>,
+  ) => void;
+  removeMedicineChargeItem: (index: number) => void;
+  clearMedicineChargeItems: () => void;
   initializeFormForEdit: (admission: AdmissionPatientData) => void;
   resetForm: () => void;
   calculateTotals: () => void;
@@ -152,6 +161,7 @@ export const useAdmissionFormStore = create<FormStore>((set, get) => ({
   admissionInfo: { ...initialAdmissionInfo },
   financialData: { ...initialFinancialData },
   validationStatus: { ...initialValidationStatus },
+  medicineChargeItems: [],
 
   // Actions
   setHospitalData: (data) =>
@@ -187,6 +197,7 @@ export const useAdmissionFormStore = create<FormStore>((set, get) => ({
     // If status is changed to Canceled, reset all financial charges to 0
     if (key === "status" && value === "Canceled") {
       set((state) => ({
+        medicineChargeItems: [],
         financialData: {
           ...state.financialData,
           admissionFee: 0,
@@ -223,6 +234,85 @@ export const useAdmissionFormStore = create<FormStore>((set, get) => ({
     set((state) => ({
       validationStatus: { ...state.validationStatus, ...status },
     })),
+
+  setMedicineChargeItems: (items) => {
+    const normalized = items.map((item) => {
+      const quantity = Math.max(1, item.quantity);
+      const unitPrice = Math.max(0, item.unitPrice);
+      return {
+        ...item,
+        quantity,
+        unitPrice,
+        totalAmount: quantity * unitPrice,
+      };
+    });
+    const medicineCharge = normalized.reduce(
+      (sum, item) => sum + item.totalAmount,
+      0,
+    );
+    set((state) => ({
+      medicineChargeItems: normalized,
+      financialData: {
+        ...state.financialData,
+        medicineCharge,
+      },
+    }));
+    get().calculateTotals();
+  },
+
+  updateMedicineChargeItem: (index, patch) => {
+    set((state) => {
+      const updated = [...state.medicineChargeItems];
+      const item = { ...updated[index], ...patch };
+      const quantity = Math.max(1, item.quantity);
+      const unitPrice = Math.max(0, item.unitPrice);
+      item.quantity = quantity;
+      item.unitPrice = unitPrice;
+      item.totalAmount = quantity * unitPrice;
+      updated[index] = item;
+      const medicineCharge = updated.reduce(
+        (sum, r) => sum + r.totalAmount,
+        0,
+      );
+      return {
+        medicineChargeItems: updated,
+        financialData: {
+          ...state.financialData,
+          medicineCharge,
+        },
+      };
+    });
+    get().calculateTotals();
+  },
+
+  removeMedicineChargeItem: (index) => {
+    set((state) => {
+      const updated = state.medicineChargeItems.filter((_, i) => i !== index);
+      const medicineCharge =
+        updated.length > 0
+          ? updated.reduce((sum, r) => sum + r.totalAmount, 0)
+          : 0;
+      return {
+        medicineChargeItems: updated,
+        financialData: {
+          ...state.financialData,
+          medicineCharge,
+        },
+      };
+    });
+    get().calculateTotals();
+  },
+
+  clearMedicineChargeItems: () => {
+    set((state) => ({
+      medicineChargeItems: [],
+      financialData: {
+        ...state.financialData,
+        medicineCharge: 0,
+      },
+    }));
+    get().calculateTotals();
+  },
 
   calculateTotals: () => {
     set((state) => {
@@ -353,6 +443,7 @@ export const useAdmissionFormStore = create<FormStore>((set, get) => ({
         phone: true,
         email: true,
       },
+      medicineChargeItems: admission.medicineChargeItems ?? [],
     });
   },
 
@@ -365,6 +456,7 @@ export const useAdmissionFormStore = create<FormStore>((set, get) => ({
       admissionInfo: { ...initialAdmissionInfo },
       financialData: { ...initialFinancialData },
       validationStatus: { ...initialValidationStatus },
+      medicineChargeItems: [],
     }),
 
   // Smart actions for financial calculations
@@ -417,6 +509,7 @@ export const useAdmissionFormStore = create<FormStore>((set, get) => ({
       admissionInfo: { ...initialAdmissionInfo },
       financialData: { ...initialFinancialData },
       validationStatus: { ...initialValidationStatus },
+      medicineChargeItems: [],
     });
   },
 
@@ -429,6 +522,7 @@ export const useAdmissionFormStore = create<FormStore>((set, get) => ({
       admissionInfo: { ...initialAdmissionInfo },
       financialData: { ...initialFinancialData },
       validationStatus: { ...initialValidationStatus },
+      medicineChargeItems: [],
     });
   },
 }));
@@ -458,6 +552,9 @@ export const useAdmissionFinancialData = () =>
 export const useAdmissionValidationStatus = () =>
   useAdmissionFormStore((state) => state.validationStatus);
 
+export const useAdmissionMedicineChargeItems = () =>
+  useAdmissionFormStore((state) => state.medicineChargeItems);
+
 // Combined actions hook
 export const useAdmissionFormActions = () =>
   useAdmissionFormStore(
@@ -471,6 +568,10 @@ export const useAdmissionFormActions = () =>
       setFinancialData: state.setFinancialData,
       updateFinancialData: state.updateFinancialData,
       setValidationStatus: state.setValidationStatus,
+      setMedicineChargeItems: state.setMedicineChargeItems,
+      updateMedicineChargeItem: state.updateMedicineChargeItem,
+      removeMedicineChargeItem: state.removeMedicineChargeItem,
+      clearMedicineChargeItems: state.clearMedicineChargeItems,
       initializeFormForEdit: state.initializeFormForEdit,
       resetForm: state.resetForm,
       calculateTotals: state.calculateTotals,

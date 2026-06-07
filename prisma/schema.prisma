@@ -186,6 +186,7 @@ model Admission {
   pathologyTests    PathologyTest[]
   infertilityTests  InfertilityTest[]
   serviceCharges    ServiceCharge[] // Link to new payment system
+  medicineChargeItems AdmissionMedicineCharge[]
 
   @@index([patientId])
   @@index([departmentId])
@@ -193,6 +194,30 @@ model Admission {
   @@index([dateAdmitted])
   @@index([isDischarged])
   @@index([status])
+}
+
+model AdmissionMedicineCharge {
+  id             Int      @id @default(autoincrement())
+  admissionId    Int
+  packageCode    String?
+  operationName  String
+  medicineName   String
+  genericName    String?
+  groupName      String?
+  companyName    String?
+  quantity       Int
+  unitPrice      Decimal
+  totalAmount    Decimal
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  createdBy      Int
+  lastModifiedBy Int?
+
+  admission Admission @relation(fields: [admissionId], references: [id], onDelete: Cascade)
+
+  @@index([admissionId])
+  @@index([packageCode])
+  @@index([operationName])
 }
 
 // Pathology Department

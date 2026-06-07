@@ -67,6 +67,7 @@ export interface HospitalData {
 export interface AdmissionData {
   departmentId: number;
   doctorId: number;
+  status?: string;
   seatNumber?: string;
   ward?: string;
   diagnosis?: string;
@@ -74,6 +75,67 @@ export interface AdmissionData {
   otType?: string;
   remarks?: string;
   chiefComplaint?: string;
+  serviceCharge?: number;
+  seatRent?: number;
+  otCharge?: number;
+  doctorCharge?: number;
+  surgeonCharge?: number;
+  anesthesiaFee?: number;
+  assistantDoctorFee?: number;
+  medicineCharge?: number;
+  otherCharges?: number;
+  discountType?: string | null;
+  discountValue?: number | null;
+  discountAmount?: number;
+  paidAmount?: number;
+  medicineChargeItems?: AdmissionMedicineChargeItemInput[];
+}
+
+export interface AdmissionMedicineChargeItemInput {
+  id?: number;
+  packageCode?: string | null;
+  operationName: string;
+  medicineName: string;
+  genericName?: string | null;
+  groupName?: string | null;
+  companyName?: string | null;
+  quantity: number;
+  unitPrice: number;
+  totalAmount?: number;
+}
+
+interface NormalizedAdmissionMedicineChargeItem {
+  packageCode: string | null;
+  operationName: string;
+  medicineName: string;
+  genericName: string | null;
+  groupName: string | null;
+  companyName: string | null;
+  quantity: number;
+  unitPrice: number;
+  totalAmount: number;
+}
+
+function normalizeAdmissionMedicineChargeItems(
+  items: AdmissionMedicineChargeItemInput[] | undefined,
+): NormalizedAdmissionMedicineChargeItem[] {
+  if (!items?.length) return [];
+
+  return items.map((item) => {
+    const quantity = Math.max(1, Math.trunc(item.quantity));
+    const unitPrice = Math.max(0, item.unitPrice);
+    return {
+      packageCode: item.packageCode?.trim() || null,
+      operationName: item.operationName.trim(),
+      medicineName: item.medicineName.trim(),
+      genericName: item.genericName?.trim() || null,
+      groupName: item.groupName?.trim() || null,
+      companyName: item.companyName?.trim() || null,
+      quantity,
+      unitPrice,
+      totalAmount: quantity * unitPrice,
+    };
+  });
 }
 
 export interface FinancialData {
@@ -153,6 +215,9 @@ export async function getAdmissions(filters: AdmissionFilters) {
         },
         department: true,
         doctor: true,
+        medicineChargeItems: {
+          orderBy: { id: "asc" },
+        },
       },
       orderBy: {
         dateAdmitted: "desc",
@@ -202,6 +267,9 @@ export async function getAdmissionById(id: number) {
       },
       department: true,
       doctor: true,
+      medicineChargeItems: {
+        orderBy: { id: "asc" },
+      },
     },
   });
 }
@@ -224,9 +292,11 @@ export async function createAdmission(
     const admissionFeeConfig = await tx.hospitalConfig.findUnique({
       where: { key: "ADMISSION_FEE" },
     });
-    const admissionFee = admissionFeeConfig
+    const configuredAdmissionFee = admissionFeeConfig
       ? parseFloat(admissionFeeConfig.value)
       : 300;
+    const isCreatingCanceled = admissionData.status === "Canceled";
+    const admissionFee = isCreatingCanceled ? 0 : configuredAdmissionFee;
 
     // 2. Use default hospital ID 1 (FNH Hospital)
     const hospitalId = 1;
@@ -271,8 +341,7 @@ export async function createAdmission(
       });
     }
 
-    // 4. Generate admission number (format: DEPT-YY-XXXXX, e.g., GYNE-25-00001)
-    // Get department to determine the code
+    // 4. Generate admission number
     const department = await tx.department.findUnique({
       where: { id: admissionData.departmentId },
     });
@@ -282,10 +351,9 @@ export async function createAdmission(
 
     const departmentCode = getDepartmentCode(department.name);
     const currentYear = getTwoDigitYear();
-    const yearStart = new Date(new Date().getFullYear(), 0, 1); // Jan 1 of current year
-    const yearEnd = new Date(new Date().getFullYear() + 1, 0, 1); // Jan 1 of next year
+    const yearStart = new Date(new Date().getFullYear(), 0, 1);
+    const yearEnd = new Date(new Date().getFullYear() + 1, 0, 1);
 
-    // Count admissions for this department in the current year
     const countThisYear = await tx.admission.count({
       where: {
         departmentId: admissionData.departmentId,
@@ -302,19 +370,111 @@ export async function createAdmission(
       countThisYear + 1,
     );
 
-    // 5. Create admission record
+    // 5. Normalize medicine charge items
+    const medicineItems = isCreatingCanceled
+      ? []
+      : normalizeAdmissionMedicineChargeItems(
+          admissionData.medicineChargeItems,
+        );
+
+    // 6. Calculate financial fields
+    const serviceCharge = isCreatingCanceled
+      ? 0
+      : (admissionData.serviceCharge ?? 0);
+    const seatRent = isCreatingCanceled ? 0 : (admissionData.seatRent ?? 0);
+    const otCharge = isCreatingCanceled ? 0 : (admissionData.otCharge ?? 0);
+    const doctorCharge = isCreatingCanceled
+      ? 0
+      : (admissionData.doctorCharge ?? 0);
+    const surgeonCharge = isCreatingCanceled
+      ? 0
+      : (admissionData.surgeonCharge ?? 0);
+    const anesthesiaFee = isCreatingCanceled
+      ? 0
+      : (admissionData.anesthesiaFee ?? 0);
+    const assistantDoctorFee = isCreatingCanceled
+      ? 0
+      : (admissionData.assistantDoctorFee ?? 0);
+    const otherCharges = isCreatingCanceled
+      ? 0
+      : (admissionData.otherCharges ?? 0);
+
+    const medicineCharge =
+      medicineItems.length > 0
+        ? medicineItems.reduce((sum, item) => sum + item.totalAmount, 0)
+        : isCreatingCanceled
+          ? 0
+          : (admissionData.medicineCharge ?? 0);
+
+    const totalAmount =
+      admissionFee +
+      serviceCharge +
+      seatRent +
+      otCharge +
+      doctorCharge +
+      surgeonCharge +
+      anesthesiaFee +
+      assistantDoctorFee +
+      medicineCharge +
+      otherCharges;
+
+    let discountAmount = 0;
+    const discountType = isCreatingCanceled
+      ? null
+      : (admissionData.discountType ?? null);
+    const discountValue = isCreatingCanceled
+      ? null
+      : (admissionData.discountValue ?? null);
+    if (discountType && discountValue) {
+      if (discountType === "percentage") {
+        discountAmount = (totalAmount * discountValue) / 100;
+      } else {
+        discountAmount = discountValue;
+      }
+    }
+    discountAmount = Math.min(discountAmount, totalAmount);
+
+    const grandTotal = totalAmount - discountAmount;
+
+    const submittedPaidAmount = admissionData.paidAmount;
+    let paidAmount: number;
+    if (isCreatingCanceled) {
+      paidAmount = 0;
+    } else if (submittedPaidAmount !== undefined) {
+      paidAmount = Math.max(0, Math.min(submittedPaidAmount, grandTotal));
+    } else {
+      paidAmount = admissionFee;
+      paidAmount = Math.min(paidAmount, grandTotal);
+    }
+
+    const dueAmount = grandTotal - paidAmount;
+    const status = admissionData.status ?? "Admitted";
+
+    // 7. Create admission record
     const admission = await tx.admission.create({
       data: {
         patientId: patient.id,
         departmentId: admissionData.departmentId,
         doctorId: admissionData.doctorId,
         admissionNumber,
-        status: "Admitted",
+        status,
         admissionFee,
-        totalAmount: admissionFee,
-        grandTotal: admissionFee,
-        dueAmount: 0, // Assume paid by default as per user request
-        paidAmount: admissionFee, // Set to 300 by default
+        serviceCharge,
+        seatRent,
+        otCharge,
+        doctorCharge,
+        surgeonCharge,
+        anesthesiaFee,
+        assistantDoctorFee,
+        medicineCharge,
+        otherCharges,
+        totalAmount,
+        discountType,
+        discountValue: discountValue !== null ? discountValue : undefined,
+        discountAmount,
+        grandTotal,
+        paidAmount,
+        dueAmount,
         seatNumber: admissionData.seatNumber || null,
         ward: admissionData.ward || null,
         diagnosis: admissionData.diagnosis || null,
@@ -333,10 +493,31 @@ export async function createAdmission(
         },
         department: true,
         doctor: true,
+        medicineChargeItems: true,
       },
     });
 
-    // 6. Create patient account if doesn't exist
+    // 8. Create medicine charge items
+    if (medicineItems.length > 0) {
+      await tx.admissionMedicineCharge.createMany({
+        data: medicineItems.map((item) => ({
+          admissionId: admission.id,
+          packageCode: item.packageCode,
+          operationName: item.operationName,
+          medicineName: item.medicineName,
+          genericName: item.genericName,
+          groupName: item.groupName,
+          companyName: item.companyName,
+          quantity: item.quantity,
+          unitPrice: item.unitPrice,
+          totalAmount: item.totalAmount,
+          createdBy: staffId,
+          lastModifiedBy: staffId,
+        })),
+      });
+    }
+
+    // 9. Create patient account if doesn't exist
     let patientAccount = await tx.patientAccount.findUnique({
       where: { patientId: patient.id },
     });
@@ -345,93 +526,92 @@ export async function createAdmission(
       patientAccount = await tx.patientAccount.create({
         data: {
           patientId: patient.id,
-          totalCharges: admissionFee,
-          totalPaid: admissionFee,
-          totalDue: 0,
+          totalCharges: grandTotal,
+          totalPaid: paidAmount,
+          totalDue: dueAmount,
         },
       });
     } else {
       patientAccount = await tx.patientAccount.update({
         where: { id: patientAccount.id },
         data: {
-          totalCharges: { increment: admissionFee },
-          totalPaid: { increment: admissionFee },
-          totalDue: { increment: 0 },
+          totalCharges: { increment: grandTotal },
+          totalPaid: { increment: paidAmount },
+          totalDue: { increment: dueAmount },
         },
       });
     }
 
-    // 6.5. Create service charge record FIRST (so we can link payment to it)
-    const serviceCharge = await tx.serviceCharge.create({
+    // 10. Create service charge record
+    const serviceChargeRecord = await tx.serviceCharge.create({
       data: {
         patientAccountId: patientAccount.id,
         serviceType: "ADMISSION",
         serviceName: `Admission - ${admissionNumber}`,
         departmentId: admissionData.departmentId,
-        originalAmount: admissionFee,
-        discountAmount: 0,
-        finalAmount: admissionFee,
+        originalAmount: totalAmount,
+        discountAmount: discountAmount,
+        finalAmount: grandTotal,
         admissionId: admission.id,
         createdBy: staffId,
       },
     });
 
-    // 7. Create Payment and Cash Movement for initial admission fee
-    // Always ensure a shift exists so payments are never silently lost
-    const activeShift = shiftId
-      ? { id: shiftId }
-      : await shiftService.ensureActiveShift(staffId, tx);
+    // 11. Create Payment and Cash Movement if paidAmount > 0
+    if (paidAmount > 0) {
+      const activeShift = shiftId
+        ? { id: shiftId }
+        : await shiftService.ensureActiveShift(staffId, tx);
 
-    const paymentCount = await tx.payment.count();
-    const receiptNumber = `RCP-${Date.now()}-${paymentCount + 1}`;
+      const paymentCount = await tx.payment.count();
+      const receiptNumber = `RCP-${Date.now()}-${paymentCount + 1}`;
 
-    const payment = await tx.payment.create({
-      data: {
-        patientAccountId: patientAccount.id,
-        amount: new Prisma.Decimal(admissionFee),
-        paymentMethod: "Cash",
-        collectedById: staffId,
-        shiftId: activeShift.id,
-        receiptNumber,
-        notes: `Initial Admission Fee for ${admissionNumber}`,
-        // Create PaymentAllocation to link payment to service charge for department tracking
-        paymentAllocations: {
-          create: {
-            serviceChargeId: serviceCharge.id,
-            allocatedAmount: new Prisma.Decimal(admissionFee),
+      const payment = await tx.payment.create({
+        data: {
+          patientAccountId: patientAccount.id,
+          amount: new Prisma.Decimal(paidAmount),
+          paymentMethod: "Cash",
+          collectedById: staffId,
+          shiftId: activeShift.id,
+          receiptNumber,
+          notes: `Initial payment for ${admissionNumber}`,
+          paymentAllocations: {
+            create: {
+              serviceChargeId: serviceChargeRecord.id,
+              allocatedAmount: new Prisma.Decimal(paidAmount),
+            },
           },
         },
-      },
-    });
+      });
 
-    await tx.cashMovement.create({
-      data: {
-        shiftId: activeShift.id,
-        amount: new Prisma.Decimal(admissionFee),
-        movementType: "COLLECTION",
-        description: `Admission Fee collection for ${admissionNumber}`,
-        paymentId: payment.id,
-      },
-    });
+      await tx.cashMovement.create({
+        data: {
+          shiftId: activeShift.id,
+          amount: new Prisma.Decimal(paidAmount),
+          movementType: "COLLECTION",
+          description: `Payment collection for ${admissionNumber}`,
+          paymentId: payment.id,
+        },
+      });
 
-    await tx.shift.update({
-      where: { id: activeShift.id },
-      data: {
-        systemCash: { increment: admissionFee },
-        totalCollected: { increment: admissionFee },
-      },
-    });
+      await tx.shift.update({
+        where: { id: activeShift.id },
+        data: {
+          systemCash: { increment: paidAmount },
+          totalCollected: { increment: paidAmount },
+        },
+      });
+    }
 
-    // 8. Log activity with device info
+    // 12. Log activity
     await tx.activityLog.create({
       data: {
         userId,
         action: "CREATE",
-        description: `Created admission ${admissionNumber} for ${patient.fullName}. Admission Fee: BDT ${admissionFee}`,
+        description: `Created admission ${admissionNumber} for ${patient.fullName}. Grand Total: BDT ${grandTotal}, Paid: BDT ${paidAmount}`,
         entityType: "Admission",
         entityId: admission.id,
         timestamp: new Date(),
-        // Device info from session for accountability
         sessionId: activityLogContext?.sessionId,
         ipAddress: activityLogContext?.deviceInfo?.ipAddress,
         deviceFingerprint: activityLogContext?.deviceInfo?.deviceFingerprint,
@@ -444,8 +624,25 @@ export async function createAdmission(
       },
     });
 
+    // 13. Refetch admission with medicine items
+    const admissionWithItems = await tx.admission.findUnique({
+      where: { id: admission.id },
+      include: {
+        patient: {
+          include: {
+            hospital: true,
+          },
+        },
+        department: true,
+        doctor: true,
+        medicineChargeItems: {
+          orderBy: { id: "asc" },
+        },
+      },
+    });
+
     return {
-      admission,
+      admission: admissionWithItems ?? admission,
       patient: {
         id: patient.id,
         fullName: patient.fullName,
@@ -490,6 +687,7 @@ export async function updateAdmission(
     isDischarged?: boolean;
     dateDischarged?: Date | null;
     chiefComplaint?: string;
+    medicineChargeItems?: AdmissionMedicineChargeItemInput[];
   },
   staffId: number,
   userId: number,
@@ -497,7 +695,6 @@ export async function updateAdmission(
   activityLogContext?: ActivityLogContext,
 ) {
   return await prisma.$transaction(async (tx) => {
-    // Get existing record
     const existingAdmission = await tx.admission.findUnique({
       where: { id },
       include: { patient: true },
@@ -507,13 +704,43 @@ export async function updateAdmission(
       throw new Error("Admission record not found");
     }
 
-    // Check if this is a cancellation or restore from canceled
     const isCanceling = updateData.status === "Canceled";
     const isRestoring =
       existingAdmission.status === "Canceled" &&
       updateData.status !== "Canceled";
 
-    // Calculate totals based on status
+    // Handle medicine charge items
+    if (isCanceling) {
+      await tx.admissionMedicineCharge.deleteMany({
+        where: { admissionId: id },
+      });
+    } else if (updateData.medicineChargeItems !== undefined) {
+      await tx.admissionMedicineCharge.deleteMany({
+        where: { admissionId: id },
+      });
+      const medicineItems = normalizeAdmissionMedicineChargeItems(
+        updateData.medicineChargeItems,
+      );
+      if (medicineItems.length > 0) {
+        await tx.admissionMedicineCharge.createMany({
+          data: medicineItems.map((item) => ({
+            admissionId: id,
+            packageCode: item.packageCode,
+            operationName: item.operationName,
+            medicineName: item.medicineName,
+            genericName: item.genericName,
+            groupName: item.groupName,
+            companyName: item.companyName,
+            quantity: item.quantity,
+            unitPrice: item.unitPrice,
+            totalAmount: item.totalAmount,
+            createdBy: staffId,
+            lastModifiedBy: staffId,
+          })),
+        });
+      }
+    }
+
     let admissionFee: number;
     let serviceCharge: number;
     let seatRent: number;
@@ -527,7 +754,6 @@ export async function updateAdmission(
     let paidAmountNew: number;
 
     if (isCanceling) {
-      // Cancellation: Zero out all charges, set paid to 0 (implies refund needed)
       admissionFee = 0;
       serviceCharge = 0;
       seatRent = 0;
@@ -538,9 +764,8 @@ export async function updateAdmission(
       assistantDoctorFee = 0;
       medicineCharge = 0;
       otherCharges = 0;
-      paidAmountNew = 0; // Previous paid amount will need to be refunded manually
+      paidAmountNew = 0;
     } else if (isRestoring) {
-      // Restore from canceled: Set admission fee to 300, other charges 0
       admissionFee = 300;
       serviceCharge = updateData.serviceCharge ?? 0;
       seatRent = updateData.seatRent ?? 0;
@@ -549,11 +774,21 @@ export async function updateAdmission(
       surgeonCharge = updateData.surgeonCharge ?? 0;
       anesthesiaFee = updateData.anesthesiaFee ?? 0;
       assistantDoctorFee = updateData.assistantDoctorFee ?? 0;
-      medicineCharge = updateData.medicineCharge ?? 0;
       otherCharges = updateData.otherCharges ?? 0;
       paidAmountNew = updateData.paidAmount ?? 0;
+
+      if (updateData.medicineChargeItems !== undefined) {
+        const items = normalizeAdmissionMedicineChargeItems(
+          updateData.medicineChargeItems,
+        );
+        medicineCharge =
+          items.length > 0
+            ? items.reduce((sum, item) => sum + item.totalAmount, 0)
+            : 0;
+      } else {
+        medicineCharge = updateData.medicineCharge ?? 0;
+      }
     } else {
-      // Normal update: Use existing values or provided updates
       admissionFee = Number(existingAdmission.admissionFee);
       serviceCharge =
         updateData.serviceCharge ?? Number(existingAdmission.serviceCharge);
@@ -568,12 +803,23 @@ export async function updateAdmission(
       assistantDoctorFee =
         updateData.assistantDoctorFee ??
         Number(existingAdmission.assistantDoctorFee);
-      medicineCharge =
-        updateData.medicineCharge ?? Number(existingAdmission.medicineCharge);
       otherCharges =
         updateData.otherCharges ?? Number(existingAdmission.otherCharges);
       paidAmountNew =
         updateData.paidAmount ?? Number(existingAdmission.paidAmount);
+
+      if (updateData.medicineChargeItems !== undefined) {
+        const items = normalizeAdmissionMedicineChargeItems(
+          updateData.medicineChargeItems,
+        );
+        medicineCharge =
+          items.length > 0
+            ? items.reduce((sum, item) => sum + item.totalAmount, 0)
+            : 0;
+      } else {
+        medicineCharge =
+          updateData.medicineCharge ?? Number(existingAdmission.medicineCharge);
+      }
     }
 
     const totalAmount =
@@ -602,11 +848,9 @@ export async function updateAdmission(
     const paidAmount = paidAmountNew;
     const dueAmount = grandTotal - paidAmount;
 
-    // Calculate payment difference for tracking
     const oldPaidAmount = Number(existingAdmission.paidAmount);
     const paidAmountDiff = paidAmount - oldPaidAmount;
 
-    // Update admission
     const updatedAdmission = await tx.admission.update({
       where: { id },
       data: {
@@ -624,7 +868,7 @@ export async function updateAdmission(
               existingAdmission.remarks || ""
             } - Previous charges refunded`
           : (updateData.remarks ?? existingAdmission.remarks),
-        admissionFee, // Include admission fee for cancellation/restore
+        admissionFee,
         serviceCharge,
         seatRent,
         otCharge,
@@ -659,10 +903,12 @@ export async function updateAdmission(
         },
         department: true,
         doctor: true,
+        medicineChargeItems: {
+          orderBy: { id: "asc" },
+        },
       },
     });
 
-    // Update ServiceCharge to reflect edited amounts
     await tx.serviceCharge.updateMany({
       where: { admissionId: id },
       data: {
@@ -672,21 +918,16 @@ export async function updateAdmission(
       },
     });
 
-    // Handle payment tracking if there's a payment difference
     if (paidAmountDiff !== 0) {
-      // Always ensure a shift exists so payments are never silently lost
       const activeShift = shiftId
         ? { id: shiftId }
         : await shiftService.ensureActiveShift(staffId, tx);
 
-      // Find the existing service charge for this admission to link payments
       const existingServiceCharge = await tx.serviceCharge.findFirst({
         where: { admissionId: id },
       });
 
       if (paidAmountDiff > 0) {
-        // Additional collection
-        // First, we need to get the correct patientAccountId (NOT patientId)
         const patientAccountForPayment = await tx.patientAccount.findUnique({
           where: { patientId: existingAdmission.patientId },
         });
@@ -700,14 +941,13 @@ export async function updateAdmission(
 
         const payment = await tx.payment.create({
           data: {
-            patientAccountId: patientAccountForPayment.id, // Use the correct PatientAccount ID
+            patientAccountId: patientAccountForPayment.id,
             amount: new Prisma.Decimal(paidAmountDiff),
             paymentMethod: "Cash",
             collectedById: staffId,
             shiftId: activeShift.id,
             receiptNumber,
             notes: `Payment for admission ${existingAdmission.admissionNumber}`,
-            // Link payment to service charge for department tracking
             ...(existingServiceCharge && {
               paymentAllocations: {
                 create: {
@@ -737,10 +977,8 @@ export async function updateAdmission(
           },
         });
       } else {
-        // Refund
         const refundAmount = Math.abs(paidAmountDiff);
 
-        // Find the original payment to link the refund cash movement
         let originalPaymentId: number | undefined;
         if (existingServiceCharge) {
           const originalPayment = await tx.payment.findFirst({
@@ -777,7 +1015,6 @@ export async function updateAdmission(
       }
     }
 
-    // Update patient account
     const patientAccount = await tx.patientAccount.findUnique({
       where: { patientId: existingAdmission.patientId },
     });
@@ -798,7 +1035,6 @@ export async function updateAdmission(
       });
     }
 
-    // Log activity with device info
     await tx.activityLog.create({
       data: {
         userId,
@@ -807,7 +1043,6 @@ export async function updateAdmission(
         entityType: "Admission",
         entityId: updatedAdmission.id,
         timestamp: new Date(),
-        // Device info from session for accountability
         sessionId: activityLogContext?.sessionId,
         ipAddress: activityLogContext?.deviceInfo?.ipAddress,
         deviceFingerprint: activityLogContext?.deviceInfo?.deviceFingerprint,
@@ -955,7 +1190,23 @@ export async function deleteAdmission(
 // HELPER FUNCTIONS
 // ═══════════════════════════════════════════════════════════════
 
-export function transformAdmissionForResponse(admission: any) {
+type AdmissionWithRelations = Prisma.AdmissionGetPayload<{
+  include: {
+    patient: {
+      include: {
+        hospital: true;
+      };
+    };
+    department: true;
+    doctor: true;
+    medicineChargeItems: true;
+  };
+}> & {
+  createdByName?: string | null;
+  lastModifiedByName?: string | null;
+};
+
+export function transformAdmissionForResponse(admission: AdmissionWithRelations) {
   return {
     id: admission.id,
     admissionNumber: admission.admissionNumber,
@@ -1020,5 +1271,17 @@ export function transformAdmissionForResponse(admission: any) {
     lastModifiedBy: admission.lastModifiedBy,
     createdByName: admission.createdByName || null,
     lastModifiedByName: admission.lastModifiedByName || null,
+    medicineChargeItems: (admission.medicineChargeItems ?? []).map((item) => ({
+      id: item.id,
+      packageCode: item.packageCode,
+      operationName: item.operationName,
+      medicineName: item.medicineName,
+      genericName: item.genericName,
+      groupName: item.groupName,
+      companyName: item.companyName,
+      quantity: item.quantity,
+      unitPrice: Number(item.unitPrice),
+      totalAmount: Number(item.totalAmount),
+    })),
   };
 }

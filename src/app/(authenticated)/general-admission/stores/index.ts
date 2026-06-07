@@ -12,6 +12,7 @@ export {
   useAdmissionInfo,
   useAdmissionFinancialData,
   useAdmissionValidationStatus,
+  useAdmissionMedicineChargeItems,
   useAdmissionFormActions,
 } from "./formStore";
 
@@ -53,6 +54,10 @@ export const useAdmissionActions = () => {
       setFinancialData: state.setFinancialData,
       updateFinancialData: state.updateFinancialData,
       setValidationStatus: state.setValidationStatus,
+      setMedicineChargeItems: state.setMedicineChargeItems,
+      updateMedicineChargeItem: state.updateMedicineChargeItem,
+      removeMedicineChargeItem: state.removeMedicineChargeItem,
+      clearMedicineChargeItems: state.clearMedicineChargeItems,
       initializeFormForEdit: state.initializeFormForEdit,
       resetForm: state.resetForm,
       calculateTotals: state.calculateTotals,

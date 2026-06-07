@@ -8,6 +8,16 @@ import { useShallow } from "zustand/react/shallow";
 import type { AdmissionStatus } from "../types";
 import { getBDTPresetCalendarRange } from "@/lib/timezone";
 
+export type DateRangeOption =
+  | "all"
+  | "today"
+  | "yesterday"
+  | "last7days"
+  | "last30days"
+  | "thisMonth"
+  | "lastMonth"
+  | "custom";
+
 // ═══════════════════════════════════════════════════════════════
 // State Interfaces
 // ═══════════════════════════════════════════════════════════════
@@ -16,7 +26,7 @@ export interface FilterValues {
   departmentId: number | null;
   doctorId: number | null;
   status: AdmissionStatus | "All";
-  dateRange: string;
+  dateRange: DateRangeOption;
   startDate: Date | null;
   endDate: Date | null;
   search: string;
@@ -43,7 +53,7 @@ interface FilterActions {
   setDepartmentId: (id: number | null) => void;
   setDoctorId: (id: number | null) => void;
   setStatus: (status: AdmissionStatus | "All") => void;
-  setDateRange: (range: string) => void;
+  setDateRange: (range: DateRangeOption) => void;
   setCustomDateRange: (start: Date | null, end: Date | null) => void;
   setSearch: (search: string) => void;
   setPage: (page: number) => void;
@@ -81,7 +91,7 @@ const initialPanelState: FilterPanelState = {
 // ═══════════════════════════════════════════════════════════════
 
 export const getDateRangeFromOption = (
-  option: string
+  option: DateRangeOption
 ): { start: Date | null; end: Date | null } => {
   return getBDTPresetCalendarRange(option);
 };

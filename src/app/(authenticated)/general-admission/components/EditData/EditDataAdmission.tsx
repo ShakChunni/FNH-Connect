@@ -22,6 +22,7 @@ import {
   useAdmissionDoctorData,
   useAdmissionInfo,
   useAdmissionFinancialData,
+  useAdmissionMedicineChargeItems,
   useAdmissionActions,
 } from "../../stores";
 import { useAdmissionScrollSpy } from "../../hooks";
@@ -70,6 +71,7 @@ const EditDataAdmission: React.FC<EditDataProps> = ({
   const doctorData = useAdmissionDoctorData();
   const admissionInfo = useAdmissionInfo();
   const financialData = useAdmissionFinancialData();
+  const medicineChargeItems = useAdmissionMedicineChargeItems();
   const { initializeFormForEdit, resetForm, afterEditModalClosed } =
     useAdmissionActions();
   const canEditDoctorReassignment = Boolean(
@@ -177,6 +179,7 @@ const EditDataAdmission: React.FC<EditDataProps> = ({
         lastModifiedBy: staffId,
         createdByName: initialPatientData.createdByName || null,
         lastModifiedByName: staffName,
+        medicineChargeItems: medicineChargeItems,
       };
 
       // Dynamically import and generate invoice
@@ -267,6 +270,8 @@ const EditDataAdmission: React.FC<EditDataProps> = ({
       paidAmount: financialData.paidAmount,
       chiefComplaint: admissionInfo.chiefComplaint,
       isDischarged: admissionInfo.status === "Discharged",
+      medicineChargeItems:
+        medicineChargeItems.length > 0 ? medicineChargeItems : [],
       ...(canEditDoctorReassignment && doctorData.id
         ? { doctorId: doctorData.id }
         : {}),
@@ -276,6 +281,7 @@ const EditDataAdmission: React.FC<EditDataProps> = ({
     isSubmitting,
     admissionInfo,
     financialData,
+    medicineChargeItems,
     editAdmission,
     initialPatientData.id,
     canEditDoctorReassignment,

@@ -191,7 +191,23 @@ const TableRow: React.FC<TableRowProps> = ({
         );
 
       default:
-        return row[header.key as keyof AdmissionPatientData] || "N/A";
+        {
+          const value = row[header.key as keyof AdmissionPatientData];
+
+          if (value === null || value === undefined || value === "") {
+            return "N/A";
+          }
+
+          if (typeof value === "string" || typeof value === "number") {
+            return value;
+          }
+
+          if (typeof value === "boolean") {
+            return value ? "Yes" : "No";
+          }
+
+          return "N/A";
+        }
     }
   };
 
