@@ -3,11 +3,14 @@
 import React, { useRef, useState, useEffect } from "react";
 import { Calendar, ChevronDown, Check, ChevronLeft } from "lucide-react";
 import { format } from "date-fns";
-import { useFilterStore } from "../../../stores/filterStore";
+import {
+  DateRangeOption,
+  useFilterStore,
+} from "../../../stores/filterStore";
 import { DropdownPortal } from "@/components/ui/DropdownPortal";
 import { CalendarWithMonthYearPicker } from "@/components/ui/calendar";
 
-const DATE_OPTIONS = [
+const DATE_OPTIONS: Array<{ value: DateRangeOption; label: string }> = [
   { value: "all", label: "All Time" },
   { value: "today", label: "Today" },
   { value: "yesterday", label: "Yesterday" },
@@ -44,14 +47,14 @@ export const DateRangeFilter: React.FC = () => {
     }
   }, [filters.startDate, filters.endDate, filters.dateRange]);
 
-  const handleSelect = (option: string) => {
+  const handleSelect = (option: DateRangeOption) => {
     if (option === "custom") {
       // Show calendar picker inline
       setShowCalendar(true);
       setTempRange({ from: undefined, to: undefined });
       setIsOpen(false);
     } else {
-      setDateRange(option as any);
+      setDateRange(option);
       setShowCalendar(false);
       setIsOpen(false);
     }

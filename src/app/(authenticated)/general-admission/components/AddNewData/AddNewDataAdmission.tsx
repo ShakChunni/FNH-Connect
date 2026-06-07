@@ -1,6 +1,6 @@
 "use client";
 import React, { useCallback, useMemo, useRef, useEffect } from "react";
-import { Save, User, Stethoscope } from "lucide-react";
+import { Save, User, Stethoscope, Activity, Wallet } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   modalVariants,
@@ -13,13 +13,17 @@ import { ModalFooter } from "@/components/ui/ModalFooter";
 import {
   AdmissionPatientInformation,
   DepartmentSelection,
+  AdmissionStatusSection,
+  FinancialInformation,
 } from "../form-section";
 import {
   useAdmissionPatientData,
   useAdmissionDepartmentData,
   useAdmissionDoctorData,
   useAdmissionInfo,
+  useAdmissionFinancialData,
   useAdmissionValidationStatus,
+  useAdmissionMedicineChargeItems,
   useAdmissionActions,
 } from "../../stores";
 import { useAdmissionScrollSpy } from "../../hooks";
@@ -33,7 +37,7 @@ interface AddNewDataProps {
   onSuccess?: (data: AdmissionPatientData) => void;
 }
 
-const SECTION_IDS = ["patient", "department"];
+const SECTION_IDS = ["patient", "department", "status", "financial"];
 
 const getTabColors = (color: string, isActive: boolean) => {
   const colors: Record<string, { active: string; inactive: string }> = {
@@ -44,6 +48,14 @@ const getTabColors = (color: string, isActive: boolean) => {
     purple: {
       active: "bg-purple-600 text-white shadow-lg",
       inactive: "bg-purple-100 text-purple-700 hover:bg-purple-200",
+    },
+    amber: {
+      active: "bg-amber-600 text-white shadow-lg",
+      inactive: "bg-amber-100 text-amber-700 hover:bg-amber-200",
+    },
+    green: {
+      active: "bg-green-600 text-white shadow-lg",
+      inactive: "bg-green-100 text-green-700 hover:bg-green-200",
     },
   };
   return isActive ? colors[color]?.active : colors[color]?.inactive;
@@ -57,22 +69,21 @@ const AddNewDataAdmission: React.FC<AddNewDataProps> = ({
   const popupRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-  // Store access (removed hospital)
   const patientData = useAdmissionPatientData();
   const departmentData = useAdmissionDepartmentData();
   const doctorData = useAdmissionDoctorData();
   const validationStatus = useAdmissionValidationStatus();
   const admissionInfo = useAdmissionInfo();
+  const financialData = useAdmissionFinancialData();
+  const medicineChargeItems = useAdmissionMedicineChargeItems();
   const { resetForm, afterAddModalClosed } = useAdmissionActions();
 
-  // Custom Hooks
   const { activeSection, scrollToSection } = useAdmissionScrollSpy(
     SECTION_IDS,
     scrollContainerRef,
     isOpen
   );
 
-  // Handle body scroll locking
   useEffect(() => {
     if (isOpen) {
       preserveLockBodyScroll();
@@ -84,7 +95,6 @@ const AddNewDataAdmission: React.FC<AddNewDataProps> = ({
     };
   }, [isOpen]);
 
-  // Mutation Hook
   const { addAdmission, isLoading: isSubmitting } = useAddAdmissionData({
     onSuccess: (data) => {
       onClose();
@@ -92,7 +102,6 @@ const AddNewDataAdmission: React.FC<AddNewDataProps> = ({
     },
   });
 
-  // Validation (removed hospital)
   const { isFormValid, validationErrors } = useMemo(() => {
     const errors: string[] = [];
 
@@ -126,6 +135,9 @@ const AddNewDataAdmission: React.FC<AddNewDataProps> = ({
     if (!validationStatus.email) {
       errors.push("Invalid email address");
     }
+    if (financialData.seatRent > 0 && !admissionInfo.seatNumber) {
+      errors.push("Please enter room/seat number when charging seat rent");
+    }
 
     return {
       isFormValid: errors.length === 0,
@@ -141,11 +153,12 @@ const AddNewDataAdmission: React.FC<AddNewDataProps> = ({
     departmentData.id,
     doctorData.id,
     validationStatus,
+    financialData.seatRent,
+    admissionInfo.seatNumber,
   ]);
 
   const { showNotification } = useNotification();
 
-  // Handlers
   const handleClose = useCallback(() => {
     if (isSubmitting) return;
     onClose();
@@ -164,7 +177,6 @@ const AddNewDataAdmission: React.FC<AddNewDataProps> = ({
     }
 
     addAdmission({
-      // Hospital is handled server-side (always ID 1)
       hospital: {
         id: 1,
         name: "FNH Hospital",
@@ -192,6 +204,28 @@ const AddNewDataAdmission: React.FC<AddNewDataProps> = ({
       departmentId: departmentData.id!,
       doctorId: doctorData.id!,
       chiefComplaint: admissionInfo.chiefComplaint,
+      status: admissionInfo.status,
+      seatNumber: admissionInfo.seatNumber,
+      ward: admissionInfo.ward,
+      diagnosis: admissionInfo.diagnosis,
+      treatment: admissionInfo.treatment,
+      otType: admissionInfo.otType,
+      remarks: admissionInfo.remarks,
+      serviceCharge: financialData.serviceCharge,
+      seatRent: financialData.seatRent,
+      otCharge: financialData.otCharge,
+      doctorCharge: financialData.doctorCharge,
+      surgeonCharge: financialData.surgeonCharge,
+      anesthesiaFee: financialData.anesthesiaFee,
+      assistantDoctorFee: financialData.assistantDoctorFee,
+      medicineCharge: financialData.medicineCharge,
+      otherCharges: financialData.otherCharges,
+      discountType: financialData.discountType,
+      discountValue: financialData.discountValue,
+      discountAmount: financialData.discountAmount,
+      paidAmount: financialData.paidAmount,
+      medicineChargeItems:
+        medicineChargeItems.length > 0 ? medicineChargeItems : undefined,
     });
   }, [
     isFormValid,
@@ -201,11 +235,12 @@ const AddNewDataAdmission: React.FC<AddNewDataProps> = ({
     doctorData,
     addAdmission,
     admissionInfo,
+    financialData,
+    medicineChargeItems,
     validationErrors,
     showNotification,
   ]);
 
-  // Keyboard handling
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
@@ -232,6 +267,18 @@ const AddNewDataAdmission: React.FC<AddNewDataProps> = ({
       label: "Department & Doctor",
       icon: Stethoscope,
       color: "purple",
+    },
+    {
+      id: "status",
+      label: "Status",
+      icon: Activity,
+      color: "amber",
+    },
+    {
+      id: "financial",
+      label: "Financial",
+      icon: Wallet,
+      color: "green",
     },
   ];
 
@@ -268,7 +315,7 @@ const AddNewDataAdmission: React.FC<AddNewDataProps> = ({
               icon={Stethoscope}
               iconColor="green"
               title="New Patient Admission"
-              subtitle="Enter patient and admission details. Admission fee: ৳300"
+              subtitle="Enter patient and admission details"
               onClose={handleClose}
               isDisabled={isSubmitting}
             >
@@ -307,6 +354,12 @@ const AddNewDataAdmission: React.FC<AddNewDataProps> = ({
                 </div>
                 <div id="department">
                   <DepartmentSelection hideWardRoom={true} />
+                </div>
+                <div id="status">
+                  <AdmissionStatusSection />
+                </div>
+                <div id="financial">
+                  <FinancialInformation />
                 </div>
               </div>
             </div>

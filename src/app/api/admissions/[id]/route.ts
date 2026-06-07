@@ -162,11 +162,11 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
         isDischarged: validated.isDischarged,
         dateDischarged: validated.dateDischarged,
         chiefComplaint: validated.chiefComplaint,
+        medicineChargeItems: validated.medicineChargeItems,
       },
       staffId,
       userId,
       activeShift?.id || null,
-      // Pass session device info for activity logging
       {
         sessionId: user.sessionId,
         deviceInfo: user.sessionDeviceInfo,

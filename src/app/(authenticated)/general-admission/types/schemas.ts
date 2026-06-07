@@ -27,6 +27,19 @@ export type AdmissionFiltersInput = z.infer<typeof admissionFiltersSchema>;
 // POST/PUT Schemas
 // ═══════════════════════════════════════════════════════════════
 
+export const admissionMedicineChargeItemSchema = z.object({
+  id: z.number().optional(),
+  packageCode: z.string().trim().nullable(),
+  operationName: z.string().trim().min(1, "Operation name is required"),
+  medicineName: z.string().trim().min(1, "Medicine name is required"),
+  genericName: z.string().trim().nullable(),
+  groupName: z.string().trim().nullable(),
+  companyName: z.string().trim().nullable(),
+  quantity: z.number().int().min(1, "Quantity must be at least 1"),
+  unitPrice: z.number().min(0, "Unit price cannot be negative"),
+  totalAmount: z.number().min(0).optional(),
+});
+
 export const hospitalSchema = z.object({
   id: z.number().nullable(),
   name: z.string().min(1, "Hospital name is required"),
@@ -64,6 +77,33 @@ export const createAdmissionSchema = z.object({
   chiefComplaint: z.string().optional(),
   ward: z.string().optional(),
   seatNumber: z.string().optional(),
+  status: z
+    .enum([
+      "Admitted",
+      "Under Treatment",
+      "Awaiting Discharge",
+      "Discharged",
+      "Canceled",
+    ])
+    .optional(),
+  diagnosis: z.string().optional(),
+  treatment: z.string().optional(),
+  otType: z.string().optional(),
+  remarks: z.string().optional(),
+  serviceCharge: z.number().optional(),
+  seatRent: z.number().optional(),
+  otCharge: z.number().optional(),
+  doctorCharge: z.number().optional(),
+  surgeonCharge: z.number().optional(),
+  anesthesiaFee: z.number().optional(),
+  assistantDoctorFee: z.number().optional(),
+  medicineCharge: z.number().optional(),
+  otherCharges: z.number().optional(),
+  discountType: z.enum(["percentage", "value"]).nullable().optional(),
+  discountValue: z.number().nullable().optional(),
+  discountAmount: z.number().optional(),
+  paidAmount: z.number().optional(),
+  medicineChargeItems: z.array(admissionMedicineChargeItemSchema).optional(),
 });
 
 export const updateAdmissionSchema = z.object({
@@ -105,6 +145,7 @@ export const updateAdmissionSchema = z.object({
       return val instanceof Date ? val : new Date(String(val));
     }, z.date().nullable())
     .optional(),
+  medicineChargeItems: z.array(admissionMedicineChargeItemSchema).optional(),
 });
 
 export type CreateAdmissionInput = z.infer<typeof createAdmissionSchema>;

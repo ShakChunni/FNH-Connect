@@ -497,11 +497,24 @@ export const generateAdmissionInvoice = async (
       description: "Assistant Doctor Fee",
       amount: data.assistantDoctorFee || 0,
     },
-    { description: "Medicine Charge", amount: data.medicineCharge },
-    { description: "Other Charges", amount: data.otherCharges },
   ].filter((c) => c.amount > 0);
 
-  const allTableRows = charges.map((charge, index) => [
+  if (data.medicineChargeItems && data.medicineChargeItems.length > 0) {
+    for (const item of data.medicineChargeItems) {
+      charges.push({
+        description: `Medicine - ${item.medicineName} (${item.operationName}, Qty ${item.quantity} x ৳${item.unitPrice.toLocaleString()})`,
+        amount: item.totalAmount,
+      });
+    }
+  } else if (data.medicineCharge > 0) {
+    charges.push({ description: "Medicine Charge", amount: data.medicineCharge });
+  }
+
+  charges.push({ description: "Other Charges", amount: data.otherCharges });
+
+  const filteredCharges = charges.filter((c) => c.amount > 0);
+
+  const allTableRows = filteredCharges.map((charge, index) => [
     index + 1,
     charge.description,
     charge.amount.toLocaleString(),

@@ -13,6 +13,7 @@ import {
   CreateAdmissionPayload,
   UpdateAdmissionPayload,
   AdmissionPatientData,
+  AdmissionMedicineChargeItem,
 } from "../types";
 import {
   getAgeInYears,
@@ -35,6 +36,9 @@ export function transformFormToCreatePayload(
   patientData: PatientData,
   departmentData: DepartmentData,
   doctorData: DoctorData,
+  admissionInfo?: AdmissionInfo,
+  financialData?: FinancialData,
+  medicineChargeItems?: AdmissionMedicineChargeItem[],
 ): CreateAdmissionPayload {
   return {
     hospital: {
@@ -53,8 +57,7 @@ export function transformFormToCreatePayload(
       fullName: patientData.fullName,
       gender: patientData.gender,
       age: patientData.age,
-      // Serialize date properly to avoid timezone issues
-      dateOfBirth: serializeDate(patientData.dateOfBirth) as any,
+      dateOfBirth: serializeDate(patientData.dateOfBirth),
       address: patientData.address,
       phoneNumber: patientData.phoneNumber,
       email: patientData.email,
@@ -64,6 +67,31 @@ export function transformFormToCreatePayload(
     },
     departmentId: departmentData.id!,
     doctorId: doctorData.id!,
+    chiefComplaint: admissionInfo?.chiefComplaint,
+    status: admissionInfo?.status,
+    seatNumber: admissionInfo?.seatNumber,
+    ward: admissionInfo?.ward,
+    diagnosis: admissionInfo?.diagnosis,
+    treatment: admissionInfo?.treatment,
+    otType: admissionInfo?.otType,
+    remarks: admissionInfo?.remarks,
+    serviceCharge: financialData?.serviceCharge,
+    seatRent: financialData?.seatRent,
+    otCharge: financialData?.otCharge,
+    doctorCharge: financialData?.doctorCharge,
+    surgeonCharge: financialData?.surgeonCharge,
+    anesthesiaFee: financialData?.anesthesiaFee,
+    assistantDoctorFee: financialData?.assistantDoctorFee,
+    medicineCharge: financialData?.medicineCharge,
+    otherCharges: financialData?.otherCharges,
+    discountType: financialData?.discountType,
+    discountValue: financialData?.discountValue,
+    discountAmount: financialData?.discountAmount,
+    paidAmount: financialData?.paidAmount,
+    medicineChargeItems:
+      medicineChargeItems && medicineChargeItems.length > 0
+        ? medicineChargeItems
+        : undefined,
   };
 }
 
@@ -74,6 +102,7 @@ export function transformFormToUpdatePayload(
   admissionId: number,
   admissionInfo: AdmissionInfo,
   financialData: FinancialData,
+  medicineChargeItems?: AdmissionMedicineChargeItem[],
 ): UpdateAdmissionPayload {
   return {
     id: admissionId,
@@ -84,9 +113,14 @@ export function transformFormToUpdatePayload(
     treatment: admissionInfo.treatment,
     otType: admissionInfo.otType,
     remarks: admissionInfo.remarks,
+    chiefComplaint: admissionInfo.chiefComplaint,
     serviceCharge: financialData.serviceCharge,
     seatRent: financialData.seatRent,
     otCharge: financialData.otCharge,
+    doctorCharge: financialData.doctorCharge,
+    surgeonCharge: financialData.surgeonCharge,
+    anesthesiaFee: financialData.anesthesiaFee,
+    assistantDoctorFee: financialData.assistantDoctorFee,
     medicineCharge: financialData.medicineCharge,
     otherCharges: financialData.otherCharges,
     discountType: financialData.discountType,
@@ -94,6 +128,7 @@ export function transformFormToUpdatePayload(
     discountAmount: financialData.discountAmount,
     paidAmount: financialData.paidAmount,
     isDischarged: admissionInfo.status === "Discharged",
+    medicineChargeItems: medicineChargeItems,
   };
 }
 

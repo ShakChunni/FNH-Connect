@@ -28,6 +28,19 @@ export const ADMISSION_STATUS_OPTIONS: {
 
 export type DiscountType = "percentage" | "value" | null;
 
+export interface AdmissionMedicineChargeItem {
+  id?: number;
+  packageCode: string | null;
+  operationName: string;
+  medicineName: string;
+  genericName: string | null;
+  groupName: string | null;
+  companyName: string | null;
+  quantity: number;
+  unitPrice: number;
+  totalAmount: number;
+}
+
 export interface SortConfig {
   key: string;
   direction: string;
@@ -176,6 +189,7 @@ export interface AdmissionPatientData {
   lastModifiedBy: number;
   createdByName?: string | null;
   lastModifiedByName?: string | null;
+  medicineChargeItems?: AdmissionMedicineChargeItem[];
 }
 
 export interface AdmissionFilters {
@@ -224,7 +238,7 @@ export interface CreateAdmissionPayload {
     fullName: string;
     gender: string;
     age: number | null;
-    dateOfBirth: Date | null;
+    dateOfBirth: Date | string | null;
     address: string;
     phoneNumber: string;
     email: string;
@@ -235,6 +249,27 @@ export interface CreateAdmissionPayload {
   departmentId: number;
   doctorId: number;
   chiefComplaint?: string;
+  status?: AdmissionStatus;
+  seatNumber?: string;
+  ward?: string;
+  diagnosis?: string;
+  treatment?: string;
+  otType?: string;
+  remarks?: string;
+  serviceCharge?: number;
+  seatRent?: number;
+  otCharge?: number;
+  doctorCharge?: number;
+  surgeonCharge?: number;
+  anesthesiaFee?: number;
+  assistantDoctorFee?: number;
+  medicineCharge?: number;
+  otherCharges?: number;
+  discountType?: DiscountType;
+  discountValue?: number | null;
+  discountAmount?: number;
+  paidAmount?: number;
+  medicineChargeItems?: AdmissionMedicineChargeItem[];
 }
 
 export interface UpdateAdmissionPayload {
@@ -263,6 +298,7 @@ export interface UpdateAdmissionPayload {
   paidAmount?: number;
   isDischarged?: boolean;
   dateDischarged?: Date | null;
+  medicineChargeItems?: AdmissionMedicineChargeItem[];
 }
 
 // ═══════════════════════════════════════════════════════════════
