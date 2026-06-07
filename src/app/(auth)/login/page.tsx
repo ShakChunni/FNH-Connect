@@ -21,8 +21,9 @@ import {
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { version } from "@/../package.json";
 
-const APP_VERSION = "v1.1.3";
+const APP_VERSION = `v${version}`;
 const SOFT_EASE = [0.16, 1, 0.3, 1] as const;
 const BACKGROUND_TRANSITION_CLASS =
   "transition-colors duration-[1400ms] ease-[cubic-bezier(0.16,1,0.3,1)]";
