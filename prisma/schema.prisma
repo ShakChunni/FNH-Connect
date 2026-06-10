@@ -187,6 +187,7 @@ model Admission {
   infertilityTests  InfertilityTest[]
   serviceCharges    ServiceCharge[] // Link to new payment system
   medicineChargeItems AdmissionMedicineCharge[]
+  medicineSales     MedicineSale[]
 
   @@index([patientId])
   @@index([departmentId])
@@ -197,25 +198,30 @@ model Admission {
 }
 
 model AdmissionMedicineCharge {
-  id             Int      @id @default(autoincrement())
-  admissionId    Int
-  packageCode    String?
-  operationName  String
-  medicineName   String
-  genericName    String?
-  groupName      String?
-  companyName    String?
-  quantity       Int
-  unitPrice      Decimal
-  totalAmount    Decimal
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-  createdBy      Int
-  lastModifiedBy Int?
+  id                    Int      @id @default(autoincrement())
+  admissionId           Int
+  medicineId            Int?
+  packageCode           String?
+  operationName         String
+  requestedMedicineName String?
+  medicineName          String
+  genericName           String?
+  groupName             String?
+  companyName           String?
+  quantity              Int
+  unitPrice             Decimal
+  totalAmount           Decimal
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  createdBy             Int
+  lastModifiedBy        Int?
 
-  admission Admission @relation(fields: [admissionId], references: [id], onDelete: Cascade)
+  admission    Admission     @relation(fields: [admissionId], references: [id], onDelete: Cascade)
+  medicine     Medicine?     @relation(fields: [medicineId], references: [id])
+  medicineSales MedicineSale[]
 
   @@index([admissionId])
+  @@index([medicineId])
   @@index([packageCode])
   @@index([operationName])
 }
@@ -908,6 +914,7 @@ model Medicine {
   group     MedicineGroup      @relation(fields: [groupId], references: [id])
   purchases MedicinePurchase[]
   sales     MedicineSale[]
+  admissionMedicineCharges AdmissionMedicineCharge[]
 
   @@unique([brandName, groupId])
   @@index([groupId])
@@ -951,10 +958,12 @@ model MedicinePurchase {
 
 // Sales entries - when medicine is sold to patients
 model MedicineSale {
-  id         Int @id @default(autoincrement())
-  patientId  Int // Patient receiving medicine
-  medicineId Int // Medicine sold
-  purchaseId Int // Which purchase batch this came from
+  id                        Int @id @default(autoincrement())
+  patientId                 Int // Patient receiving medicine
+  medicineId                Int // Medicine sold
+  purchaseId                Int // Which purchase batch this came from
+  admissionId               Int?
+  admissionMedicineChargeId Int?
 
   quantity    Int // Units sold
   unitPrice   Decimal // Price per unit (from purchase)
@@ -967,12 +976,16 @@ model MedicineSale {
   createdBy Int // Staff who recorded this
 
   // Relations
-  patient  Patient          @relation(fields: [patientId], references: [id])
-  medicine Medicine         @relation(fields: [medicineId], references: [id])
-  purchase MedicinePurchase @relation(fields: [purchaseId], references: [id])
+  patient               Patient                 @relation(fields: [patientId], references: [id])
+  medicine              Medicine                @relation(fields: [medicineId], references: [id])
+  purchase              MedicinePurchase        @relation(fields: [purchaseId], references: [id])
+  admission             Admission?              @relation(fields: [admissionId], references: [id])
+  admissionMedicineCharge AdmissionMedicineCharge? @relation(fields: [admissionMedicineChargeId], references: [id])
 
   @@index([patientId])
   @@index([medicineId])
   @@index([purchaseId])
   @@index([saleDate])
+  @@index([admissionId])
+  @@index([admissionMedicineChargeId])
 }

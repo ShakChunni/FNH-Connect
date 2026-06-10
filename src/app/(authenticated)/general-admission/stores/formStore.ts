@@ -237,14 +237,16 @@ export const useAdmissionFormStore = create<FormStore>((set, get) => ({
 
   setMedicineChargeItems: (items) => {
     const normalized = items.map((item) => {
-      const quantity = Math.max(1, item.quantity);
-      const unitPrice = Math.max(0, item.unitPrice);
-      return {
+      const quantity = Math.max(1, Math.trunc(item.quantity || 1));
+      const unitPrice = Math.max(0, item.unitPrice || 0);
+      const normalizedItem: AdmissionMedicineChargeItem = {
         ...item,
         quantity,
         unitPrice,
         totalAmount: quantity * unitPrice,
+        isMatched: item.medicineId !== null && item.medicineId !== undefined,
       };
+      return normalizedItem;
     });
     const medicineCharge = normalized.reduce(
       (sum, item) => sum + item.totalAmount,
@@ -264,11 +266,13 @@ export const useAdmissionFormStore = create<FormStore>((set, get) => ({
     set((state) => {
       const updated = [...state.medicineChargeItems];
       const item = { ...updated[index], ...patch };
-      const quantity = Math.max(1, item.quantity);
-      const unitPrice = Math.max(0, item.unitPrice);
+      const quantity = Math.max(1, Math.trunc(item.quantity || 1));
+      const unitPrice = Math.max(0, item.unitPrice || 0);
       item.quantity = quantity;
       item.unitPrice = unitPrice;
       item.totalAmount = quantity * unitPrice;
+      item.isMatched =
+        item.medicineId !== null && item.medicineId !== undefined;
       updated[index] = item;
       const medicineCharge = updated.reduce(
         (sum, r) => sum + r.totalAmount,

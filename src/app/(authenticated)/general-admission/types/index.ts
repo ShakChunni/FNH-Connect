@@ -30,8 +30,10 @@ export type DiscountType = "percentage" | "value" | null;
 
 export interface AdmissionMedicineChargeItem {
   id?: number;
+  medicineId: number | null;
   packageCode: string | null;
   operationName: string;
+  requestedMedicineName: string | null;
   medicineName: string;
   genericName: string | null;
   groupName: string | null;
@@ -39,6 +41,9 @@ export interface AdmissionMedicineChargeItem {
   quantity: number;
   unitPrice: number;
   totalAmount: number;
+  currentStock?: number;
+  defaultSalePrice?: number;
+  isMatched?: boolean;
 }
 
 export interface SortConfig {

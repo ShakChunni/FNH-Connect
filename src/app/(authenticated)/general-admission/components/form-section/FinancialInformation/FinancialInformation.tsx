@@ -1,8 +1,15 @@
 "use client";
 
 import React, { useMemo, useEffect, useState, useCallback } from "react";
-import { Wallet, AlertCircle, Package, Trash2 } from "lucide-react";
 import {
+  Wallet,
+  AlertCircle,
+  Package,
+  Pill,
+} from "lucide-react";
+import { api } from "@/lib/axios";
+import {
+  useAdmissionDepartmentData,
   useAdmissionFinancialData,
   useAdmissionInfo,
   useAdmissionActions,
@@ -10,97 +17,57 @@ import {
 } from "../../../stores";
 import { AdmissionMedicineChargeItem } from "../../../types";
 import NumberInput from "@/components/form-sections/Fields/NumberInput";
+import {
+  AdmissionMedicineItemsTable,
+  type PharmacyMedicineOption,
+} from "../../AdmissionMedicineItemsTable";
 
-interface GynecologyMedicinePackage {
+interface AdmissionMedicinePackageItemResponse {
+  templateName: string;
+  matched: boolean;
+  medicineId: number | null;
+  medicineName: string;
+  genericName: string | null;
+  groupName: string | null;
+  companyName: string | null;
+  defaultSalePrice: number;
+  currentStock: number;
+  lowStockThreshold: number;
+  quantity: number;
+  unitPrice: number;
+  totalAmount: number;
+  matchReason: string | null;
+}
+
+interface AdmissionMedicinePackageResponse {
+  code: string;
+  name: string;
   operationName: string;
-  packageCode: string | null;
-  medicines: {
-    medicineName: string;
-    genericName: string | null;
-    groupName: string | null;
-    companyName: string | null;
-    quantity: number;
-    unitPrice: number;
-  }[];
+  items: AdmissionMedicinePackageItemResponse[];
 }
 
-function parsePackageJson(data: unknown): GynecologyMedicinePackage[] {
-  if (!Array.isArray(data)) return [];
-
-  const result: GynecologyMedicinePackage[] = [];
-
-  for (const raw of data) {
-    if (typeof raw !== "object" || raw === null) continue;
-    const obj = raw as Record<string, unknown>;
-
-    const operationName =
-      typeof obj["Operation Name"] === "string"
-        ? obj["Operation Name"].trim()
-        : "";
-    if (!operationName) continue;
-
-    const packageCode =
-      typeof obj["Package Code"] === "string"
-        ? obj["Package Code"].trim() || null
-        : null;
-
-    const rawMedicines = Array.isArray(obj["Medicines"])
-      ? obj["Medicines"]
-      : [];
-
-    const medicines: GynecologyMedicinePackage["medicines"] = [];
-
-    for (const rawMed of rawMedicines) {
-      if (typeof rawMed !== "object" || rawMed === null) continue;
-      const med = rawMed as Record<string, unknown>;
-
-      const medicineName =
-        typeof med["Medicine Name"] === "string"
-          ? med["Medicine Name"].trim()
-          : "";
-      if (!medicineName) continue;
-
-      const qty =
-        typeof med["Qty"] === "number" && med["Qty"] > 0
-          ? Math.trunc(med["Qty"])
-          : 0;
-      if (qty <= 0) continue;
-
-      const price =
-        typeof med["Price"] === "number" && med["Price"] >= 0
-          ? med["Price"]
-          : 0;
-
-      medicines.push({
-        medicineName,
-        genericName:
-          typeof med["Generic Name"] === "string"
-            ? med["Generic Name"].trim() || null
-            : null,
-        groupName:
-          typeof med["Group"] === "string"
-            ? med["Group"].trim() || null
-            : null,
-        companyName:
-          typeof med["Company Name"] === "string"
-            ? med["Company Name"].trim() || null
-            : null,
-        quantity: qty,
-        unitPrice: price,
-      });
-    }
-
-    if (medicines.length === 0) continue;
-
-    result.push({ operationName, packageCode, medicines });
-  }
-
-  return result;
+interface AdmissionMedicinePackageApiResponse {
+  success: boolean;
+  data?: AdmissionMedicinePackageResponse;
+  error?: string;
 }
+
+interface OldestPurchaseApiResponse {
+  success: boolean;
+  data: {
+    company: {
+      name: string;
+    };
+  } | null;
+  error?: string;
+}
+
+const DEFAULT_PACKAGE_CODE = "LUCS_OT_MEDICINE";
 
 const FinancialInformation: React.FC = () => {
   const financialData = useAdmissionFinancialData();
   const admissionInfo = useAdmissionInfo();
+  const departmentData = useAdmissionDepartmentData();
   const medicineChargeItems = useAdmissionMedicineChargeItems();
   const {
     setCharge,
@@ -115,38 +82,60 @@ const FinancialInformation: React.FC = () => {
 
   const isCanceled = admissionInfo.status === "Canceled";
   const hasItemizedMedicines = medicineChargeItems.length > 0;
-
-  const [packages, setPackages] = useState<GynecologyMedicinePackage[]>([]);
-  const [packageLoadError, setPackageLoadError] = useState<string | null>(null);
-  const [packagesLoaded, setPackagesLoaded] = useState(false);
-
-  const [discountInput, setDiscountInput] = useState<number | "">(
-    financialData.discountValue ?? ""
+  const isGynecologyDepartment = /gyn|gyne|gyna|obstet/i.test(
+    departmentData.name,
   );
 
-  useEffect(() => {
-    let cancelled = false;
-    fetch("/gynecology-medicine-packages.json")
-      .then((res) => {
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        return res.json();
-      })
-      .then((data: unknown) => {
-        if (cancelled) return;
-        const parsed = parsePackageJson(data);
-        setPackages(parsed);
-        setPackagesLoaded(true);
-      })
-      .catch((error) => {
-        if (cancelled) return;
-        console.error("Failed to load gynecology medicine packages:", error);
-        setPackageLoadError("Could not load medicine packages.");
-        setPackagesLoaded(true);
-      });
-    return () => {
-      cancelled = true;
-    };
+  const [packageData, setPackageData] =
+    useState<AdmissionMedicinePackageResponse | null>(null);
+  const [packageLoadError, setPackageLoadError] = useState<string | null>(
+    null,
+  );
+  const [packagesLoaded, setPackagesLoaded] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const [discountInput, setDiscountInput] = useState<number | "">(
+    financialData.discountValue ?? "",
+  );
+
+  const loadPackage = useCallback(async (showSpinner = false) => {
+    if (showSpinner) setRefreshing(true);
+    try {
+      const response =
+        await api.get<AdmissionMedicinePackageApiResponse>(
+          `/admissions/medicine-packages?code=${DEFAULT_PACKAGE_CODE}`,
+        );
+      if (response.data.success && response.data.data) {
+        setPackageData(response.data.data);
+        setPackageLoadError(null);
+      } else {
+        setPackageLoadError(
+          response.data.error || "Could not load medicine package.",
+        );
+      }
+    } catch (error) {
+      console.error("Failed to load medicine package:", error);
+      setPackageLoadError(
+        error instanceof Error
+          ? error.message
+          : "Could not load medicine package.",
+      );
+    } finally {
+      setPackagesLoaded(true);
+      if (showSpinner) setRefreshing(false);
+    }
   }, []);
+
+  useEffect(() => {
+    if (!isGynecologyDepartment) {
+      setPackageData(null);
+      setPackageLoadError(null);
+      setPackagesLoaded(false);
+      return;
+    }
+
+    void loadPackage(false);
+  }, [isGynecologyDepartment, loadPackage]);
 
   useEffect(() => {
     const storeVal = financialData.discountValue;
@@ -172,12 +161,9 @@ const FinancialInformation: React.FC = () => {
     };
   }, [isCanceled]);
 
-  const smallInputClassName =
-    "text-gray-700 font-normal rounded-lg h-9 py-1 px-2 w-full focus:border-green-900 focus:ring-2 focus:ring-green-950 outline-none shadow-sm text-xs";
-
   const handleNumberChange = (
     field: keyof typeof financialData,
-    value: string
+    value: string,
   ) => {
     if (field === "medicineCharge" && hasItemizedMedicines) return;
     const numValue = value === "" ? 0 : parseFloat(value);
@@ -192,7 +178,7 @@ const FinancialInformation: React.FC = () => {
   };
 
   const handleDiscountInputChange = (
-    e: React.ChangeEvent<HTMLInputElement>
+    e: React.ChangeEvent<HTMLInputElement>,
   ) => {
     const val = e.target.value;
     if (val === "") {
@@ -211,42 +197,133 @@ const FinancialInformation: React.FC = () => {
   };
 
   const handlePackageSelect = useCallback(
-    (pkg: GynecologyMedicinePackage) => {
+    (pkg: AdmissionMedicinePackageResponse) => {
       if (isCanceled) return;
 
-      const items: AdmissionMedicineChargeItem[] = pkg.medicines.map((med) => ({
-        packageCode: pkg.packageCode,
+      const items: AdmissionMedicineChargeItem[] = pkg.items.map((it) => ({
+        medicineId: it.medicineId,
+        packageCode: pkg.code,
         operationName: pkg.operationName,
-        medicineName: med.medicineName,
-        genericName: med.genericName,
-        groupName: med.groupName,
-        companyName: med.companyName,
-        quantity: med.quantity,
-        unitPrice: med.unitPrice,
-        totalAmount: med.quantity * med.unitPrice,
+        requestedMedicineName: it.templateName,
+        medicineName: it.matched ? it.medicineName : it.templateName,
+        genericName: it.genericName,
+        groupName: it.groupName,
+        companyName: it.companyName,
+        quantity: 1,
+        unitPrice: it.unitPrice,
+        totalAmount: it.totalAmount,
+        currentStock: it.currentStock,
+        defaultSalePrice: it.defaultSalePrice,
+        isMatched: it.matched,
       }));
 
       setMedicineChargeItems(items);
       setAdmissionInfo({ otType: pkg.operationName });
     },
-    [isCanceled, setMedicineChargeItems, setAdmissionInfo]
+    [isCanceled, setMedicineChargeItems, setAdmissionInfo],
   );
 
-  const handleItemFieldChange = useCallback(
-    (index: number, field: string, value: string | number) => {
+  const handleAddEmptyMedicineRow = useCallback(() => {
+    if (isCanceled) return;
+    const newRow: AdmissionMedicineChargeItem = {
+      medicineId: null,
+      packageCode: null,
+      operationName: admissionInfo.otType || "",
+      requestedMedicineName: null,
+      medicineName: "",
+      genericName: null,
+      groupName: null,
+      companyName: null,
+      quantity: 1,
+      unitPrice: 0,
+      totalAmount: 0,
+      currentStock: 0,
+      defaultSalePrice: 0,
+      isMatched: false,
+    };
+    setMedicineChargeItems([...medicineChargeItems, newRow]);
+  }, [
+    isCanceled,
+    admissionInfo.otType,
+    medicineChargeItems,
+    setMedicineChargeItems,
+  ]);
+
+  const handleSelectMedicine = useCallback(
+    async (index: number, medicine: PharmacyMedicineOption) => {
       if (isCanceled) return;
-      updateMedicineChargeItem(index, { [field]: value });
+
+      const displayName =
+        (medicine.brandName ?? "").trim() || medicine.genericName;
+      const defaultSalePrice = Number(medicine.defaultSalePrice);
+
+      updateMedicineChargeItem(index, {
+        medicineId: medicine.id,
+        medicineName: displayName,
+        genericName: medicine.genericName,
+        groupName: medicine.group.name,
+        companyName: null,
+        unitPrice: defaultSalePrice,
+        currentStock: medicine.currentStock,
+        defaultSalePrice,
+        isMatched: true,
+      });
+
+      try {
+        const response = await api.get<OldestPurchaseApiResponse>(
+          `/medicine-inventory/medicines/${medicine.id}/oldest-purchase`,
+        );
+
+        if (response.data.success && response.data.data) {
+          updateMedicineChargeItem(index, {
+            companyName: response.data.data.company.name,
+          });
+        }
+      } catch (error) {
+        console.error("Failed to load oldest purchase company:", error);
+      }
     },
-    [isCanceled, updateMedicineChargeItem]
+    [isCanceled, updateMedicineChargeItem],
   );
 
-  const handleRemoveItem = useCallback(
-    (index: number) => {
-      if (isCanceled) return;
-      removeMedicineChargeItem(index);
-    },
-    [isCanceled, removeMedicineChargeItem]
-  );
+  const handleRefreshPharmacyValues = useCallback(async () => {
+    if (isCanceled) return;
+    setRefreshing(true);
+    try {
+      const refreshedRows: AdmissionMedicineChargeItem[] = await Promise.all(
+        medicineChargeItems.map(async (item) => {
+          if (item.medicineId === null) return item;
+          try {
+            const res = await api.get<{
+              success: boolean;
+              data: { id: number; genericName: string; brandName: string | null; defaultSalePrice: number; currentStock: number; group: { name: string } } | null;
+            }>(`/medicine-inventory/medicines/${item.medicineId}`);
+            const medicine = res.data.data;
+            if (!medicine) return item;
+            const displayName =
+              (medicine.brandName ?? "").trim() || medicine.genericName;
+            return {
+              ...item,
+              medicineName: displayName,
+              genericName: medicine.genericName,
+              groupName: medicine.group.name,
+              currentStock: medicine.currentStock,
+              unitPrice: Number(medicine.defaultSalePrice),
+              totalAmount:
+                item.quantity * Number(medicine.defaultSalePrice),
+              defaultSalePrice: Number(medicine.defaultSalePrice),
+              isMatched: true,
+            };
+          } catch {
+            return item;
+          }
+        }),
+      );
+      setMedicineChargeItems(refreshedRows);
+    } finally {
+      setRefreshing(false);
+    }
+  }, [isCanceled, medicineChargeItems, setMedicineChargeItems]);
 
   const showRoomWarning =
     financialData.seatRent > 0 && !admissionInfo.seatNumber;
@@ -287,6 +364,11 @@ const FinancialInformation: React.FC = () => {
     { key: "otherCharges", label: "Other Charges" },
   ];
 
+  const totalItems = packageData?.items.length ?? 0;
+  const matchedCount =
+    packageData?.items.filter((it) => it.matched).length ?? 0;
+  const unmatchedCount = totalItems - matchedCount;
+
   return (
     <div id="financial" className="mt-2 sm:mt-0 mb-6 sm:mb-8 md:mb-10">
       <div className="bg-linear-to-r from-green-50 to-emerald-100 border-green-200 rounded-lg sm:rounded-xl p-4 sm:p-5 md:p-6 mb-4 sm:mb-5 md:mb-6 shadow-sm border transition-colors duration-300">
@@ -320,216 +402,88 @@ const FinancialInformation: React.FC = () => {
         </div>
       )}
 
-      {/* Medicine Package Selector */}
-      <div className="mb-4 sm:mb-5">
-        <div className="flex items-center gap-2 mb-2">
-          <Package className="w-4 h-4 text-green-600" />
-          <label className="block text-gray-700 text-xs sm:text-sm font-semibold">
-            Medicine Package
-          </label>
-        </div>
-
-        {packageLoadError && (
-          <p className="text-xs text-amber-600 mb-2">{packageLoadError}</p>
-        )}
-
-        {packagesLoaded && packages.length === 0 && !packageLoadError && (
-          <p className="text-xs text-gray-500 mb-2">
-            No operation medicine packages configured.
-          </p>
-        )}
-
-        {packages.length > 0 && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {packages.map((pkg, idx) => {
-              const total = pkg.medicines.reduce(
-                (sum, m) => sum + m.quantity * m.unitPrice,
-                0
-              );
-              return (
-                <button
-                  key={idx}
-                  type="button"
-                  onClick={() => handlePackageSelect(pkg)}
-                  disabled={isCanceled}
-                  className={`text-left p-3 rounded-lg border-2 transition-all cursor-pointer ${
-                    isCanceled
-                      ? "border-gray-200 bg-gray-50 opacity-50 cursor-not-allowed"
-                      : "border-green-200 bg-green-50 hover:border-green-400 hover:bg-green-100"
-                  }`}
-                >
-                  <p className="font-semibold text-sm text-gray-800">
-                    {pkg.operationName}
-                  </p>
-                  <p className="text-xs text-gray-500 mt-0.5">
-                    {pkg.medicines.length} medicine
-                    {pkg.medicines.length !== 1 ? "s" : ""} · ৳
-                    {total.toLocaleString()}
-                  </p>
-                </button>
-              );
-            })}
+      {isGynecologyDepartment && (
+        <div className="mb-4 sm:mb-5">
+          <div className="flex items-center gap-2 mb-2.5">
+            <Package className="w-4 h-4 text-green-600 shrink-0" />
+            <span className="text-gray-700 text-xs sm:text-sm font-semibold">
+              Gynecology Medicine Package
+            </span>
           </div>
-        )}
-      </div>
+
+          {packageLoadError && (
+            <p className="text-xs text-amber-600 mb-2">{packageLoadError}</p>
+          )}
+
+          {packagesLoaded && !packageData && !packageLoadError && (
+            <p className="text-xs text-gray-500 mb-2">
+              No gynecology medicine package configured.
+            </p>
+          )}
+
+          {packageData && (
+            <button
+              type="button"
+              onClick={() => handlePackageSelect(packageData)}
+              disabled={isCanceled}
+              className={`w-full text-left rounded-xl border-2 px-4 py-3 transition-all duration-200 ${
+                isCanceled
+                  ? "border-gray-200 bg-gray-50 opacity-50 cursor-not-allowed"
+                  : "border-green-300 bg-green-50 hover:border-green-500 hover:bg-green-100 hover:shadow-sm cursor-pointer"
+              }`}
+            >
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-green-100 text-green-700">
+                    <Pill className="w-5 h-5" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="font-bold text-sm text-gray-800">
+                      Add all LUCS medicines
+                    </p>
+                    <p className="text-xs text-gray-500 mt-0.5">
+                      {totalItems} medicine{totalItems !== 1 ? "s" : ""}{" "}
+                      ·{" "}{matchedCount} matched
+                      {unmatchedCount > 0
+                        ? ` · ${unmatchedCount} unmatched`
+                        : ""}
+                    </p>
+                  </div>
+                </div>
+                <span className="shrink-0 rounded-lg bg-green-600 px-3 py-1.5 text-xs font-semibold text-white">
+                  Apply
+                </span>
+              </div>
+            </button>
+          )}
+        </div>
+      )}
 
       {/* Itemized Medicine Table */}
       {hasItemizedMedicines && (
-        <div className="mb-4 sm:mb-5 overflow-x-auto">
-          <div className="mb-2 flex items-center justify-between gap-3">
-            <label className="block text-gray-700 text-xs sm:text-sm font-semibold">
-              Itemized Medicines
-            </label>
-            <button
-              type="button"
-              onClick={clearMedicineChargeItems}
-              disabled={isCanceled}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-red-200 bg-red-50 px-2.5 py-1.5 text-xs font-semibold text-red-700 transition-colors hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              <Trash2 className="h-3.5 w-3.5" />
-              Clear package
-            </button>
-          </div>
-          <table className="w-full min-w-[900px] text-xs border border-gray-200 rounded-lg overflow-hidden">
-            <thead>
-              <tr className="bg-gray-50 text-gray-600">
-                <th className="px-2 py-2 text-left font-semibold">Medicine</th>
-                <th className="px-2 py-2 text-left font-semibold">Generic</th>
-                <th className="px-2 py-2 text-left font-semibold">Group</th>
-                <th className="px-2 py-2 text-left font-semibold">Company</th>
-                <th className="px-2 py-2 text-center font-semibold w-16">
-                  Qty
-                </th>
-                <th className="px-2 py-2 text-right font-semibold w-24">
-                  Unit Price
-                </th>
-                <th className="px-2 py-2 text-right font-semibold w-24">
-                  Total
-                </th>
-                <th className="px-2 py-2 w-10"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {medicineChargeItems.map((item, index) => (
-                <tr
-                  key={
-                    item.id
-                      ? `saved-${item.id}`
-                      : `${item.packageCode ?? "package"}-${
-                          item.operationName
-                        }-${item.medicineName}-${index}`
-                  }
-                  className="border-t border-gray-100 hover:bg-gray-50"
-                >
-                  <td className="px-1 py-1">
-                    <input
-                      type="text"
-                      value={item.medicineName}
-                      onChange={(e) =>
-                        handleItemFieldChange(
-                          index,
-                          "medicineName",
-                          e.target.value
-                        )
-                      }
-                      disabled={isCanceled}
-                      className={`${smallInputClassName} disabled:bg-gray-100 disabled:cursor-not-allowed`}
-                    />
-                  </td>
-                  <td className="px-1 py-1">
-                    <input
-                      type="text"
-                      value={item.genericName ?? ""}
-                      onChange={(e) =>
-                        handleItemFieldChange(
-                          index,
-                          "genericName",
-                          e.target.value
-                        )
-                      }
-                      disabled={isCanceled}
-                      className={`${smallInputClassName} disabled:bg-gray-100 disabled:cursor-not-allowed`}
-                    />
-                  </td>
-                  <td className="px-1 py-1">
-                    <input
-                      type="text"
-                      value={item.groupName ?? ""}
-                      onChange={(e) =>
-                        handleItemFieldChange(
-                          index,
-                          "groupName",
-                          e.target.value
-                        )
-                      }
-                      disabled={isCanceled}
-                      className={`${smallInputClassName} disabled:bg-gray-100 disabled:cursor-not-allowed`}
-                    />
-                  </td>
-                  <td className="px-1 py-1">
-                    <input
-                      type="text"
-                      value={item.companyName ?? ""}
-                      onChange={(e) =>
-                        handleItemFieldChange(
-                          index,
-                          "companyName",
-                          e.target.value
-                        )
-                      }
-                      disabled={isCanceled}
-                      className={`${smallInputClassName} disabled:bg-gray-100 disabled:cursor-not-allowed`}
-                    />
-                  </td>
-                  <td className="px-1 py-1">
-                    <input
-                      type="number"
-                      value={item.quantity}
-                      onChange={(e) =>
-                        handleItemFieldChange(
-                          index,
-                          "quantity",
-                          Math.max(1, parseInt(e.target.value) || 1)
-                        )
-                      }
-                      disabled={isCanceled}
-                      min={1}
-                      className={`${smallInputClassName} text-center disabled:bg-gray-100 disabled:cursor-not-allowed`}
-                    />
-                  </td>
-                  <td className="px-1 py-1">
-                    <input
-                      type="number"
-                      value={item.unitPrice}
-                      onChange={(e) =>
-                        handleItemFieldChange(
-                          index,
-                          "unitPrice",
-                          Math.max(0, parseFloat(e.target.value) || 0)
-                        )
-                      }
-                      disabled={isCanceled}
-                      min={0}
-                      className={`${smallInputClassName} text-right disabled:bg-gray-100 disabled:cursor-not-allowed`}
-                    />
-                  </td>
-                  <td className="px-2 py-1 text-right font-semibold text-gray-700">
-                    ৳{item.totalAmount.toLocaleString()}
-                  </td>
-                  <td className="px-1 py-1 text-center">
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveItem(index)}
-                      disabled={isCanceled}
-                      className="text-red-500 hover:text-red-700 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <AdmissionMedicineItemsTable
+          items={medicineChargeItems}
+          isCanceled={isCanceled}
+          refreshing={refreshing}
+          onUpdate={updateMedicineChargeItem}
+          onSelectMedicine={handleSelectMedicine}
+          onRemove={removeMedicineChargeItem}
+          onAddRow={handleAddEmptyMedicineRow}
+          onRefresh={handleRefreshPharmacyValues}
+          onClearAll={clearMedicineChargeItems}
+        />
+      )}
+
+      {!hasItemizedMedicines && !isCanceled && (
+        <div className="mb-4 sm:mb-5">
+          <button
+            type="button"
+            onClick={handleAddEmptyMedicineRow}
+            className="inline-flex items-center gap-1.5 rounded-lg border-2 border-dashed border-emerald-300 bg-emerald-50/50 px-3 py-2 text-xs font-semibold text-emerald-700 transition-all hover:bg-emerald-100 hover:border-emerald-500 active:scale-95"
+          >
+            <Pill className="h-3.5 w-3.5" />
+            Add a single pharmacy medicine
+          </button>
         </div>
       )}
 
@@ -546,7 +500,7 @@ const FinancialInformation: React.FC = () => {
             <NumberInput
               className={`${inputClassName(
                 financialData.admissionFee,
-                true
+                true,
               )} pl-10`}
               value={financialData.admissionFee}
               readOnly
@@ -571,7 +525,7 @@ const FinancialInformation: React.FC = () => {
                 <NumberInput
                   className={`${inputClassName(
                     financialData[field.key],
-                    field.forceReadonly ?? false
+                    field.forceReadonly ?? false,
                   )} pl-10`}
                   value={financialData[field.key] || ""}
                   onChange={(e) =>
@@ -676,7 +630,7 @@ const FinancialInformation: React.FC = () => {
             <NumberInput
               className={`${inputClassName(
                 financialData.grandTotal,
-                true
+                true,
               )} pl-10 font-bold text-green-600`}
               value={financialData.grandTotal}
               readOnly
@@ -698,7 +652,7 @@ const FinancialInformation: React.FC = () => {
               <NumberInput
                 className={`${inputClassName(
                   financialData.paidAmount,
-                  false
+                  false,
                 )} pl-10`}
                 value={financialData.paidAmount || ""}
                 onChange={handlePaymentChange}
@@ -726,7 +680,7 @@ const FinancialInformation: React.FC = () => {
               <NumberInput
                 className={`${inputClassName(
                   financialData.dueAmount,
-                  true
+                  true,
                 )} pl-10 ${
                   financialData.dueAmount > 0
                     ? "text-orange-600 font-bold"
@@ -745,6 +699,7 @@ const FinancialInformation: React.FC = () => {
           </div>
         </div>
       </div>
+
     </div>
   );
 };

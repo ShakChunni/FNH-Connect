@@ -1,5 +1,6 @@
 /**
  * Medicine by ID API Route
+ * GET: Fetch a single medicine
  * PATCH: Update a medicine (excluding stock)
  */
 
@@ -9,6 +10,7 @@ import {
   addCSRFTokenToResponse,
 } from "@/lib/csrfProtection";
 import { getAuthenticatedUserForAPI } from "@/lib/auth-validation";
+import { prisma } from "@/lib/prisma";
 import {
   updateMedicine,
   transformMedicineForResponse,
@@ -28,6 +30,75 @@ const updateMedicineSchema = z.object({
   defaultSalePrice: z.number().min(0).default(0),
   lowStockThreshold: z.number().int().min(0).default(10),
 });
+
+export async function GET(request: NextRequest, { params }: RouteParams) {
+  try {
+    const user = await getAuthenticatedUserForAPI();
+    if (!user) {
+      return NextResponse.json(
+        { success: false, error: "Unauthorized" },
+        { status: 401 },
+      );
+    }
+
+    const { id } = await params;
+    const medicineId = parseInt(id, 10);
+
+    if (isNaN(medicineId) || medicineId <= 0) {
+      return NextResponse.json(
+        { success: false, error: "Invalid medicine ID" },
+        { status: 400 },
+      );
+    }
+
+    const medicine = await prisma.medicine.findUnique({
+      where: { id: medicineId },
+      select: {
+        id: true,
+        genericName: true,
+        brandName: true,
+        strength: true,
+        dosageForm: true,
+        defaultSalePrice: true,
+        currentStock: true,
+        lowStockThreshold: true,
+        isActive: true,
+        createdAt: true,
+        group: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+    });
+
+    if (!medicine) {
+      return NextResponse.json(
+        { success: false, error: "Medicine not found" },
+        { status: 404 },
+      );
+    }
+
+    return NextResponse.json({
+      success: true,
+      data: transformMedicineForResponse(medicine),
+    });
+  } catch (error) {
+    console.error(
+      "GET /api/medicine-inventory/medicines/[id] error:",
+      error,
+    );
+    return NextResponse.json(
+      {
+        success: false,
+        error: "Failed to fetch medicine",
+        message: error instanceof Error ? error.message : "Unknown error",
+      },
+      { status: 500 },
+    );
+  }
+}
 
 export async function PATCH(request: NextRequest, { params }: RouteParams) {
   try {

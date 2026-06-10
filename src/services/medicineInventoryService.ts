@@ -16,6 +16,49 @@ export interface ActivityLogContext {
   deviceInfo?: SessionDeviceInfo;
 }
 
+export interface MedicineSaleLinkContext {
+  admissionId?: number;
+  admissionMedicineChargeId?: number;
+}
+
+export interface MedicineSaleWithRelations {
+  id: number;
+  quantity: number;
+  unitPrice: number | Prisma.Decimal;
+  totalAmount: number | Prisma.Decimal;
+  saleDate: Date;
+  patient: {
+    id: number;
+    fullName: string;
+    phoneNumber: string | null;
+  };
+  medicine: {
+    id: number;
+    genericName: string;
+    brandName: string | null;
+    group: {
+      id: number;
+      name: string;
+    };
+  };
+  purchase: {
+    id: number;
+    invoiceNumber: string;
+    batchNumber: string | null;
+    company: {
+      id: number;
+      name: string;
+    };
+  };
+}
+
+export interface CreateSaleWithTxResult {
+  primarySale: MedicineSaleWithRelations;
+  sales: MedicineSaleWithRelations[];
+  totalAmount: number;
+  totalQuantity: number;
+}
+
 export interface MedicineFilters {
   search?: string;
   groupId?: number;
@@ -1014,6 +1057,13 @@ export async function getSales(filters: SaleFilters) {
         totalAmount: true,
         saleDate: true,
         createdAt: true,
+        admissionId: true,
+        admission: {
+          select: {
+            id: true,
+            admissionNumber: true,
+          },
+        },
         patient: {
           select: {
             id: true,
@@ -1069,210 +1119,299 @@ export async function createSale(
   staffId: number,
   userId: number,
   activityLogContext?: ActivityLogContext,
+  linkContext?: MedicineSaleLinkContext,
 ) {
-  return prisma.$transaction(async (tx) => {
-    const now = new Date();
-    const effectiveSaleDate = data.saleDate || now;
+  const result = await prisma.$transaction(async (tx) =>
+    createSaleWithTx(tx, data, staffId, userId, activityLogContext, linkContext),
+  );
 
-    if (effectiveSaleDate > now) {
-      throw new Error("Sale date cannot be in the future");
-    }
+  // Return the first sale record for backward compatibility
+  return result.primarySale;
+}
 
-    // Verify patient exists
-    const patient = await tx.patient.findUnique({
-      where: { id: data.patientId },
-    });
+/**
+ * Transaction-aware sale creator.
+ *
+ * Performs FIFO stock deduction against `MedicinePurchase` batches and
+ * creates one `MedicineSale` per batch consumed. When called from inside
+ * an existing transaction (e.g. admission create/update), the caller's
+ * transaction is used so all-or-nothing semantics are preserved.
+ */
+export async function createSaleWithTx(
+  tx: Prisma.TransactionClient,
+  data: {
+    patientId: number;
+    medicineId: number;
+    quantity: number;
+    unitPrice?: number; // Optional override — defaults to FIFO batch price
+    saleDate?: Date;
+  },
+  staffId: number,
+  userId: number,
+  activityLogContext?: ActivityLogContext,
+  linkContext?: MedicineSaleLinkContext,
+): Promise<CreateSaleWithTxResult> {
+  const now = new Date();
+  const effectiveSaleDate = data.saleDate || now;
 
-    if (!patient) {
-      throw new Error("Patient not found");
-    }
+  if (effectiveSaleDate > now) {
+    throw new Error("Sale date cannot be in the future");
+  }
 
-    // Verify medicine exists and has sufficient stock
-    const medicine = await tx.medicine.findUnique({
-      where: { id: data.medicineId },
-    });
+  // Verify patient exists
+  const patient = await tx.patient.findUnique({
+    where: { id: data.patientId },
+  });
 
-    if (!medicine || !medicine.isActive) {
-      throw new Error("Invalid or inactive medicine");
-    }
+  if (!patient) {
+    throw new Error("Patient not found");
+  }
 
-    if (medicine.currentStock < data.quantity) {
-      throw new Error(
-        `Insufficient stock. Available: ${medicine.currentStock}, Requested: ${data.quantity}`,
-      );
-    }
+  // Verify medicine exists and has sufficient stock
+  const medicine = await tx.medicine.findUnique({
+    where: { id: data.medicineId },
+  });
 
-    const firstPurchase = await tx.medicinePurchase.findFirst({
-      where: {
-        medicineId: data.medicineId,
+  if (!medicine || !medicine.isActive) {
+    throw new Error("Invalid or inactive medicine");
+  }
+
+  if (medicine.currentStock < data.quantity) {
+    throw new Error(
+      `Insufficient stock. Available: ${medicine.currentStock}, Requested: ${data.quantity}`,
+    );
+  }
+
+  const firstPurchase = await tx.medicinePurchase.findFirst({
+    where: {
+      medicineId: data.medicineId,
+    },
+    orderBy: {
+      purchaseDate: "asc",
+    },
+    select: {
+      purchaseDate: true,
+    },
+  });
+
+  if (!firstPurchase) {
+    throw new Error("No stock purchase history found for this medicine");
+  }
+
+  if (effectiveSaleDate < firstPurchase.purchaseDate) {
+    throw new Error(
+      `Sale date cannot be before first stock purchase date (${firstPurchase.purchaseDate.toISOString()})`,
+    );
+  }
+
+  // Find ALL purchase batches with remaining stock, ordered oldest first (FIFO)
+  const availablePurchases = await tx.medicinePurchase.findMany({
+    where: {
+      medicineId: data.medicineId,
+      remainingQty: {
+        gt: 0,
       },
-      orderBy: {
-        purchaseDate: "asc",
+    },
+    orderBy: {
+      purchaseDate: "asc", // FIFO - oldest first
+    },
+  });
+
+  if (availablePurchases.length === 0) {
+    throw new Error("No stock available from purchases");
+  }
+
+  // Calculate total available across all batches
+  const totalAvailable = availablePurchases.reduce(
+    (sum, p) => sum + p.remainingQty,
+    0,
+  );
+
+  if (totalAvailable < data.quantity) {
+    throw new Error(
+      `Insufficient stock across all batches. Available: ${totalAvailable}, Requested: ${data.quantity}`,
+    );
+  }
+
+  // Consume stock across batches using FIFO
+  let remainingToSell = data.quantity;
+  const saleRecords: MedicineSaleWithRelations[] = [];
+  let overallTotalAmount = 0;
+
+  for (const purchase of availablePurchases) {
+    if (remainingToSell <= 0) break;
+
+    const qtyFromThisBatch = Math.min(remainingToSell, purchase.remainingQty);
+    const batchUnitPrice =
+      data.unitPrice !== undefined
+        ? data.unitPrice
+        : Number(purchase.unitPrice);
+    const batchTotalAmount = qtyFromThisBatch * batchUnitPrice;
+
+    // Create sale entry for this batch portion
+    const sale = await tx.medicineSale.create({
+      data: {
+        patientId: data.patientId,
+        medicineId: data.medicineId,
+        purchaseId: purchase.id,
+        quantity: qtyFromThisBatch,
+        unitPrice: batchUnitPrice,
+        totalAmount: batchTotalAmount,
+        saleDate: effectiveSaleDate,
+        createdBy: staffId,
+        admissionId: linkContext?.admissionId ?? null,
+        admissionMedicineChargeId:
+          linkContext?.admissionMedicineChargeId ?? null,
       },
       select: {
-        purchaseDate: true,
+        id: true,
+        quantity: true,
+        unitPrice: true,
+        totalAmount: true,
+        saleDate: true,
+        patient: {
+          select: {
+            id: true,
+            fullName: true,
+            phoneNumber: true,
+          },
+        },
+        medicine: {
+          select: {
+            id: true,
+            genericName: true,
+            brandName: true,
+            group: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+          },
+        },
+        purchase: {
+          select: {
+            id: true,
+            invoiceNumber: true,
+            batchNumber: true,
+            company: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+          },
+        },
       },
     });
 
-    if (!firstPurchase) {
-      throw new Error("No stock purchase history found for this medicine");
-    }
-
-    if (effectiveSaleDate < firstPurchase.purchaseDate) {
-      throw new Error(
-        `Sale date cannot be before first stock purchase date (${firstPurchase.purchaseDate.toISOString()})`,
-      );
-    }
-
-    // Find ALL purchase batches with remaining stock, ordered oldest first (FIFO)
-    const availablePurchases = await tx.medicinePurchase.findMany({
-      where: {
-        medicineId: data.medicineId,
+    // Update this purchase batch's remaining quantity
+    await tx.medicinePurchase.update({
+      where: { id: purchase.id },
+      data: {
         remainingQty: {
-          gt: 0,
-        },
-      },
-      orderBy: {
-        purchaseDate: "asc", // FIFO - oldest first
-      },
-    });
-
-    if (availablePurchases.length === 0) {
-      throw new Error("No stock available from purchases");
-    }
-
-    // Calculate total available across all batches
-    const totalAvailable = availablePurchases.reduce(
-      (sum, p) => sum + p.remainingQty,
-      0,
-    );
-
-    if (totalAvailable < data.quantity) {
-      throw new Error(
-        `Insufficient stock across all batches. Available: ${totalAvailable}, Requested: ${data.quantity}`,
-      );
-    }
-
-    // Consume stock across batches using FIFO
-    let remainingToSell = data.quantity;
-    const saleRecords = [];
-    let overallTotalAmount = 0;
-
-    for (const purchase of availablePurchases) {
-      if (remainingToSell <= 0) break;
-
-      const qtyFromThisBatch = Math.min(remainingToSell, purchase.remainingQty);
-      const batchUnitPrice =
-        data.unitPrice !== undefined
-          ? data.unitPrice
-          : Number(purchase.unitPrice);
-      const batchTotalAmount = qtyFromThisBatch * batchUnitPrice;
-
-      // Create sale entry for this batch portion
-      const sale = await tx.medicineSale.create({
-        data: {
-          patientId: data.patientId,
-          medicineId: data.medicineId,
-          purchaseId: purchase.id,
-          quantity: qtyFromThisBatch,
-          unitPrice: batchUnitPrice,
-          totalAmount: batchTotalAmount,
-          saleDate: effectiveSaleDate,
-          createdBy: staffId,
-        },
-        select: {
-          id: true,
-          quantity: true,
-          unitPrice: true,
-          totalAmount: true,
-          saleDate: true,
-          patient: {
-            select: {
-              id: true,
-              fullName: true,
-              phoneNumber: true,
-            },
-          },
-          medicine: {
-            select: {
-              id: true,
-              genericName: true,
-              brandName: true,
-              group: {
-                select: {
-                  id: true,
-                  name: true,
-                },
-              },
-            },
-          },
-          purchase: {
-            select: {
-              id: true,
-              invoiceNumber: true,
-              batchNumber: true,
-              company: {
-                select: {
-                  id: true,
-                  name: true,
-                },
-              },
-            },
-          },
-        },
-      });
-
-      // Update this purchase batch's remaining quantity
-      await tx.medicinePurchase.update({
-        where: { id: purchase.id },
-        data: {
-          remainingQty: {
-            decrement: qtyFromThisBatch,
-          },
-        },
-      });
-
-      saleRecords.push(sale);
-      overallTotalAmount += batchTotalAmount;
-      remainingToSell -= qtyFromThisBatch;
-    }
-
-    // Update medicine stock (total quantity sold)
-    await tx.medicine.update({
-      where: { id: data.medicineId },
-      data: {
-        currentStock: {
-          decrement: data.quantity,
+          decrement: qtyFromThisBatch,
         },
       },
     });
 
-    // Log activity
-    const primarySale = saleRecords[0];
-    await tx.activityLog.create({
-      data: {
-        userId,
-        action: "CREATE",
-        description: `Sold ${data.quantity} units of ${getMedicineDisplayLabel(medicine)} to ${patient.fullName}. Amount: BDT ${overallTotalAmount}${saleRecords.length > 1 ? ` (across ${saleRecords.length} batches)` : ""}`,
-        entityType: "MedicineSale",
-        entityId: primarySale.id,
-        timestamp: new Date(),
-        sessionId: activityLogContext?.sessionId,
-        ipAddress: activityLogContext?.deviceInfo?.ipAddress,
-        deviceFingerprint: activityLogContext?.deviceInfo?.deviceFingerprint,
-        readableFingerprint:
-          activityLogContext?.deviceInfo?.readableFingerprint,
-        deviceType: activityLogContext?.deviceInfo?.deviceType,
-        browserName: activityLogContext?.deviceInfo?.browserName,
-        browserVersion: activityLogContext?.deviceInfo?.browserVersion,
-        osType: activityLogContext?.deviceInfo?.osType,
-      },
-    });
+    saleRecords.push(sale);
+    overallTotalAmount += batchTotalAmount;
+    remainingToSell -= qtyFromThisBatch;
+  }
 
-    // Return the first sale record for backward compatibility
-    // The primary sale captures the main transaction details
-    return primarySale;
+  // Update medicine stock (total quantity sold)
+  await tx.medicine.update({
+    where: { id: data.medicineId },
+    data: {
+      currentStock: {
+        decrement: data.quantity,
+      },
+    },
   });
+
+  // Log activity
+  const primarySale = saleRecords[0];
+  const isAdmissionSale = Boolean(linkContext?.admissionId);
+  const saleDescriptionSuffix = isAdmissionSale
+    ? ` (linked to admission${linkContext?.admissionId ? ` #${linkContext.admissionId}` : ""})`
+    : "";
+
+  await tx.activityLog.create({
+    data: {
+      userId,
+      action: "CREATE",
+      description: `Sold ${data.quantity} units of ${getMedicineDisplayLabel(medicine)} to ${patient.fullName}. Amount: BDT ${overallTotalAmount}${saleRecords.length > 1 ? ` (across ${saleRecords.length} batches)` : ""}${saleDescriptionSuffix}`,
+      entityType: "MedicineSale",
+      entityId: primarySale.id,
+      timestamp: new Date(),
+      sessionId: activityLogContext?.sessionId,
+      ipAddress: activityLogContext?.deviceInfo?.ipAddress,
+      deviceFingerprint: activityLogContext?.deviceInfo?.deviceFingerprint,
+      readableFingerprint:
+        activityLogContext?.deviceInfo?.readableFingerprint,
+      deviceType: activityLogContext?.deviceInfo?.deviceType,
+      browserName: activityLogContext?.deviceInfo?.browserName,
+      browserVersion: activityLogContext?.deviceInfo?.browserVersion,
+      osType: activityLogContext?.deviceInfo?.osType,
+    },
+  });
+
+  return {
+    primarySale,
+    sales: saleRecords,
+    totalAmount: overallTotalAmount,
+    totalQuantity: data.quantity,
+  };
+}
+
+/**
+ * Reverse (delete) all `MedicineSale` rows linked to a given admission and
+ * restore stock back to the source purchase batches.
+ *
+ * Must be called from inside an existing Prisma transaction. The caller is
+ * responsible for deleting `AdmissionMedicineCharge` rows and any other
+ * admission-scoped data after this runs.
+ */
+export async function reverseAdmissionMedicineSales(
+  tx: Prisma.TransactionClient,
+  admissionId: number,
+): Promise<{ reversed: number }> {
+  const sales = await tx.medicineSale.findMany({
+    where: { admissionId },
+    select: {
+      id: true,
+      medicineId: true,
+      purchaseId: true,
+      quantity: true,
+    },
+  });
+
+  if (sales.length === 0) {
+    return { reversed: 0 };
+  }
+
+  for (const sale of sales) {
+    await tx.medicinePurchase.update({
+      where: { id: sale.purchaseId },
+      data: {
+        remainingQty: { increment: sale.quantity },
+      },
+    });
+
+    await tx.medicine.update({
+      where: { id: sale.medicineId },
+      data: {
+        currentStock: { increment: sale.quantity },
+      },
+    });
+  }
+
+  await tx.medicineSale.deleteMany({
+    where: { admissionId },
+  });
+
+  return { reversed: sales.length };
 }
 
 // ═══════════════════════════════════════════════════════════════
