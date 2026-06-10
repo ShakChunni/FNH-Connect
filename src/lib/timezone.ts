@@ -25,6 +25,8 @@ function formatCalendarPartsISO(parts: CalendarDateParts): string {
   return `${parts.year}-${padTwo(parts.month + 1)}-${padTwo(parts.day)}`;
 }
 
+export { formatCalendarPartsISO };
+
 function parseCalendarDateISO(value: string): CalendarDateParts | null {
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value.trim());
   if (!match) {
@@ -54,7 +56,7 @@ function getNowInBDT(reference: Date = new Date()): Date {
   return new Date(reference.getTime() + BDT_OFFSET_MS);
 }
 
-function getTodayBDTCalendarDateParts(reference: Date = new Date()): CalendarDateParts {
+export function getTodayBDTCalendarDateParts(reference: Date = new Date()): CalendarDateParts {
   const bdtNow = getNowInBDT(reference);
   return {
     year: bdtNow.getUTCFullYear(),
