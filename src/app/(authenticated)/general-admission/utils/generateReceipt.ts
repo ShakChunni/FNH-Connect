@@ -501,8 +501,18 @@ export const generateAdmissionInvoice = async (
 
   if (data.medicineChargeItems && data.medicineChargeItems.length > 0) {
     for (const item of data.medicineChargeItems) {
+      const baseDescription = `Medicine - ${item.medicineName} (${item.operationName}, Qty ${item.quantity} x ৳${item.unitPrice.toLocaleString()})`;
+      let description = baseDescription;
+      if (
+        item.requestedMedicineName &&
+        item.requestedMedicineName.trim() &&
+        item.requestedMedicineName.trim().toLowerCase() !==
+          item.medicineName.trim().toLowerCase()
+      ) {
+        description = `${baseDescription}\nRequested: ${item.requestedMedicineName}`;
+      }
       charges.push({
-        description: `Medicine - ${item.medicineName} (${item.operationName}, Qty ${item.quantity} x ৳${item.unitPrice.toLocaleString()})`,
+        description,
         amount: item.totalAmount,
       });
     }

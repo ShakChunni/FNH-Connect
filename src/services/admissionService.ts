@@ -16,6 +16,10 @@ import {
 } from "@/lib/dateOfBirth";
 import { SessionDeviceInfo } from "@/types/auth";
 import { shiftService } from "@/services/shiftService";
+import {
+  createSaleWithTx,
+  reverseAdmissionMedicineSales,
+} from "@/services/medicineInventoryService";
 
 // ═══════════════════════════════════════════════════════════════
 // TYPES
@@ -93,8 +97,10 @@ export interface AdmissionData {
 
 export interface AdmissionMedicineChargeItemInput {
   id?: number;
+  medicineId: number | null;
   packageCode?: string | null;
   operationName: string;
+  requestedMedicineName?: string | null;
   medicineName: string;
   genericName?: string | null;
   groupName?: string | null;
@@ -102,11 +108,16 @@ export interface AdmissionMedicineChargeItemInput {
   quantity: number;
   unitPrice: number;
   totalAmount?: number;
+  currentStock?: number;
+  defaultSalePrice?: number;
+  isMatched?: boolean;
 }
 
 interface NormalizedAdmissionMedicineChargeItem {
+  medicineId: number;
   packageCode: string | null;
   operationName: string;
+  requestedMedicineName: string | null;
   medicineName: string;
   genericName: string | null;
   groupName: string | null;
@@ -116,26 +127,136 @@ interface NormalizedAdmissionMedicineChargeItem {
   totalAmount: number;
 }
 
-function normalizeAdmissionMedicineChargeItems(
+export class AdmissionMedicineValidationError extends Error {
+  constructor(
+    message: string,
+    public readonly fieldErrors: Record<string, string[]> = {},
+  ) {
+    super(message);
+    this.name = "AdmissionMedicineValidationError";
+  }
+}
+
+/**
+ * Resolve an unmatched admission medicine row that may carry
+ * `defaultSalePrice` / `currentStock` snapshot from the client. The actual
+ * authoritative values are re-fetched from the `Medicine` table — the
+ * client snapshot is only used as a UX hint.
+ */
+async function normalizeAdmissionMedicineChargeItems(
   items: AdmissionMedicineChargeItemInput[] | undefined,
-): NormalizedAdmissionMedicineChargeItem[] {
+  tx: Prisma.TransactionClient,
+  context: { isUpdating: boolean },
+): Promise<NormalizedAdmissionMedicineChargeItem[]> {
   if (!items?.length) return [];
 
-  return items.map((item) => {
+  const normalized: NormalizedAdmissionMedicineChargeItem[] = [];
+  const fieldErrors: Record<string, string[]> = {};
+
+  items.forEach((item, index) => {
+    const path = `medicineChargeItems.${index}`;
+
+    if (item.medicineId === null || item.medicineId === undefined) {
+      if (context.isUpdating) {
+        // For an update, the user is allowed to clear itemized rows
+        // (in which case the caller passes an empty array). Empty medicineId
+        // for an explicit row is rejected.
+        fieldErrors[`${path}.medicineId`] = [
+          "Select a pharmacy medicine or remove this row before saving.",
+        ];
+      } else {
+        fieldErrors[`${path}.medicineId`] = [
+          "Pharmacy medicine is required for medicine charge items.",
+        ];
+      }
+    }
+  });
+
+  for (let i = 0; i < items.length; i++) {
+    const item = items[i];
+    if (item.medicineId === null || item.medicineId === undefined) {
+      continue;
+    }
+
+    const path = `medicineChargeItems.${i}`;
+    const medicineId = item.medicineId;
+
+    const medicine = await tx.medicine.findUnique({
+      where: { id: medicineId },
+      select: {
+        id: true,
+        genericName: true,
+        brandName: true,
+        isActive: true,
+        currentStock: true,
+        defaultSalePrice: true,
+        group: { select: { id: true, name: true } },
+      },
+    });
+
+    if (!medicine || !medicine.isActive) {
+      fieldErrors[`${path}.medicineId`] = [
+        "Selected pharmacy medicine is not available.",
+      ];
+      continue;
+    }
+
     const quantity = Math.max(1, Math.trunc(item.quantity));
-    const unitPrice = Math.max(0, item.unitPrice);
-    return {
+    const unitPrice = Number(item.unitPrice);
+
+    if (medicine.currentStock < quantity) {
+      fieldErrors[`${path}.quantity`] = [
+        `Insufficient stock. Available: ${medicine.currentStock}, Requested: ${quantity}`,
+      ];
+    }
+
+    if (!Number.isFinite(unitPrice) || unitPrice <= 0) {
+      fieldErrors[`${path}.unitPrice`] = [
+        "Medicine price must be greater than 0.",
+      ];
+      continue;
+    }
+
+    const displayName = medicine.brandName?.trim() || medicine.genericName;
+
+    // Resolve the source company for the snapshot. We pick the oldest
+    // purchase with stock because that is the FIFO batch the sale will
+    // consume from; if none has stock we still allow the row but leave
+    // company null (the sale flow will revalidate).
+    const oldestPurchase = await tx.medicinePurchase.findFirst({
+      where: {
+        medicineId: medicine.id,
+        remainingQty: { gt: 0 },
+      },
+      orderBy: { purchaseDate: "asc" },
+      select: {
+        company: { select: { name: true } },
+      },
+    });
+
+    normalized.push({
+      medicineId: medicine.id,
       packageCode: item.packageCode?.trim() || null,
       operationName: item.operationName.trim(),
-      medicineName: item.medicineName.trim(),
-      genericName: item.genericName?.trim() || null,
-      groupName: item.groupName?.trim() || null,
-      companyName: item.companyName?.trim() || null,
+      requestedMedicineName: item.requestedMedicineName?.trim() || null,
+      medicineName: displayName,
+      genericName: medicine.genericName,
+      groupName: medicine.group.name,
+      companyName: oldestPurchase?.company?.name ?? null,
       quantity,
       unitPrice,
       totalAmount: quantity * unitPrice,
-    };
-  });
+    });
+  }
+
+  if (Object.keys(fieldErrors).length > 0) {
+    throw new AdmissionMedicineValidationError(
+      "Admission medicine items have validation errors.",
+      fieldErrors,
+    );
+  }
+
+  return normalized;
 }
 
 export interface FinancialData {
@@ -373,8 +494,10 @@ export async function createAdmission(
     // 5. Normalize medicine charge items
     const medicineItems = isCreatingCanceled
       ? []
-      : normalizeAdmissionMedicineChargeItems(
+      : await normalizeAdmissionMedicineChargeItems(
           admissionData.medicineChargeItems,
+          tx,
+          { isUpdating: false },
         );
 
     // 6. Calculate financial fields
@@ -497,24 +620,63 @@ export async function createAdmission(
       },
     });
 
-    // 8. Create medicine charge items
+    // 8. Create medicine charge items and linked pharmacy sales
+    let createdChargeRows: Array<{
+      id: number;
+      medicineId: number | null;
+      quantity: number;
+      unitPrice: number | Prisma.Decimal;
+    }> = [];
     if (medicineItems.length > 0) {
-      await tx.admissionMedicineCharge.createMany({
-        data: medicineItems.map((item) => ({
+      for (const item of medicineItems) {
+        const charge = await tx.admissionMedicineCharge.create({
+          data: {
+            admissionId: admission.id,
+            medicineId: item.medicineId,
+            packageCode: item.packageCode,
+            operationName: item.operationName,
+            requestedMedicineName: item.requestedMedicineName,
+            medicineName: item.medicineName,
+            genericName: item.genericName,
+            groupName: item.groupName,
+            companyName: item.companyName,
+            quantity: item.quantity,
+            unitPrice: item.unitPrice,
+            totalAmount: item.totalAmount,
+            createdBy: staffId,
+            lastModifiedBy: staffId,
+          },
+          select: {
+            id: true,
+            medicineId: true,
+            quantity: true,
+            unitPrice: true,
+          },
+        });
+        createdChargeRows.push(charge);
+      }
+    }
+
+    // 8b. Create linked FIFO medicine sales for each charge row
+    for (const charge of createdChargeRows) {
+      if (charge.medicineId === null) continue;
+      await createSaleWithTx(
+        tx,
+        {
+          patientId: patient.id,
+          medicineId: charge.medicineId,
+          quantity: charge.quantity,
+          unitPrice: Number(charge.unitPrice),
+          saleDate: admission.dateAdmitted,
+        },
+        staffId,
+        userId,
+        activityLogContext,
+        {
           admissionId: admission.id,
-          packageCode: item.packageCode,
-          operationName: item.operationName,
-          medicineName: item.medicineName,
-          genericName: item.genericName,
-          groupName: item.groupName,
-          companyName: item.companyName,
-          quantity: item.quantity,
-          unitPrice: item.unitPrice,
-          totalAmount: item.totalAmount,
-          createdBy: staffId,
-          lastModifiedBy: staffId,
-        })),
-      });
+          admissionMedicineChargeId: charge.id,
+        },
+      );
     }
 
     // 9. Create patient account if doesn't exist
@@ -709,24 +871,41 @@ export async function updateAdmission(
       existingAdmission.status === "Canceled" &&
       updateData.status !== "Canceled";
 
-    // Handle medicine charge items
+    // Handle medicine charge items + linked pharmacy sales
+    let recreatedChargeRows: Array<{
+      id: number;
+      medicineId: number | null;
+      quantity: number;
+      unitPrice: number | Prisma.Decimal;
+    }> = [];
+
     if (isCanceling) {
+      // Always reverse linked pharmacy stock first, then drop charge rows
+      await reverseAdmissionMedicineSales(tx, id);
       await tx.admissionMedicineCharge.deleteMany({
         where: { admissionId: id },
       });
     } else if (updateData.medicineChargeItems !== undefined) {
+      // Reverse any previously linked sales (stock + rows), then rebuild
+      await reverseAdmissionMedicineSales(tx, id);
       await tx.admissionMedicineCharge.deleteMany({
         where: { admissionId: id },
       });
-      const medicineItems = normalizeAdmissionMedicineChargeItems(
+
+      const medicineItems = await normalizeAdmissionMedicineChargeItems(
         updateData.medicineChargeItems,
+        tx,
+        { isUpdating: true },
       );
-      if (medicineItems.length > 0) {
-        await tx.admissionMedicineCharge.createMany({
-          data: medicineItems.map((item) => ({
+
+      for (const item of medicineItems) {
+        const charge = await tx.admissionMedicineCharge.create({
+          data: {
             admissionId: id,
+            medicineId: item.medicineId,
             packageCode: item.packageCode,
             operationName: item.operationName,
+            requestedMedicineName: item.requestedMedicineName,
             medicineName: item.medicineName,
             genericName: item.genericName,
             groupName: item.groupName,
@@ -736,8 +915,36 @@ export async function updateAdmission(
             totalAmount: item.totalAmount,
             createdBy: staffId,
             lastModifiedBy: staffId,
-          })),
+          },
+          select: {
+            id: true,
+            medicineId: true,
+            quantity: true,
+            unitPrice: true,
+          },
         });
+        recreatedChargeRows.push(charge);
+      }
+
+      for (const charge of recreatedChargeRows) {
+        if (charge.medicineId === null) continue;
+        await createSaleWithTx(
+          tx,
+          {
+            patientId: existingAdmission.patientId,
+            medicineId: charge.medicineId,
+            quantity: charge.quantity,
+            unitPrice: Number(charge.unitPrice),
+            saleDate: existingAdmission.dateAdmitted,
+          },
+          staffId,
+          userId,
+          activityLogContext,
+          {
+            admissionId: id,
+            admissionMedicineChargeId: charge.id,
+          },
+        );
       }
     }
 
@@ -778,13 +985,17 @@ export async function updateAdmission(
       paidAmountNew = updateData.paidAmount ?? 0;
 
       if (updateData.medicineChargeItems !== undefined) {
-        const items = normalizeAdmissionMedicineChargeItems(
-          updateData.medicineChargeItems,
+        // The actual normalization/validation has already happened
+        // above where the charge rows are recreated. Here we only need
+        // the total for the financial summary.
+        const existingCharges = await tx.admissionMedicineCharge.findMany({
+          where: { admissionId: id },
+          select: { totalAmount: true },
+        });
+        medicineCharge = existingCharges.reduce(
+          (sum, item) => sum + Number(item.totalAmount),
+          0,
         );
-        medicineCharge =
-          items.length > 0
-            ? items.reduce((sum, item) => sum + item.totalAmount, 0)
-            : 0;
       } else {
         medicineCharge = updateData.medicineCharge ?? 0;
       }
@@ -809,13 +1020,15 @@ export async function updateAdmission(
         updateData.paidAmount ?? Number(existingAdmission.paidAmount);
 
       if (updateData.medicineChargeItems !== undefined) {
-        const items = normalizeAdmissionMedicineChargeItems(
-          updateData.medicineChargeItems,
+        // Same as above — re-read totals from the freshly inserted rows
+        const existingCharges = await tx.admissionMedicineCharge.findMany({
+          where: { admissionId: id },
+          select: { totalAmount: true },
+        });
+        medicineCharge = existingCharges.reduce(
+          (sum, item) => sum + Number(item.totalAmount),
+          0,
         );
-        medicineCharge =
-          items.length > 0
-            ? items.reduce((sum, item) => sum + item.totalAmount, 0)
-            : 0;
       } else {
         medicineCharge =
           updateData.medicineCharge ?? Number(existingAdmission.medicineCharge);
@@ -1076,6 +1289,10 @@ export async function deleteAdmission(
 
     // ── Reverse financial records before deleting ──
 
+    // 0. Reverse any pharmacy sales linked to this admission so we don't
+    //    leave phantom stock deductions behind.
+    await reverseAdmissionMedicineSales(tx, id);
+
     // 1. Find all ServiceCharges linked to this admission
     const serviceCharges = await tx.serviceCharge.findMany({
       where: { admissionId: id },
@@ -1273,8 +1490,10 @@ export function transformAdmissionForResponse(admission: AdmissionWithRelations)
     lastModifiedByName: admission.lastModifiedByName || null,
     medicineChargeItems: (admission.medicineChargeItems ?? []).map((item) => ({
       id: item.id,
+      medicineId: item.medicineId,
       packageCode: item.packageCode,
       operationName: item.operationName,
+      requestedMedicineName: item.requestedMedicineName,
       medicineName: item.medicineName,
       genericName: item.genericName,
       groupName: item.groupName,

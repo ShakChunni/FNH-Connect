@@ -206,11 +206,32 @@ const EditDataAdmission: React.FC<EditDataProps> = ({
       errors.push("Patient address is required");
     }
 
+    medicineChargeItems.forEach((item, index) => {
+      if (item.medicineId === null) {
+        errors.push(
+          `Medicine row ${index + 1}: select a pharmacy medicine or remove the row`,
+        );
+      }
+      if (item.unitPrice <= 0) {
+        errors.push(
+          `Medicine row ${index + 1}: sale price must be greater than 0`,
+        );
+      }
+      if (
+        item.currentStock !== undefined &&
+        item.quantity > item.currentStock
+      ) {
+        errors.push(
+          `Medicine row ${index + 1}: quantity exceeds available stock`,
+        );
+      }
+    });
+
     return {
       isFormValid: errors.length === 0,
       validationErrors: errors,
     };
-  }, [patientData.firstName, patientData.address]);
+  }, [patientData.firstName, patientData.address, medicineChargeItems]);
 
   const { showNotification } = useNotification();
 

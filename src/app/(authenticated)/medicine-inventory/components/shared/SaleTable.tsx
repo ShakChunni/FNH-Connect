@@ -154,6 +154,9 @@ const SaleTable: React.FC = () => {
                   Total
                 </th>
                 <th className="text-left px-6 py-3 text-[10px] font-black uppercase tracking-widest text-gray-500">
+                  Source
+                </th>
+                <th className="text-left px-6 py-3 text-[10px] font-black uppercase tracking-widest text-gray-500">
                   Date
                 </th>
               </tr>
@@ -205,6 +208,20 @@ const SaleTable: React.FC = () => {
                       {formatCurrency(sale.totalAmount)}
                     </span>
                   </td>
+                  <td className="px-6 py-3.5">
+                    {sale.admission?.admissionNumber ? (
+                      <span
+                        className="inline-flex items-center gap-1 px-2 py-1 bg-emerald-50 text-emerald-700 text-[11px] font-semibold rounded-lg border border-emerald-100"
+                        title="This sale came from an admission"
+                      >
+                        Admission: {sale.admission.admissionNumber}
+                      </span>
+                    ) : (
+                      <span className="text-xs text-gray-400 font-medium">
+                        Walk-in
+                      </span>
+                    )}
+                  </td>
                   <td className="px-6 py-3.5 text-sm text-gray-600">
                     {formatDate(sale.saleDate)}
                   </td>
@@ -231,6 +248,11 @@ const SaleTable: React.FC = () => {
                       Generic: {getMedicineGenericSubtitle(sale.medicine)}
                     </p>
                   )}
+                  {sale.admission?.admissionNumber ? (
+                    <span className="mt-1 inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-50 text-emerald-700 text-[10px] font-semibold rounded-md border border-emerald-100">
+                      Admission: {sale.admission.admissionNumber}
+                    </span>
+                  ) : null}
                 </div>
                 <span className="text-sm font-bold text-blue-700">
                   {formatCurrency(sale.totalAmount)}

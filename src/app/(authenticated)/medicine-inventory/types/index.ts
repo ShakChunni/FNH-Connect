@@ -155,6 +155,11 @@ export interface MedicineSale {
   totalAmount: number;
   saleDate: string;
   createdAt: string;
+  admissionId?: number | null;
+  admission?: {
+    id: number;
+    admissionNumber: string;
+  } | null;
   patient: {
     id: number;
     fullName: string;

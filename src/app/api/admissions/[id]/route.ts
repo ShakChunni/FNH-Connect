@@ -18,6 +18,7 @@ import {
   updateAdmission,
   deleteAdmission,
   transformAdmissionForResponse,
+  AdmissionMedicineValidationError,
 } from "@/services/admissionService";
 
 interface RouteParams {
@@ -192,6 +193,16 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     return addCSRFTokenToResponse(response);
   } catch (error) {
     console.error("PATCH /api/admissions/[id] error:", error);
+    if (error instanceof AdmissionMedicineValidationError) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: error.message,
+          details: error.fieldErrors,
+        },
+        { status: 400 }
+      );
+    }
     if (
       error instanceof Error &&
       error.message === "Admission record not found"
@@ -199,6 +210,18 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json(
         { success: false, error: "Admission not found" },
         { status: 404 }
+      );
+    }
+    if (
+      error instanceof Error &&
+      (error.message.includes("Insufficient stock") ||
+        error.message.includes("Sale date cannot") ||
+        error.message.includes("No stock available") ||
+        error.message.includes("No stock purchase history"))
+    ) {
+      return NextResponse.json(
+        { success: false, error: error.message },
+        { status: 400 }
       );
     }
     return NextResponse.json(

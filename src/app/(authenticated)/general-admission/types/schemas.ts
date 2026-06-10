@@ -29,15 +29,26 @@ export type AdmissionFiltersInput = z.infer<typeof admissionFiltersSchema>;
 
 export const admissionMedicineChargeItemSchema = z.object({
   id: z.number().optional(),
+  medicineId: z
+    .number()
+    .int()
+    .positive("Pharmacy medicine is required")
+    .nullable(),
   packageCode: z.string().trim().nullable(),
   operationName: z.string().trim().min(1, "Operation name is required"),
+  requestedMedicineName: z.string().trim().nullable().optional(),
   medicineName: z.string().trim().min(1, "Medicine name is required"),
   genericName: z.string().trim().nullable(),
   groupName: z.string().trim().nullable(),
   companyName: z.string().trim().nullable(),
   quantity: z.number().int().min(1, "Quantity must be at least 1"),
-  unitPrice: z.number().min(0, "Unit price cannot be negative"),
+  unitPrice: z
+    .number()
+    .positive("Medicine price must be greater than 0"),
   totalAmount: z.number().min(0).optional(),
+  currentStock: z.number().int().min(0).optional(),
+  defaultSalePrice: z.number().min(0).optional(),
+  isMatched: z.boolean().optional(),
 });
 
 export const hospitalSchema = z.object({

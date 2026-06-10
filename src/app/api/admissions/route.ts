@@ -19,6 +19,7 @@ import {
   getAdmissions,
   createAdmission,
   transformAdmissionForResponse,
+  AdmissionMedicineValidationError,
 } from "@/services/admissionService";
 
 // ═══════════════════════════════════════════════════════════════
@@ -211,9 +212,31 @@ export async function POST(request: NextRequest) {
     return addCSRFTokenToResponse(response);
   } catch (error) {
     console.error("POST /api/admissions error:", error);
+    if (error instanceof AdmissionMedicineValidationError) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: error.message,
+          details: error.fieldErrors,
+        },
+        { status: 400 }
+      );
+    }
     if (error instanceof Error && error.message.includes("Unique constraint")) {
       return NextResponse.json(
         { success: false, error: "Admission number already exists" },
+        { status: 400 }
+      );
+    }
+    if (
+      error instanceof Error &&
+      (error.message.includes("Insufficient stock") ||
+        error.message.includes("Sale date cannot") ||
+        error.message.includes("No stock available") ||
+        error.message.includes("No stock purchase history"))
+    ) {
+      return NextResponse.json(
+        { success: false, error: error.message },
         { status: 400 }
       );
     }
