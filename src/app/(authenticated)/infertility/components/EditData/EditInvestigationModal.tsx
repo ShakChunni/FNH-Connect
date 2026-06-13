@@ -3,7 +3,12 @@
 import React, { useCallback, useEffect, useRef } from "react";
 import { Save, Beaker } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { modalVariants, backdropVariants } from "@/components/ui/modal-animations";
+import {
+  modalVariants,
+  backdropVariants,
+  preserveLockBodyScroll,
+  preserveUnlockBodyScroll,
+} from "@/components/ui/modal-animations";
 import { ModalHeader } from "@/components/ui/ModalHeader";
 import { ModalFooter } from "@/components/ui/ModalFooter";
 import { InvestigationInformation } from "../form-sections/InvestigationInformation";
@@ -49,9 +54,8 @@ export const EditInvestigationModal: React.FC<EditInvestigationModalProps> = ({
 
   const handleClose = useCallback(() => {
     if (isSubmitting) return;
-    resetForm();
     onClose();
-  }, [isSubmitting, onClose, resetForm]);
+  }, [isSubmitting, onClose]);
 
   const handleSubmit = useCallback(() => {
     if (isSubmitting) return;
@@ -108,31 +112,39 @@ export const EditInvestigationModal: React.FC<EditInvestigationModalProps> = ({
     updateInvestigation,
   ]);
 
-  // Keyboard handling
+  // Body scroll lock + keyboard handling
+  useEffect(() => {
+    if (isOpen) {
+      preserveLockBodyScroll();
+    } else {
+      preserveUnlockBodyScroll();
+    }
+    return () => {
+      preserveUnlockBodyScroll();
+    };
+  }, [isOpen]);
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") handleClose();
     };
     if (isOpen) {
       document.addEventListener("keydown", handleKeyDown);
-      document.body.style.overflow = "hidden";
     }
     return () => {
       document.removeEventListener("keydown", handleKeyDown);
-      document.body.style.overflow = "unset";
     };
   }, [isOpen, handleClose]);
 
   return (
-    <AnimatePresence mode="wait">
+    <AnimatePresence mode="wait" onExitComplete={() => resetForm()}>
       {isOpen && (
         <motion.div
           className="fixed inset-0 bg-slate-900/70 flex items-center justify-center z-100000"
-          onClick={handleClose}
           variants={backdropVariants}
           initial="hidden"
           animate="visible"
-          exit="hidden"
+          exit="exit"
         >
           <motion.div
             ref={popupRef}
@@ -141,7 +153,7 @@ export const EditInvestigationModal: React.FC<EditInvestigationModalProps> = ({
             variants={modalVariants}
             initial="hidden"
             animate="visible"
-            exit="hidden"
+            exit="exit"
           >
             <ModalHeader
               icon={Beaker}

@@ -45,7 +45,7 @@ export const patientDataSchema = z.object({
     return parseDateOfBirth(val as Date | string | null | undefined);
   }, z.date().nullable()),
   guardianName: z.string(),
-  address: z.string(),
+  address: z.string().min(1, "Address is required"),
   phoneNumber: z.string(),
   email: z.string(),
   bloodGroup: z.string(),

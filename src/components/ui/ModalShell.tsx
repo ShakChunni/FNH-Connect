@@ -38,7 +38,7 @@ export const ModalShell: React.FC<ModalShellProps> = ({
   if (typeof document === "undefined") return null;
 
   return createPortal(
-    <AnimatePresence>
+    <AnimatePresence mode="wait">
       {isOpen && (
         <div className="fixed inset-0 z-9999 flex items-center justify-center p-4 overflow-hidden">
           {/* Backdrop with blur - matching ConfirmModal variants */}
