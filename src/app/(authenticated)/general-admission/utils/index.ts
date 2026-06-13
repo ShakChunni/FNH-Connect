@@ -90,7 +90,10 @@ export function transformFormToCreatePayload(
     paidAmount: financialData?.paidAmount,
     medicineChargeItems:
       medicineChargeItems && medicineChargeItems.length > 0
-        ? medicineChargeItems
+        ? medicineChargeItems.map((item) => {
+            const { clientId, ...rest } = item;
+            return rest;
+          })
         : undefined,
   };
 }
@@ -128,7 +131,11 @@ export function transformFormToUpdatePayload(
     discountAmount: financialData.discountAmount,
     paidAmount: financialData.paidAmount,
     isDischarged: admissionInfo.status === "Discharged",
-    medicineChargeItems: medicineChargeItems,
+    medicineChargeItems:
+      medicineChargeItems?.map((item) => {
+        const { clientId, ...rest } = item;
+        return rest;
+      }) ?? medicineChargeItems,
   };
 }
 
@@ -162,7 +169,10 @@ export function formatDateTime(dateStr: string | null): string {
  * Format currency (BDT)
  */
 export function formatCurrency(amount: number): string {
-  return `৳${amount.toLocaleString()}`;
+  return `৳${amount.toLocaleString(undefined, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
 }
 
 /**

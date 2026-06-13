@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion, type Variants } from "framer-motion";
 import {
   Boxes,
   CheckCircle2,
@@ -60,10 +60,93 @@ interface AdmissionMedicineItemsTableProps {
   onClearAll: () => void;
 }
 
-const currency = (value: number) => `৳${Number(value || 0).toLocaleString()}`;
+const currency = (value: number) =>
+  `৳${Number(value || 0).toLocaleString(undefined, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
+
+const roundToTwoDecimals = (value: number): number => {
+  return Math.round(value * 100) / 100;
+};
 
 const getMedicineDisplayName = (medicine: PharmacyMedicineOption) =>
   medicine.brandName?.trim() || medicine.genericName;
+
+const tableContentVariants: Variants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.04,
+      delayChildren: 0.05,
+    },
+  },
+  exit: {
+    opacity: 0,
+    transition: { duration: 0.25, ease: [0.4, 0, 1, 1] },
+  },
+};
+
+const rowVariants: Variants = {
+  hidden: { opacity: 0, y: 14, scale: 0.96 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: {
+      type: "spring",
+      damping: 18,
+      stiffness: 340,
+      mass: 0.8,
+    },
+  },
+  exit: {
+    opacity: 0,
+    x: 12,
+    scale: 0.97,
+    transition: { duration: 0.22, ease: [0.4, 0, 1, 1] },
+  },
+};
+
+const cardVariants: Variants = {
+  hidden: { opacity: 0, y: 16, scale: 0.92 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: {
+      type: "spring",
+      damping: 16,
+      stiffness: 320,
+      mass: 0.8,
+    },
+  },
+  exit: {
+    opacity: 0,
+    scale: 0.95,
+    y: -6,
+    transition: { duration: 0.22, ease: [0.4, 0, 1, 1] },
+  },
+};
+
+const emptyStateVariants: Variants = {
+  hidden: { opacity: 0, scale: 0.95 },
+  visible: {
+    opacity: 1,
+    scale: 1,
+    transition: {
+      type: "spring",
+      damping: 22,
+      stiffness: 280,
+    },
+  },
+  exit: {
+    opacity: 0,
+    scale: 0.95,
+    transition: { duration: 0.22, ease: [0.4, 0, 1, 1] },
+  },
+};
 
 function StockBadge({
   stock,
@@ -373,7 +456,7 @@ function UnitPriceField({
         ৳
       </span>
       <NumberInput
-        value={value}
+        value={roundToTwoDecimals(value)}
         readOnly
         aria-label="Unit price"
         className={`h-9 w-full rounded-lg border pl-6 pr-2 text-right text-xs font-bold outline-none ${
@@ -399,7 +482,7 @@ function TotalField({
         ৳
       </span>
       <NumberInput
-        value={value}
+        value={roundToTwoDecimals(value)}
         readOnly
         aria-label="Total"
         className={`h-9 w-full rounded-lg border pl-6 pr-2 text-right text-xs font-extrabold outline-none ${
@@ -428,12 +511,19 @@ export const AdmissionMedicineItemsTable: React.FC<
   const matchedCount = items.filter((item) => item.medicineId !== null).length;
   const unmatchedCount = items.length - matchedCount;
   const totalAmount = useMemo(
-    () => items.reduce((sum, item) => sum + item.totalAmount, 0),
+    () =>
+      Math.round(
+        items.reduce((sum, item) => sum + item.totalAmount, 0) * 100,
+      ) / 100,
     [items],
   );
 
   return (
-    <div className="mb-5 overflow-visible rounded-xl border border-emerald-200 bg-white shadow-sm">
+    <motion.div
+      layout
+      transition={{ type: "spring", damping: 24, stiffness: 260, mass: 0.8 }}
+      className="mb-5 overflow-visible rounded-xl border border-emerald-200 bg-white shadow-sm"
+    >
 
       {/* Header */}
       <div className="border-b border-emerald-100 bg-emerald-50 px-4 py-3">
@@ -465,35 +555,47 @@ export const AdmissionMedicineItemsTable: React.FC<
           </div>
 
           <div className="flex flex-wrap items-center gap-2 shrink-0">
-            <button
+            <motion.button
               type="button"
               onClick={onRefresh}
               disabled={isCanceled || refreshing || items.length === 0}
+              whileTap={
+                isCanceled || refreshing || items.length === 0
+                  ? undefined
+                  : { scale: 0.94 }
+              }
+              transition={{ type: "spring", stiffness: 400, damping: 17 }}
               className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-blue-200 bg-white px-2.5 text-xs font-semibold text-blue-700 transition hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-40"
             >
               <RefreshCw
                 className={`h-3 w-3 ${refreshing ? "animate-spin" : ""}`}
               />
               Refresh
-            </button>
-            <button
+            </motion.button>
+            <motion.button
               type="button"
               onClick={onAddRow}
               disabled={isCanceled}
+              whileTap={isCanceled ? undefined : { scale: 0.94 }}
+              transition={{ type: "spring", stiffness: 400, damping: 17 }}
               className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-emerald-300 bg-white px-2.5 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-40"
             >
               <Plus className="h-3 w-3" />
               Add row
-            </button>
-            <button
+            </motion.button>
+            <motion.button
               type="button"
               onClick={onClearAll}
               disabled={isCanceled || items.length === 0}
+              whileTap={
+                isCanceled || items.length === 0 ? undefined : { scale: 0.9 }
+              }
+              transition={{ type: "spring", stiffness: 400, damping: 15 }}
               className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-red-200 bg-white px-2.5 text-xs font-semibold text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-40"
             >
               <Trash2 className="h-3 w-3" />
               Clear
-            </button>
+            </motion.button>
           </div>
         </div>
       </div>
@@ -502,10 +604,11 @@ export const AdmissionMedicineItemsTable: React.FC<
         {items.length === 0 ? (
           <motion.div
             key="empty"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.15 }}
+            layout
+            variants={emptyStateVariants}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
             className="px-4 py-8 text-center"
           >
             <Pill className="mx-auto mb-2 h-8 w-8 text-emerald-200" />
@@ -517,10 +620,11 @@ export const AdmissionMedicineItemsTable: React.FC<
         ) : (
           <motion.div
             key="content"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.15 }}
+            layout
+            variants={tableContentVariants}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
           >
           {/* Desktop table — visible from lg up */}
           <div className="hidden lg:block overflow-x-auto">
@@ -538,25 +642,24 @@ export const AdmissionMedicineItemsTable: React.FC<
                   <th className="w-10 px-2 py-2.5" />
                 </tr>
               </thead>
-              <tbody>
+              <motion.tbody>
                 <AnimatePresence initial={false}>
                   {items.map((item, index) => {
                     const isMatched = item.medicineId !== null;
                     const stock = item.currentStock ?? 0;
                     const outOfStock = isMatched && stock === 0;
                     const stockShort = isMatched && item.quantity > stock;
-                    const rowKey = item.id
-                      ? `saved-${item.id}`
-                      : `${item.packageCode ?? "row"}-${item.requestedMedicineName ?? item.medicineName}-${index}`;
+                    const rowKey = item.clientId
+                      ? item.clientId
+                      : item.id
+                        ? `saved-${item.id}`
+                        : `${item.packageCode ?? "row"}-${item.requestedMedicineName ?? item.medicineName}-${index}`;
 
                     return (
                       <motion.tr
                         key={rowKey}
                         layout
-                        initial={{ opacity: 0, y: -6 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, x: 12, transition: { duration: 0.15 } }}
-                        transition={{ duration: 0.18, ease: "easeOut" }}
+                        variants={rowVariants}
                         className="border-b border-gray-100 align-top last:border-b-0 hover:bg-gray-50/60"
                       >
                         <td className="px-3 py-3 text-[11px] font-bold text-gray-400">
@@ -629,21 +732,23 @@ export const AdmissionMedicineItemsTable: React.FC<
                           />
                         </td>
                         <td className="px-2 py-3 text-center">
-                          <button
+                          <motion.button
                             type="button"
                             onClick={() => onRemove(index)}
                             disabled={isCanceled}
+                            whileTap={isCanceled ? undefined : { scale: 0.82 }}
+                            transition={{ type: "spring", stiffness: 400, damping: 17 }}
                             className="rounded-md p-1 text-gray-400 transition hover:bg-red-50 hover:text-red-500 disabled:cursor-not-allowed disabled:opacity-40"
                             aria-label="Remove medicine row"
                           >
                             <XIcon className="h-3.5 w-3.5" />
-                          </button>
+                          </motion.button>
                         </td>
                       </motion.tr>
                     );
                   })}
                 </AnimatePresence>
-              </tbody>
+              </motion.tbody>
               <tfoot>
                 <tr className="border-t-2 border-emerald-200 bg-emerald-50/60">
                   <td colSpan={7} className="px-3 py-2.5 text-right text-xs font-bold text-gray-600 uppercase tracking-wider">
@@ -666,18 +771,17 @@ export const AdmissionMedicineItemsTable: React.FC<
                 const stock = item.currentStock ?? 0;
                 const outOfStock = isMatched && stock === 0;
                 const stockShort = isMatched && item.quantity > stock;
-                const cardKey = item.id
-                  ? `mobile-saved-${item.id}`
-                  : `mobile-${item.packageCode ?? "row"}-${item.requestedMedicineName ?? item.medicineName}-${index}`;
+                const cardKey = item.clientId
+                  ? `mobile-${item.clientId}`
+                  : item.id
+                    ? `mobile-saved-${item.id}`
+                    : `mobile-${item.packageCode ?? "row"}-${item.requestedMedicineName ?? item.medicineName}-${index}`;
 
                 return (
                   <motion.div
                     key={cardKey}
                     layout
-                    initial={{ opacity: 0, scale: 0.97, y: -8 }}
-                    animate={{ opacity: 1, scale: 1, y: 0 }}
-                    exit={{ opacity: 0, scale: 0.95, transition: { duration: 0.15 } }}
-                    transition={{ duration: 0.2, ease: "easeOut" }}
+                    variants={cardVariants}
                     className="rounded-xl border border-gray-200 bg-white p-3 shadow-sm"
                   >
                     <div className="mb-2.5 flex items-start justify-between gap-2">
@@ -691,15 +795,17 @@ export const AdmissionMedicineItemsTable: React.FC<
                             "Manual medicine"}
                         </p>
                       </div>
-                      <button
+                      <motion.button
                         type="button"
                         onClick={() => onRemove(index)}
                         disabled={isCanceled}
+                        whileTap={isCanceled ? undefined : { scale: 0.82 }}
+                        transition={{ type: "spring", stiffness: 400, damping: 17 }}
                         className="rounded-md p-1 text-gray-400 transition hover:bg-red-50 hover:text-red-500 disabled:opacity-40"
                         aria-label="Remove medicine row"
                       >
                         <XIcon className="h-3.5 w-3.5" />
-                      </button>
+                      </motion.button>
                     </div>
 
                     <MedicineLookupInput
@@ -788,7 +894,7 @@ export const AdmissionMedicineItemsTable: React.FC<
           Quantity can be adjusted; unit price is locked from pharmacy inventory and totals update automatically.
         </p>
       </div>
-    </div>
+    </motion.div>
   );
 };
 

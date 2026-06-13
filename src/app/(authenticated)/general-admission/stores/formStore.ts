@@ -18,6 +18,10 @@ import {
 } from "../types";
 import { parseDateOfBirth } from "@/lib/dateOfBirth";
 
+const roundToTwoDecimals = (value: number): number => {
+  return Math.round(value * 100) / 100;
+};
+
 // ═══════════════════════════════════════════════════════════════
 // State Interfaces
 // ═══════════════════════════════════════════════════════════════
@@ -242,15 +246,14 @@ export const useAdmissionFormStore = create<FormStore>((set, get) => ({
       const normalizedItem: AdmissionMedicineChargeItem = {
         ...item,
         quantity,
-        unitPrice,
-        totalAmount: quantity * unitPrice,
+        unitPrice: roundToTwoDecimals(unitPrice),
+        totalAmount: roundToTwoDecimals(quantity * unitPrice),
         isMatched: item.medicineId !== null && item.medicineId !== undefined,
       };
       return normalizedItem;
     });
-    const medicineCharge = normalized.reduce(
-      (sum, item) => sum + item.totalAmount,
-      0,
+    const medicineCharge = roundToTwoDecimals(
+      normalized.reduce((sum, item) => sum + item.totalAmount, 0),
     );
     set((state) => ({
       medicineChargeItems: normalized,
@@ -269,14 +272,13 @@ export const useAdmissionFormStore = create<FormStore>((set, get) => ({
       const quantity = Math.max(1, Math.trunc(item.quantity || 1));
       const unitPrice = Math.max(0, item.unitPrice || 0);
       item.quantity = quantity;
-      item.unitPrice = unitPrice;
-      item.totalAmount = quantity * unitPrice;
+      item.unitPrice = roundToTwoDecimals(unitPrice);
+      item.totalAmount = roundToTwoDecimals(quantity * unitPrice);
       item.isMatched =
         item.medicineId !== null && item.medicineId !== undefined;
       updated[index] = item;
-      const medicineCharge = updated.reduce(
-        (sum, r) => sum + r.totalAmount,
-        0,
+      const medicineCharge = roundToTwoDecimals(
+        updated.reduce((sum, r) => sum + r.totalAmount, 0),
       );
       return {
         medicineChargeItems: updated,
@@ -294,7 +296,9 @@ export const useAdmissionFormStore = create<FormStore>((set, get) => ({
       const updated = state.medicineChargeItems.filter((_, i) => i !== index);
       const medicineCharge =
         updated.length > 0
-          ? updated.reduce((sum, r) => sum + r.totalAmount, 0)
+          ? roundToTwoDecimals(
+              updated.reduce((sum, r) => sum + r.totalAmount, 0),
+            )
           : 0;
       return {
         medicineChargeItems: updated,
@@ -363,14 +367,14 @@ export const useAdmissionFormStore = create<FormStore>((set, get) => ({
       discountAmount = Math.min(discountAmount, totalAmount);
 
       // Calculate final totals
-      const grandTotal = totalAmount - discountAmount;
-      const dueAmount = grandTotal - paidAmount;
+      const grandTotal = roundToTwoDecimals(totalAmount - discountAmount);
+      const dueAmount = roundToTwoDecimals(grandTotal - paidAmount);
 
       return {
         financialData: {
           ...state.financialData,
-          totalAmount,
-          discountAmount,
+          totalAmount: roundToTwoDecimals(totalAmount),
+          discountAmount: roundToTwoDecimals(discountAmount),
           grandTotal,
           dueAmount,
         },
@@ -447,7 +451,15 @@ export const useAdmissionFormStore = create<FormStore>((set, get) => ({
         phone: true,
         email: true,
       },
-      medicineChargeItems: admission.medicineChargeItems ?? [],
+      medicineChargeItems:
+        admission.medicineChargeItems?.map((item) => ({
+          ...item,
+          clientId:
+            typeof crypto !== "undefined" &&
+            typeof crypto.randomUUID === "function"
+              ? crypto.randomUUID()
+              : `edit-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+        })) ?? [],
     });
   },
 
