@@ -30,6 +30,7 @@ export type DiscountType = "percentage" | "value" | null;
 
 export interface AdmissionMedicineChargeItem {
   id?: number;
+  clientId?: string;
   medicineId: number | null;
   packageCode: string | null;
   operationName: string;

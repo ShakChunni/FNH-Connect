@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useMemo, useEffect, useState, useCallback } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import {
   Wallet,
   AlertCircle,
@@ -63,6 +64,13 @@ interface OldestPurchaseApiResponse {
 }
 
 const DEFAULT_PACKAGE_CODE = "LUCS_OT_MEDICINE";
+
+const generateClientId = () => {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID();
+  }
+  return `local-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+};
 
 const FinancialInformation: React.FC = () => {
   const financialData = useAdmissionFinancialData();
@@ -201,6 +209,7 @@ const FinancialInformation: React.FC = () => {
       if (isCanceled) return;
 
       const items: AdmissionMedicineChargeItem[] = pkg.items.map((it) => ({
+        clientId: generateClientId(),
         medicineId: it.medicineId,
         packageCode: pkg.code,
         operationName: pkg.operationName,
@@ -226,6 +235,7 @@ const FinancialInformation: React.FC = () => {
   const handleAddEmptyMedicineRow = useCallback(() => {
     if (isCanceled) return;
     const newRow: AdmissionMedicineChargeItem = {
+      clientId: generateClientId(),
       medicineId: null,
       packageCode: null,
       operationName: admissionInfo.otType || "",
@@ -422,10 +432,13 @@ const FinancialInformation: React.FC = () => {
           )}
 
           {packageData && (
-            <button
+            <motion.button
               type="button"
               onClick={() => handlePackageSelect(packageData)}
               disabled={isCanceled}
+              whileHover={isCanceled ? undefined : { scale: 1.005, y: -1 }}
+              whileTap={isCanceled ? undefined : { scale: 0.97 }}
+              transition={{ type: "spring", stiffness: 400, damping: 17 }}
               className={`w-full text-left rounded-xl border-2 px-4 py-3 transition-all duration-200 ${
                 isCanceled
                   ? "border-gray-200 bg-gray-50 opacity-50 cursor-not-allowed"
@@ -450,42 +463,77 @@ const FinancialInformation: React.FC = () => {
                     </p>
                   </div>
                 </div>
-                <span className="shrink-0 rounded-lg bg-green-600 px-3 py-1.5 text-xs font-semibold text-white">
+                <motion.span
+                  layout
+                  className="shrink-0 rounded-lg bg-green-600 px-3 py-1.5 text-xs font-semibold text-white"
+                >
                   Apply
-                </span>
+                </motion.span>
               </div>
-            </button>
+            </motion.button>
           )}
         </div>
       )}
 
       {/* Itemized Medicine Table */}
-      {hasItemizedMedicines && (
-        <AdmissionMedicineItemsTable
-          items={medicineChargeItems}
-          isCanceled={isCanceled}
-          refreshing={refreshing}
-          onUpdate={updateMedicineChargeItem}
-          onSelectMedicine={handleSelectMedicine}
-          onRemove={removeMedicineChargeItem}
-          onAddRow={handleAddEmptyMedicineRow}
-          onRefresh={handleRefreshPharmacyValues}
-          onClearAll={clearMedicineChargeItems}
-        />
-      )}
-
-      {!hasItemizedMedicines && !isCanceled && (
-        <div className="mb-4 sm:mb-5">
-          <button
-            type="button"
-            onClick={handleAddEmptyMedicineRow}
-            className="inline-flex items-center gap-1.5 rounded-lg border-2 border-dashed border-emerald-300 bg-emerald-50/50 px-3 py-2 text-xs font-semibold text-emerald-700 transition-all hover:bg-emerald-100 hover:border-emerald-500 active:scale-95"
+      <AnimatePresence initial={false}>
+        {hasItemizedMedicines && (
+          <motion.div
+            key="medicine-table"
+            initial={{ opacity: 0, scale: 0.95, y: 12 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.96, y: -8 }}
+            transition={{
+              opacity: { duration: 0.35, ease: [0.4, 0, 0.2, 1] },
+              scale: { duration: 0.35, ease: [0.4, 0, 0.2, 1] },
+              y: { duration: 0.35, ease: [0.4, 0, 0.2, 1] },
+            }}
+            className="origin-top"
           >
-            <Pill className="h-3.5 w-3.5" />
-            Add a single pharmacy medicine
-          </button>
-        </div>
-      )}
+            <AdmissionMedicineItemsTable
+              items={medicineChargeItems}
+              isCanceled={isCanceled}
+              refreshing={refreshing}
+              onUpdate={updateMedicineChargeItem}
+              onSelectMedicine={handleSelectMedicine}
+              onRemove={removeMedicineChargeItem}
+              onAddRow={handleAddEmptyMedicineRow}
+              onRefresh={handleRefreshPharmacyValues}
+              onClearAll={clearMedicineChargeItems}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence initial={false}>
+        {!hasItemizedMedicines && !isCanceled && (
+          <motion.div
+            key="single-medicine-button"
+            initial={{ opacity: 0, y: 10, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -8, scale: 0.96 }}
+            transition={{
+              type: "spring",
+              damping: 20,
+              stiffness: 300,
+              mass: 0.8,
+            }}
+            className="mb-4 sm:mb-5 origin-top"
+          >
+            <motion.button
+              type="button"
+              onClick={handleAddEmptyMedicineRow}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.96 }}
+              transition={{ type: "spring", stiffness: 400, damping: 17 }}
+              className="inline-flex items-center gap-1.5 rounded-lg border-2 border-dashed border-emerald-300 bg-emerald-50/50 px-3 py-2 text-xs font-semibold text-emerald-700 transition-all hover:bg-emerald-100 hover:border-emerald-500"
+            >
+              <Pill className="h-3.5 w-3.5" />
+              Add a single pharmacy medicine
+            </motion.button>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <div className="space-y-4 sm:space-y-5">
         {/* Admission Fee (Fixed) */}
@@ -601,7 +649,11 @@ const FinancialInformation: React.FC = () => {
               <div className="flex items-center justify-between text-xs">
                 <span className="text-gray-600">Patient saves:</span>
                 <span className="font-bold text-green-600">
-                  ৳{(financialData.discountAmount || 0).toLocaleString()}
+                  ৳
+                  {(financialData.discountAmount || 0).toLocaleString(
+                    undefined,
+                    { minimumFractionDigits: 2, maximumFractionDigits: 2 },
+                  )}
                   {financialData.discountType === "percentage" &&
                     discountInput !== "" &&
                     discountInput > 0 && (
