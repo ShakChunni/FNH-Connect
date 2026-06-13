@@ -64,12 +64,10 @@ export async function POST(req: NextRequest) {
           where: { userId: user.id },
         });
 
-        // Delete all sessions for this user
-        await tx.session.deleteMany({
-          where: { userId: user.id },
-        });
-
-        // Log the multi-device logout with device info
+        // Log the multi-device logout BEFORE deleting sessions so the
+        // activity log's sessionId FK is still valid at creation time.
+        // The schema uses onDelete: SetNull, so the sessionId will be
+        // cleared automatically once the session is removed.
         await tx.activityLog.create({
           data: {
             userId: user.id,
@@ -88,6 +86,11 @@ export async function POST(req: NextRequest) {
             browserVersion: user.sessionDeviceInfo.browserVersion,
             osType: user.sessionDeviceInfo.osType,
           },
+        });
+
+        // Delete all sessions for this user
+        await tx.session.deleteMany({
+          where: { userId: user.id },
         });
       }
     });
