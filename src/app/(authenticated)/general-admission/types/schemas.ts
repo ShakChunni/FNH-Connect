@@ -72,7 +72,7 @@ export const patientSchema = z.object({
     if (val === null || val === undefined || val === "") return null;
     return parseDateOfBirth(val as Date | string | null | undefined);
   }, z.date().nullable()),
-  address: z.string(),
+  address: z.string().min(1, "Address is required"),
   phoneNumber: z.string(),
   email: z.string(),
   bloodGroup: z.string(),

@@ -6,6 +6,8 @@ import { useEditInfertilityData } from "../../hooks/useEditInfertilityData";
 import {
   modalVariants,
   backdropVariants,
+  preserveLockBodyScroll,
+  preserveUnlockBodyScroll,
 } from "@/components/ui/modal-animations";
 import { ModalHeader } from "@/components/ui/ModalHeader";
 import { ModalFooter } from "@/components/ui/ModalFooter";
@@ -66,7 +68,6 @@ const EditDataInfertility: React.FC<EditDataProps> = ({
   // Mutation
   const { editPatient, isLoading: isSubmitting } = useEditInfertilityData({
     onSuccess: () => {
-      resetFormState();
       onClose();
     },
   });
@@ -75,17 +76,17 @@ const EditDataInfertility: React.FC<EditDataProps> = ({
   const isFormValid = useMemo(() => {
     return (
       patientData.firstName.trim() !== "" &&
+      patientData.address.trim() !== "" &&
       validationStatus.phone &&
       validationStatus.email
     );
-  }, [hospitalData.name, patientData.firstName, validationStatus]);
+  }, [patientData.firstName, patientData.address, validationStatus]);
 
   // Handlers
   const handleClose = useCallback(() => {
     if (isSubmitting) return;
-    resetFormState();
     onClose();
-  }, [isSubmitting, onClose, resetFormState]);
+  }, [isSubmitting, onClose]);
 
   const handleSubmit = useCallback(() => {
     if (!isFormValid || isSubmitting) return;
@@ -116,7 +117,18 @@ const EditDataInfertility: React.FC<EditDataProps> = ({
     initialPatientData.id,
   ]);
 
-  // Keyboard handling
+  // Body scroll lock + keyboard handling
+  useEffect(() => {
+    if (isOpen) {
+      preserveLockBodyScroll();
+    } else {
+      preserveUnlockBodyScroll();
+    }
+    return () => {
+      preserveUnlockBodyScroll();
+    };
+  }, [isOpen]);
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
@@ -125,11 +137,9 @@ const EditDataInfertility: React.FC<EditDataProps> = ({
     };
     if (isOpen) {
       document.addEventListener("keydown", handleKeyDown);
-      document.body.style.overflow = "hidden";
     }
     return () => {
       document.removeEventListener("keydown", handleKeyDown);
-      document.body.style.overflow = "unset";
     };
   }, [isOpen, handleClose]);
 
@@ -150,15 +160,14 @@ const EditDataInfertility: React.FC<EditDataProps> = ({
   ];
 
   return (
-    <AnimatePresence mode="wait">
+    <AnimatePresence mode="wait" onExitComplete={() => resetFormState()}>
       {isOpen && (
         <motion.div
           className="fixed inset-0 bg-slate-900/70 flex items-center justify-center z-100000"
-          onClick={onClose}
           variants={backdropVariants}
           initial="hidden"
           animate="visible"
-          exit="hidden"
+          exit="exit"
           style={{
             isolation: "isolate",
             willChange: "opacity",
@@ -173,7 +182,7 @@ const EditDataInfertility: React.FC<EditDataProps> = ({
             variants={modalVariants}
             initial="hidden"
             animate="visible"
-            exit="hidden"
+            exit="exit"
             style={{
               willChange: "transform, opacity",
               backfaceVisibility: "hidden",

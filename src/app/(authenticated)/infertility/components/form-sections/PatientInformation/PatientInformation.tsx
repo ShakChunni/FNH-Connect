@@ -329,7 +329,7 @@ const PatientInformation: React.FC = () => {
             {/* Address */}
             <div className="md:col-span-2">
               <label className="block text-gray-700 text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2">
-                Address
+                Patient Address<span className="text-red-500">*</span>
               </label>
               <textarea
                 className={`${inputClassName(patientData.address).replace(
