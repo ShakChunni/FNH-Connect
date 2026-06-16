@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Heart, LogOut, Menu, Settings } from "lucide-react";
+import { LogOut, Menu, Settings } from "lucide-react";
 import Image from "next/image";
 import { getNavigationItems } from "./navigation";
 import { useAuth } from "@/app/AuthContext";
@@ -173,9 +173,13 @@ export default function MobileSidebar() {
             <div className="flex items-center justify-between gap-2 mb-2 px-1">
               <div className="flex items-center gap-2">
                 {portal === "infertility" ? (
-                  <div className="h-8 w-8 rounded-lg bg-emerald-800/40 flex items-center justify-center border border-emerald-600/30 shrink-0">
-                    <Heart className="h-4 w-4 text-emerald-400" />
-                  </div>
+                  <Image
+                    src="/hsi-logo.png"
+                    alt="HSI Center"
+                    width={32}
+                    height={32}
+                    className="h-8 w-8 shrink-0 object-contain"
+                  />
                 ) : (
                   <Image
                     src="/fnh-logo.svg"

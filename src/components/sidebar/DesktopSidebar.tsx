@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Heart, LogOut, Pin, Settings } from "lucide-react";
+import { LogOut, Pin, Settings } from "lucide-react";
 import { getNavigationItems } from "./navigation";
 import { SidebarProps } from "./types";
 import Image from "next/image";
@@ -243,9 +243,14 @@ export default function DesktopSidebar({
               {!isExpanded ? (
                 <div className="relative h-10 w-10 shrink-0 flex items-center justify-center">
                   {portal === "infertility" ? (
-                    <div className="h-10 w-10 rounded-xl bg-emerald-800/40 flex items-center justify-center border border-emerald-600/30">
-                      <Heart className="h-5 w-5 text-emerald-400" />
-                    </div>
+                    <Image
+                      src="/hsi-logo.png"
+                      alt="HSI Center"
+                      width={40}
+                      height={40}
+                      className="h-10 w-10 object-contain"
+                      priority
+                    />
                   ) : (
                     <Image
                       src="/fnh-logo.svg"
@@ -264,9 +269,14 @@ export default function DesktopSidebar({
                     className="flex items-center gap-3 flex-1 min-w-0"
                   >
                     {portal === "infertility" ? (
-                      <div className="h-10 w-10 rounded-xl bg-emerald-800/40 flex items-center justify-center border border-emerald-600/30 shrink-0">
-                        <Heart className="h-5 w-5 text-emerald-400" />
-                      </div>
+                      <Image
+                        src="/hsi-logo.png"
+                        alt="HSI Center"
+                        width={40}
+                        height={40}
+                        className="h-10 w-10 shrink-0 object-contain"
+                        priority
+                      />
                     ) : (
                       <Image
                         src="/fnh-logo.svg"
