@@ -2,7 +2,6 @@ import {
   Home,
   Baby,
   Microscope,
-  UserCircle,
   Users,
   FileText,
   ClipboardList,
@@ -20,29 +19,21 @@ import {
 } from "@/lib/roles";
 import type { PortalType } from "@/types/auth";
 
-const PROFILE_NAV_ITEM: NavigationItem = {
-  label: "Profile",
-  href: "/profile",
-  icon: UserCircle,
-};
-
 // Receptionist allowed routes for sidebar filtering
 const RECEPTIONIST_SIDEBAR_ROUTES = [
   "/dashboard",
   "/general-admission",
   "/pathology",
   "/patient-records",
-  "/profile",
 ];
 
 // Pharmacist allowed routes for sidebar filtering
-const PHARMACIST_SIDEBAR_ROUTES = ["/medicine-inventory", "/profile"];
+const PHARMACIST_SIDEBAR_ROUTES = ["/medicine-inventory"];
 
 // Infertility portal sidebar routes
 const INFERTILITY_SIDEBAR_ROUTES = [
   "/infertility",
   "/infertility/cash-tracking",
-  "/profile",
 ];
 
 // Full navigation items - will be filtered based on user role
@@ -91,11 +82,6 @@ export const navigationItems: NavigationItem[] = [
     adminOnly: true,
   },
   {
-    label: "Profile",
-    href: "/profile",
-    icon: UserCircle,
-  },
-  {
     label: "User Management",
     href: "/admin/user-management",
     icon: Users,
@@ -122,7 +108,6 @@ export const infertilityNavigationItems: NavigationItem[] = [
     href: "/infertility/cash-tracking",
     icon: Wallet,
   },
-  PROFILE_NAV_ITEM,
 ];
 
 /**
@@ -153,7 +138,6 @@ export function getNavigationItems(
           href: "/admin/activity-logs",
           icon: FileText,
         },
-        PROFILE_NAV_ITEM,
       ];
 
       if (userRole && isSystemAdminRole(userRole)) {
