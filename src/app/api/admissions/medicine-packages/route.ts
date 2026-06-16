@@ -48,6 +48,8 @@ type ResolvedMedicine = {
   id: number;
   genericName: string;
   brandName: string | null;
+  strength: string | null;
+  dosageForm: string | null;
   defaultSalePrice: Prisma.Decimal;
   currentStock: number;
   lowStockThreshold: number;
@@ -55,55 +57,147 @@ type ResolvedMedicine = {
 };
 
 const normalizeSearchText = (value: string) =>
-  value.trim().toLowerCase().replace(/\s+/g, " ");
+  value
+    .trim()
+    .toLowerCase()
+    .replace(/[µμ]g/g, "mcg")
+    .replace(/(\d+)\s*(mg|mcg|ml|gm|g)\b/g, "$1 $2")
+    .replace(/\binj\b/g, "injection")
+    .replace(/\binf\b/g, "infusion")
+    .replace(/\btab\b/g, "tablet")
+    .replace(/\bcap\b/g, "capsule")
+    .replace(/\bsyring\b/g, "syringe")
+    .replace(/\bcathertar\b/g, "catheter")
+    .replace(/[^a-z0-9]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
 
-const findMedicineForAlias = (
+const tokenizeSearchText = (value: string): string[] =>
+  normalizeSearchText(value).split(" ").filter(Boolean);
+
+const getMedicineSearchValues = (medicine: ResolvedMedicine): string[] => [
+  medicine.brandName ?? "",
+  medicine.genericName,
+  medicine.strength ?? "",
+  medicine.dosageForm ?? "",
+  medicine.group.name,
+];
+
+const hasDoseClue = (tokens: string[]): boolean =>
+  tokens.some((token) =>
+    ["mg", "mcg", "ml", "gm", "g", "infusion", "injection"].includes(token),
+  );
+
+const hasNumberClue = (tokens: string[]): boolean =>
+  tokens.some((token) => /^\d+$/.test(token));
+
+type MedicineMatch = {
+  medicine: ResolvedMedicine;
+  alias: string;
+  score: number;
+  matchReason: string;
+};
+
+const scoreMedicineForAlias = (
   alias: string,
+  medicine: ResolvedMedicine,
+): MedicineMatch | null => {
+  const normalizedAlias = normalizeSearchText(alias);
+  if (!normalizedAlias) return null;
+
+  const aliasTokens = tokenizeSearchText(alias);
+  if (aliasTokens.length === 0) return null;
+
+  const normalizedBrand = medicine.brandName
+    ? normalizeSearchText(medicine.brandName)
+    : null;
+  const normalizedGeneric = normalizeSearchText(medicine.genericName);
+  const normalizedValues = getMedicineSearchValues(medicine)
+    .map(normalizeSearchText)
+    .filter(Boolean);
+  const candidateText = normalizedValues.join(" ");
+  const candidateTokens = new Set(tokenizeSearchText(candidateText));
+  const allAliasTokensMatch = aliasTokens.every((token) =>
+    candidateTokens.has(token),
+  );
+
+  let baseScore = 0;
+  let matchType: string | null = null;
+
+  if (normalizedBrand === normalizedAlias) {
+    baseScore = 90;
+    matchType = "exact medicine name";
+  } else if (normalizedGeneric === normalizedAlias) {
+    baseScore = 88;
+    matchType = "exact generic name";
+  } else if (normalizedValues.some((value) => value === normalizedAlias)) {
+    baseScore = 86;
+    matchType = "exact field";
+  } else if (candidateText.includes(normalizedAlias)) {
+    baseScore = 82;
+    matchType = "full label";
+  } else if (
+    normalizedBrand !== null &&
+    normalizedBrand.includes(normalizedAlias)
+  ) {
+    baseScore = 72;
+    matchType = "medicine name";
+  } else if (normalizedGeneric.includes(normalizedAlias)) {
+    baseScore = 70;
+    matchType = "generic name";
+  } else if (allAliasTokensMatch) {
+    baseScore = 80;
+    matchType = "token match";
+  }
+
+  if (baseScore === 0 || matchType === null) return null;
+
+  const score =
+    baseScore +
+    aliasTokens.length * 4 +
+    (hasNumberClue(aliasTokens) ? 18 : 0) +
+    (hasDoseClue(aliasTokens) ? 12 : 0) +
+    Math.min(Math.max(medicine.currentStock, 0), 100) / 100;
+
+  return {
+    medicine,
+    alias,
+    score,
+    matchReason: `Matched via ${matchType} alias "${alias}"`,
+  };
+};
+
+const findBestMedicineMatch = (
+  aliases: string[],
   medicines: ResolvedMedicine[],
-): ResolvedMedicine | null => {
-  const normalized = alias.trim();
-  if (!normalized) return null;
-  const normalizedAlias = normalizeSearchText(normalized);
+): MedicineMatch | null => {
+  let bestMatch: MedicineMatch | null = null;
 
-  // 1. Exact brandName match
-  const exactBrand = medicines.find(
-    (medicine) =>
-      medicine.brandName !== null &&
-      normalizeSearchText(medicine.brandName) === normalizedAlias,
-  );
-  if (exactBrand) {
-    return exactBrand;
+  for (const alias of aliases) {
+    for (const medicine of medicines) {
+      const match = scoreMedicineForAlias(alias, medicine);
+      if (!match) continue;
+
+      if (
+        bestMatch === null ||
+        match.score > bestMatch.score ||
+        (match.score === bestMatch.score &&
+          match.medicine.currentStock > bestMatch.medicine.currentStock)
+      ) {
+        bestMatch = match;
+      }
+    }
   }
 
-  // 2. Exact genericName match
-  const exactGeneric = medicines.find(
-    (medicine) => normalizeSearchText(medicine.genericName) === normalizedAlias,
-  );
-  if (exactGeneric) {
-    return exactGeneric;
-  }
-
-  // 3. brandName contains alias
-  const containsBrand = medicines.find(
-    (medicine) =>
-      medicine.brandName !== null &&
-      normalizeSearchText(medicine.brandName).includes(normalizedAlias),
-  );
-  if (containsBrand) {
-    return containsBrand;
-  }
-
-  // 4. genericName contains alias
-  const containsGeneric = medicines.find((medicine) =>
-    normalizeSearchText(medicine.genericName).includes(normalizedAlias),
-  );
-  return containsGeneric ?? null;
+  return bestMatch;
 };
 
 const medicineSelect = {
   id: true,
   genericName: true,
   brandName: true,
+  strength: true,
+  dosageForm: true,
   defaultSalePrice: true,
   currentStock: true,
   lowStockThreshold: true,
@@ -115,29 +209,29 @@ const resolveTemplateItem = async (
   medicines: ResolvedMedicine[],
   companyByMedicineId: Map<number, string>,
 ): Promise<AdmissionMedicinePackageItemResponse> => {
-  for (const alias of item.aliases) {
-    const medicine = findMedicineForAlias(alias, medicines);
-    if (medicine) {
-      const unitPrice = Number(medicine.defaultSalePrice);
-      const displayName = medicine.brandName?.trim() || medicine.genericName;
+  const match = findBestMedicineMatch(item.aliases, medicines);
 
-      return {
-        templateName: item.templateName,
-        matched: true,
-        medicineId: medicine.id,
-        medicineName: displayName,
-        genericName: medicine.genericName,
-        groupName: medicine.group.name,
-        companyName: companyByMedicineId.get(medicine.id) ?? null,
-        defaultSalePrice: unitPrice,
-        currentStock: medicine.currentStock,
-        lowStockThreshold: medicine.lowStockThreshold,
-        quantity: DEFAULT_QUANTITY,
-        unitPrice,
-        totalAmount: DEFAULT_QUANTITY * unitPrice,
-        matchReason: `Matched via alias "${alias}"`,
-      };
-    }
+  if (match) {
+    const medicine = match.medicine;
+    const unitPrice = Number(medicine.defaultSalePrice);
+    const displayName = medicine.brandName?.trim() || medicine.genericName;
+
+    return {
+      templateName: item.templateName,
+      matched: true,
+      medicineId: medicine.id,
+      medicineName: displayName,
+      genericName: medicine.genericName,
+      groupName: medicine.group.name,
+      companyName: companyByMedicineId.get(medicine.id) ?? null,
+      defaultSalePrice: unitPrice,
+      currentStock: medicine.currentStock,
+      lowStockThreshold: medicine.lowStockThreshold,
+      quantity: DEFAULT_QUANTITY,
+      unitPrice,
+      totalAmount: DEFAULT_QUANTITY * unitPrice,
+      matchReason: match.matchReason,
+    };
   }
 
   return {
@@ -240,7 +334,6 @@ export async function GET(request: NextRequest) {
       {
         success: false,
         error: "Failed to load admission medicine package",
-        message: error instanceof Error ? error.message : "Unknown error",
       },
       { status: 500 },
     );
