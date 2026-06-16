@@ -3,7 +3,11 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import jwt from "jsonwebtoken";
 import { SessionUser, AuthenticatedUser } from "@/types/auth";
-import { isAdminRole } from "@/lib/roles";
+import {
+  getDefaultRouteForRole,
+  isAdminRole,
+  isSystemAdminRole,
+} from "@/lib/roles";
 import {
   getPortalFromSessionToken,
   normalizePortal,
@@ -119,6 +123,19 @@ export async function validateAdminAccess() {
   // Check based on User system role using centralized roles utility
   if (!isAdminRole(user.role)) {
     redirect("/dashboard");
+  }
+
+  return { user };
+}
+
+/**
+ * Validate system-admin access - redirects to the user's home route if not system-admin
+ */
+export async function validateSystemAdminAccess() {
+  const { user } = await validateServerSession();
+
+  if (!isSystemAdminRole(user.role)) {
+    redirect(getDefaultRouteForRole(user.role, user.portal));
   }
 
   return { user };

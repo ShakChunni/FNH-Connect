@@ -3,7 +3,7 @@
  *
  * System Roles (User.role) - These are stored in the database:
  * - system-admin: Full system access, can manage everything
- * - admin: Administrative access, can manage users and system settings
+ * - admin: Administrative access, cannot manage users
  * - receptionist: Limited access - dashboard, general-admission, pathology only
  * - medicine-pharmacist: Limited access - dashboard and medicine-inventory only
  * - staff: Regular staff access, limited to their department/patient data
@@ -242,9 +242,10 @@ export function canAccessAdminRoutes(userRole: string): boolean {
 
 /**
  * Check if user can manage users
+ * Restricted to system-admin only; normal admins cannot create/edit/reset users.
  */
 export function canManageUsers(userRole: string): boolean {
-  return isAdminRole(userRole);
+  return isSystemAdminRole(userRole);
 }
 
 /**

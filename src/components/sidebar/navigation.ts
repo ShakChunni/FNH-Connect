@@ -2,6 +2,7 @@ import {
   Home,
   Baby,
   Microscope,
+  UserCircle,
   Users,
   FileText,
   ClipboardList,
@@ -12,11 +13,18 @@ import {
 import { NavigationItem } from "./types";
 import {
   isAdminRole,
+  isSystemAdminRole,
   isReceptionistRole,
   isPharmacistRole,
   isReceptionistInfertilityRole,
 } from "@/lib/roles";
 import type { PortalType } from "@/types/auth";
+
+const PROFILE_NAV_ITEM: NavigationItem = {
+  label: "Profile",
+  href: "/profile",
+  icon: UserCircle,
+};
 
 // Receptionist allowed routes for sidebar filtering
 const RECEPTIONIST_SIDEBAR_ROUTES = [
@@ -24,15 +32,17 @@ const RECEPTIONIST_SIDEBAR_ROUTES = [
   "/general-admission",
   "/pathology",
   "/patient-records",
+  "/profile",
 ];
 
 // Pharmacist allowed routes for sidebar filtering
-const PHARMACIST_SIDEBAR_ROUTES = ["/medicine-inventory"];
+const PHARMACIST_SIDEBAR_ROUTES = ["/medicine-inventory", "/profile"];
 
 // Infertility portal sidebar routes
 const INFERTILITY_SIDEBAR_ROUTES = [
   "/infertility",
   "/infertility/cash-tracking",
+  "/profile",
 ];
 
 // Full navigation items - will be filtered based on user role
@@ -81,10 +91,16 @@ export const navigationItems: NavigationItem[] = [
     adminOnly: true,
   },
   {
+    label: "Profile",
+    href: "/profile",
+    icon: UserCircle,
+  },
+  {
     label: "User Management",
     href: "/admin/user-management",
     icon: Users,
     adminOnly: true,
+    systemAdminOnly: true,
   },
   {
     label: "Activity Logs",
@@ -106,6 +122,7 @@ export const infertilityNavigationItems: NavigationItem[] = [
     href: "/infertility/cash-tracking",
     icon: Wallet,
   },
+  PROFILE_NAV_ITEM,
 ];
 
 /**
@@ -120,7 +137,7 @@ export function getNavigationItems(
   if (portal === "infertility") {
     // Admin/system-admin in infertility: see infertility items + shared admin items
     if (userRole && isAdminRole(userRole)) {
-      return [
+      const items: NavigationItem[] = [
         {
           label: "HSI Center Patients",
           href: "/infertility",
@@ -132,16 +149,22 @@ export function getNavigationItems(
           icon: Wallet,
         },
         {
-          label: "User Management",
-          href: "/admin/user-management",
-          icon: Users,
-        },
-        {
           label: "Activity Logs",
           href: "/admin/activity-logs",
           icon: FileText,
         },
+        PROFILE_NAV_ITEM,
       ];
+
+      if (userRole && isSystemAdminRole(userRole)) {
+        items.push({
+          label: "User Management",
+          href: "/admin/user-management",
+          icon: Users,
+        });
+      }
+
+      return items;
     }
     // Receptionists (any type) in infertility: only infertility nav items
     return infertilityNavigationItems;
@@ -178,11 +201,13 @@ export function getNavigationItems(
   }
 
   // Admin in general portal: all items except infertility-specific ones
+  // User Management is further restricted to system-admin only
   if (isAdminRole(userRole)) {
     return navigationItems.filter(
       (item) =>
         item.href !== "/infertility" &&
-        item.href !== "/admin/infertility-cash-tracking"
+        item.href !== "/admin/infertility-cash-tracking" &&
+        !(item.systemAdminOnly && !isSystemAdminRole(userRole))
     );
   }
 

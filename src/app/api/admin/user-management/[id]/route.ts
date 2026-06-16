@@ -10,7 +10,7 @@ import {
   addCSRFTokenToResponse,
 } from "@/lib/csrfProtection";
 import { getAuthenticatedUserForAPI } from "@/lib/auth-validation";
-import { isAdminRole } from "@/lib/roles";
+import { isSystemAdminRole } from "@/lib/roles";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 
@@ -49,9 +49,9 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    if (!isAdminRole(user.role)) {
+    if (!isSystemAdminRole(user.role)) {
       return NextResponse.json(
-        { success: false, error: "Forbidden: Admin access required" },
+        { success: false, error: "Forbidden: System admin access required" },
         { status: 403 },
       );
     }
@@ -105,7 +105,6 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       {
         success: false,
         error: "Failed to fetch user",
-        message: error instanceof Error ? error.message : "Unknown error",
       },
       { status: 500 },
     );
@@ -133,9 +132,9 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    if (!isAdminRole(authUser.role)) {
+    if (!isSystemAdminRole(authUser.role)) {
       return NextResponse.json(
-        { success: false, error: "Forbidden: Admin access required" },
+        { success: false, error: "Forbidden: System admin access required" },
         { status: 403 },
       );
     }
@@ -270,7 +269,6 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       {
         success: false,
         error: "Failed to update user",
-        message: error instanceof Error ? error.message : "Unknown error",
       },
       { status: 500 },
     );

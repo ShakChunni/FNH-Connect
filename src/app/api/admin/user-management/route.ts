@@ -10,7 +10,7 @@ import {
   addCSRFTokenToResponse,
 } from "@/lib/csrfProtection";
 import { getAuthenticatedUserForAPI } from "@/lib/auth-validation";
-import { isAdminRole } from "@/lib/roles";
+import { isSystemAdminRole } from "@/lib/roles";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcrypt";
 import { z } from "zod";
@@ -84,9 +84,9 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    if (!isAdminRole(user.role)) {
+    if (!isSystemAdminRole(user.role)) {
       return NextResponse.json(
-        { success: false, error: "Forbidden: Admin access required" },
+        { success: false, error: "Forbidden: System admin access required" },
         { status: 403 },
       );
     }
@@ -185,7 +185,6 @@ export async function GET(request: NextRequest) {
       {
         success: false,
         error: "Failed to fetch users",
-        message: error instanceof Error ? error.message : "Unknown error",
       },
       { status: 500 },
     );
@@ -213,9 +212,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!isAdminRole(authUser.role)) {
+    if (!isSystemAdminRole(authUser.role)) {
       return NextResponse.json(
-        { success: false, error: "Forbidden: Admin access required" },
+        { success: false, error: "Forbidden: System admin access required" },
         { status: 403 },
       );
     }
@@ -386,7 +385,6 @@ export async function POST(request: NextRequest) {
       {
         success: false,
         error: "Failed to create user",
-        message: error instanceof Error ? error.message : "Unknown error",
       },
       { status: 500 },
     );

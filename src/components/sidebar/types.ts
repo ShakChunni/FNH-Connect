@@ -3,6 +3,7 @@ export interface NavigationItem {
   href: string;
   icon: React.ComponentType<{ className?: string }>;
   adminOnly?: boolean;
+  systemAdminOnly?: boolean;
 }
 
 export interface SidebarProps {

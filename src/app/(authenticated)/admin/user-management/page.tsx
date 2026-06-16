@@ -6,6 +6,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { PageHeader } from "@/components/ui/PageHeader";
 import {
   Users,
@@ -30,9 +31,21 @@ import {
   ResetPasswordModal,
 } from "./components/modals";
 import { UserTable } from "./components/shared";
+import { useAuth } from "@/app/AuthContext";
+import { isSystemAdminRole } from "@/lib/roles";
 import type { UserWithStaff } from "./types";
 
 const UserManagementPage = () => {
+  const { user } = useAuth();
+  const router = useRouter();
+
+  // Client-side guard: User Management is restricted to system-admin only
+  useEffect(() => {
+    if (user && !isSystemAdminRole(user.role)) {
+      router.replace("/dashboard");
+    }
+  }, [user, router]);
+
   const { activeModal, openModal, closeModal, modalData } = useUIStore();
   const { filters, setFilter, resetFilters } = useUserFilterStore();
 
