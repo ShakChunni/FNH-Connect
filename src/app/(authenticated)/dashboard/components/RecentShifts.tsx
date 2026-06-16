@@ -32,7 +32,7 @@ interface RecentShiftsProps {
 }
 
 /**
- * Recent Shifts Component for Normal Admin Dashboard
+ * Recent shifts component for admin users
  *
  * Shows shifts from employees with date range filter.
  * Only rendered for admin users (not system-admin).

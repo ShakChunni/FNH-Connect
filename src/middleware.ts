@@ -386,7 +386,6 @@ export async function middleware(request: NextRequest) {
     "/medicine-inventory",
     "/patient-records",
     "/admin/cash-tracking",
-    "/admin-dashboard",
     "/api/dashboard",
     "/api/general-admission",
     "/api/pathology",
@@ -493,9 +492,11 @@ export async function middleware(request: NextRequest) {
       const pharmacistAllowedPaths = [
         // Page routes
         "/medicine-inventory",
+        "/profile",
         "/login",
         // API routes
         "/api/medicine-inventory",
+        "/api/profile",
         "/api/auth",
         "/api/patients", // For patient lookup during sales
         "/api/patient-records", // For patient search dropdown in medicine inventory

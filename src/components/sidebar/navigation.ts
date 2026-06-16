@@ -2,7 +2,6 @@ import {
   Home,
   Baby,
   Microscope,
-  Shield,
   Users,
   FileText,
   ClipboardList,
@@ -79,12 +78,6 @@ export const navigationItems: NavigationItem[] = [
     label: "HSI Center Cash",
     href: "/admin/infertility-cash-tracking",
     icon: Wallet,
-    adminOnly: true,
-  },
-  {
-    label: "Admin Dashboard",
-    href: "/admin-dashboard",
-    icon: Shield,
     adminOnly: true,
   },
   {

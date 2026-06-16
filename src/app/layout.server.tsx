@@ -52,10 +52,10 @@ export async function generateMetadata(): Promise<Metadata> {
         robots: baseRobots,
       };
 
-    case "/admin-dashboard":
+    case "/profile":
       return {
-        title: "Admin Dashboard | FNH Connect",
-        description: "Administrative dashboard for system management",
+        title: "Profile | FNH Connect",
+        description: "Manage your profile and password",
         robots: baseRobots,
       };
 
