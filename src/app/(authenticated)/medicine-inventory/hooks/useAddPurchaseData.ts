@@ -4,20 +4,38 @@
  */
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import axios from "axios";
 import { api } from "@/lib/axios";
 import { useNotification } from "@/hooks/useNotification";
 import type { MedicinePurchase, CreatePurchaseInput } from "../types";
 
+interface ApiErrorResponse {
+  error?: string;
+  message?: string;
+}
+
 interface AddPurchaseResponse {
   success: boolean;
-  data: MedicinePurchase;
+  data: MedicinePurchase[];
   message?: string;
   error?: string;
 }
 
 interface UseAddPurchaseDataOptions {
-  onSuccess?: (data: MedicinePurchase) => void;
+  onSuccess?: (data: MedicinePurchase[]) => void;
   onError?: (error: Error) => void;
+}
+
+function getErrorMessage(error: Error) {
+  if (axios.isAxiosError<ApiErrorResponse>(error)) {
+    return (
+      error.response?.data?.error ||
+      error.response?.data?.message ||
+      "Failed to record purchase. Please try again."
+    );
+  }
+
+  return error.message || "Failed to record purchase. Please try again.";
 }
 
 export function useAddPurchaseData(options?: UseAddPurchaseDataOptions) {
@@ -50,10 +68,7 @@ export function useAddPurchaseData(options?: UseAddPurchaseDataOptions) {
       }
     },
     onError: (error: Error) => {
-      showNotification(
-        error.message || "Failed to record purchase. Please try again.",
-        "error",
-      );
+      showNotification(getErrorMessage(error), "error");
       options?.onError?.(error);
     },
   });

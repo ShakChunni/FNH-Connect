@@ -12,19 +12,37 @@ import {
 import { getAuthenticatedUserForAPI } from "@/lib/auth-validation";
 import {
   getPurchases,
-  createPurchase,
+  createPurchaseInvoice,
 } from "@/services/medicineInventoryService";
 import { z } from "zod";
 
-const createPurchaseSchema = z.object({
-  invoiceNumber: z.string().min(1, "Invoice number is required").max(100),
-  companyId: z.number().int().positive("Company is required"),
+const dateStringSchema = z
+  .string()
+  .refine((value) => !Number.isNaN(new Date(value).getTime()), {
+    message: "Invalid date",
+  });
+
+const createPurchaseItemSchema = z.object({
   medicineId: z.number().int().positive("Medicine is required"),
   quantity: z.number().int().positive("Quantity must be positive"),
-  unitPrice: z.number().positive("Unit price must be positive"),
-  purchaseDate: z.string().optional(),
-  expiryDate: z.string().optional(),
-  batchNumber: z.string().max(100).optional(),
+  unitPrice: z.number().positive("Purchase price must be positive"),
+  salePrice: z.number().positive("Sale price must be positive"),
+  expiryDate: dateStringSchema.optional(),
+  batchNumber: z.string().trim().max(100).optional(),
+});
+
+const createPurchaseSchema = z.object({
+  invoiceNumber: z
+    .string()
+    .trim()
+    .min(1, "Invoice number is required")
+    .max(100),
+  companyId: z.number().int().positive("Company is required"),
+  purchaseDate: dateStringSchema.optional(),
+  items: z
+    .array(createPurchaseItemSchema)
+    .min(1, "At least one medicine is required")
+    .max(100, "A single invoice can contain up to 100 medicines"),
 });
 
 const purchaseFiltersSchema = z.object({
@@ -85,7 +103,6 @@ export async function GET(request: NextRequest) {
       {
         success: false,
         error: "Failed to fetch purchases",
-        message: error instanceof Error ? error.message : "Unknown error",
       },
       { status: 500 },
     );
@@ -114,7 +131,7 @@ export async function POST(request: NextRequest) {
     }
     const { id: userId, staffId } = user;
 
-    const body = await request.json();
+    const body: unknown = await request.json();
     const validation = createPurchaseSchema.safeParse(body);
 
     if (!validation.success) {
@@ -129,20 +146,21 @@ export async function POST(request: NextRequest) {
     }
 
     const validated = validation.data;
-    const purchase = await createPurchase(
+    const purchases = await createPurchaseInvoice(
       {
         invoiceNumber: validated.invoiceNumber,
         companyId: validated.companyId,
-        medicineId: validated.medicineId,
-        quantity: validated.quantity,
-        unitPrice: validated.unitPrice,
         purchaseDate: validated.purchaseDate
           ? new Date(validated.purchaseDate)
           : undefined,
-        expiryDate: validated.expiryDate
-          ? new Date(validated.expiryDate)
-          : undefined,
-        batchNumber: validated.batchNumber,
+        items: validated.items.map((item) => ({
+          medicineId: item.medicineId,
+          quantity: item.quantity,
+          unitPrice: item.unitPrice,
+          salePrice: item.salePrice,
+          expiryDate: item.expiryDate ? new Date(item.expiryDate) : undefined,
+          batchNumber: item.batchNumber || undefined,
+        })),
       },
       staffId,
       userId,
@@ -155,8 +173,8 @@ export async function POST(request: NextRequest) {
     const response = NextResponse.json(
       {
         success: true,
-        data: purchase,
-        message: "Purchase recorded successfully",
+        data: purchases,
+        message: `${purchases.length} medicine${purchases.length === 1 ? "" : "s"} purchased under invoice ${validated.invoiceNumber}`,
       },
       { status: 201 },
     );
@@ -171,6 +189,7 @@ export async function POST(request: NextRequest) {
         "already exists",
         "cannot be in the future",
         "Expiry date cannot be earlier than purchase date",
+        "At least one medicine is required",
       ];
       if (knownErrors.some((msg) => error.message.includes(msg))) {
         return NextResponse.json(
@@ -184,7 +203,6 @@ export async function POST(request: NextRequest) {
       {
         success: false,
         error: "Failed to create purchase",
-        message: error instanceof Error ? error.message : "Unknown error",
       },
       { status: 500 },
     );
