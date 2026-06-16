@@ -20,13 +20,30 @@ interface ProfileFieldProps {
   label: string;
   value: React.ReactNode;
   icon: React.ComponentType<{ className?: string }>;
+  iconTone?: "blue" | "emerald" | "amber" | "violet" | "rose" | "navy";
 }
 
-function ProfileField({ label, value, icon: Icon }: ProfileFieldProps) {
+const iconToneClasses = {
+  blue: "bg-sky-50 border-sky-100 text-sky-700",
+  emerald: "bg-emerald-50 border-emerald-100 text-emerald-700",
+  amber: "bg-amber-50 border-amber-100 text-amber-700",
+  violet: "bg-violet-50 border-violet-100 text-violet-700",
+  rose: "bg-rose-50 border-rose-100 text-rose-700",
+  navy: "bg-slate-50 border-slate-100 text-slate-700",
+};
+
+function ProfileField({
+  label,
+  value,
+  icon: Icon,
+  iconTone = "blue",
+}: ProfileFieldProps) {
   return (
-    <div className="flex items-start gap-3 rounded-xl border border-gray-100 bg-white p-3 shadow-sm">
-      <div className="w-8 h-8 rounded-lg bg-blue-50 border border-blue-100 flex items-center justify-center shrink-0">
-        <Icon className="w-4 h-4 text-fnh-blue" />
+    <div className="flex items-start gap-3 rounded-xl border border-sky-100/80 bg-white/90 p-3 shadow-sm shadow-sky-900/5">
+      <div
+        className={`w-8 h-8 rounded-lg border flex items-center justify-center shrink-0 ${iconToneClasses[iconTone]}`}
+      >
+        <Icon className="w-4 h-4" />
       </div>
       <div className="min-w-0 flex-1">
         <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-0.5">
@@ -76,81 +93,87 @@ export default async function ProfilePage() {
 
           <div className="px-1 sm:px-2 lg:px-4">
             <div className="grid grid-cols-1 overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm lg:grid-cols-[minmax(320px,0.78fr)_minmax(460px,1fr)]">
-              <section className="relative overflow-hidden bg-gray-50/70 p-4 sm:p-6 lg:p-7">
-                <div className="absolute inset-x-0 top-0 h-24 bg-white/70" />
-                <div className="relative">
-                  <div className="flex flex-col gap-5">
+              <section className="bg-sky-50 p-4 sm:p-6 lg:p-7">
+                <div className="flex flex-col gap-5">
+                  <div className="rounded-2xl border border-sky-100 bg-white/85 p-4 shadow-sm shadow-sky-900/10">
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex min-w-0 items-center gap-4">
-                        <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl border border-gray-100 bg-white px-3 pb-0.5 pt-1 text-xl font-black leading-none text-fnh-navy-dark shadow-sm">
+                        <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl border border-sky-100 bg-sky-100 px-3 pb-0.5 pt-1 text-xl font-black leading-none text-slate-800 shadow-sm shadow-sky-900/10">
                           <span className="leading-none">
                             {initials.toUpperCase()}
                           </span>
                         </div>
                         <div className="min-w-0">
-                          <h2 className="truncate text-2xl font-black text-fnh-navy-dark">
+                          <h2 className="truncate text-2xl font-black text-slate-900">
                             {user.fullName || user.username}
                           </h2>
-                          <p className="mt-1 text-xs font-semibold text-gray-500">
+                          <p className="mt-1 text-xs font-semibold text-slate-500">
                             {user.username}
                           </p>
                         </div>
                       </div>
-                      <div className="inline-flex shrink-0 items-center gap-2 rounded-full border border-emerald-100 bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-700">
+                      <div className="inline-flex shrink-0 items-center gap-2 rounded-full border border-emerald-100 bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-700 shadow-sm">
                         <Activity className="h-3.5 w-3.5" />
                         {user.isActive ? "Active" : "Inactive"}
                       </div>
                     </div>
+                  </div>
 
-                    <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
-                      <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">
-                        Access Level
-                      </p>
-                      <p className="mt-1 text-lg font-black text-fnh-navy-dark">
-                        {getRoleDisplayName(user.role)}
-                      </p>
-                      <p className="mt-1 text-xs font-medium text-gray-500">
-                        Role and identity are managed by admin staff.
-                      </p>
-                    </div>
+                  <div className="rounded-2xl border border-sky-200 bg-sky-100/70 p-4 shadow-sm shadow-sky-900/5">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-sky-700">
+                      Access Level
+                    </p>
+                    <p className="mt-1 text-lg font-black text-slate-900">
+                      {getRoleDisplayName(user.role)}
+                    </p>
+                    <p className="mt-1 text-xs font-medium text-slate-600">
+                      Role and identity are managed by admin staff.
+                    </p>
+                  </div>
 
-                    <div className="space-y-3">
-                      <ProfileField
-                        label="Full Name"
-                        value={user.fullName || <NotProvided />}
-                        icon={User}
-                      />
-                      <ProfileField
-                        label="Username"
-                        value={user.username}
-                        icon={AtSign}
-                      />
-                      <ProfileField
-                        label="System Role"
-                        value={getRoleDisplayName(user.role)}
-                        icon={ShieldCheck}
-                      />
-                      <ProfileField
-                        label="Staff Role"
-                        value={user.staffRole || <NotProvided />}
-                        icon={Briefcase}
-                      />
-                      <ProfileField
-                        label="Specialization"
-                        value={user.specialization || <NotProvided />}
-                        icon={Stethoscope}
-                      />
-                      <ProfileField
-                        label="Email"
-                        value={user.email || <NotProvided />}
-                        icon={Mail}
-                      />
-                      <ProfileField
-                        label="Phone"
-                        value={user.phoneNumber || <NotProvided />}
-                        icon={Phone}
-                      />
-                    </div>
+                  <div className="space-y-3">
+                    <ProfileField
+                      label="Full Name"
+                      value={user.fullName || <NotProvided />}
+                      icon={User}
+                      iconTone="navy"
+                    />
+                    <ProfileField
+                      label="Username"
+                      value={user.username}
+                      icon={AtSign}
+                      iconTone="blue"
+                    />
+                    <ProfileField
+                      label="System Role"
+                      value={getRoleDisplayName(user.role)}
+                      icon={ShieldCheck}
+                      iconTone="emerald"
+                    />
+                    <ProfileField
+                      label="Staff Role"
+                      value={user.staffRole || <NotProvided />}
+                      icon={Briefcase}
+                      iconTone="amber"
+                    />
+                    <ProfileField
+                      label="Specialization"
+                      value={user.specialization || <NotProvided />}
+                      icon={Stethoscope}
+                      iconTone="violet"
+                    />
+                    <ProfileField
+                      label="Email"
+                      value={user.email || <NotProvided />}
+                      icon={Mail}
+                      iconTone="rose"
+                    />
+                    <ProfileField
+                      label="Phone"
+                      value={user.phoneNumber || <NotProvided />}
+                      icon={Phone}
+                      iconTone="blue"
+                    />
                   </div>
                 </div>
               </section>
@@ -160,7 +183,7 @@ export default async function ProfilePage() {
                   <div>
                     <div className="mb-5 flex items-center gap-3">
                       <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center">
-                        <Mail className="w-5 h-5 text-fnh-blue" />
+                        <Mail className="w-5 h-5 text-sky-700" />
                       </div>
                       <div>
                         <h3 className="text-base font-black text-fnh-navy-dark">
