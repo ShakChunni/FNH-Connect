@@ -32,27 +32,52 @@ export const ADMISSION_MEDICINE_PACKAGE_TEMPLATES: AdmissionMedicinePackageTempl
         { templateName: "Seline Set", aliases: ["Seline Set", "Saline Set"] },
         {
           templateName: "Inf H/s",
-          aliases: ["Inf H/s", "Hartmann", "Hartmann's Solution", "H/S"],
+          aliases: [
+            "Inf H/s",
+            "Hartmann",
+            "Hartmann's Solution",
+            "Hartmann Solution",
+            "H/S",
+          ],
         },
-        { templateName: "DNS", aliases: ["DNS"] },
+        { templateName: "DNS", aliases: ["DNS", "Dextrose Normal Saline"] },
         { templateName: "Inj Esoral", aliases: ["Inj Esoral", "Esoral"] },
         { templateName: "Inj Topcef", aliases: ["Inj Topcef", "Topcef"] },
         {
           templateName: "Inj vergon",
           aliases: ["Inj vergon", "Inj Vergon", "Vergon"],
         },
-        { templateName: "Inj Metro", aliases: ["Inj Metro", "Metro"] },
+        {
+          templateName: "Inj Metro",
+          aliases: [
+            "Metro 100ml infusion",
+            "Metro 100 ml infusion",
+            "Metronidazole 100ml infusion",
+            "Metronidazole 100 ml infusion",
+            "Metronidazole infusion",
+            "Inj Metro",
+            "Metro",
+          ],
+        },
         {
           templateName: "Inj Ultra Caine",
           aliases: ["Inj Ultra Caine", "Ultra Caine", "Ultracaine"],
         },
         {
           templateName: "Inj Duratocin",
-          aliases: ["Inj Duratocin", "Duratocin"],
+          aliases: [
+            "Duratocin 100 mcg/1 ml",
+            "Duratocin 100mcg/1ml",
+            "Duratocin 100 mcg 1 ml",
+            "Carbetocin 100 mcg/1 ml",
+            "Carbetocin 100mcg/1ml",
+            "Inj Duratocin",
+            "Duratocin",
+          ],
         },
         {
           templateName: "Inj Linda/Ds",
-          aliases: ["Inj Linda/Ds", "Linda/Ds", "Linda DS"],
+          aliases: ["Inj Linda/Ds", "Linda/Ds", "Linda DS", "Lindamax DS"],
         },
         {
           templateName: "Spinal Nedle",
@@ -60,17 +85,38 @@ export const ADMISSION_MEDICINE_PACKAGE_TEMPLATES: AdmissionMedicinePackageTempl
         },
         {
           templateName: "F Cathertar",
-          aliases: ["F Cathertar", "F Catheter", "Foley Catheter"],
+          aliases: [
+            "F Cathertar",
+            "F Catheter",
+            "Foley Catheter",
+            "Foley Catheter 16",
+            "Foley Catheter 18",
+          ],
         },
         { templateName: "Urin Bag", aliases: ["Urin Bag", "Urine Bag"] },
-        { templateName: "Gloves", aliases: ["Gloves"] },
+        {
+          templateName: "Gloves",
+          aliases: [
+            "Gloves 6.5",
+            "Gloves 6.6",
+            "Surgical Gloves",
+            "Sterile Gloves",
+            "Gloves",
+          ],
+        },
         {
           templateName: "Hexicol 100 ML",
-          aliases: ["Hexicol 100 ML", "Hexicol 100ml"],
+          aliases: ["Hexicol 100 ML", "Hexicol 100ml", "Hexisol 100ml"],
         },
         {
           templateName: "Viodin 100 ML",
-          aliases: ["Viodin 100 ML", "Viodin 100ml", "Povidone Iodine"],
+          aliases: [
+            "Viodin 100 ML",
+            "Viodin 100ml",
+            "Viodine 100ml",
+            "Povidone Iodine 100ml",
+            "Povidone Iodine",
+          ],
         },
         {
           templateName: "Syring 5 ML",
