@@ -377,7 +377,7 @@ export const generatePathologyReceipt = async (
 
       doc.setFont("helvetica", "bold");
       doc.setTextColor(COLORS.lightText);
-      doc.text("Consultation:", col2LabelX, pY);
+      doc.text("Consultant:", col2LabelX, pY);
       doc.setTextColor(COLORS.primary);
       doc.setFont("helvetica", "bold");
 
