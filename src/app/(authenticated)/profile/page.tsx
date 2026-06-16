@@ -5,7 +5,6 @@ import {
   User,
   Briefcase,
   ShieldCheck,
-  Activity,
   Stethoscope,
   KeyRound,
   Mail,
@@ -20,47 +19,19 @@ interface ProfileFieldProps {
   label: string;
   value: React.ReactNode;
   icon: React.ComponentType<{ className?: string }>;
-  variant?: "light" | "navy";
 }
 
-function ProfileField({
-  label,
-  value,
-  icon: Icon,
-  variant = "light",
-}: ProfileFieldProps) {
-  const isNavy = variant === "navy";
-
+function ProfileField({ label, value, icon: Icon }: ProfileFieldProps) {
   return (
-    <div
-      className={`flex items-start gap-3 rounded-xl border p-3 shadow-sm ${
-        isNavy
-          ? "border-white/10 bg-white/5 shadow-black/10"
-          : "border-sky-100/80 bg-white/90 shadow-sky-900/5"
-      }`}
-    >
-      <div
-        className={`w-8 h-8 rounded-lg border flex items-center justify-center shrink-0 ${
-          isNavy
-            ? "border-white/10 bg-fnh-navy-light/40 text-white"
-            : "bg-sky-50 border-sky-100 text-sky-700"
-        }`}
-      >
+    <div className="flex items-start gap-3 rounded-xl border border-gray-100 bg-white p-3 shadow-sm">
+      <div className="w-8 h-8 rounded-lg border border-slate-200 bg-slate-100 flex items-center justify-center shrink-0 text-slate-600">
         <Icon className="w-4 h-4" />
       </div>
       <div className="min-w-0 flex-1">
-        <p
-          className={`text-[10px] font-black uppercase tracking-widest mb-0.5 ${
-            isNavy ? "text-slate-400" : "text-gray-400"
-          }`}
-        >
+        <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-0.5">
           {label}
         </p>
-        <p
-          className={`text-sm font-semibold truncate ${
-            isNavy ? "text-slate-100" : "text-fnh-navy-dark"
-          }`}
-        >
+        <p className="text-sm font-semibold text-slate-800 truncate">
           {value}
         </p>
       </div>
@@ -68,16 +39,8 @@ function ProfileField({
   );
 }
 
-function NotProvided({ variant = "light" }: { variant?: "light" | "navy" }) {
-  return (
-    <span
-      className={`font-medium italic ${
-        variant === "navy" ? "text-slate-500" : "text-gray-400"
-      }`}
-    >
-      Not provided
-    </span>
-  );
+function NotProvided() {
+  return <span className="text-slate-400 font-medium italic">Not provided</span>;
 }
 
 export default async function ProfilePage() {
@@ -112,91 +75,88 @@ export default async function ProfilePage() {
 
           <div className="px-1 sm:px-2 lg:px-4">
             <div className="grid grid-cols-1 overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm lg:grid-cols-[minmax(320px,0.78fr)_minmax(460px,1fr)]">
-              <section className="relative overflow-hidden bg-gradient-to-br from-fnh-navy-dark via-fnh-navy to-fnh-navy-light p-4 sm:p-6 lg:p-7">
-                {/* subtle radial glow for depth */}
-                <div
-                  className="pointer-events-none absolute -right-16 -top-16 h-64 w-64 rounded-full bg-fnh-blue/10 blur-3xl"
-                  aria-hidden="true"
-                />
-                <div className="relative flex flex-col gap-5">
-                  <div className="rounded-2xl border border-white/10 bg-white/10 p-4 shadow-lg shadow-black/10 backdrop-blur-sm">
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex min-w-0 items-center gap-4">
-                        <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-fnh-blue to-fnh-blue-light px-3 pb-0.5 pt-1 text-xl font-black leading-none text-white shadow-lg shadow-black/20">
-                          <span className="leading-none">
-                            {initials.toUpperCase()}
-                          </span>
-                        </div>
-                        <div className="min-w-0">
-                          <h2 className="truncate text-2xl font-black text-white">
+              <section className="bg-slate-50 p-4 sm:p-6 lg:p-7">
+                <div className="flex flex-col gap-5">
+                  {/* Header card: identity + access level + status together */}
+                  <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                      <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-slate-600 to-slate-800 text-xl font-black leading-none text-white shadow-md">
+                        <span className="leading-none">
+                          {initials.toUpperCase()}
+                        </span>
+                      </div>
+
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <h2 className="truncate text-xl font-black text-slate-900">
                             {user.fullName || user.username}
                           </h2>
-                          <p className="mt-1 text-xs font-semibold text-slate-300">
-                            {user.username}
-                          </p>
+                          <span
+                            className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[10px] font-black uppercase tracking-wider ${
+                              user.isActive
+                                ? "bg-slate-800 text-white"
+                                : "bg-rose-100 text-rose-700"
+                            }`}
+                          >
+                            <span
+                              className={`h-1.5 w-1.5 rounded-full ${
+                                user.isActive ? "bg-emerald-400" : "bg-rose-500"
+                              }`}
+                            />
+                            {user.isActive ? "Active" : "Inactive"}
+                          </span>
                         </div>
-                      </div>
-                      <div className="inline-flex shrink-0 items-center gap-2 rounded-full border border-emerald-400/30 bg-emerald-500/15 px-3 py-1.5 text-xs font-bold text-emerald-300 shadow-sm">
-                        <Activity className="h-3.5 w-3.5" />
-                        {user.isActive ? "Active" : "Inactive"}
+
+                        <p className="mt-1 text-xs font-semibold text-slate-500">
+                          @{user.username}
+                        </p>
+
+                        <div className="mt-3 flex flex-wrap items-center gap-2">
+                          <span className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-700">
+                            <ShieldCheck className="h-3.5 w-3.5" />
+                            {getRoleDisplayName(user.role)}
+                          </span>
+                        </div>
                       </div>
                     </div>
                   </div>
 
-                  <div className="rounded-2xl border border-white/10 bg-fnh-navy-light/40 p-4 shadow-sm shadow-black/10">
-                    <p className="text-[10px] font-black uppercase tracking-widest text-fnh-blue-light">
-                      Access Level
-                    </p>
-                    <p className="mt-1 text-lg font-black text-white">
-                      {getRoleDisplayName(user.role)}
-                    </p>
-                    <p className="mt-1 text-xs font-medium text-slate-300">
-                      Role and identity are managed by admin staff.
-                    </p>
-                  </div>
-
-                  <div className="space-y-3">
+                  {/* Profile fields */}
+                  <div className="grid grid-cols-1 gap-3">
                     <ProfileField
                       label="Full Name"
-                      value={user.fullName || <NotProvided variant="navy" />}
+                      value={user.fullName || <NotProvided />}
                       icon={User}
-                      variant="navy"
                     />
                     <ProfileField
                       label="Username"
                       value={user.username}
                       icon={AtSign}
-                      variant="navy"
                     />
                     <ProfileField
                       label="System Role"
                       value={getRoleDisplayName(user.role)}
                       icon={ShieldCheck}
-                      variant="navy"
                     />
                     <ProfileField
                       label="Staff Role"
-                      value={user.staffRole || <NotProvided variant="navy" />}
+                      value={user.staffRole || <NotProvided />}
                       icon={Briefcase}
-                      variant="navy"
                     />
                     <ProfileField
                       label="Specialization"
-                      value={user.specialization || <NotProvided variant="navy" />}
+                      value={user.specialization || <NotProvided />}
                       icon={Stethoscope}
-                      variant="navy"
                     />
                     <ProfileField
                       label="Email"
-                      value={user.email || <NotProvided variant="navy" />}
+                      value={user.email || <NotProvided />}
                       icon={Mail}
-                      variant="navy"
                     />
                     <ProfileField
                       label="Phone"
-                      value={user.phoneNumber || <NotProvided variant="navy" />}
+                      value={user.phoneNumber || <NotProvided />}
                       icon={Phone}
-                      variant="navy"
                     />
                   </div>
                 </div>
