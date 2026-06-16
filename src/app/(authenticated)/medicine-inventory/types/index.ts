@@ -131,18 +131,27 @@ export interface MedicinePurchase {
   };
 }
 
-export const createPurchaseSchema = z.object({
-  invoiceNumber: z.string().min(1, "Invoice number is required").max(100),
-  companyId: z.number().int().positive("Company is required"),
+export const createPurchaseItemSchema = z.object({
   medicineId: z.number().int().positive("Medicine is required"),
   quantity: z.number().int().positive("Quantity must be positive"),
-  unitPrice: z.number().positive("Unit price must be positive"),
-  purchaseDate: z.string().optional(),
+  unitPrice: z.number().positive("Purchase price must be positive"),
+  salePrice: z.number().positive("Sale price must be positive"),
   expiryDate: z.string().optional(),
   batchNumber: z.string().max(100).optional(),
 });
 
+export const createPurchaseSchema = z.object({
+  invoiceNumber: z.string().min(1, "Invoice number is required").max(100),
+  companyId: z.number().int().positive("Company is required"),
+  purchaseDate: z.string().optional(),
+  items: z
+    .array(createPurchaseItemSchema)
+    .min(1, "At least one medicine is required")
+    .max(100, "A single invoice can contain up to 100 medicines"),
+});
+
 export type CreatePurchaseInput = z.infer<typeof createPurchaseSchema>;
+export type CreatePurchaseItemInput = z.infer<typeof createPurchaseItemSchema>;
 
 // ============================================
 // Sale Types

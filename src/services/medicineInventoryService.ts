@@ -108,6 +108,22 @@ export interface CompanyFilters {
   limit?: number;
 }
 
+export interface CreatePurchaseInvoiceItemInput {
+  medicineId: number;
+  quantity: number;
+  unitPrice: number;
+  salePrice?: number;
+  expiryDate?: Date;
+  batchNumber?: string;
+}
+
+export interface CreatePurchaseInvoiceInput {
+  invoiceNumber: string;
+  companyId: number;
+  purchaseDate?: Date;
+  items: CreatePurchaseInvoiceItemInput[];
+}
+
 export interface InventoryActivityFilters {
   search?: string;
   startDate?: string;
@@ -823,6 +839,198 @@ export async function getPurchases(filters: PurchaseFilters) {
   return { purchases, total, page, limit };
 }
 
+const medicinePurchaseSelect = {
+  id: true,
+  invoiceNumber: true,
+  quantity: true,
+  unitPrice: true,
+  totalAmount: true,
+  purchaseDate: true,
+  expiryDate: true,
+  batchNumber: true,
+  remainingQty: true,
+  createdAt: true,
+  company: {
+    select: {
+      id: true,
+      name: true,
+    },
+  },
+  medicine: {
+    select: {
+      id: true,
+      genericName: true,
+      brandName: true,
+      group: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
+    },
+  },
+} satisfies Prisma.MedicinePurchaseSelect;
+
+export async function createPurchaseInvoice(
+  data: CreatePurchaseInvoiceInput,
+  staffId: number,
+  userId: number,
+  activityLogContext?: ActivityLogContext,
+) {
+  const now = new Date();
+  const effectivePurchaseDate = data.purchaseDate || now;
+
+  if (effectivePurchaseDate > now) {
+    throw new Error("Purchase date cannot be in the future");
+  }
+
+  if (data.items.length === 0) {
+    throw new Error("At least one medicine is required");
+  }
+
+  for (const item of data.items) {
+    if (item.expiryDate && item.expiryDate < effectivePurchaseDate) {
+      throw new Error("Expiry date cannot be earlier than purchase date");
+    }
+  }
+
+  return prisma.$transaction(async (tx) => {
+    // Verify company exists
+    const company = await tx.medicineCompany.findUnique({
+      where: { id: data.companyId },
+    });
+
+    if (!company || !company.isActive) {
+      throw new Error("Invalid or inactive company");
+    }
+
+    const requestedMedicineIds = Array.from(
+      new Set(data.items.map((item) => item.medicineId)),
+    );
+
+    const medicines = await tx.medicine.findMany({
+      where: {
+        id: {
+          in: requestedMedicineIds,
+        },
+        isActive: true,
+      },
+      select: {
+        id: true,
+        genericName: true,
+        brandName: true,
+      },
+    });
+
+    if (medicines.length !== requestedMedicineIds.length) {
+      throw new Error("Invalid or inactive medicine");
+    }
+
+    const medicineById = new Map(
+      medicines.map((medicine) => [medicine.id, medicine]),
+    );
+
+    const purchaseRows: Prisma.MedicinePurchaseCreateManyInput[] =
+      data.items.map((item) => ({
+        invoiceNumber: data.invoiceNumber,
+        companyId: data.companyId,
+        medicineId: item.medicineId,
+        quantity: item.quantity,
+        unitPrice: item.unitPrice,
+        totalAmount: item.quantity * item.unitPrice,
+        purchaseDate: effectivePurchaseDate,
+        expiryDate: item.expiryDate || null,
+        batchNumber: item.batchNumber,
+        remainingQty: item.quantity,
+        createdBy: staffId,
+      }));
+
+    const createdPurchaseIds = await tx.medicinePurchase.createManyAndReturn({
+      data: purchaseRows,
+      select: {
+        id: true,
+      },
+    });
+
+    const stockAndPriceByMedicineId = data.items.reduce(
+      (acc, item) => {
+        const existing = acc.get(item.medicineId);
+
+        acc.set(item.medicineId, {
+          quantity: (existing?.quantity || 0) + item.quantity,
+          salePrice: item.salePrice,
+        });
+
+        return acc;
+      },
+      new Map<number, { quantity: number; salePrice?: number }>(),
+    );
+
+    await Promise.all(
+      Array.from(stockAndPriceByMedicineId.entries()).map(
+        ([medicineId, values]) =>
+          tx.medicine.update({
+            where: { id: medicineId },
+            data: {
+              currentStock: {
+                increment: values.quantity,
+              },
+              ...(values.salePrice !== undefined
+                ? { defaultSalePrice: values.salePrice }
+                : {}),
+            },
+          }),
+      ),
+    );
+
+    const createdPurchases = await tx.medicinePurchase.findMany({
+      where: {
+        id: {
+          in: createdPurchaseIds.map((purchase) => purchase.id),
+        },
+      },
+      select: medicinePurchaseSelect,
+      orderBy: {
+        id: "asc",
+      },
+    });
+
+    const invoiceTotal = data.items.reduce(
+      (total, item) => total + item.quantity * item.unitPrice,
+      0,
+    );
+    const medicineSummary = data.items
+      .map((item) => {
+        const medicine = medicineById.get(item.medicineId);
+        return medicine ? getMedicineDisplayLabel(medicine) : "Unknown";
+      })
+      .join(", ");
+
+    // Log activity
+    await tx.activityLog.create({
+      data: {
+        userId,
+        action: "CREATE",
+        description: `Purchased ${data.items.length} medicine item${data.items.length === 1 ? "" : "s"} from ${company.name}. Invoice: ${data.invoiceNumber}. Total: ${invoiceTotal}. Medicines: ${medicineSummary}`,
+        entityType: "MedicinePurchase",
+        entityId: createdPurchases[0]?.id,
+        timestamp: new Date(),
+        sessionId: activityLogContext?.sessionId,
+        ipAddress: activityLogContext?.deviceInfo?.ipAddress,
+        deviceFingerprint: activityLogContext?.deviceInfo?.deviceFingerprint,
+        readableFingerprint:
+          activityLogContext?.deviceInfo?.readableFingerprint,
+        deviceType: activityLogContext?.deviceInfo?.deviceType,
+        browserName: activityLogContext?.deviceInfo?.browserName,
+        browserVersion: activityLogContext?.deviceInfo?.browserVersion,
+        osType: activityLogContext?.deviceInfo?.osType,
+      },
+    });
+
+    return createdPurchases;
+  });
+}
+
 export async function createPurchase(
   data: {
     invoiceNumber: string;
@@ -838,118 +1046,27 @@ export async function createPurchase(
   userId: number,
   activityLogContext?: ActivityLogContext,
 ) {
-  const now = new Date();
-  const effectivePurchaseDate = data.purchaseDate || now;
-
-  if (effectivePurchaseDate > now) {
-    throw new Error("Purchase date cannot be in the future");
-  }
-
-  if (data.expiryDate && data.expiryDate < effectivePurchaseDate) {
-    throw new Error("Expiry date cannot be earlier than purchase date");
-  }
-
-  const totalAmount = data.quantity * data.unitPrice;
-
-  return prisma.$transaction(async (tx) => {
-    // Verify company exists
-    const company = await tx.medicineCompany.findUnique({
-      where: { id: data.companyId },
-    });
-
-    if (!company || !company.isActive) {
-      throw new Error("Invalid or inactive company");
-    }
-
-    // Verify medicine exists
-    const medicine = await tx.medicine.findUnique({
-      where: { id: data.medicineId },
-    });
-
-    if (!medicine || !medicine.isActive) {
-      throw new Error("Invalid or inactive medicine");
-    }
-
-    // Create purchase entry
-    const purchase = await tx.medicinePurchase.create({
-      data: {
-        invoiceNumber: data.invoiceNumber,
-        companyId: data.companyId,
-        medicineId: data.medicineId,
-        quantity: data.quantity,
-        unitPrice: data.unitPrice,
-        totalAmount: totalAmount,
-        purchaseDate: effectivePurchaseDate,
-        expiryDate: data.expiryDate || null,
-        batchNumber: data.batchNumber,
-        remainingQty: data.quantity, // All units available initially
-        createdBy: staffId,
-      },
-      select: {
-        id: true,
-        invoiceNumber: true,
-        quantity: true,
-        unitPrice: true,
-        totalAmount: true,
-        purchaseDate: true,
-        expiryDate: true,
-        batchNumber: true,
-        remainingQty: true,
-        company: {
-          select: {
-            id: true,
-            name: true,
-          },
+  const purchases = await createPurchaseInvoice(
+    {
+      invoiceNumber: data.invoiceNumber,
+      companyId: data.companyId,
+      purchaseDate: data.purchaseDate,
+      items: [
+        {
+          medicineId: data.medicineId,
+          quantity: data.quantity,
+          unitPrice: data.unitPrice,
+          expiryDate: data.expiryDate,
+          batchNumber: data.batchNumber,
         },
-        medicine: {
-          select: {
-            id: true,
-            genericName: true,
-            brandName: true,
-            group: {
-              select: {
-                id: true,
-                name: true,
-              },
-            },
-          },
-        },
-      },
-    });
+      ],
+    },
+    staffId,
+    userId,
+    activityLogContext,
+  );
 
-    // Update medicine stock
-    await tx.medicine.update({
-      where: { id: data.medicineId },
-      data: {
-        currentStock: {
-          increment: data.quantity,
-        },
-      },
-    });
-
-    // Log activity
-    await tx.activityLog.create({
-      data: {
-        userId,
-        action: "CREATE",
-        description: `Purchased ${data.quantity} units of ${getMedicineDisplayLabel(medicine)} from ${company.name}. Invoice: ${data.invoiceNumber}`,
-        entityType: "MedicinePurchase",
-        entityId: purchase.id,
-        timestamp: new Date(),
-        sessionId: activityLogContext?.sessionId,
-        ipAddress: activityLogContext?.deviceInfo?.ipAddress,
-        deviceFingerprint: activityLogContext?.deviceInfo?.deviceFingerprint,
-        readableFingerprint:
-          activityLogContext?.deviceInfo?.readableFingerprint,
-        deviceType: activityLogContext?.deviceInfo?.deviceType,
-        browserName: activityLogContext?.deviceInfo?.browserName,
-        browserVersion: activityLogContext?.deviceInfo?.browserVersion,
-        osType: activityLogContext?.deviceInfo?.osType,
-      },
-    });
-
-    return purchase;
-  });
+  return purchases[0];
 }
 
 // ═══════════════════════════════════════════════════════════════

@@ -1,17 +1,11 @@
 /**
  * Add Purchase Modal
- * Full modal for recording medicine purchases from suppliers
+ * Records one supplier invoice with multiple medicine purchase lines.
  */
 
 "use client";
 
-import React, {
-  useCallback,
-  useMemo,
-  useRef,
-  useEffect,
-  useState,
-} from "react";
+import React, { useCallback, useMemo, useRef, useEffect, useState } from "react";
 import {
   Save,
   TrendingUp,
@@ -20,6 +14,9 @@ import {
   Package,
   Calendar,
   Hash,
+  Plus,
+  Trash2,
+  ReceiptText,
 } from "lucide-react";
 import { format } from "date-fns";
 import NumberInput from "@/components/form-sections/Fields/NumberInput";
@@ -37,6 +34,11 @@ import { useAddPurchaseData } from "../../hooks";
 import {
   usePurchaseFormData,
   useSetPurchaseFormData,
+  useSetPurchaseDraftItem,
+  useAddPurchaseDraftItem,
+  useUpdatePurchaseItem,
+  useRemovePurchaseItem,
+  useResetPurchaseDraftItem,
   useResetPurchaseForm,
 } from "../../stores";
 import { useUIStore } from "../../stores";
@@ -51,51 +53,64 @@ interface AddPurchaseModalProps {
   onClose: () => void;
 }
 
+const formatCurrency = (amount: number) => {
+  return new Intl.NumberFormat("en-BD", {
+    style: "currency",
+    currency: "BDT",
+    minimumFractionDigits: 0,
+  }).format(amount);
+};
+
+const parsePositiveInteger = (value: string) => {
+  const parsed = parseInt(value, 10);
+  return Number.isFinite(parsed) ? parsed : 0;
+};
+
+const parsePositiveNumber = (value: string) => {
+  const parsed = parseFloat(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+};
+
+const formatDateInputValue = (date: Date | null) =>
+  date ? format(date, "yyyy-MM-dd") : "";
+
+const parseDateInputValue = (value: string) =>
+  value ? new Date(`${value}T00:00:00`) : null;
+
 const AddPurchaseModal: React.FC<AddPurchaseModalProps> = ({
   isOpen,
   onClose,
 }) => {
   const popupRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const purchaseDateBtnRef = useRef<HTMLButtonElement>(null);
+  const [showPurchaseCalendar, setShowPurchaseCalendar] = useState(false);
 
-  // Form state from store
   const formData = usePurchaseFormData();
   const setFormData = useSetPurchaseFormData();
+  const setDraftItem = useSetPurchaseDraftItem();
+  const addDraftItem = useAddPurchaseDraftItem();
+  const updateItem = useUpdatePurchaseItem();
+  const removeItem = useRemovePurchaseItem();
+  const resetDraftItem = useResetPurchaseDraftItem();
   const resetForm = useResetPurchaseForm();
   const { openModal: openUIModal } = useUIStore();
-
-  // Calendar date state
-  const [purchaseDate, setPurchaseDate] = useState<Date>(new Date());
-  const [expiryDate, setExpiryDate] = useState<Date | null>(null);
-  const [showPurchaseCalendar, setShowPurchaseCalendar] = useState(false);
-  const [showExpiryCalendar, setShowExpiryCalendar] = useState(false);
-
-  // Refs for calendar trigger buttons
-  const purchaseDateBtnRef = useRef<HTMLButtonElement>(null);
-  const expiryDateBtnRef = useRef<HTMLButtonElement>(null);
-
-  // Notification
   const { showNotification } = useNotification();
 
-  // Handle body scroll locking
   useEffect(() => {
     if (isOpen) {
       preserveLockBodyScroll();
-      // Reset form when opening
       resetForm();
-      setPurchaseDate(new Date());
-      setExpiryDate(null);
       setShowPurchaseCalendar(false);
-      setShowExpiryCalendar(false);
     } else {
       preserveUnlockBodyScroll();
     }
+
     return () => {
       preserveUnlockBodyScroll();
     };
   }, [isOpen, resetForm]);
 
-  // Mutation
   const { addPurchase, isLoading: isSubmitting } = useAddPurchaseData({
     onSuccess: () => {
       resetForm();
@@ -103,25 +118,80 @@ const AddPurchaseModal: React.FC<AddPurchaseModalProps> = ({
     },
   });
 
-  // Validation
+  const draftItem = formData.draftItem;
+
+  const { isDraftValid, draftErrors } = useMemo(() => {
+    const errors: string[] = [];
+
+    if (!draftItem.medicineId) {
+      errors.push("Medicine is required");
+    }
+
+    if (draftItem.quantity <= 0) {
+      errors.push("Quantity must be greater than 0");
+    }
+
+    if (draftItem.unitPrice <= 0) {
+      errors.push("Purchase price must be greater than 0");
+    }
+
+    if (draftItem.salePrice <= 0) {
+      errors.push("Sale price must be greater than 0");
+    }
+
+    if (
+      draftItem.expiryDate &&
+      draftItem.expiryDate < formData.purchaseDate
+    ) {
+      errors.push("Expiry date cannot be earlier than purchase date");
+    }
+
+    return {
+      isDraftValid: errors.length === 0,
+      draftErrors: errors,
+    };
+  }, [draftItem, formData.purchaseDate]);
+
   const { isFormValid, validationErrors } = useMemo(() => {
     const errors: string[] = [];
 
     if (!formData.invoiceNumber.trim()) {
       errors.push("Invoice number is required");
     }
+
     if (!formData.companyId) {
       errors.push("Company is required");
     }
-    if (!formData.medicineId) {
-      errors.push("Medicine is required");
+
+    if (formData.items.length === 0) {
+      errors.push("Add at least one medicine to the invoice");
     }
-    if (formData.quantity <= 0) {
-      errors.push("Quantity must be greater than 0");
-    }
-    if (formData.unitPrice <= 0) {
-      errors.push("Unit price must be greater than 0");
-    }
+
+    formData.items.forEach((item, index) => {
+      const lineNumber = index + 1;
+
+      if (!item.medicineId) {
+        errors.push(`Line ${lineNumber}: medicine is required`);
+      }
+
+      if (item.quantity <= 0) {
+        errors.push(`Line ${lineNumber}: quantity must be greater than 0`);
+      }
+
+      if (item.unitPrice <= 0) {
+        errors.push(`Line ${lineNumber}: purchase price must be greater than 0`);
+      }
+
+      if (item.salePrice <= 0) {
+        errors.push(`Line ${lineNumber}: sale price must be greater than 0`);
+      }
+
+      if (item.expiryDate && item.expiryDate < formData.purchaseDate) {
+        errors.push(
+          `Line ${lineNumber}: expiry date cannot be earlier than purchase date`,
+        );
+      }
+    });
 
     return {
       isFormValid: errors.length === 0,
@@ -129,7 +199,16 @@ const AddPurchaseModal: React.FC<AddPurchaseModalProps> = ({
     };
   }, [formData]);
 
-  // Handlers
+  const totals = useMemo(() => {
+    return formData.items.reduce(
+      (acc, item) => ({
+        quantity: acc.quantity + item.quantity,
+        amount: acc.amount + item.quantity * item.unitPrice,
+      }),
+      { quantity: 0, amount: 0 },
+    );
+  }, [formData.items]);
+
   const handleClose = useCallback(() => {
     if (isSubmitting) return;
     resetForm();
@@ -148,46 +227,67 @@ const AddPurchaseModal: React.FC<AddPurchaseModalProps> = ({
       return;
     }
 
-    // Prepare payload
-    const payload = {
-      invoiceNumber: formData.invoiceNumber.trim(),
-      companyId: formData.companyId!,
-      medicineId: formData.medicineId!,
-      quantity: formData.quantity,
-      unitPrice: formData.unitPrice,
-      purchaseDate: purchaseDate.toISOString(),
-      expiryDate: expiryDate ? expiryDate.toISOString() : undefined,
-      batchNumber: formData.batchNumber.trim() || undefined,
-    };
+    if (!formData.companyId) {
+      showNotification("Company is required", "error");
+      return;
+    }
 
-    addPurchase(payload);
+    const purchaseItems = formData.items.map((item) => {
+      if (!item.medicineId) {
+        showNotification("Medicine is required", "error");
+        return null;
+      }
+
+      return {
+        medicineId: item.medicineId,
+        quantity: item.quantity,
+        unitPrice: item.unitPrice,
+        salePrice: item.salePrice,
+        expiryDate: item.expiryDate ? item.expiryDate.toISOString() : undefined,
+        batchNumber: item.batchNumber.trim() || undefined,
+      };
+    });
+
+    const validPurchaseItems = purchaseItems.filter(
+      (item): item is NonNullable<(typeof purchaseItems)[number]> =>
+        item !== null,
+    );
+
+    if (validPurchaseItems.length !== purchaseItems.length) {
+      return;
+    }
+
+    addPurchase({
+      invoiceNumber: formData.invoiceNumber.trim(),
+      companyId: formData.companyId,
+      purchaseDate: formData.purchaseDate.toISOString(),
+      items: validPurchaseItems,
+    });
   }, [
+    addPurchase,
+    formData,
     isFormValid,
     isSubmitting,
-    formData,
-    purchaseDate,
-    expiryDate,
-    addPurchase,
-    validationErrors,
     showNotification,
+    validationErrors,
   ]);
 
-  // Keyboard handling
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         handleClose();
       }
     };
+
     if (isOpen) {
       document.addEventListener("keydown", handleKeyDown);
     }
+
     return () => {
       document.removeEventListener("keydown", handleKeyDown);
     };
   }, [isOpen, handleClose]);
 
-  // Company selection handler
   const handleCompanyChange = useCallback(
     (company: MedicineCompany | null) => {
       if (company) {
@@ -195,37 +295,39 @@ const AddPurchaseModal: React.FC<AddPurchaseModalProps> = ({
           companyId: company.id,
           companyName: company.name,
         });
-      } else {
-        setFormData({
-          companyId: null,
-          companyName: "",
-        });
+        return;
       }
+
+      setFormData({
+        companyId: null,
+        companyName: "",
+      });
     },
     [setFormData],
   );
 
-  // Medicine selection handler
-  const handleMedicineChange = useCallback(
+  const handleDraftMedicineChange = useCallback(
     (medicine: Medicine | null) => {
       if (medicine) {
-        setFormData({
+        setDraftItem({
           medicineId: medicine.id,
           medicineName: getMedicineDisplayName(medicine),
           medicineGroupName: medicine.group?.name || "Unknown Group",
+          salePrice: Number(medicine.defaultSalePrice || 0),
         });
-      } else {
-        setFormData({
-          medicineId: null,
-          medicineName: "",
-          medicineGroupName: "",
-        });
+        return;
       }
+
+      setDraftItem({
+        medicineId: null,
+        medicineName: "",
+        medicineGroupName: "",
+        salePrice: 0,
+      });
     },
-    [setFormData],
+    [setDraftItem],
   );
 
-  // Add new company handler
   const handleAddNewCompany = useCallback(
     (name: string) => {
       openUIModal("addCompany", { name });
@@ -233,24 +335,30 @@ const AddPurchaseModal: React.FC<AddPurchaseModalProps> = ({
     [openUIModal],
   );
 
-  // Add new medicine handler
   const handleAddNewMedicine = useCallback(() => {
     openUIModal("addMedicine");
   }, [openUIModal]);
 
-  // Format currency
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-BD", {
-      style: "currency",
-      currency: "BDT",
-      minimumFractionDigits: 0,
-    }).format(amount);
-  };
+  const handleAddLineItem = useCallback(() => {
+    if (!isDraftValid) {
+      const errorMessage =
+        draftErrors.length === 1
+          ? draftErrors[0]
+          : `Please fix the medicine line: ${draftErrors.join(", ")}`;
+      showNotification(errorMessage, "error");
+      return;
+    }
 
-  // Common input class
+    const wasAdded = addDraftItem();
+
+    if (!wasAdded) {
+      showNotification("Medicine line is incomplete", "error");
+    }
+  }, [addDraftItem, draftErrors, isDraftValid, showNotification]);
+
   const getInputClass = (hasValue: boolean, hasError: boolean = false) => {
     const base =
-      "text-gray-700 font-normal rounded-lg h-12 md:h-14 py-2 px-4 w-full focus:border-blue-900 focus:ring-2 focus:ring-blue-950 outline-none shadow-sm hover:shadow-md transition-all duration-300 placeholder:text-gray-400 placeholder:font-light text-xs sm:text-sm cursor-pointer";
+      "text-gray-700 font-normal rounded-lg h-12 md:h-14 py-2 px-4 w-full focus:border-blue-900 focus:ring-2 focus:ring-blue-950 outline-none shadow-sm hover:shadow-md transition-all duration-300 placeholder:text-gray-400 placeholder:font-light text-xs sm:text-sm";
 
     if (hasError) {
       return `${base} bg-red-50 border-2 border-red-500`;
@@ -279,7 +387,7 @@ const AddPurchaseModal: React.FC<AddPurchaseModalProps> = ({
         >
           <motion.div
             ref={popupRef}
-            className="bg-white rounded-3xl shadow-lg w-full max-w-[95%] sm:max-w-[90%] md:max-w-[70%] lg:max-w-[60%] xl:max-w-[50%] h-auto max-h-[95%] sm:max-h-[90%] popup-content flex flex-col"
+            className="bg-white rounded-3xl shadow-lg w-full max-w-[96%] xl:max-w-6xl h-auto max-h-[95%] sm:max-h-[90%] popup-content flex flex-col"
             variants={modalVariants}
             initial="hidden"
             animate="visible"
@@ -293,8 +401,8 @@ const AddPurchaseModal: React.FC<AddPurchaseModalProps> = ({
             <ModalHeader
               icon={TrendingUp}
               iconColor="green"
-              title="Add Purchase"
-              subtitle="Record a new medicine purchase from supplier"
+              title="Add Purchase Invoice"
+              subtitle="Record multiple medicines under one supplier invoice"
               onClose={handleClose}
               isDisabled={isSubmitting}
             />
@@ -303,20 +411,18 @@ const AddPurchaseModal: React.FC<AddPurchaseModalProps> = ({
               ref={scrollContainerRef}
               className="flex-1 overflow-y-auto p-4 sm:p-6"
             >
-              <div className="space-y-6">
-                {/* Invoice and Company Section */}
+              <div className="space-y-5">
                 <div className="bg-emerald-50/50 rounded-2xl p-4 sm:p-5 border border-emerald-100">
                   <div className="flex items-center gap-2 mb-4">
                     <div className="w-8 h-8 bg-emerald-100 rounded-lg flex items-center justify-center">
                       <Building2 className="w-4 h-4 text-emerald-600" />
                     </div>
                     <h3 className="text-sm font-bold text-emerald-900">
-                      Purchase Details
+                      Invoice Details
                     </h3>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {/* Invoice Number */}
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                     <div>
                       <label className="block text-xs font-semibold text-gray-700 mb-2">
                         Invoice Number <span className="text-red-500">*</span>
@@ -329,7 +435,7 @@ const AddPurchaseModal: React.FC<AddPurchaseModalProps> = ({
                           onChange={(e) =>
                             setFormData({ invoiceNumber: e.target.value })
                           }
-                          placeholder="e.g., 98632254"
+                          placeholder="e.g., INV-98632254"
                           className={`${getInputClass(
                             !!formData.invoiceNumber,
                           )} pl-10`}
@@ -337,7 +443,6 @@ const AddPurchaseModal: React.FC<AddPurchaseModalProps> = ({
                       </div>
                     </div>
 
-                    {/* Company Search */}
                     <div>
                       <label className="block text-xs font-semibold text-gray-700 mb-2">
                         Company / Supplier{" "}
@@ -351,153 +456,7 @@ const AddPurchaseModal: React.FC<AddPurchaseModalProps> = ({
                         placeholder="Search company..."
                       />
                     </div>
-                  </div>
-                </div>
 
-                {/* Medicine Section */}
-                <div className="bg-blue-50/50 rounded-2xl p-4 sm:p-5 border border-blue-100">
-                  <div className="flex items-center gap-2 mb-4">
-                    <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                      <Pill className="w-4 h-4 text-blue-600" />
-                    </div>
-                    <h3 className="text-sm font-bold text-blue-900">
-                      Medicine Information
-                    </h3>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {/* Medicine Search */}
-                    <div className="md:col-span-2">
-                      <label className="block text-xs font-semibold text-gray-700 mb-2">
-                        Medicine Name <span className="text-red-500">*</span>
-                      </label>
-                      <MedicineSearch
-                        value={formData.medicineId}
-                        displayValue={formData.medicineName}
-                        onChange={handleMedicineChange}
-                        onAddNew={handleAddNewMedicine}
-                        placeholder="Search medicine name..."
-                        showStock={true}
-                      />
-                    </div>
-
-                    {/* Group (Auto-filled, read-only) */}
-                    {formData.medicineGroupName && (
-                      <div>
-                        <label className="block text-xs font-semibold text-gray-700 mb-2">
-                          Group
-                        </label>
-                        <div className="h-12 md:h-14 px-4 py-2 bg-gray-100 border-2 border-gray-200 rounded-lg flex items-center">
-                          <span className="text-sm font-medium text-gray-700">
-                            {formData.medicineGroupName}
-                          </span>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Batch Number */}
-                    <div
-                      className={
-                        formData.medicineGroupName ? "" : "md:col-span-2"
-                      }
-                    >
-                      <label className="block text-xs font-semibold text-gray-700 mb-2">
-                        Batch Number
-                      </label>
-                      <input
-                        type="text"
-                        value={formData.batchNumber}
-                        onChange={(e) =>
-                          setFormData({ batchNumber: e.target.value })
-                        }
-                        placeholder="Optional batch/lot number"
-                        className={getInputClass(!!formData.batchNumber)}
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Quantity and Price Section */}
-                <div className="bg-violet-50/50 rounded-2xl p-4 sm:p-5 border border-violet-100">
-                  <div className="flex items-center gap-2 mb-4">
-                    <div className="w-8 h-8 bg-violet-100 rounded-lg flex items-center justify-center">
-                      <Package className="w-4 h-4 text-violet-600" />
-                    </div>
-                    <h3 className="text-sm font-bold text-violet-900">
-                      Quantity & Pricing
-                    </h3>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    {/* Quantity */}
-                    <div>
-                      <label className="block text-xs font-semibold text-gray-700 mb-2">
-                        Quantity <span className="text-red-500">*</span>
-                      </label>
-                      <NumberInput
-                        min="1"
-                        value={formData.quantity || ""}
-                        onChange={(e) =>
-                          setFormData({
-                            quantity: parseInt(e.target.value) || 0,
-                          })
-                        }
-                        placeholder="Enter quantity"
-                        className={getInputClass(formData.quantity > 0)}
-                      />
-                    </div>
-
-                    {/* Unit Price */}
-                    <div>
-                      <label className="block text-xs font-semibold text-gray-700 mb-2">
-                        Unit Price (৳) <span className="text-red-500">*</span>
-                      </label>
-                      <div className="relative">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-bold text-gray-400">
-                          ৳
-                        </span>
-                        <NumberInput
-                          min="0"
-                          step="0.01"
-                          value={formData.unitPrice || ""}
-                          onChange={(e) =>
-                            setFormData({
-                              unitPrice: parseFloat(e.target.value) || 0,
-                            })
-                          }
-                          placeholder="Price per unit"
-                          className={`${getInputClass(
-                            formData.unitPrice > 0,
-                          )} pl-10`}
-                        />
-                      </div>
-                    </div>
-
-                    {/* Total Amount (Auto-calculated) */}
-                    <div>
-                      <label className="block text-xs font-semibold text-gray-700 mb-2">
-                        Total Amount
-                      </label>
-                      <div className="h-12 md:h-14 px-4 py-2 bg-emerald-100 border-2 border-emerald-300 rounded-lg flex items-center justify-center">
-                        <span className="text-base sm:text-lg font-bold text-emerald-800">
-                          {formatCurrency(formData.totalAmount)}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Dates Section */}
-                <div className="bg-gray-50 rounded-2xl p-4 sm:p-5 border border-gray-200">
-                  <div className="flex items-center gap-2 mb-4">
-                    <div className="w-8 h-8 bg-gray-200 rounded-lg flex items-center justify-center">
-                      <Calendar className="w-4 h-4 text-gray-600" />
-                    </div>
-                    <h3 className="text-sm font-bold text-gray-900">Dates</h3>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {/* Purchase Date */}
                     <div>
                       <label className="block text-xs font-semibold text-gray-700 mb-2">
                         Purchase Date
@@ -505,15 +464,16 @@ const AddPurchaseModal: React.FC<AddPurchaseModalProps> = ({
                       <button
                         ref={purchaseDateBtnRef}
                         type="button"
-                        onClick={() => {
-                          setShowPurchaseCalendar(!showPurchaseCalendar);
-                          setShowExpiryCalendar(false);
-                        }}
-                        className={`${getInputClass(!!purchaseDate)} flex items-center gap-3 text-left`}
+                        onClick={() =>
+                          setShowPurchaseCalendar(!showPurchaseCalendar)
+                        }
+                        className={`${getInputClass(
+                          !!formData.purchaseDate,
+                        )} flex items-center gap-3 text-left`}
                       >
                         <Calendar className="w-4 h-4 text-gray-400 shrink-0" />
                         <span className="text-sm font-medium text-gray-700">
-                          {format(purchaseDate, "dd MMM yyyy")}
+                          {format(formData.purchaseDate, "dd MMM yyyy")}
                         </span>
                       </button>
                       <DropdownPortal
@@ -524,9 +484,9 @@ const AddPurchaseModal: React.FC<AddPurchaseModalProps> = ({
                         withContainerStyles={false}
                       >
                         <CustomCalendar
-                          selectedDisplayDate={purchaseDate}
+                          selectedDisplayDate={formData.purchaseDate}
                           handleDateSelect={(date) => {
-                            setPurchaseDate(date);
+                            setFormData({ purchaseDate: date });
                             setShowPurchaseCalendar(false);
                           }}
                           colorScheme="emerald"
@@ -534,49 +494,490 @@ const AddPurchaseModal: React.FC<AddPurchaseModalProps> = ({
                         />
                       </DropdownPortal>
                     </div>
+                  </div>
+                </div>
 
-                    {/* Expiry Date */}
-                    <div>
+                <div className="bg-blue-50/50 rounded-2xl p-4 sm:p-5 border border-blue-100">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-4">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                        <Pill className="w-4 h-4 text-blue-600" />
+                      </div>
+                      <h3 className="text-sm font-bold text-blue-900">
+                        Add Medicine Line
+                      </h3>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={resetDraftItem}
+                      className="self-start sm:self-auto text-xs font-semibold text-gray-600 hover:text-gray-900 transition-colors cursor-pointer"
+                    >
+                      Clear line
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+                    <div className="lg:col-span-4">
                       <label className="block text-xs font-semibold text-gray-700 mb-2">
-                        Expiry Date (Optional)
+                        Medicine Name <span className="text-red-500">*</span>
                       </label>
-                      <button
-                        ref={expiryDateBtnRef}
-                        type="button"
-                        onClick={() => {
-                          setShowExpiryCalendar(!showExpiryCalendar);
-                          setShowPurchaseCalendar(false);
-                        }}
-                        className={`${getInputClass(!!expiryDate)} flex items-center gap-3 text-left`}
-                      >
-                        <Calendar className="w-4 h-4 text-gray-400 shrink-0" />
-                        <span
-                          className={`text-sm font-medium ${expiryDate ? "text-gray-700" : "text-gray-400"}`}
-                        >
-                          {expiryDate
-                            ? format(expiryDate, "dd MMM yyyy")
-                            : "Select expiry date..."}
+                      <MedicineSearch
+                        value={draftItem.medicineId}
+                        displayValue={draftItem.medicineName}
+                        onChange={handleDraftMedicineChange}
+                        onAddNew={handleAddNewMedicine}
+                        placeholder="Search medicine name..."
+                        showStock={true}
+                      />
+                      {draftItem.medicineGroupName ? (
+                        <p className="mt-1.5 text-xs font-medium text-blue-700">
+                          Group: {draftItem.medicineGroupName}
+                        </p>
+                      ) : null}
+                    </div>
+
+                    <div className="lg:col-span-2">
+                      <label className="block text-xs font-semibold text-gray-700 mb-2">
+                        Quantity <span className="text-red-500">*</span>
+                      </label>
+                      <NumberInput
+                        min="1"
+                        value={draftItem.quantity || ""}
+                        onChange={(e) =>
+                          setDraftItem({
+                            quantity: parsePositiveInteger(e.target.value),
+                          })
+                        }
+                        placeholder="Qty"
+                        className={getInputClass(draftItem.quantity > 0)}
+                      />
+                    </div>
+
+                    <div className="lg:col-span-2">
+                      <label className="block text-xs font-semibold text-gray-700 mb-2">
+                        Purchase Price <span className="text-red-500">*</span>
+                      </label>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-bold text-gray-400">
+                          ৳
                         </span>
-                      </button>
-                      <DropdownPortal
-                        isOpen={showExpiryCalendar}
-                        onClose={() => setShowExpiryCalendar(false)}
-                        buttonRef={expiryDateBtnRef}
-                        matchButtonWidth={false}
-                        withContainerStyles={false}
-                      >
-                        <CustomCalendar
-                          selectedDisplayDate={expiryDate}
-                          handleDateSelect={(date) => {
-                            setExpiryDate(date);
-                            setShowExpiryCalendar(false);
-                          }}
-                          colorScheme="amber"
-                          minDate={purchaseDate}
+                        <NumberInput
+                          min="0"
+                          step="0.01"
+                          value={draftItem.unitPrice || ""}
+                          onChange={(e) =>
+                            setDraftItem({
+                              unitPrice: parsePositiveNumber(e.target.value),
+                            })
+                          }
+                          placeholder="Buy"
+                          className={`${getInputClass(
+                            draftItem.unitPrice > 0,
+                          )} pl-10`}
                         />
-                      </DropdownPortal>
+                      </div>
+                    </div>
+
+                    <div className="lg:col-span-2">
+                      <label className="block text-xs font-semibold text-gray-700 mb-2">
+                        Sale Price <span className="text-red-500">*</span>
+                      </label>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-bold text-gray-400">
+                          ৳
+                        </span>
+                        <NumberInput
+                          min="0"
+                          step="0.01"
+                          value={
+                            draftItem.salePrice === 0
+                              ? ""
+                              : draftItem.salePrice
+                          }
+                          onChange={(e) =>
+                            setDraftItem({
+                              salePrice: parsePositiveNumber(e.target.value),
+                            })
+                          }
+                          placeholder="Sell"
+                          className={`${getInputClass(
+                            draftItem.salePrice > 0,
+                          )} pl-10`}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="lg:col-span-2">
+                      <label className="block text-xs font-semibold text-gray-700 mb-2">
+                        Line Total
+                      </label>
+                      <div className="h-12 md:h-14 px-3 py-2 bg-emerald-100 border-2 border-emerald-300 rounded-lg flex items-center justify-center">
+                        <span className="text-sm font-bold text-emerald-800">
+                          {formatCurrency(
+                            draftItem.quantity * draftItem.unitPrice,
+                          )}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="lg:col-span-4">
+                      <label className="block text-xs font-semibold text-gray-700 mb-2">
+                        Batch Number
+                      </label>
+                      <input
+                        type="text"
+                        value={draftItem.batchNumber}
+                        onChange={(e) =>
+                          setDraftItem({ batchNumber: e.target.value })
+                        }
+                        placeholder="Optional batch/lot number"
+                        className={getInputClass(!!draftItem.batchNumber)}
+                      />
+                    </div>
+
+                    <div className="lg:col-span-4">
+                      <label className="block text-xs font-semibold text-gray-700 mb-2">
+                        Expiry Date
+                      </label>
+                      <input
+                        type="date"
+                        min={formatDateInputValue(formData.purchaseDate)}
+                        value={formatDateInputValue(draftItem.expiryDate)}
+                        onChange={(e) =>
+                          setDraftItem({
+                            expiryDate: parseDateInputValue(e.target.value),
+                          })
+                        }
+                        className={getInputClass(!!draftItem.expiryDate)}
+                      />
+                    </div>
+
+                    <div className="lg:col-span-4 flex items-end">
+                      <button
+                        type="button"
+                        onClick={handleAddLineItem}
+                        className="h-12 md:h-14 w-full px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors duration-200 flex items-center justify-center gap-2 text-sm font-semibold cursor-pointer"
+                      >
+                        <Plus className="w-4 h-4" />
+                        Add to Invoice
+                      </button>
                     </div>
                   </div>
+                </div>
+
+                <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+                  <div className="px-4 sm:px-5 py-4 bg-gray-50 border-b border-gray-200 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 bg-gray-200 rounded-lg flex items-center justify-center">
+                        <ReceiptText className="w-4 h-4 text-gray-600" />
+                      </div>
+                      <div>
+                        <h3 className="text-sm font-bold text-gray-900">
+                          Invoice Medicines
+                        </h3>
+                        <p className="text-xs text-gray-500">
+                          {formData.items.length} item
+                          {formData.items.length === 1 ? "" : "s"} selected
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-wrap gap-2 text-xs font-bold">
+                      <span className="inline-flex items-center gap-1 rounded-lg bg-blue-50 px-3 py-1.5 text-blue-700">
+                        <Package className="w-3.5 h-3.5" />
+                        Qty {totals.quantity}
+                      </span>
+                      <span className="inline-flex items-center rounded-lg bg-emerald-50 px-3 py-1.5 text-emerald-700">
+                        Total {formatCurrency(totals.amount)}
+                      </span>
+                    </div>
+                  </div>
+
+                  {formData.items.length === 0 ? (
+                    <div className="p-8 text-center">
+                      <div className="w-14 h-14 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-3">
+                        <Pill className="w-7 h-7 text-gray-400" />
+                      </div>
+                      <p className="text-sm font-semibold text-gray-800">
+                        No medicines added yet.
+                      </p>
+                      <p className="mt-1 text-xs text-gray-500">
+                        Search a medicine, enter quantity and prices, then add
+                        it to this invoice.
+                      </p>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="hidden lg:block overflow-x-auto">
+                        <table className="w-full">
+                          <thead>
+                            <tr className="border-b border-gray-100 bg-white">
+                              <th className="text-left px-4 py-3 text-[10px] font-black uppercase tracking-widest text-gray-500">
+                                Medicine
+                              </th>
+                              <th className="text-right px-4 py-3 text-[10px] font-black uppercase tracking-widest text-gray-500">
+                                Qty
+                              </th>
+                              <th className="text-right px-4 py-3 text-[10px] font-black uppercase tracking-widest text-gray-500">
+                                Purchase
+                              </th>
+                              <th className="text-right px-4 py-3 text-[10px] font-black uppercase tracking-widest text-gray-500">
+                                Sale
+                              </th>
+                              <th className="text-left px-4 py-3 text-[10px] font-black uppercase tracking-widest text-gray-500">
+                                Batch
+                              </th>
+                              <th className="text-left px-4 py-3 text-[10px] font-black uppercase tracking-widest text-gray-500">
+                                Expiry
+                              </th>
+                              <th className="text-right px-4 py-3 text-[10px] font-black uppercase tracking-widest text-gray-500">
+                                Total
+                              </th>
+                              <th className="px-4 py-3" />
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-gray-100">
+                            {formData.items.map((item) => (
+                              <tr key={item.id} className="hover:bg-gray-50">
+                                <td className="px-4 py-3">
+                                  <p className="text-sm font-semibold text-gray-900">
+                                    {item.medicineName}
+                                  </p>
+                                  <p className="text-xs text-gray-500">
+                                    {item.medicineGroupName || "Unknown Group"}
+                                  </p>
+                                </td>
+                                <td className="px-4 py-3">
+                                  <NumberInput
+                                    min="1"
+                                    value={item.quantity || ""}
+                                    onChange={(e) =>
+                                      updateItem(item.id, {
+                                        quantity: parsePositiveInteger(
+                                          e.target.value,
+                                        ),
+                                      })
+                                    }
+                                    className="h-10 w-24 rounded-lg border-2 border-gray-200 px-3 text-right text-sm font-semibold outline-none focus:border-blue-900 focus:ring-2 focus:ring-blue-950"
+                                  />
+                                </td>
+                                <td className="px-4 py-3">
+                                  <NumberInput
+                                    min="0"
+                                    step="0.01"
+                                    value={item.unitPrice || ""}
+                                    onChange={(e) =>
+                                      updateItem(item.id, {
+                                        unitPrice: parsePositiveNumber(
+                                          e.target.value,
+                                        ),
+                                      })
+                                    }
+                                    className="h-10 w-28 rounded-lg border-2 border-gray-200 px-3 text-right text-sm font-semibold outline-none focus:border-blue-900 focus:ring-2 focus:ring-blue-950"
+                                  />
+                                </td>
+                                <td className="px-4 py-3">
+                                  <NumberInput
+                                    min="0"
+                                    step="0.01"
+                                    value={
+                                      item.salePrice === 0
+                                        ? ""
+                                        : item.salePrice
+                                    }
+                                    onChange={(e) =>
+                                      updateItem(item.id, {
+                                        salePrice: parsePositiveNumber(
+                                          e.target.value,
+                                        ),
+                                      })
+                                    }
+                                    className="h-10 w-28 rounded-lg border-2 border-gray-200 px-3 text-right text-sm font-semibold outline-none focus:border-blue-900 focus:ring-2 focus:ring-blue-950"
+                                  />
+                                </td>
+                                <td className="px-4 py-3">
+                                  <input
+                                    type="text"
+                                    value={item.batchNumber}
+                                    onChange={(e) =>
+                                      updateItem(item.id, {
+                                        batchNumber: e.target.value,
+                                      })
+                                    }
+                                    placeholder="Optional"
+                                    className="h-10 w-32 rounded-lg border-2 border-gray-200 px-3 text-sm outline-none focus:border-blue-900 focus:ring-2 focus:ring-blue-950"
+                                  />
+                                </td>
+                                <td className="px-4 py-3">
+                                  <input
+                                    type="date"
+                                    min={formatDateInputValue(
+                                      formData.purchaseDate,
+                                    )}
+                                    value={formatDateInputValue(
+                                      item.expiryDate,
+                                    )}
+                                    onChange={(e) =>
+                                      updateItem(item.id, {
+                                        expiryDate: parseDateInputValue(
+                                          e.target.value,
+                                        ),
+                                      })
+                                    }
+                                    className="h-10 w-36 rounded-lg border-2 border-gray-200 px-3 text-sm outline-none focus:border-blue-900 focus:ring-2 focus:ring-blue-950"
+                                  />
+                                </td>
+                                <td className="px-4 py-3 text-right text-sm font-bold text-emerald-700">
+                                  {formatCurrency(
+                                    item.quantity * item.unitPrice,
+                                  )}
+                                </td>
+                                <td className="px-4 py-3 text-right">
+                                  <button
+                                    type="button"
+                                    onClick={() => removeItem(item.id)}
+                                    className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
+                                    aria-label={`Remove ${item.medicineName}`}
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </button>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+
+                      <div className="lg:hidden divide-y divide-gray-100">
+                        {formData.items.map((item) => (
+                          <div key={item.id} className="p-4 space-y-3">
+                            <div className="flex items-start justify-between gap-3">
+                              <div>
+                                <p className="text-sm font-bold text-gray-900">
+                                  {item.medicineName}
+                                </p>
+                                <p className="text-xs text-gray-500">
+                                  {item.medicineGroupName || "Unknown Group"}
+                                </p>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => removeItem(item.id)}
+                                className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
+                                aria-label={`Remove ${item.medicineName}`}
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-3">
+                              <div>
+                                <label className="block text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-1">
+                                  Qty
+                                </label>
+                                <NumberInput
+                                  min="1"
+                                  value={item.quantity || ""}
+                                  onChange={(e) =>
+                                    updateItem(item.id, {
+                                      quantity: parsePositiveInteger(
+                                        e.target.value,
+                                      ),
+                                    })
+                                  }
+                                  className="h-11 w-full rounded-lg border-2 border-gray-200 px-3 text-sm font-semibold outline-none focus:border-blue-900 focus:ring-2 focus:ring-blue-950"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-1">
+                                  Purchase
+                                </label>
+                                <NumberInput
+                                  min="0"
+                                  step="0.01"
+                                  value={item.unitPrice || ""}
+                                  onChange={(e) =>
+                                    updateItem(item.id, {
+                                      unitPrice: parsePositiveNumber(
+                                        e.target.value,
+                                      ),
+                                    })
+                                  }
+                                  className="h-11 w-full rounded-lg border-2 border-gray-200 px-3 text-sm font-semibold outline-none focus:border-blue-900 focus:ring-2 focus:ring-blue-950"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-1">
+                                  Sale
+                                </label>
+                                <NumberInput
+                                  min="0"
+                                  step="0.01"
+                                  value={
+                                    item.salePrice === 0 ? "" : item.salePrice
+                                  }
+                                  onChange={(e) =>
+                                    updateItem(item.id, {
+                                      salePrice: parsePositiveNumber(
+                                        e.target.value,
+                                      ),
+                                    })
+                                  }
+                                  className="h-11 w-full rounded-lg border-2 border-gray-200 px-3 text-sm font-semibold outline-none focus:border-blue-900 focus:ring-2 focus:ring-blue-950"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-1">
+                                  Total
+                                </label>
+                                <div className="h-11 rounded-lg bg-emerald-50 px-3 flex items-center text-sm font-bold text-emerald-700">
+                                  {formatCurrency(
+                                    item.quantity * item.unitPrice,
+                                  )}
+                                </div>
+                              </div>
+                              <div>
+                                <label className="block text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-1">
+                                  Batch
+                                </label>
+                                <input
+                                  type="text"
+                                  value={item.batchNumber}
+                                  onChange={(e) =>
+                                    updateItem(item.id, {
+                                      batchNumber: e.target.value,
+                                    })
+                                  }
+                                  placeholder="Optional"
+                                  className="h-11 w-full rounded-lg border-2 border-gray-200 px-3 text-sm outline-none focus:border-blue-900 focus:ring-2 focus:ring-blue-950"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-1">
+                                  Expiry
+                                </label>
+                                <input
+                                  type="date"
+                                  min={formatDateInputValue(
+                                    formData.purchaseDate,
+                                  )}
+                                  value={formatDateInputValue(item.expiryDate)}
+                                  onChange={(e) =>
+                                    updateItem(item.id, {
+                                      expiryDate: parseDateInputValue(
+                                        e.target.value,
+                                      ),
+                                    })
+                                  }
+                                  className="h-11 w-full rounded-lg border-2 border-gray-200 px-3 text-sm outline-none focus:border-blue-900 focus:ring-2 focus:ring-blue-950"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
             </div>
@@ -587,7 +988,7 @@ const AddPurchaseModal: React.FC<AddPurchaseModalProps> = ({
               isSubmitting={isSubmitting}
               isDisabled={false}
               cancelText="Cancel"
-              submitText="Record Purchase"
+              submitText="Purchase Invoice"
               loadingText="Saving..."
               submitIcon={Save}
               theme="green"

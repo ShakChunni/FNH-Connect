@@ -12,10 +12,15 @@ export {
   usePurchaseFormStore,
   usePurchaseFormData,
   useSetPurchaseFormData,
+  useSetPurchaseDraftItem,
+  useAddPurchaseDraftItem,
+  useUpdatePurchaseItem,
+  useRemovePurchaseItem,
+  useResetPurchaseDraftItem,
   useResetPurchaseForm,
   useCalculatePurchaseTotal,
 } from "./purchaseFormStore";
-export type { PurchaseFormData } from "./purchaseFormStore";
+export type { PurchaseFormData, PurchaseLineItem } from "./purchaseFormStore";
 
 export {
   useSaleFormStore,

@@ -40,7 +40,7 @@ export function PasswordInput({
 
     // Solid white background with dark text for maximum readability
     const base =
-      `w-full px-4 py-3.5 pr-12 rounded-xl border bg-white text-sm text-slate-900 placeholder-slate-400 transition-all duration-300 ease-out focus:outline-none focus:ring-4 shadow-sm`;
+      `w-full px-4 py-3.5 pr-12 rounded-xl border bg-white text-sm text-slate-900 placeholder-slate-400 transition-[border-color,background-color,box-shadow,transform] duration-300 ease-out focus:outline-none focus:ring-4 shadow-sm`;
 
     // Error state: High visibility red border
     const errorStyles = error
@@ -79,7 +79,7 @@ export function PasswordInput({
           type="button"
           onClick={() => setShowPassword(!showPassword)}
           disabled={disabled}
-          className={`absolute right-3 top-1/2 -translate-y-1/2 p-2 rounded-lg transition-all duration-200 active:scale-95 ${
+          className={`absolute right-3 top-1/2 -translate-y-1/2 p-2 rounded-lg transition-[color,background-color,transform] duration-200 active:scale-95 ${
             error
               ? "text-red-400 hover:text-red-500 hover:bg-red-50"
               : "text-gray-400 hover:text-fnh-blue hover:bg-blue-50"
