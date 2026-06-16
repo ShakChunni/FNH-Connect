@@ -378,7 +378,7 @@ export async function middleware(request: NextRequest) {
    ];
 
   // General-only routes (infertility users must NOT access)
-  // Note: /admin/user-management and /admin/activity-logs are SHARED — accessible from both portals
+  // Note: /admin/activity-logs is shared; /admin/user-management is handled separately below.
   const generalOnlyRoutes = [
     "/dashboard",
     "/general-admission",
@@ -434,6 +434,34 @@ export async function middleware(request: NextRequest) {
       if (isAPIRoute) {
         return new NextResponse(
           JSON.stringify({ message: "Forbidden - Admin access required" }),
+          {
+            status: 403,
+            headers: { "Content-Type": "application/json" },
+          },
+        );
+      }
+      return NextResponse.redirect(new URL(authenticatedHomeRoute, request.url));
+    }
+  }
+
+  // REDIRECT 5.1: User Management requires system-admin only
+  // Normal admins cannot create/edit/reset/archive users or access user management UI
+  const isUserManagementRoute =
+    normalizedPath === "/admin/user-management" ||
+    normalizedPath.startsWith("/admin/user-management/") ||
+    normalizedPath.startsWith("/api/admin/user-management");
+
+  if (isUserManagementRoute && hasValidSession && userRole) {
+    const normalizedRole = userRole.toLowerCase().replace(/[\s_-]/g, "");
+    const isSystemAdmin =
+      normalizedRole === "systemadmin" || normalizedRole === "sysadmin";
+
+    if (!isSystemAdmin) {
+      if (isAPIRoute) {
+        return new NextResponse(
+          JSON.stringify({
+            message: "Forbidden - System admin access required",
+          }),
           {
             status: 403,
             headers: { "Content-Type": "application/json" },

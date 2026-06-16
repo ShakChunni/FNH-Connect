@@ -5,7 +5,7 @@
 
 import { NextResponse } from "next/server";
 import { getAuthenticatedUserForAPI } from "@/lib/auth-validation";
-import { isAdminRole } from "@/lib/roles";
+import { isSystemAdminRole } from "@/lib/roles";
 import { prisma } from "@/lib/prisma";
 
 export async function GET() {
@@ -18,9 +18,9 @@ export async function GET() {
       );
     }
 
-    if (!isAdminRole(user.role)) {
+    if (!isSystemAdminRole(user.role)) {
       return NextResponse.json(
-        { success: false, error: "Forbidden: Admin access required" },
+        { success: false, error: "Forbidden: System admin access required" },
         { status: 403 },
       );
     }
@@ -56,7 +56,6 @@ export async function GET() {
       {
         success: false,
         error: "Failed to fetch stats",
-        message: error instanceof Error ? error.message : "Unknown error",
       },
       { status: 500 },
     );
