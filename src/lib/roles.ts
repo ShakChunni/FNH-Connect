@@ -44,10 +44,12 @@ export const BASE_RECEPTIONIST_ALLOWED_ROUTES = [
   "/general-admission",
   "/pathology",
   "/patient-records",
+  "/profile",
   "/api/dashboard",
   "/api/general-admission",
   "/api/pathology",
   "/api/patient-records",
+  "/api/profile",
   "/api/auth", // Auth routes are always allowed
   "/api/staff", // Staff/doctors list for dropdowns
   "/api/hospitals", // Hospitals list for dropdowns
@@ -64,10 +66,12 @@ export const BASE_RECEPTIONIST_ALLOWED_ROUTES = [
 export const INFERTILITY_RECEPTIONIST_ALLOWED_ROUTES = [
   "/infertility",
   "/infertility/cash-tracking",
+  "/profile",
   "/api/infertility",
   "/api/infertility-patients",
   "/api/admin/infertility-cash-tracking",
   "/api/infertility/cash-tracking",
+  "/api/profile",
   "/api/auth",
   "/api/staff",
   "/api/hospitals",
@@ -125,7 +129,9 @@ export function getReceptionistAllowedRoutes(
 // Routes that medicine-pharmacist can access
 export const PHARMACIST_ALLOWED_ROUTES = [
   "/medicine-inventory",
+  "/profile",
   "/api/medicine-inventory",
+  "/api/profile",
   "/api/auth", // Auth routes are always allowed
   "/api/patients", // Patient lookup for sales
   "/api/patient-records", // Patient search endpoint used by medicine inventory

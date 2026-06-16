@@ -5,7 +5,6 @@ import Link from "next/link";
 import {
   Baby,
   Microscope,
-  Shield,
   ClipboardList,
   Building2,
   type LucideIcon,
@@ -56,17 +55,6 @@ const allQuickActions: QuickActionItem[] = [
     color: "text-fnh-blue",
     bgColor: "bg-blue-50",
     hoverBgColor: "hover:bg-blue-100",
-  },
-  {
-    id: "admin-dashboard",
-    label: "Admin Dashboard",
-    description: "System overview",
-    href: "/admin-dashboard",
-    icon: Shield,
-    color: "text-amber-600",
-    bgColor: "bg-amber-50",
-    hoverBgColor: "hover:bg-amber-100",
-    adminOnly: true,
   },
 ];
 

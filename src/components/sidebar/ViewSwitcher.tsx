@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState, useRef, useCallback } from "react";
-import { Baby, Building2, Check, LogOut } from "lucide-react";
+import Link from "next/link";
+import { Baby, Building2, Check, LogOut, UserCircle } from "lucide-react";
 import type { PortalType } from "@/types/auth";
 
 const CONTAINER_BG = "var(--sidebar)"; // Dark navy
@@ -207,6 +208,21 @@ export default function ViewSwitcher({
                 </div>
               </div>
             )}
+            <Link
+              href="/profile"
+              onClick={handleClose}
+              className="mb-1 w-full flex items-center gap-3 px-2 py-2 sm:p-3 rounded-xl transition-all duration-200 hover:cursor-pointer hover:bg-white/15 text-white/80 hover:text-white"
+            >
+              <div className="w-7 h-7 sm:w-9 sm:h-9 rounded-lg flex items-center justify-center bg-blue-500/20 text-blue-300">
+                <UserCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              </div>
+              <div className="flex-1 text-left">
+                <p className="font-semibold text-xs sm:text-sm">Profile</p>
+                <p className="text-[9px] sm:text-[10px] opacity-75">
+                  Account details and password
+                </p>
+              </div>
+            </Link>
             <button
               onClick={() => handleViewSwitch("logout")}
               className="w-full flex items-center gap-3 px-2 py-2 sm:p-3 rounded-xl transition-all duration-200 hover:cursor-pointer hover:bg-white/15 text-red-400 hover:text-red-300"
