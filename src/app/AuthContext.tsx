@@ -93,6 +93,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
   const [loggingOut, setLoggingOut] = useState(false);
   const [switchingPortal, setSwitchingPortal] = useState(false);
+  const [switchingPortalTarget, setSwitchingPortalTarget] =
+    useState<PortalType | null>(null);
   const [portal, setPortal] = useState<import("@/types/auth").PortalType | null>(null);
 
   const router = useRouter();
@@ -250,6 +252,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         return;
       }
 
+      setSwitchingPortalTarget(targetPortal);
       setSwitchingPortal(true);
 
       try {
@@ -275,6 +278,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         );
       } catch (error) {
         console.error("[AuthContext] Portal switch failed:", error);
+        setSwitchingPortalTarget(null);
         setSwitchingPortal(false);
         throw error;
       }
@@ -286,11 +290,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   // Show LoadingState component only during logout
   if (loggingOut) {
-    return <LoadingState type="logout" />;
+    return (
+      <LoadingState
+        type="logout"
+        portal={portal ?? user?.portal ?? "general"}
+      />
+    );
   }
 
   if (switchingPortal) {
-    return <LoadingState type="switching" />;
+    return (
+      <LoadingState
+        type="switching"
+        portal={switchingPortalTarget ?? portal ?? user?.portal ?? "general"}
+      />
+    );
   }
 
   return (
