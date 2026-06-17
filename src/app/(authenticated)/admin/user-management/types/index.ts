@@ -24,6 +24,15 @@ export interface UserWithStaff {
   };
 }
 
+// Editable system roles (system-admin is managed separately and excluded from edit dropdown)
+export const EDITABLE_SYSTEM_ROLES = [
+  { value: "admin", label: "Administrator" },
+  { value: "receptionist", label: "Receptionist" },
+  { value: "receptionist-infertility", label: "Receptionist (Infertility)" },
+  { value: "medicine-pharmacist", label: "Pharmacist" },
+  { value: "staff", label: "Staff" },
+] as const;
+
 export interface StaffRecord {
   id: number;
   firstName: string;
@@ -134,7 +143,6 @@ export type CreateStaffInput = z.infer<typeof createStaffSchema>;
 export const updateUserSchema = z.object({
   role: z
     .enum([
-      "system-admin",
       "admin",
       "receptionist",
       "receptionist-infertility",
@@ -142,6 +150,8 @@ export const updateUserSchema = z.object({
       "staff",
     ])
     .optional(),
+  firstName: z.string().min(1, "First name is required").max(100).optional(),
+  lastName: z.string().max(100).optional(),
   staffRole: z.string().min(1).max(100).optional(),
   specialization: z.string().max(200).optional(),
   phoneNumber: z.string().max(50).optional(),

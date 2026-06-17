@@ -34,6 +34,27 @@ export function parseSessionCashStaffId(value: string | null): number | null {
   return staffId;
 }
 
+function toStaffOption(staffMember: {
+  id: number;
+  fullName: string;
+  role: string;
+}): SessionCashStaffOption {
+  return {
+    id: staffMember.id,
+    fullName: staffMember.fullName,
+    role: staffMember.role,
+  };
+}
+
+function isReceptionistSystemRole(role: string): boolean {
+  const normalizedRole = normalizeRole(role);
+
+  return (
+    normalizedRole === SystemRole.RECEPTIONIST ||
+    normalizedRole === SystemRole.RECEPTIONIST_INFERTILITY
+  );
+}
+
 export async function getSessionCashStaffOptions(
   user: AuthenticatedUser,
 ): Promise<
@@ -42,6 +63,11 @@ export async function getSessionCashStaffOptions(
   const staff = await prisma.staff.findMany({
     where: {
       isActive: true,
+      user: {
+        is: {
+          isActive: true,
+        },
+      },
     },
     select: {
       id: true,
@@ -59,11 +85,21 @@ export async function getSessionCashStaffOptions(
   });
 
   if (isSystemAdminRole(user.role)) {
-    return staff.map((staffMember) => ({
-      id: staffMember.id,
-      fullName: staffMember.fullName,
-      role: staffMember.role,
-    }));
+    return staff
+      .filter((staffMember) => {
+        if (!staffMember.user) {
+          return false;
+        }
+
+        const systemRole = normalizeRole(staffMember.user.role);
+
+        return (
+          systemRole === SystemRole.SYSTEM_ADMIN ||
+          systemRole === SystemRole.ADMIN ||
+          isReceptionistSystemRole(systemRole)
+        );
+      })
+      .map(toStaffOption);
   }
 
   return staff
@@ -72,23 +108,11 @@ export async function getSessionCashStaffOptions(
         return true;
       }
 
-      const staffRole = staffMember.role.toLowerCase();
-      const systemRole = staffMember.user?.role
-        ? normalizeRole(staffMember.user.role)
-        : null;
-
-      return (
-        !staffRole.includes("admin") &&
-        !staffRole.includes("doctor") &&
-        systemRole !== SystemRole.ADMIN &&
-        systemRole !== SystemRole.SYSTEM_ADMIN
-      );
+      return staffMember.user
+        ? isReceptionistSystemRole(staffMember.user.role)
+        : false;
     })
-    .map((staffMember) => ({
-      id: staffMember.id,
-      fullName: staffMember.fullName,
-      role: staffMember.role,
-    }));
+    .map(toStaffOption);
 }
 
 export async function resolveSessionCashStaffContext(
