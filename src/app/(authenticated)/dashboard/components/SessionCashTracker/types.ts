@@ -21,6 +21,12 @@ export interface Department {
   name: string;
 }
 
+export interface CashTrackerStaffOption {
+  id: number;
+  fullName: string;
+  role: string;
+}
+
 export interface DepartmentCashBreakdown {
   departmentId: number;
   departmentName: string;
@@ -42,6 +48,7 @@ export interface ShiftSummary {
 export interface SessionCashFilters {
   datePreset: DatePreset;
   departmentId?: number | "all";
+  staffId?: number | null;
 }
 
 export interface SessionCashData {
@@ -55,6 +62,8 @@ export interface SessionCashData {
   periodLabel: string;
   startDate: string;
   endDate: string;
+  selectedStaffId?: number;
+  canSelectStaff?: boolean;
 }
 
 export interface SessionCashReportData {

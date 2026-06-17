@@ -7,22 +7,15 @@ import {
   QuickActions,
   RecentPatients,
   SessionCashTracker,
-  RecentShifts,
   PatientCreationStats,
 } from "./components";
 import { useDashboardData } from "./hooks";
 import { useAuth } from "@/app/AuthContext";
-import { isAdminRole, isSystemAdminRole } from "@/lib/roles";
 
 const Dashboard = React.memo(() => {
   const { stats, recentPatients, patientCreationStats, isLoading } =
     useDashboardData();
   const { user } = useAuth();
-
-  // Check if user is a normal admin (not system-admin)
-  // Normal admin: role is 'admin' but NOT 'system-admin'
-  const isNormalAdmin =
-    user?.role && isAdminRole(user.role) && !isSystemAdminRole(user.role);
 
   return (
     <div className="min-h-screen bg-fnh-porcelain pb-4 sm:pb-6 lg:pb-8 w-full overflow-x-hidden">
@@ -58,19 +51,11 @@ const Dashboard = React.memo(() => {
               <RecentPatients patients={recentPatients} isLoading={isLoading} />
             </div>
 
-            {/* 
-              For Normal Admin: Show Recent Shifts from other users with link to cash-tracking
-              For Staff/System-Admin: Show Session Cash Tracker (their own cash session)
-            */}
             <div className="lg:col-span-2">
-              {isNormalAdmin ? (
-                <RecentShifts isLoading={isLoading} />
-              ) : (
-                <SessionCashTracker
-                  staffName={user?.fullName || "Staff"}
-                  isLoading={isLoading}
-                />
-              )}
+              <SessionCashTracker
+                staffName={user?.fullName || "Staff"}
+                isLoading={isLoading}
+              />
             </div>
           </section>
         </div>

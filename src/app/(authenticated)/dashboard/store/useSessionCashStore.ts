@@ -8,12 +8,14 @@ import type {
   DatePreset,
   Department,
   CustomDateRange,
+  CashTrackerStaffOption,
 } from "../components/SessionCashTracker/types";
 
 interface SessionCashStoreState {
   // Filters
   datePreset: DatePreset;
   departmentId: number | "all";
+  staffId: number | null;
   customDateRange: CustomDateRange | null;
 
   // UI State
@@ -23,26 +25,31 @@ interface SessionCashStoreState {
 
   // Cached departments from API
   departments: Department[];
+  staffOptions: CashTrackerStaffOption[];
 
   // Actions
   setDatePreset: (preset: DatePreset) => void;
   setDepartmentId: (deptId: number | "all") => void;
+  setStaffId: (staffId: number | null) => void;
   setCustomDateRange: (range: CustomDateRange | null) => void;
   setDeptDropdownOpen: (open: boolean) => void;
   setDateDropdownOpen: (open: boolean) => void;
   setCustomRangePickerOpen: (open: boolean) => void;
   setDepartments: (departments: Department[]) => void;
+  setStaffOptions: (staffOptions: CashTrackerStaffOption[]) => void;
   resetFilters: () => void;
 }
 
 const initialState = {
   datePreset: "today" as DatePreset,
   departmentId: "all" as number | "all",
+  staffId: null as number | null,
   customDateRange: null as CustomDateRange | null,
   isDeptDropdownOpen: false,
   isDateDropdownOpen: false,
   isCustomRangePickerOpen: false,
   departments: [],
+  staffOptions: [],
 };
 
 export const useSessionCashStore = create<SessionCashStoreState>((set) => ({
@@ -62,6 +69,8 @@ export const useSessionCashStore = create<SessionCashStoreState>((set) => ({
       isDeptDropdownOpen: false,
     }),
 
+  setStaffId: (staffId) => set({ staffId }),
+
   setCustomDateRange: (range) =>
     set({
       customDateRange: range,
@@ -76,6 +85,8 @@ export const useSessionCashStore = create<SessionCashStoreState>((set) => ({
   setCustomRangePickerOpen: (open) => set({ isCustomRangePickerOpen: open }),
 
   setDepartments: (departments) => set({ departments }),
+
+  setStaffOptions: (staffOptions) => set({ staffOptions }),
 
   resetFilters: () => set(initialState),
 }));

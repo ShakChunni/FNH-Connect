@@ -5,12 +5,16 @@ interface CashTrackingFilters {
   search: string;
   startDate: string;
   endDate: string;
+  staffId: number | null;
 }
 
 interface CashTrackingState {
   filters: CashTrackingFilters;
   selectedShiftId: number | null;
-  setFilter: (key: keyof CashTrackingFilters, value: any) => void;
+  setFilter: <K extends keyof CashTrackingFilters>(
+    key: K,
+    value: CashTrackingFilters[K]
+  ) => void;
   resetFilters: () => void;
   setSelectedShiftId: (id: number | null) => void;
 }
@@ -21,6 +25,7 @@ export const useCashTrackingStore = create<CashTrackingState>((set) => ({
     search: "",
     startDate: "",
     endDate: "",
+    staffId: null,
   },
   selectedShiftId: null,
   setFilter: (key, value) =>
@@ -34,6 +39,7 @@ export const useCashTrackingStore = create<CashTrackingState>((set) => ({
         search: "",
         startDate: "",
         endDate: "",
+        staffId: null,
       },
     }),
   setSelectedShiftId: (id) => set({ selectedShiftId: id }),

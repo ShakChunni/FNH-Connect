@@ -3,6 +3,7 @@ import { getAuthenticatedUserForAPI } from "@/lib/auth-validation";
 import {
   getAdminShifts,
   getCashTrackingSummary,
+  getCashTrackingStaff,
 } from "@/services/adminShiftService";
 import { isAdminRole } from "@/lib/roles";
 
@@ -39,9 +40,10 @@ export async function GET(request: NextRequest) {
       excludeSystemAdmin,
     };
 
-    const [shifts, summary] = await Promise.all([
+    const [shifts, summary, staff] = await Promise.all([
       getAdminShifts(filters),
       getCashTrackingSummary(filters),
+      getCashTrackingStaff(excludeSystemAdmin),
     ]);
 
     return NextResponse.json({
@@ -49,6 +51,9 @@ export async function GET(request: NextRequest) {
       data: {
         shifts,
         summary,
+        filterOptions: {
+          staff,
+        },
       },
     });
   } catch (error) {

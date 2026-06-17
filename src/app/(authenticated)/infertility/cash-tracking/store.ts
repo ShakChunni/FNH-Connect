@@ -5,6 +5,7 @@ interface CashTrackingFilters {
   startDate: string;
   endDate: string;
   status: "Active" | "Closed" | "All";
+  staffId: number | null;
 }
 
 interface CashTrackingState {
@@ -23,6 +24,7 @@ const initialFilters: CashTrackingFilters = {
   startDate: "",
   endDate: "",
   status: "All",
+  staffId: null,
 };
 
 export const useInfertilityCashTrackingStore = create<CashTrackingState>(

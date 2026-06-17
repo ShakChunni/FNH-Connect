@@ -5,13 +5,19 @@ import {
   hasTransferredToInfertilityMarker,
 } from "@/lib/infertilityTransfer";
 
-interface ShiftFilters {
+export interface ShiftFilters {
   staffId?: number;
   startDate?: string;
   endDate?: string;
   status?: "Active" | "Closed";
   search?: string;
   excludeSystemAdmin?: boolean;
+}
+
+export interface CashTrackingStaffOption {
+  id: number;
+  fullName: string;
+  role: string;
 }
 
 /**
@@ -137,6 +143,50 @@ export async function getAdminShifts(filters: ShiftFilters) {
       cashMovements: shift.cashMovements.length,
     },
   }));
+}
+
+export async function getCashTrackingStaff(excludeSystemAdmin = true) {
+  const shifts = await prisma.shift.findMany({
+    distinct: ["staffId"],
+    where: excludeSystemAdmin
+      ? {
+          staff: {
+            user: {
+              role: {
+                not: "system-admin",
+              },
+            },
+          },
+        }
+      : undefined,
+    select: {
+      staff: {
+        select: {
+          id: true,
+          fullName: true,
+          role: true,
+        },
+      },
+    },
+    orderBy: {
+      staff: {
+        fullName: "asc",
+      },
+    },
+  });
+
+  const uniqueStaff = new Map<number, CashTrackingStaffOption>();
+  for (const shift of shifts) {
+    if (!uniqueStaff.has(shift.staff.id)) {
+      uniqueStaff.set(shift.staff.id, {
+        id: shift.staff.id,
+        fullName: shift.staff.fullName,
+        role: shift.staff.role,
+      });
+    }
+  }
+
+  return Array.from(uniqueStaff.values());
 }
 
 export async function getShiftDetails(id: number) {

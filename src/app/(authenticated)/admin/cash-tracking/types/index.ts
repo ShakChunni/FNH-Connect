@@ -28,9 +28,20 @@ export interface CashTrackingSummary {
   activeShiftsCount: number;
 }
 
+export interface CashTrackingStaffOption {
+  id: number;
+  fullName: string;
+  role: string;
+}
+
+export interface CashTrackingFilterOptions {
+  staff: CashTrackingStaffOption[];
+}
+
 export interface CashTrackingData {
   shifts: AdminShift[];
   summary: CashTrackingSummary;
+  filterOptions: CashTrackingFilterOptions;
 }
 
 export interface CashMovementDetail {

@@ -5,7 +5,13 @@ import { Building2, Calendar, ChevronDown, X } from "lucide-react";
 import { format } from "date-fns";
 import { DropdownPortal } from "@/components/ui/DropdownPortal";
 import { CalendarWithMonthYearPicker } from "@/components/ui/calendar";
-import type { DatePreset, Department, CustomDateRange } from "./types";
+import { StaffFilter } from "@/components/ui/StaffFilter";
+import type {
+  DatePreset,
+  Department,
+  CustomDateRange,
+  CashTrackerStaffOption,
+} from "./types";
 
 interface DateRangeState {
   from?: Date;
@@ -25,12 +31,17 @@ const DATE_PRESETS: { value: DatePreset; label: string }[] = [
 interface CashTrackerFiltersProps {
   datePreset: DatePreset;
   departmentId: number | "all";
+  staffId: number | null;
   departments: Department[];
+  staffOptions: CashTrackerStaffOption[];
+  selectedStaffId: number | null;
+  canSelectStaff: boolean;
   isDeptDropdownOpen: boolean;
   isDateDropdownOpen: boolean;
   isCustomRangePickerOpen: boolean;
   customDateRange: CustomDateRange | null;
   isFetching: boolean;
+  onStaffSelect: (staffId: number | null) => void;
   onDepartmentSelect: (deptId: number | "all") => void;
   onDatePresetSelect: (preset: DatePreset) => void;
   onCustomDateRangeSelect: (range: CustomDateRange | null) => void;
@@ -48,12 +59,17 @@ interface CashTrackerFiltersProps {
 export const CashTrackerFilters: React.FC<CashTrackerFiltersProps> = ({
   datePreset,
   departmentId,
+  staffId,
   departments,
+  staffOptions,
+  selectedStaffId,
+  canSelectStaff,
   isDeptDropdownOpen,
   isDateDropdownOpen,
   isCustomRangePickerOpen,
   customDateRange,
   isFetching,
+  onStaffSelect,
   onDepartmentSelect,
   onDatePresetSelect,
   onCustomDateRangeSelect,
@@ -153,6 +169,21 @@ export const CashTrackerFilters: React.FC<CashTrackerFiltersProps> = ({
 
   return (
     <>
+      {canSelectStaff ? (
+        <div className="mb-2 shrink-0">
+          <StaffFilter
+            staff={staffOptions}
+            currentStaffId={staffId ?? selectedStaffId}
+            onStaffChange={onStaffSelect}
+            disabled={isFetching}
+            placeholder="Select Staff"
+            className="w-full"
+            dropdownClassName="w-full"
+            showAllOption={false}
+          />
+        </div>
+      ) : null}
+
       <div className="flex gap-2 mb-3 shrink-0">
         {/* Department Dropdown */}
         <button

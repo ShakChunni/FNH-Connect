@@ -13,6 +13,10 @@ import { prisma } from "@/lib/prisma";
 import { getAuthenticatedUserForAPI } from "@/lib/auth-validation";
 import { getSessionCashUTCDateRange } from "@/lib/timezone";
 import { GENERAL_TO_INFERTILITY_TRANSFER_MARKER } from "@/lib/infertilityTransfer";
+import {
+  parseSessionCashStaffId,
+  resolveSessionCashStaffContext,
+} from "@/services/sessionCashAccessService";
 
 interface DepartmentBreakdown {
   departmentId: number;
@@ -62,12 +66,25 @@ export async function GET(request: NextRequest) {
     const departmentId = searchParams.get("departmentId");
     const customStartDate = searchParams.get("startDate") || undefined;
     const customEndDate = searchParams.get("endDate") || undefined;
+    const requestedStaffId = parseSessionCashStaffId(searchParams.get("staffId"));
     const parsedDepartmentId =
       departmentId && departmentId !== "all" ? parseInt(departmentId, 10) : null;
     const selectedDepartmentId =
       parsedDepartmentId !== null && Number.isNaN(parsedDepartmentId)
         ? null
         : parsedDepartmentId;
+
+    const staffContext = await resolveSessionCashStaffContext(
+      user,
+      requestedStaffId,
+    );
+
+    if (!staffContext) {
+      return NextResponse.json(
+        { success: false, error: "Staff member not found" },
+        { status: 404 },
+      );
+    }
 
     // 3. Calculate date range based on preset (in Bangladesh Time / UTC+6)
     const { startDate, endDate, periodLabel } = getSessionCashUTCDateRange(
@@ -83,7 +100,7 @@ export async function GET(request: NextRequest) {
     //    - OR shifts that have refunds made during the date range
     const shifts = await prisma.shift.findMany({
       where: {
-        staffId: user.staffId,
+        staffId: staffContext.selectedStaffId,
         OR: [
           // Shifts that started during the date range
           {
@@ -431,12 +448,15 @@ export async function GET(request: NextRequest) {
         transactionCount: overallTransactionCount,
         departmentBreakdown,
         shifts: shiftSummaries,
-        staffName: user.fullName || "Staff",
+        staffName: staffContext.selectedStaffName,
         periodLabel,
         startDate: startDate.toISOString(),
         endDate: endDate.toISOString(),
         shiftsCount: shiftSummaries.length,
         departments,
+        staffOptions: staffContext.staffOptions,
+        selectedStaffId: staffContext.selectedStaffId,
+        canSelectStaff: staffContext.canSelectStaff,
       },
     });
   } catch (error) {

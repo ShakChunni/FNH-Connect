@@ -3,7 +3,7 @@ import { api } from "@/lib/axios";
 import { CashTrackingData, DetailedShift } from "../types";
 
 export function useAdminShifts(filters: {
-  staffId?: number;
+  staffId?: number | null;
   startDate?: string;
   endDate?: string;
   status?: string;

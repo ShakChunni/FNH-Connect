@@ -1,11 +1,17 @@
 import { prisma } from "@/lib/prisma";
 
-interface InfertilityCashTrackingFilters {
+export interface InfertilityCashTrackingFilters {
   staffId?: number;
   startDate?: string;
   endDate?: string;
   status?: "Active" | "Closed" | "All";
   search?: string;
+}
+
+export interface InfertilityCashTrackingStaffOption {
+  id: number;
+  fullName: string;
+  role: string;
 }
 
 /**
@@ -95,6 +101,39 @@ export async function getInfertilityCashTrackingShifts(
     paymentsCount: shift._count.payments,
     cashMovementsCount: shift._count.cashMovements,
   }));
+}
+
+export async function getInfertilityCashTrackingStaff() {
+  const shifts = await prisma.infertilityShift.findMany({
+    distinct: ["staffId"],
+    select: {
+      staff: {
+        select: {
+          id: true,
+          fullName: true,
+          role: true,
+        },
+      },
+    },
+    orderBy: {
+      staff: {
+        fullName: "asc",
+      },
+    },
+  });
+
+  const uniqueStaff = new Map<number, InfertilityCashTrackingStaffOption>();
+  for (const shift of shifts) {
+    if (!uniqueStaff.has(shift.staff.id)) {
+      uniqueStaff.set(shift.staff.id, {
+        id: shift.staff.id,
+        fullName: shift.staff.fullName,
+        role: shift.staff.role,
+      });
+    }
+  }
+
+  return Array.from(uniqueStaff.values());
 }
 
 /**

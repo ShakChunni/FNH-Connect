@@ -3,7 +3,7 @@ import { api } from "@/lib/axios";
 import { CashTrackingData, DetailedShift } from "./types";
 
 export function useInfertilityCashTrackingShifts(filters: {
-  staffId?: number;
+  staffId?: number | null;
   startDate?: string;
   endDate?: string;
   status?: string;
@@ -23,7 +23,7 @@ export function useInfertilityCashTrackingShifts(filters: {
       const response = await api.get(
         `/infertility/cash-tracking?${params.toString()}`
       );
-      return response.data;
+      return response.data.data;
     },
   });
 }
