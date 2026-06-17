@@ -1,8 +1,11 @@
+import type { PortalType } from "@/types/auth";
+
 interface LoadingStateProps {
   type?: "authenticating" | "loading" | "logout" | "switching";
   message?: string;
   description?: string;
   className?: string;
+  portal?: PortalType;
 }
 
 const LoadingState = ({
@@ -10,7 +13,13 @@ const LoadingState = ({
   message,
   description,
   className = "",
+  portal = "general",
 }: LoadingStateProps) => {
+  const isInfertility = portal === "infertility";
+  const logoSrc = isInfertility ? "/hsi-logo.png" : "/fnh-logo.svg";
+  const logoAlt = isInfertility ? "HSI Center Logo" : "FNH Logo";
+  const footerLabel = isInfertility ? "HSI Center" : "FNH Connect";
+
   // Default messages based on type
   const getDefaultMessage = () => {
     switch (type) {
@@ -52,11 +61,11 @@ const LoadingState = ({
           {/* Glow background - pure CSS animation with FNH blue */}
           <div className="absolute inset-0 rounded-full bg-fnh-blue/30 blur-3xl scale-[2] animate-loading-glow-in" />
 
-          {/* FNH Logo SVG - pure CSS light-up animation */}
+          {/* Portal logo - pure CSS light-up animation */}
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src="/fnh-logo.svg"
-            alt="FNH Logo"
+            src={logoSrc}
+            alt={logoAlt}
             className="absolute inset-0 w-full h-full object-contain animate-loading-logo-light-up"
           />
         </div>
@@ -73,7 +82,7 @@ const LoadingState = ({
       {/* Footer branding - pure CSS fade in with longer delay */}
       <div className="pb-6 sm:pb-8 animate-loading-footer-fade-in">
         <p className="text-[10px] sm:text-xs text-gray-400 tracking-wider uppercase">
-          FNH Connect
+          {footerLabel}
         </p>
       </div>
     </div>

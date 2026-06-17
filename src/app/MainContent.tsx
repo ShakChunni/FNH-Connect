@@ -4,15 +4,20 @@ import LoadingState from "./LoadingState";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { getDefaultRouteForRole } from "@/lib/roles";
+import type { PortalType } from "@/types/auth";
 
 export default function MainContent({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const { loading, user, isSwitchingPortal } = useAuth();
+  const { loading, user, portal, isSwitchingPortal } = useAuth();
   const pathname = usePathname();
   const router = useRouter();
+  const loadingPortal: PortalType =
+    portal ??
+    user?.portal ??
+    (pathname.startsWith("/infertility") ? "infertility" : "general");
 
   // Use state instead of refs/globals to track hydration
   // Start with false to match server render
@@ -81,26 +86,26 @@ export default function MainContent({
   // Show loading only during initial hydration/auth
   // Use suppressHydrationWarning on the container to prevent mismatch warnings
   if (!hasHydrated) {
-    return <LoadingState type="loading" />;
+    return <LoadingState type="loading" portal={loadingPortal} />;
   }
 
   const showInitialLoading = loading && !initialAuthCompleted;
   if (showInitialLoading) {
-    return <LoadingState type="authenticating" />;
+    return <LoadingState type="authenticating" portal={loadingPortal} />;
   }
 
   if (isSwitchingPortal) {
-    return <LoadingState type="switching" />;
+    return <LoadingState type="switching" portal={loadingPortal} />;
   }
 
   // Authenticated user on auth page - show loading while redirecting
   if (isPublicAuthPage && user) {
-    return <LoadingState type="authenticating" />;
+    return <LoadingState type="authenticating" portal={loadingPortal} />;
   }
 
   // Unauthenticated user on protected route - show loading while redirecting
   if (isProtectedRoute && !user) {
-    return <LoadingState type="authenticating" />;
+    return <LoadingState type="authenticating" portal={loadingPortal} />;
   }
 
   // Always render children - layouts handle the shell
