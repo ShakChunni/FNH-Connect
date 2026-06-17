@@ -2,7 +2,9 @@
 
 import React, { useCallback, useEffect, useState } from "react";
 import { RefreshCw } from "lucide-react";
+import { useAuth } from "@/app/AuthContext";
 import { useNotification } from "@/hooks/useNotification";
+import { isAdminRole } from "@/lib/roles";
 import { useSessionCashStore } from "../../store";
 import { useSessionCashData } from "../../hooks/useSessionCashData";
 import { CashTrackerSkeleton } from "./CashTrackerSkeleton";
@@ -43,23 +45,29 @@ export const SessionCashTracker: React.FC<SessionCashTrackerProps> = ({
 }) => {
   // Notification hook for report generation feedback
   const { showNotification, hideNotification } = useNotification();
+  const { user } = useAuth();
+  const canSelectStaff = Boolean(user?.role && isAdminRole(user.role));
 
   // Get state from Zustand store
   const {
     datePreset,
     departmentId,
+    staffId,
     departments,
+    staffOptions,
     isDeptDropdownOpen,
     isDateDropdownOpen,
     isCustomRangePickerOpen,
     customDateRange,
     setDatePreset,
     setDepartmentId,
+    setStaffId,
     setCustomDateRange,
     setDeptDropdownOpen,
     setDateDropdownOpen,
     setCustomRangePickerOpen,
     setDepartments,
+    setStaffOptions,
   } = useSessionCashStore();
 
   // State for detailed report loading
@@ -69,12 +77,14 @@ export const SessionCashTracker: React.FC<SessionCashTrackerProps> = ({
   const {
     data,
     departments: fetchedDepartments,
+    staffOptions: fetchedStaffOptions,
     isLoading,
     isFetching,
     refetch,
   } = useSessionCashData({
     datePreset,
     departmentId,
+    staffId: canSelectStaff ? staffId : null,
     customDateRange,
   });
 
@@ -85,12 +95,25 @@ export const SessionCashTracker: React.FC<SessionCashTrackerProps> = ({
     }
   }, [fetchedDepartments, departments.length, setDepartments]);
 
+  useEffect(() => {
+    if (canSelectStaff) {
+      setStaffOptions(fetchedStaffOptions);
+    }
+  }, [canSelectStaff, fetchedStaffOptions, setStaffOptions]);
+
   // Handlers
   const handleDepartmentSelect = useCallback(
     (deptId: number | "all") => {
       setDepartmentId(deptId);
     },
     [setDepartmentId],
+  );
+
+  const handleStaffSelect = useCallback(
+    (selectedStaffId: number | null) => {
+      setStaffId(selectedStaffId);
+    },
+    [setStaffId],
   );
 
   const handleDatePresetSelect = useCallback(
@@ -163,6 +186,9 @@ export const SessionCashTracker: React.FC<SessionCashTrackerProps> = ({
       if (departmentId && departmentId !== "all") {
         queryParams.set("departmentId", departmentId.toString());
       }
+      if (canSelectStaff && staffId) {
+        queryParams.set("staffId", staffId.toString());
+      }
       // Add custom date range parameters if using custom preset
       if (
         datePreset === "custom" &&
@@ -222,6 +248,8 @@ export const SessionCashTracker: React.FC<SessionCashTrackerProps> = ({
     data,
     datePreset,
     departmentId,
+    staffId,
+    canSelectStaff,
     departments,
     customDateRange,
     showNotification,
@@ -244,6 +272,8 @@ export const SessionCashTracker: React.FC<SessionCashTrackerProps> = ({
     startDate: new Date().toISOString(),
     endDate: new Date().toISOString(),
     shiftsCount: 0,
+    selectedStaffId: user?.staffId,
+    canSelectStaff,
   };
 
   return (
@@ -271,12 +301,17 @@ export const SessionCashTracker: React.FC<SessionCashTrackerProps> = ({
       <CashTrackerFilters
         datePreset={datePreset}
         departmentId={departmentId}
+        staffId={canSelectStaff ? staffId : null}
         departments={departments}
+        staffOptions={staffOptions}
+        selectedStaffId={data?.selectedStaffId ?? user?.staffId ?? null}
+        canSelectStaff={canSelectStaff}
         isDeptDropdownOpen={isDeptDropdownOpen}
         isDateDropdownOpen={isDateDropdownOpen}
         isCustomRangePickerOpen={isCustomRangePickerOpen}
         customDateRange={customDateRange}
         isFetching={isFetching}
+        onStaffSelect={handleStaffSelect}
         onDepartmentSelect={handleDepartmentSelect}
         onDatePresetSelect={handleDatePresetSelect}
         onCustomDateRangeSelect={handleCustomDateRangeSelect}

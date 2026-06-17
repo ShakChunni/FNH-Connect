@@ -3,6 +3,7 @@ import { getAuthenticatedUserForAPI } from "@/lib/auth-validation";
 import {
   getInfertilityCashTrackingShifts,
   getInfertilityCashTrackingSummary,
+  getInfertilityCashTrackingStaff,
 } from "@/services/infertilityCashTrackingService";
 import { z } from "zod";
 
@@ -47,15 +48,21 @@ export async function GET(request: NextRequest) {
 
     const filters = validation.data;
 
-    const [shifts, summary] = await Promise.all([
+    const [shifts, summary, staff] = await Promise.all([
       getInfertilityCashTrackingShifts(filters),
       getInfertilityCashTrackingSummary(filters),
+      getInfertilityCashTrackingStaff(),
     ]);
 
     return NextResponse.json({
       success: true,
-      shifts,
-      summary,
+      data: {
+        shifts,
+        summary,
+        filterOptions: {
+          staff,
+        },
+      },
     });
   } catch (error) {
     console.error("GET /api/infertility/cash-tracking error:", error);

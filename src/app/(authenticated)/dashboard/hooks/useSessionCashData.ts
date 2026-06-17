@@ -9,6 +9,7 @@ import type {
   DepartmentCashBreakdown,
   ShiftSummary,
   CustomDateRange,
+  CashTrackerStaffOption,
 } from "../components/SessionCashTracker/types";
 import { formatCalendarDateISO } from "@/lib/timezone";
 
@@ -27,6 +28,9 @@ interface SessionCashApiResponse {
     endDate: string;
     shiftsCount: number;
     departments: Department[];
+    staffOptions: CashTrackerStaffOption[];
+    selectedStaffId: number;
+    canSelectStaff: boolean;
   };
   error?: string;
 }
@@ -34,17 +38,22 @@ interface SessionCashApiResponse {
 interface UseSessionCashDataOptions {
   datePreset: DatePreset;
   departmentId: number | "all";
+  staffId?: number | null;
   customDateRange?: CustomDateRange | null;
 }
 
 export interface SessionCashDataResult extends SessionCashData {
   departments: Department[];
+  staffOptions: CashTrackerStaffOption[];
   shiftsCount: number;
+  selectedStaffId: number;
+  canSelectStaff: boolean;
 }
 
 export function useSessionCashData({
   datePreset,
   departmentId,
+  staffId,
   customDateRange,
 }: UseSessionCashDataOptions) {
   // Build query params
@@ -53,6 +62,10 @@ export function useSessionCashData({
 
   if (departmentId && departmentId !== "all") {
     queryParams.set("departmentId", departmentId.toString());
+  }
+
+  if (staffId) {
+    queryParams.set("staffId", staffId.toString());
   }
 
   // Add custom date range parameters if using custom preset
@@ -65,6 +78,7 @@ export function useSessionCashData({
     "session-cash",
     datePreset,
     departmentId,
+    staffId ?? null,
     datePreset === "custom" && customDateRange?.from
       ? formatCalendarDateISO(customDateRange.from)
       : null,
@@ -98,7 +112,10 @@ export function useSessionCashData({
         startDate: response.data.data.startDate,
         endDate: response.data.data.endDate,
         departments: response.data.data.departments,
+        staffOptions: response.data.data.staffOptions,
         shiftsCount: response.data.data.shiftsCount,
+        selectedStaffId: response.data.data.selectedStaffId,
+        canSelectStaff: response.data.data.canSelectStaff,
       };
     },
     staleTime: 30 * 1000, // 30 seconds
@@ -114,6 +131,7 @@ export function useSessionCashData({
   return {
     data: query.data ?? null,
     departments: query.data?.departments ?? [],
+    staffOptions: query.data?.staffOptions ?? [],
     isLoading: query.isLoading,
     isFetching: query.isFetching,
     isError: query.isError,

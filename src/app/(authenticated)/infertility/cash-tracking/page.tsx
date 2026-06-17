@@ -1,22 +1,30 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import {
   Wallet,
   Search,
   RefreshCw,
   TrendingUp,
+  TrendingDown,
   Activity,
   DollarSign,
   Users,
+  Calendar,
+  CreditCard,
+  Scale,
 } from "lucide-react";
 import { useInfertilityCashTrackingShifts } from "./hooks";
 import { useInfertilityCashTrackingStore } from "./store";
 import { useDebounce } from "@/hooks/useDebounce";
 import { DateRangePicker } from "@/components/ui/date-range-picker";
+import { DateRangePresets, DateRangePresetValue } from "@/components/ui/DateRangePresets";
+import { StaffFilter } from "@/components/ui/StaffFilter";
+import { ShiftStatusFilter } from "@/components/ui/ShiftStatusFilter";
+import { ShiftTable } from "./components/ShiftTable";
+import { ShiftDetailModal } from "./components/ShiftDetailModal";
 import { cn } from "@/lib/utils";
-import { CashTrackingShift } from "./types";
 
 const formatCurrency = (amount: number) => {
   return new Intl.NumberFormat("en-BD", {
@@ -26,136 +34,140 @@ const formatCurrency = (amount: number) => {
   }).format(amount);
 };
 
-function ShiftTable({
-  shifts,
-  isLoading,
-  onSelectShift,
-}: {
-  shifts: CashTrackingShift[];
-  isLoading: boolean;
-  onSelectShift: (id: number) => void;
-}) {
-  if (isLoading && !shifts.length) {
-    return (
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8">
-        <div className="space-y-4">
-          {Array.from({ length: 5 }).map((_, i) => (
-            <div
-              key={i}
-              className="h-14 bg-gray-50 rounded-xl animate-pulse"
-            />
-          ))}
-        </div>
-      </div>
-    );
-  }
+const formatLocalDate = (date: Date | undefined) => {
+  if (!date) return "";
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
 
-  if (!shifts.length) {
-    return (
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-12 text-center">
-        <Activity className="w-10 h-10 text-gray-300 mx-auto mb-3" />
-        <h3 className="text-sm font-bold text-gray-700">No shifts found</h3>
-        <p className="text-xs text-gray-500 mt-1">
-          There are no HSI Center cash tracking records matching your filters.
-        </p>
-      </div>
-    );
-  }
+const parseLocalDate = (dateStr: string | undefined): Date | undefined => {
+  if (!dateStr) return undefined;
+  const [year, month, day] = dateStr.split("-").map(Number);
+  return new Date(year, month - 1, day);
+};
+
+interface StatCardProps {
+  title: string;
+  value: React.ReactNode;
+  subtitle: string;
+  icon: React.ElementType;
+  color: "emerald" | "blue" | "rose" | "violet" | "amber" | "indigo";
+  isLoading: boolean;
+}
+
+const StatCard: React.FC<StatCardProps> = ({
+  title,
+  value,
+  subtitle,
+  icon: Icon,
+  color,
+  isLoading,
+}) => {
+  const colorStyles = {
+    emerald: {
+      bg: "bg-emerald-50/50",
+      border: "border-emerald-100",
+      blob: "bg-emerald-100/50",
+      icon: "text-emerald-600",
+      title: "text-emerald-900/60",
+      subtitle: "text-emerald-700/80",
+    },
+    blue: {
+      bg: "bg-blue-50/50",
+      border: "border-blue-100",
+      blob: "bg-blue-100/50",
+      icon: "text-blue-600",
+      title: "text-blue-900/60",
+      subtitle: "text-blue-700/80",
+    },
+    rose: {
+      bg: "bg-rose-50/50",
+      border: "border-rose-100",
+      blob: "bg-rose-100/50",
+      icon: "text-rose-600",
+      title: "text-rose-900/60",
+      subtitle: "text-rose-700/80",
+    },
+    violet: {
+      bg: "bg-violet-50/50",
+      border: "border-violet-100",
+      blob: "bg-violet-100/50",
+      icon: "text-violet-600",
+      title: "text-violet-900/60",
+      subtitle: "text-violet-700/80",
+    },
+    amber: {
+      bg: "bg-amber-50/50",
+      border: "border-amber-100",
+      blob: "bg-amber-100/50",
+      icon: "text-amber-600",
+      title: "text-amber-900/60",
+      subtitle: "text-amber-700/80",
+    },
+    indigo: {
+      bg: "bg-indigo-50/50",
+      border: "border-indigo-100",
+      blob: "bg-indigo-100/50",
+      icon: "text-indigo-600",
+      title: "text-indigo-900/60",
+      subtitle: "text-indigo-700/80",
+    },
+  };
+
+  const style = colorStyles[color];
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-gray-100 bg-gray-50/50">
-              <th className="text-left px-4 py-3 font-semibold text-gray-600 text-xs uppercase tracking-wider">
-                Staff
-              </th>
-              <th className="text-left px-4 py-3 font-semibold text-gray-600 text-xs uppercase tracking-wider">
-                Start Time
-              </th>
-              <th className="text-left px-4 py-3 font-semibold text-gray-600 text-xs uppercase tracking-wider">
-                Status
-              </th>
-              <th className="text-right px-4 py-3 font-semibold text-gray-600 text-xs uppercase tracking-wider">
-                Collected
-              </th>
-              <th className="text-right px-4 py-3 font-semibold text-gray-600 text-xs uppercase tracking-wider">
-                System Cash
-              </th>
-              <th className="text-right px-4 py-3 font-semibold text-gray-600 text-xs uppercase tracking-wider">
-                Variance
-              </th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-50">
-            {shifts.map((shift) => (
-              <tr
-                key={shift.id}
-                onClick={() => onSelectShift(shift.id)}
-                className="hover:bg-gray-50/50 transition-colors cursor-pointer"
-              >
-                <td className="px-4 py-3">
-                  <div className="font-semibold text-gray-900">
-                    {shift.staff.fullName}
-                  </div>
-                  <div className="text-xs text-gray-500">{shift.staff.role}</div>
-                </td>
-                <td className="px-4 py-3 text-gray-700">
-                  {new Date(shift.startTime).toLocaleString("en-GB", {
-                    day: "2-digit",
-                    month: "short",
-                    year: "numeric",
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
-                </td>
-                <td className="px-4 py-3">
-                  <span
-                    className={cn(
-                      "inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold",
-                      shift.isActive
-                        ? "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200"
-                        : "bg-gray-50 text-gray-600 ring-1 ring-gray-200"
-                    )}
-                  >
-                    {shift.isActive ? "Active" : "Closed"}
-                  </span>
-                </td>
-                <td className="px-4 py-3 text-right font-semibold text-gray-900">
-                  {formatCurrency(shift.totalCollected)}
-                </td>
-                <td className="px-4 py-3 text-right text-gray-700">
-                  {formatCurrency(shift.systemCash)}
-                </td>
-                <td className="px-4 py-3 text-right">
-                  <span
-                    className={cn(
-                      "font-bold text-xs",
-                      shift.variance === 0
-                        ? "text-emerald-600"
-                        : shift.variance > 0
-                        ? "text-blue-600"
-                        : "text-rose-600"
-                    )}
-                  >
-                    {shift.variance > 0 ? "+" : ""}
-                    {formatCurrency(shift.variance)}
-                  </span>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+    <div
+      className={cn(
+        "rounded-2xl p-4 sm:p-5 lg:p-6 border shadow-sm relative overflow-hidden group hover:shadow-md transition-all duration-300",
+        style.bg,
+        style.border
+      )}
+    >
+      <div
+        className={cn(
+          "absolute top-0 right-0 w-24 h-24 rounded-full -translate-y-1/2 translate-x-1/2 group-hover:scale-110 transition-transform duration-500",
+          style.blob
+        )}
+      />
+      <div className="relative z-10">
+        <div className="flex items-center gap-3 mb-3">
+          <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center shadow-sm">
+            <Icon className={cn("w-4 h-4", style.icon)} />
+          </div>
+          <span
+            className={cn(
+              "text-[10px] sm:text-xs font-black uppercase tracking-widest",
+              style.title
+            )}
+          >
+            {title}
+          </span>
+        </div>
+        {isLoading ? (
+          <div className="h-8 w-32 bg-white/50 rounded animate-pulse mb-1" />
+        ) : (
+          <div className="text-xl sm:text-2xl xl:text-3xl font-black text-gray-950 truncate">
+            {value}
+          </div>
+        )}
+        <p className={cn("text-[10px] sm:text-xs font-medium mt-1", style.subtitle)}>
+          {subtitle}
+        </p>
       </div>
     </div>
   );
-}
+};
 
 const InfertilityCashTrackingPage = () => {
   const { filters, setFilter, selectedShiftId, setSelectedShiftId } =
     useInfertilityCashTrackingStore();
+
   const [searchTerm, setSearchTerm] = useState(filters.search);
+  const [datePreset, setDatePreset] = useState<DateRangePresetValue | null>(null);
+
   const debouncedSearch = useDebounce(searchTerm, 500);
 
   useEffect(() => {
@@ -171,137 +183,290 @@ const InfertilityCashTrackingPage = () => {
     totalRefunded: 0,
     activeShiftsCount: 0,
   };
+  const staffOptions = data?.filterOptions?.staff || [];
+
+  const netCashFlow = summary.totalCollected - summary.totalRefunded;
+  const totalVariance = shifts.reduce((sum, shift) => sum + shift.variance, 0);
+  const totalShifts = shifts.length;
+  const totalTransactions = shifts.reduce(
+    (sum, shift) => sum + (shift.paymentsCount || 0) + (shift.cashMovementsCount || 0),
+    0
+  );
+  const averageCollection = totalShifts > 0 ? summary.totalCollected / totalShifts : 0;
+
+  const hasActiveFilters = useMemo(
+    () =>
+      filters.search ||
+      filters.status !== "All" ||
+      filters.startDate ||
+      filters.endDate ||
+      filters.staffId !== null,
+    [filters]
+  );
+
+  const handleDateRangeChange = (range: { from?: Date; to?: Date } | undefined) => {
+    setFilter("startDate", formatLocalDate(range?.from));
+    setFilter("endDate", formatLocalDate(range?.to));
+    setDatePreset(null);
+  };
+
+  const handlePresetChange = (preset: DateRangePresetValue | null) => {
+    setDatePreset(preset);
+  };
+
+  const handleReset = () => {
+    useInfertilityCashTrackingStore.getState().resetFilters();
+    setSearchTerm("");
+    setDatePreset(null);
+  };
 
   return (
     <div className="min-h-screen bg-fnh-porcelain pb-4 sm:pb-6 lg:pb-8 w-full overflow-x-hidden">
       <div className="mx-auto w-full max-w-full px-3 sm:px-4 lg:px-6 pt-16 sm:pt-12 lg:pt-2">
         <div className="space-y-4 sm:space-y-5 lg:space-y-6 w-full">
+          {/* Page Header */}
           <div className="px-1 sm:px-2 lg:px-4 pb-4 lg:pb-8">
             <PageHeader
               title="HSI Center Cash Tracking"
-              subtitle="Monitor HSI Center collections and financial flow."
+              subtitle="Monitor HSI Center staff shifts, collections, refunds, and financial accountability."
               actions={
-                <button
-                  onClick={() => refetch()}
-                  className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-all shadow-sm text-sm font-semibold cursor-pointer active:scale-95"
-                >
-                  <RefreshCw
-                    className={cn("w-4 h-4", isFetching ? "animate-spin" : "")}
-                  />
-                  <span>Refresh</span>
-                </button>
+                <div className="w-full flex justify-center sm:w-auto">
+                  <button
+                    onClick={() => refetch()}
+                    className="flex items-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-all shadow-sm text-xs sm:text-sm font-semibold cursor-pointer active:scale-95"
+                  >
+                    <RefreshCw
+                      className={cn("w-3.5 h-3.5 sm:w-4 sm:h-4", {
+                        "animate-spin": isFetching,
+                      })}
+                    />
+                    <span>Refresh</span>
+                  </button>
+                </div>
               }
             />
           </div>
 
           {/* Stats Grid */}
           <div className="px-1 sm:px-2 lg:px-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
-              <div className="bg-emerald-50 border border-emerald-100 rounded-2xl p-6 shadow-sm">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-sm">
-                    <DollarSign className="w-5 h-5 text-emerald-600" />
-                  </div>
-                  <span className="text-xs font-black uppercase tracking-widest text-emerald-800/60">
-                    Net HSI Center Cash
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-6 gap-3 sm:gap-4 lg:gap-5">
+              <StatCard
+                title="Net HSI Cash"
+                value={formatCurrency(netCashFlow)}
+                subtitle="Collections minus refunds"
+                icon={DollarSign}
+                color="emerald"
+                isLoading={isLoading && !data}
+              />
+              <StatCard
+                title="Total Collected"
+                value={formatCurrency(summary.totalCollected)}
+                subtitle="Gross incoming payments"
+                icon={TrendingUp}
+                color="blue"
+                isLoading={isLoading && !data}
+              />
+              <StatCard
+                title="Total Refunded"
+                value={formatCurrency(summary.totalRefunded)}
+                subtitle="Total returned to patients"
+                icon={TrendingDown}
+                color="rose"
+                isLoading={isLoading && !data}
+              />
+              <StatCard
+                title="Active Shifts"
+                value={summary.activeShiftsCount}
+                subtitle="Staff currently on shift"
+                icon={Users}
+                color="violet"
+                isLoading={isLoading && !data}
+              />
+              <StatCard
+                title="Total Transactions"
+                value={totalTransactions.toLocaleString("en-BD")}
+                subtitle="Payments & cash movements"
+                icon={CreditCard}
+                color="indigo"
+                isLoading={isLoading && !data}
+              />
+              <StatCard
+                title="Total Variance"
+                value={
+                  <span
+                    className={cn(
+                      totalVariance === 0
+                        ? "text-emerald-600"
+                        : totalVariance > 0
+                        ? "text-blue-600"
+                        : "text-rose-600"
+                    )}
+                  >
+                    {totalVariance > 0 ? "+" : ""}
+                    {formatCurrency(totalVariance)}
                   </span>
-                </div>
-                <p className="text-2xl sm:text-3xl font-black text-emerald-950">
-                  {formatCurrency(summary.totalCollected)}
-                </p>
-                <p className="text-[10px] sm:text-xs font-medium mt-1 text-emerald-700/80">
-                  Total collected from investigations
-                </p>
-              </div>
-
-              <div className="bg-blue-50 border border-blue-100 rounded-2xl p-6 shadow-sm">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-sm">
-                    <TrendingUp className="w-5 h-5 text-blue-600" />
-                  </div>
-                  <span className="text-xs font-black uppercase tracking-widest text-blue-800/60">
-                    Total Transactions
-                  </span>
-                </div>
-                <p className="text-2xl sm:text-3xl font-black text-blue-950">
-                  {shifts.reduce((sum, s) => sum + (s.paymentsCount || 0), 0)}
-                </p>
-                <p className="text-[10px] sm:text-xs font-medium mt-1 text-blue-700/80">
-                  Number of payments recorded
-                </p>
-              </div>
-
-              <div className="bg-indigo-50 border border-indigo-100 rounded-2xl p-6 shadow-sm">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-sm">
-                    <Users className="w-5 h-5 text-indigo-600" />
-                  </div>
-                  <span className="text-xs font-black uppercase tracking-widest text-indigo-800/60">
-                    Active Shifts
-                  </span>
-                </div>
-                <p className="text-2xl sm:text-3xl font-black text-indigo-950">
-                  {summary.activeShiftsCount}
-                </p>
-                <p className="text-[10px] sm:text-xs font-medium mt-1 text-indigo-700/80">
-                  Staff currently collecting cash
-                </p>
-              </div>
+                }
+                subtitle="Cash vs system difference"
+                icon={Scale}
+                color="amber"
+                isLoading={isLoading && !data}
+              />
             </div>
           </div>
 
           {/* Filters */}
           <div className="px-1 sm:px-2 lg:px-4">
-            <div className="p-4 bg-white rounded-2xl border border-gray-100 shadow-sm flex flex-col md:flex-row gap-4 items-center">
-              <div className="flex-1 min-w-[240px] relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Search staff name..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-100 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-emerald-600/20 transition-all"
-                />
+            <div className="p-3 sm:p-4 bg-white rounded-2xl border border-gray-100 shadow-sm relative group space-y-3 sm:space-y-4">
+              {/* Top Row: Search + Primary Filters */}
+              <div className="flex flex-col lg:flex-row gap-3">
+                {/* Search */}
+                <div className="relative flex-1 min-w-0">
+                  <div className="absolute left-3 top-1/2 -translate-y-1/2 flex items-center gap-2 pointer-events-none">
+                    <Search className="w-4 h-4 text-gray-400" />
+                  </div>
+                  <input
+                    type="text"
+                    placeholder="Search by staff name..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full h-[42px] pl-10 pr-4 bg-gray-50/50 border border-gray-100 rounded-xl text-sm font-semibold text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-fnh-blue/20 focus:border-fnh-blue/30 transition-all"
+                  />
+                </div>
+
+                {/* Filter Controls */}
+                <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-2 sm:gap-3">
+                  <div className="col-span-1 sm:w-[170px]">
+                    <StaffFilter
+                      staff={staffOptions}
+                      currentStaffId={filters.staffId}
+                      onStaffChange={(staffId) => setFilter("staffId", staffId)}
+                      disabled={isLoading && !data}
+                      placeholder="All Staff"
+                    />
+                  </div>
+
+                  <div className="col-span-1 sm:w-[140px]">
+                    <ShiftStatusFilter
+                      currentStatus={filters.status}
+                      onStatusChange={(status) =>
+                        setFilter("status", status as "Active" | "Closed" | "All")
+                      }
+                      disabled={isLoading && !data}
+                    />
+                  </div>
+
+                  <div className="col-span-2 sm:w-[260px]">
+                    <DateRangePicker
+                      value={{
+                        from: parseLocalDate(filters.startDate),
+                        to: parseLocalDate(filters.endDate),
+                      }}
+                      onChange={handleDateRangeChange}
+                      placeholder="Filter by date range"
+                      disabled={isLoading && !data}
+                    />
+                  </div>
+                </div>
               </div>
 
-              <div className="w-full md:w-[320px]">
-                <DateRangePicker
-                  value={{
-                    from: filters.startDate
-                      ? new Date(filters.startDate)
-                      : undefined,
-                    to: filters.endDate
-                      ? new Date(filters.endDate)
-                      : undefined,
-                  }}
-                  onChange={(range) => {
-                    const formatLocalDate = (date: Date | undefined) => {
-                      if (!date) return "";
-                      return `${date.getFullYear()}-${String(
-                        date.getMonth() + 1
-                      ).padStart(2, "0")}-${String(date.getDate()).padStart(
-                        2,
-                        "0"
-                      )}`;
-                    };
-                    setFilter("startDate", formatLocalDate(range?.from));
-                    setFilter("endDate", formatLocalDate(range?.to));
-                  }}
-                  placeholder="Filter by date range"
-                />
+              {/* Bottom Row: Quick Date Presets + Clear */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 border-t border-gray-50">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+                  <span className="flex items-center gap-1.5 text-[10px] font-black text-gray-400 uppercase tracking-widest shrink-0">
+                    <Calendar className="w-3 h-3" />
+                    Quick Date
+                  </span>
+                  <DateRangePresets
+                    onChange={handleDateRangeChange}
+                    activePreset={datePreset}
+                    onActivePresetChange={handlePresetChange}
+                    disabled={isLoading && !data}
+                  />
+                </div>
+
+                {hasActiveFilters && (
+                  <button
+                    onClick={handleReset}
+                    disabled={isLoading && !data}
+                    className="self-start sm:self-center px-3 py-2 text-[10px] sm:text-xs font-black text-rose-500 uppercase tracking-widest hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
+                  >
+                    Clear Filters
+                  </button>
+                )}
               </div>
 
-              {searchTerm || filters.startDate ? (
-                <button
-                  onClick={() => {
-                    useInfertilityCashTrackingStore.getState().resetFilters();
-                    setSearchTerm("");
-                  }}
-                  className="text-xs font-black text-rose-500 uppercase tracking-widest hover:bg-rose-50 px-3 py-2 rounded-lg transition-colors cursor-pointer"
-                >
-                  Clear
-                </button>
-              ) : null}
+              {/* Loading Overlay */}
+              {isLoading && !data && (
+                <div className="absolute inset-0 bg-white/40 backdrop-blur-[1px] rounded-2xl z-10 pointer-events-none transition-opacity" />
+              )}
+            </div>
+          </div>
+
+          {/* Cash Flow Breakdown */}
+          <div className="px-1 sm:px-2 lg:px-4">
+            <div className="p-4 sm:p-5 bg-gradient-to-r from-fnh-navy to-slate-800 rounded-2xl text-white">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-[10px] sm:text-xs font-black uppercase tracking-widest opacity-80">
+                  HSI Center Cash Flow Breakdown
+                </h3>
+                <span className="text-[10px] font-bold text-white/60">
+                  {totalShifts} shift{totalShifts !== 1 ? "s" : ""} shown
+                </span>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="flex items-center gap-3 p-3 bg-white/10 rounded-xl border border-white/5">
+                  <TrendingUp className="w-5 h-5 text-emerald-400 shrink-0" />
+                  <div className="min-w-0">
+                    <p className="text-[10px] font-bold uppercase tracking-wide opacity-70 truncate">
+                      Collected
+                    </p>
+                    <p
+                      className="text-base sm:text-lg font-black truncate"
+                      title={formatCurrency(summary.totalCollected)}
+                    >
+                      {formatCurrency(summary.totalCollected)}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3 p-3 bg-white/10 rounded-xl border border-white/5">
+                  <TrendingDown className="w-5 h-5 text-rose-400 shrink-0" />
+                  <div className="min-w-0">
+                    <p className="text-[10px] font-bold uppercase tracking-wide opacity-70 truncate">
+                      Refunded
+                    </p>
+                    <p
+                      className="text-base sm:text-lg font-black truncate"
+                      title={formatCurrency(summary.totalRefunded)}
+                    >
+                      {formatCurrency(summary.totalRefunded)}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3 p-3 bg-emerald-500/20 border border-emerald-400/30 rounded-xl">
+                  <Wallet className="w-5 h-5 text-emerald-300 shrink-0" />
+                  <div className="min-w-0">
+                    <p className="text-[10px] font-bold uppercase tracking-wide opacity-90 truncate">
+                      Net Cash
+                    </p>
+                    <p
+                      className="text-base sm:text-lg font-black text-emerald-300 truncate"
+                      title={formatCurrency(netCashFlow)}
+                    >
+                      {formatCurrency(netCashFlow)}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <p className="mt-4 sm:hidden text-xs text-white/70 text-center">
+                {formatCurrency(summary.totalCollected)} collected −{" "}
+                {formatCurrency(summary.totalRefunded)} refunded ={" "}
+                <span className="text-emerald-300 font-bold">
+                  {formatCurrency(netCashFlow)}
+                </span>
+              </p>
             </div>
           </div>
 
@@ -310,51 +475,18 @@ const InfertilityCashTrackingPage = () => {
             <ShiftTable
               shifts={shifts}
               isLoading={isLoading && !data}
-              onSelectShift={(id) => setSelectedShiftId(id)}
+              onSelectShift={(shift) => setSelectedShiftId(shift.id)}
             />
           </div>
         </div>
       </div>
 
-      {/* Shift Detail Modal — simplified inline */}
-      {selectedShiftId !== null && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm"
-          onClick={() => setSelectedShiftId(null)}
-        >
-          <div
-            className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[80vh] overflow-y-auto p-6"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-bold text-gray-900">
-                Shift #{selectedShiftId}
-              </h3>
-              <button
-                onClick={() => setSelectedShiftId(null)}
-                className="text-gray-400 hover:text-gray-600 transition-colors cursor-pointer"
-              >
-                <svg
-                  className="w-5 h-5"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                </svg>
-              </button>
-            </div>
-            <p className="text-sm text-gray-500">
-              Detailed shift information will be loaded here.
-            </p>
-          </div>
-        </div>
-      )}
+      {/* Detail Modal */}
+      <ShiftDetailModal
+        shiftId={selectedShiftId ?? 0}
+        isOpen={selectedShiftId !== null}
+        onClose={() => setSelectedShiftId(null)}
+      />
     </div>
   );
 };

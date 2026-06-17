@@ -11,7 +11,7 @@ interface ShiftStatusFilterProps {
 }
 
 const STATUS_OPTIONS = [
-  { label: "All Status", value: "All", color: "blue" },
+  { label: "Status", value: "All", color: "blue" },
   { label: "Active", value: "Active", color: "green" },
   { label: "Closed", value: "Closed", color: "gray" },
 ];
