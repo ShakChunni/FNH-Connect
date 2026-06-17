@@ -17,7 +17,6 @@ import { z } from "zod";
 const updateUserSchema = z.object({
   role: z
     .enum([
-      "system-admin",
       "admin",
       "receptionist",
       "receptionist-infertility",
@@ -25,6 +24,8 @@ const updateUserSchema = z.object({
       "staff",
     ])
     .optional(),
+  firstName: z.string().min(1).max(100).optional(),
+  lastName: z.string().max(100).optional(),
   staffRole: z.string().min(1).max(100).optional(),
   specialization: z.string().max(200).optional(),
   phoneNumber: z.string().max(50).optional(),
@@ -177,15 +178,36 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       }
 
       // Update User role if provided
-      if (data.role) {
+      const userUpdate: Record<string, unknown> = {};
+      if (data.role !== undefined) userUpdate.role = data.role;
+
+      if (Object.keys(userUpdate).length > 0) {
         await tx.user.update({
           where: { id: userId },
-          data: { role: data.role },
+          data: userUpdate,
         });
       }
 
       // Update Staff details
       const staffUpdate: Record<string, unknown> = {};
+      if (data.firstName !== undefined) {
+        staffUpdate.firstName = data.firstName.trim();
+      }
+      if (data.lastName !== undefined) {
+        staffUpdate.lastName = (data.lastName || "").trim();
+      }
+      // Recompute fullName if first or last name changed
+      if (data.firstName !== undefined || data.lastName !== undefined) {
+        const currentStaff = await tx.staff.findUnique({
+          where: { id: existingUser.staffId },
+          select: { firstName: true, lastName: true },
+        });
+        const newFirstName = data.firstName !== undefined ? data.firstName.trim() : currentStaff?.firstName || "";
+        const newLastName = data.lastName !== undefined ? (data.lastName || "").trim() : currentStaff?.lastName || "";
+        staffUpdate.fullName = newLastName
+          ? `${newFirstName} ${newLastName}`
+          : newFirstName;
+      }
       if (data.staffRole !== undefined) staffUpdate.role = data.staffRole;
       if (data.specialization !== undefined)
         staffUpdate.specialization = data.specialization || null;
