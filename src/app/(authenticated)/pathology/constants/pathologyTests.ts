@@ -313,6 +313,12 @@ export const PATHOLOGY_TESTS: PathologyTestItem[] = [
     category: "Electrolytes",
     price: 1000,
   },
+  {
+    code: "S-CALCIUM",
+    name: "S. Calcium",
+    category: "Electrolytes",
+    price: 500,
+  },
 
   // Thyroid Function Tests
   {
