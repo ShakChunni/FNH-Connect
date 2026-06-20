@@ -11,6 +11,7 @@ import GenderDropdown from "@/components/form-sections/Fields/GenderDropdown";
 import DateOfBirthDropdown from "@/components/form-sections/Fields/DobDropdown";
 import ContactPhoneInput from "@/components/form-sections/Fields/ContactPhoneInput";
 import ContactEmailInput from "@/components/form-sections/Fields/ContactEmailInput";
+import PatientAddressFields from "@/components/form-sections/Fields/PatientAddressFields";
 import { useState, useEffect, useMemo } from "react";
 
 const PatientInformation: React.FC = () => {
@@ -328,20 +329,12 @@ const PatientInformation: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Address */}
             <div className="md:col-span-2">
-              <label className="block text-gray-700 text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2">
-                Patient Address<span className="text-red-500">*</span>
-              </label>
-              <textarea
-                className={`${inputClassName(patientData.address).replace(
-                  /h-\d+|md:h-\d+/g,
-                  ""
-                )} resize-none min-h-24`}
+              <PatientAddressFields
                 value={patientData.address}
-                onChange={(e) =>
-                  setPatientData({ ...patientData, address: e.target.value })
+                onChange={(address) =>
+                  setPatientData({ ...patientData, address })
                 }
-                placeholder="Patient address"
-                rows={4}
+                isAutofilled={Boolean(patientData.id)}
               />
             </div>
           </div>

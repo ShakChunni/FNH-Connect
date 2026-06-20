@@ -109,9 +109,13 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    const body = await request.json();
+    const body: unknown = await request.json();
+    const requestData =
+      typeof body === "object" && body !== null && !Array.isArray(body)
+        ? body
+        : {};
     const validation = updateAdmissionSchema.safeParse({
-      ...body,
+      ...requestData,
       id: admissionId,
     });
 
@@ -139,6 +143,23 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     const updatedAdmission = await updateAdmission(
       admissionId,
       {
+        patient: validated.patient
+          ? {
+              id: validated.patient.id,
+              firstName: validated.patient.firstName,
+              lastName: validated.patient.lastName,
+              fullName: validated.patient.fullName,
+              gender: validated.patient.gender,
+              age: validated.patient.age,
+              dateOfBirth: validated.patient.dateOfBirth,
+              address: validated.patient.address,
+              phoneNumber: validated.patient.phoneNumber,
+              email: validated.patient.email,
+              bloodGroup: validated.patient.bloodGroup,
+              guardianName: validated.patient.guardianName,
+              guardianPhone: validated.patient.guardianPhone,
+            }
+          : undefined,
         doctorId: validated.doctorId,
         status: validated.status,
         seatNumber: validated.seatNumber,
@@ -174,15 +195,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       }
     );
 
-    const responseData = {
-      id: updatedAdmission.id,
-      admissionNumber: updatedAdmission.admissionNumber,
-      patientFullName: updatedAdmission.patient.fullName,
-      status: updatedAdmission.status,
-      grandTotal: Number(updatedAdmission.grandTotal),
-      dueAmount: Number(updatedAdmission.dueAmount),
-      updatedAt: updatedAdmission.updatedAt.toISOString(),
-    };
+    const responseData = transformAdmissionForResponse(updatedAdmission);
 
     const response = NextResponse.json({
       success: true,
@@ -210,6 +223,16 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json(
         { success: false, error: "Admission not found" },
         { status: 404 }
+      );
+    }
+    if (
+      error instanceof Error &&
+      error.message ===
+        "Cannot change the patient linked to an existing admission."
+    ) {
+      return NextResponse.json(
+        { success: false, error: "Patient does not match this admission" },
+        { status: 400 },
       );
     }
     if (

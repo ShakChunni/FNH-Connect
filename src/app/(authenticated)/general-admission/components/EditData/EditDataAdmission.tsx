@@ -30,6 +30,7 @@ import { useEditAdmissionData } from "../../hooks/useEditAdmissionData";
 import { useNotification } from "@/hooks/useNotification";
 import { isAdminRole, isReceptionistRole } from "@/lib/roles";
 import { AdmissionPatientData } from "../../types";
+import { hasRequiredBangladeshDistrict } from "@/lib/bangladeshAddress";
 
 interface EditDataProps {
   isOpen: boolean;
@@ -106,80 +107,15 @@ const EditDataAdmission: React.FC<EditDataProps> = ({
 
   // Mutation with auto-print on success
   const { editAdmission, isLoading: isSubmitting } = useEditAdmissionData({
-    onSuccess: () => {
+    onSuccess: (savedAdmission) => {
       // Auto-print invoice after successful update
-      const now = new Date().toISOString();
-      const staffId = user?.staffId ?? initialPatientData.lastModifiedBy;
       const staffName = user?.fullName || "Staff";
 
       const invoiceData: AdmissionPatientData = {
-        id: initialPatientData.id,
-        admissionNumber: initialPatientData.admissionNumber,
-        patientId: initialPatientData.patientId,
-        patientFirstName: patientData.firstName,
-        patientLastName: patientData.lastName || null,
-        patientFullName: `${patientData.firstName} ${
-          patientData.lastName || ""
-        }`.trim(),
-        patientDateOfBirth:
-          patientData.dateOfBirth instanceof Date
-            ? patientData.dateOfBirth.toISOString()
-            : initialPatientData.patientDateOfBirth,
-        patientGender: patientData.gender,
-        patientAge: patientData.age,
-        patientPhone: patientData.phoneNumber,
-        patientEmail: patientData.email,
-        patientBloodGroup: patientData.bloodGroup,
-        patientAddress: patientData.address,
-        guardianName: patientData.guardianName,
-        guardianPhone: patientData.guardianPhone,
-        hospitalId: initialPatientData.hospitalId,
-        departmentName: initialPatientData.departmentName,
-        hospitalName: initialPatientData.hospitalName,
-        hospitalAddress: initialPatientData.hospitalAddress,
-        hospitalPhone: initialPatientData.hospitalPhone,
-        hospitalEmail: initialPatientData.hospitalEmail,
-        hospitalWebsite: initialPatientData.hospitalWebsite,
-        hospitalType: initialPatientData.hospitalType,
-        departmentId: initialPatientData.departmentId,
-        doctorId: doctorData.id ?? initialPatientData.doctorId,
-        doctorName: doctorData.fullName || initialPatientData.doctorName,
-        doctorSpecialization: initialPatientData.doctorSpecialization,
-        seatNumber: admissionInfo.seatNumber,
-        ward: admissionInfo.ward,
-        status: admissionInfo.status,
-        dateAdmitted: initialPatientData.dateAdmitted,
-        dateDischarged: initialPatientData.dateDischarged,
-        isDischarged: admissionInfo.status === "Discharged",
-        diagnosis: admissionInfo.diagnosis,
-        treatment: admissionInfo.treatment,
-        otType: admissionInfo.otType,
-        admissionFee: financialData.admissionFee,
-        serviceCharge: financialData.serviceCharge,
-        seatRent: financialData.seatRent,
-        otCharge: financialData.otCharge,
-        doctorCharge: financialData.doctorCharge || 0,
-        surgeonCharge: financialData.surgeonCharge || 0,
-        anesthesiaFee: financialData.anesthesiaFee || 0,
-        assistantDoctorFee: financialData.assistantDoctorFee || 0,
-        medicineCharge: financialData.medicineCharge,
-        otherCharges: financialData.otherCharges,
-        totalAmount: financialData.totalAmount,
-        discountType: financialData.discountType,
-        discountValue: financialData.discountValue,
-        discountAmount: financialData.discountAmount,
-        grandTotal: financialData.grandTotal,
-        paidAmount: financialData.paidAmount,
-        dueAmount: financialData.dueAmount,
-        remarks: admissionInfo.remarks,
-        chiefComplaint: admissionInfo.chiefComplaint,
-        createdAt: initialPatientData.createdAt,
-        updatedAt: now,
-        createdBy: initialPatientData.createdBy,
-        lastModifiedBy: staffId,
-        createdByName: initialPatientData.createdByName || null,
+        ...savedAdmission,
+        createdByName:
+          savedAdmission.createdByName || initialPatientData.createdByName,
         lastModifiedByName: staffName,
-        medicineChargeItems: medicineChargeItems,
       };
 
       // Dynamically import and generate invoice
@@ -202,8 +138,8 @@ const EditDataAdmission: React.FC<EditDataProps> = ({
     if (!patientData.firstName.trim()) {
       errors.push("Patient name is required");
     }
-    if (!patientData.address?.trim()) {
-      errors.push("Patient address is required");
+    if (!hasRequiredBangladeshDistrict(patientData.address)) {
+      errors.push("Patient district is required");
     }
 
     medicineChargeItems.forEach((item, index) => {
@@ -269,6 +205,23 @@ const EditDataAdmission: React.FC<EditDataProps> = ({
 
     editAdmission({
       id: initialPatientData.id,
+      patient: {
+        id: initialPatientData.patientId,
+        firstName: patientData.firstName,
+        lastName: patientData.lastName,
+        fullName: `${patientData.firstName} ${
+          patientData.lastName || ""
+        }`.trim(),
+        gender: patientData.gender,
+        age: patientData.age,
+        dateOfBirth: patientData.dateOfBirth,
+        address: patientData.address,
+        phoneNumber: patientData.phoneNumber,
+        email: patientData.email,
+        bloodGroup: patientData.bloodGroup,
+        guardianName: patientData.guardianName,
+        guardianPhone: patientData.guardianPhone,
+      },
       status: admissionInfo.status,
       seatNumber: admissionInfo.seatNumber,
       ward: admissionInfo.ward,
@@ -305,6 +258,8 @@ const EditDataAdmission: React.FC<EditDataProps> = ({
     medicineChargeItems,
     editAdmission,
     initialPatientData.id,
+    initialPatientData.patientId,
+    patientData,
     canEditDoctorReassignment,
     doctorData.id,
     doctorData.fullName,

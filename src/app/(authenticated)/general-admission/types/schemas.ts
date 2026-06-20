@@ -5,6 +5,7 @@
 
 import { z } from "zod";
 import { parseDateOfBirth } from "@/lib/dateOfBirth";
+import { patientAddressSchema } from "@/lib/bangladeshAddressSchema";
 
 // ═══════════════════════════════════════════════════════════════
 // GET Query Schemas
@@ -72,7 +73,7 @@ export const patientSchema = z.object({
     if (val === null || val === undefined || val === "") return null;
     return parseDateOfBirth(val as Date | string | null | undefined);
   }, z.date().nullable()),
-  address: z.string().min(1, "Address is required"),
+  address: patientAddressSchema,
   phoneNumber: z.string(),
   email: z.string(),
   bloodGroup: z.string(),
@@ -119,6 +120,7 @@ export const createAdmissionSchema = z.object({
 
 export const updateAdmissionSchema = z.object({
   id: z.number(),
+  patient: patientSchema.optional(),
   doctorId: z.number().min(1, "Doctor is required").optional(),
   status: z
     .enum([

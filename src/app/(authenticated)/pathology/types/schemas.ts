@@ -5,6 +5,7 @@
 
 import { z } from "zod";
 import { parseDateOfBirth } from "@/lib/dateOfBirth";
+import { patientAddressSchema } from "@/lib/bangladeshAddressSchema";
 
 // ═══════════════════════════════════════════════════════════════
 // UTILITY SCHEMAS
@@ -51,7 +52,7 @@ export const patientSchema = z.object({
   age: z.number().nullable().optional(),
   dateOfBirth: datePreprocess, // Use preprocessed date
   guardianName: z.string().optional().default(""),
-  address: z.string().optional().default(""),
+  address: patientAddressSchema,
   phoneNumber: z.string().optional().default(""),
   email: z
     .string()

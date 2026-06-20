@@ -825,6 +825,7 @@ export async function createAdmission(
 export async function updateAdmission(
   id: number,
   updateData: {
+    patient?: PatientData;
     doctorId?: number;
     status?: string;
     seatNumber?: string;
@@ -864,6 +865,56 @@ export async function updateAdmission(
 
     if (!existingAdmission) {
       throw new Error("Admission record not found");
+    }
+
+    if (
+      updateData.patient &&
+      updateData.patient.id !== null &&
+      updateData.patient.id !== undefined &&
+      updateData.patient.id !== existingAdmission.patientId
+    ) {
+      throw new Error(
+        "Cannot change the patient linked to an existing admission.",
+      );
+    }
+
+    if (updateData.patient) {
+      await tx.patient.update({
+        where: { id: existingAdmission.patientId },
+        data: {
+          firstName: updateData.patient.firstName,
+          lastName: updateData.patient.lastName || null,
+          fullName: updateData.patient.fullName,
+          gender: updateData.patient.gender,
+          dateOfBirth: updateData.patient.dateOfBirth,
+          address: updateData.patient.address || null,
+          phoneNumber: updateData.patient.phoneNumber || null,
+          email: updateData.patient.email || null,
+          bloodGroup: updateData.patient.bloodGroup || null,
+          guardianName: updateData.patient.guardianName || null,
+          guardianPhone: updateData.patient.guardianPhone || null,
+        },
+      });
+
+      await tx.activityLog.create({
+        data: {
+          userId,
+          action: "UPDATE",
+          description: `Updated patient details for admission ${existingAdmission.admissionNumber}`,
+          entityType: "Patient",
+          entityId: existingAdmission.patientId,
+          timestamp: new Date(),
+          sessionId: activityLogContext?.sessionId,
+          ipAddress: activityLogContext?.deviceInfo?.ipAddress,
+          deviceFingerprint: activityLogContext?.deviceInfo?.deviceFingerprint,
+          readableFingerprint:
+            activityLogContext?.deviceInfo?.readableFingerprint,
+          deviceType: activityLogContext?.deviceInfo?.deviceType,
+          browserName: activityLogContext?.deviceInfo?.browserName,
+          browserVersion: activityLogContext?.deviceInfo?.browserVersion,
+          osType: activityLogContext?.deviceInfo?.osType,
+        },
+      });
     }
 
     const isCanceling = updateData.status === "Canceled";

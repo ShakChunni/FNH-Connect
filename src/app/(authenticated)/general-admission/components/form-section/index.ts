@@ -10,7 +10,6 @@ export { AdmissionHospitalDetails } from "./HospitalInformation";
 // Patient Information
 export { AdmissionPatientInformation } from "./PatientInformation";
 export { AdmissionPatientSearch } from "./PatientInformation";
-export { AdmissionPatientDetails } from "./PatientInformation";
 
 // Department & Doctor Selection
 export { DepartmentSelection } from "./DepartmentSelection";

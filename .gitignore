@@ -17,7 +17,8 @@
 
 # production
 /build
-/scripts
+/scripts/*
+!/scripts/standardize-patient-addresses.ts
 # misc
 .DS_Store
 *.pem

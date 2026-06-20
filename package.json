@@ -17,6 +17,7 @@
     "db:seed": "tsx scripts/seed.ts",
     "db:studio": "prisma studio",
     "db:audit-infertility-migration": "tsx scripts/audit-infertility-migration.ts",
+    "db:audit-patient-addresses": "tsx scripts/standardize-patient-addresses.ts",
     "db:reset-infertility-migration": "tsx scripts/reset-infertility-migration-batch.ts",
     "db:migrate-pathology-to-infertility-v2": "tsx scripts/migrate-pathology-to-infertility-v2.ts",
     "db:fix-payments": "tsx scripts/fix-payment-allocations.ts",
