@@ -6,6 +6,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { getAuthenticatedUserForAPI } from "@/lib/auth-validation";
 import { isReceptionistRole, isReceptionistInfertilityRole } from "@/lib/roles";
@@ -14,6 +15,7 @@ import {
   addCSRFTokenToResponse,
 } from "@/lib/csrfProtection";
 import { parseDateOfBirth, serializeDateOfBirth } from "@/lib/dateOfBirth";
+import { patientAddressSchema } from "@/lib/bangladeshAddressSchema";
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -38,6 +40,21 @@ function getPatientAccessWhereByRole(userRole: string) {
 
   return {};
 }
+
+const updatePatientRequestSchema = z
+  .object({
+    firstName: z.string().trim().min(1).optional(),
+    lastName: z.string().nullable().optional(),
+    gender: z.string().trim().min(1).optional(),
+    dateOfBirth: z
+      .union([z.string(), z.date(), z.null()])
+      .nullable()
+      .optional(),
+    guardianName: z.string().nullable().optional(),
+    phoneNumber: z.string().nullable().optional(),
+    address: patientAddressSchema.optional(),
+  })
+  .strict();
 
 export async function PATCH(request: NextRequest, { params }: RouteParams) {
   try {
@@ -84,8 +101,21 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    // 5. Parse request body
-    const body = await request.json();
+    // 5. Parse and validate request body
+    const body: unknown = await request.json();
+    const validation = updatePatientRequestSchema.safeParse(body);
+
+    if (!validation.success) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Invalid request data.",
+          details: validation.error.flatten().fieldErrors,
+        },
+        { status: 400 },
+      );
+    }
+
     const {
       firstName,
       lastName,
@@ -94,7 +124,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       guardianName,
       phoneNumber,
       address,
-    } = body;
+    } = validation.data;
 
     // 6. Build update data
     const updateData: Record<string, unknown> = {};

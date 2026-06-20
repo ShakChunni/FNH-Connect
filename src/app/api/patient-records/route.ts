@@ -55,11 +55,13 @@ export async function GET(request: NextRequest) {
 
     Object.assign(where, getPatientAccessWhereByRole(user.role));
 
-    if (search && search.length >= 2) {
+    const normalizedSearch = search?.trim() ?? "";
+    if (normalizedSearch.length >= 2) {
       where.OR = [
-        { fullName: { contains: search, mode: "insensitive" } },
-        { phoneNumber: { contains: search, mode: "insensitive" } },
-        { guardianName: { contains: search, mode: "insensitive" } },
+        { fullName: { contains: normalizedSearch, mode: "insensitive" } },
+        { phoneNumber: { contains: normalizedSearch, mode: "insensitive" } },
+        { guardianName: { contains: normalizedSearch, mode: "insensitive" } },
+        { address: { contains: normalizedSearch, mode: "insensitive" } },
       ];
     }
 

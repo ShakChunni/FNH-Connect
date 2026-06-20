@@ -7,7 +7,6 @@ import {
   UserCheck,
   Droplets,
   Bed,
-  MapPin,
 } from "lucide-react";
 import AdmissionPatientSearch from "./AdmissionPatientSearch";
 import {
@@ -20,6 +19,7 @@ import DateOfBirthDropdown from "@/components/form-sections/Fields/DobDropdown";
 import ContactPhoneInput from "@/components/form-sections/Fields/ContactPhoneInput";
 import ContactEmailInput from "@/components/form-sections/Fields/ContactEmailInput";
 import BloodGroupDropdown from "@/components/form-sections/Fields/BloodGroupDropdown";
+import PatientAddressFields from "@/components/form-sections/Fields/PatientAddressFields";
 
 interface AdmissionPatientInformationProps {
   showAdmissionDetails?: boolean;
@@ -326,21 +326,11 @@ const AdmissionPatientInformation: React.FC<
             )}
 
             {/* Address Column */}
-            <div>
-              <label className="block text-gray-700 text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2">
-                <MapPin className="w-3.5 h-3.5 inline mr-1 text-indigo-500" />
-                Patient Address<span className="text-red-500">*</span>
-              </label>
-              <textarea
-                className={`${inputClassName(patientData.address)} resize-none`}
-                value={patientData.address}
-                onChange={(e) =>
-                  setPatientData({ ...patientData, address: e.target.value })
-                }
-                placeholder="Patient full residential address..."
-                rows={showAdmissionDetails ? 3 : 4}
-              />
-            </div>
+            <PatientAddressFields
+              value={patientData.address}
+              onChange={(address) => setPatientData({ ...patientData, address })}
+              isAutofilled={Boolean(patientData.id)}
+            />
           </div>
         </div>
       </div>

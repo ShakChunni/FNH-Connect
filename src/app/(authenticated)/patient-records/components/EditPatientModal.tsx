@@ -2,18 +2,20 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { User, MapPin, Save } from "lucide-react";
+import { User, Save } from "lucide-react";
 import { ModalHeader, ModalFooter } from "@/components/ui";
 
 // Existing field components from infertility
 import GenderDropdown from "@/components/form-sections/Fields/GenderDropdown";
 import DobDropdown from "@/components/form-sections/Fields/DobDropdown";
 import ContactPhoneInput from "@/components/form-sections/Fields/ContactPhoneInput";
+import PatientAddressFields from "@/components/form-sections/Fields/PatientAddressFields";
 
 import type { PatientData } from "../types";
 import { useUpdatePatient } from "../hooks";
 import { useNotificationContext } from "@/app/NotificationProvider";
 import { parseDateOfBirth, serializeDateOfBirth } from "@/lib/dateOfBirth";
+import { hasRequiredBangladeshDistrict } from "@/lib/bangladeshAddress";
 
 interface EditPatientModalProps {
   isOpen: boolean;
@@ -84,6 +86,11 @@ export const EditPatientModal: React.FC<EditPatientModalProps> = ({
 
     if (formData.phoneNumber.trim() && !isPhoneValid) {
       showNotification("Invalid phone number", "error");
+      return;
+    }
+
+    if (!hasRequiredBangladeshDistrict(formData.address)) {
+      showNotification("Patient district is required", "error");
       return;
     }
 
@@ -235,20 +242,13 @@ export const EditPatientModal: React.FC<EditPatientModalProps> = ({
 
                 {/* Address */}
                 <div>
-                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5">
-                    Address
-                  </label>
-                  <div className="relative">
-                    <MapPin className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
-                    <textarea
-                      name="address"
-                      value={formData.address}
-                      onChange={handleInputChange}
-                      rows={2}
-                      className="w-full pl-10 pr-4 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-950 focus:ring-2 focus:ring-blue-950 transition-all resize-none text-xs sm:text-sm cursor-text"
-                      placeholder="Patient address"
-                    />
-                  </div>
+                  <PatientAddressFields
+                    value={formData.address}
+                    onChange={(address) =>
+                      setFormData((prev) => ({ ...prev, address }))
+                    }
+                    isAutofilled={Boolean(patientData.id)}
+                  />
                 </div>
               </div>
 

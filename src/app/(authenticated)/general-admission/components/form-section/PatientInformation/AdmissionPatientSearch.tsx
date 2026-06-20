@@ -8,7 +8,7 @@ import React, {
 } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ClientPortal } from "@/components/ui/ClientPortal";
-import { User, PlusCircle, Loader2, X } from "lucide-react";
+import { User, PlusCircle, Loader2, X, MapPin } from "lucide-react";
 import { useAdmissionPatientData, useAdmissionActions } from "../../../stores";
 import { useFetchPatients } from "../../../hooks";
 import type { Patient } from "../../../types";
@@ -29,7 +29,7 @@ const AdmissionPatientSearch: React.FC = () => {
   }, []);
 
   // Use the extracted hook
-  const { data: patients = [], isLoading: loading } =
+  const { data: patients = [], isLoading: loading, error: searchError } =
     useFetchPatients(searchQuery);
 
   useEffect(() => {
@@ -250,17 +250,31 @@ const AdmissionPatientSearch: React.FC = () => {
                   >
                     <User className="w-5 h-5 text-gray-400 shrink-0" />
                     <div className="min-w-0 flex-1">
-                      <p className="font-medium text-gray-800 text-sm truncate">
+                      <p className="font-medium text-gray-800 text-sm">
                         {patient.fullName}
                       </p>
                       <p className="text-xs text-gray-500 truncate">
                         {patient.gender}
                         {patient.phoneNumber ? ` • ${patient.phoneNumber}` : ""}
                       </p>
+                      {patient.address ? (
+                        <p className="text-xs text-gray-500 flex items-center gap-1 mt-0.5 break-words">
+                          <MapPin className="w-3 h-3 text-indigo-500 shrink-0" />
+                          <span className="whitespace-normal">
+                            {patient.address}
+                          </span>
+                        </p>
+                      ) : null}
                     </div>
                   </div>
                 ))}
+              {!loading && searchError ? (
+                <div className="px-4 py-3 text-xs text-red-600 border-t border-gray-200">
+                  Unable to search patients. Please try again.
+                </div>
+              ) : null}
               {!loading &&
+                !searchError &&
                 searchQuery.length >= 1 &&
                 !patients.some(
                   (p) => p.fullName.toLowerCase() === searchQuery.toLowerCase(),
@@ -290,6 +304,7 @@ const AdmissionPatientSearch: React.FC = () => {
       loading,
       patients,
       searchQuery,
+      searchError,
       handleSelectPatient,
       handleAddNew,
     ],
@@ -330,7 +345,7 @@ const AdmissionPatientSearch: React.FC = () => {
               setIsDropdownOpen(true);
             }
           }}
-          placeholder="Search for existing patient or type new name..."
+          placeholder="Search by patient name, phone or address..."
           readOnly={isPatientSelected}
         />
         {isPatientSelected && (

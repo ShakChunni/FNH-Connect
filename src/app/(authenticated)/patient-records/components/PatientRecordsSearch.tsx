@@ -78,7 +78,7 @@ export const PatientRecordsSearch: React.FC<PatientRecordsSearchProps> = ({
                 onChange={(e) => handleSearchChange(e.target.value)}
                 onFocus={() => setIsFocused(true)}
                 onBlur={() => setIsFocused(false)}
-                placeholder="Search patient name or phone..."
+                placeholder="Search patient name, phone or address..."
                 className="w-full h-full pl-10 pr-4 bg-transparent border-0 
                   focus:ring-0 focus:outline-none 
                   text-gray-700 text-xs 
@@ -127,7 +127,7 @@ export const PatientRecordsSearch: React.FC<PatientRecordsSearchProps> = ({
                 onChange={(e) => handleSearchChange(e.target.value)}
                 onFocus={() => setIsFocused(true)}
                 onBlur={() => setIsFocused(false)}
-                placeholder="Search by patient name or phone number..."
+                placeholder="Search by patient name, phone or address..."
                 className="w-full h-full pl-12 pr-4 bg-transparent border-0 
                   focus:ring-0 focus:outline-none 
                   text-gray-700 text-base 

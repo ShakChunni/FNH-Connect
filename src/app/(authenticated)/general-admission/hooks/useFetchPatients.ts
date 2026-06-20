@@ -16,18 +16,20 @@ interface PatientSearchResponse {
 
 export function useFetchPatients(searchQuery: string) {
   const debouncedQuery = useDebounce(searchQuery || "", 200);
+  const trimmedQuery = debouncedQuery.trim();
+  const isLongEnough = trimmedQuery.length >= 2;
 
   return useQuery({
     queryKey: ["patients", "search", debouncedQuery],
     queryFn: async (): Promise<Patient[]> => {
-      if (!debouncedQuery || !debouncedQuery.trim()) {
+      if (!isLongEnough) {
         return [];
       }
 
       const response = await api.get<PatientSearchResponse>(
         "/patient-records",
         {
-          params: { search: debouncedQuery.trim() },
+          params: { search: trimmedQuery },
           timeout: 5000,
         }
       );
@@ -38,7 +40,7 @@ export function useFetchPatients(searchQuery: string) {
 
       return response.data.data || [];
     },
-    enabled: !!(debouncedQuery && debouncedQuery.trim()),
+    enabled: isLongEnough,
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
     retry: (failureCount, error) => {

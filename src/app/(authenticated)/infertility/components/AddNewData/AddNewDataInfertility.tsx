@@ -32,6 +32,7 @@ import { useAddInfertilityTest } from "../../hooks/useAddInfertilityTest";
 import { InvestigationInformation } from "../form-sections/InvestigationInformation";
 import { useInfertilityTestInfo } from "../../stores";
 import { useNotification } from "@/hooks/useNotification";
+import { hasRequiredBangladeshDistrict } from "@/lib/bangladeshAddress";
 import type { AddInfertilityPatientRequest, AddInfertilityPatientResponse } from "../../types";
 
 
@@ -138,7 +139,7 @@ const AddNewDataInfertility: React.FC<AddNewDataProps> = ({
   const isFormValid = useMemo(() => {
     return (
       patientData.firstName.trim() !== "" &&
-      patientData.address.trim() !== "" &&
+      hasRequiredBangladeshDistrict(patientData.address) &&
       validationStatus.phone &&
       validationStatus.email
     );
@@ -151,7 +152,14 @@ const AddNewDataInfertility: React.FC<AddNewDataProps> = ({
   }, [isSubmitting, onClose]);
 
   const handleSubmit = useCallback(() => {
-    if (!isFormValid || isSubmitting) return;
+    if (isSubmitting) return;
+
+    if (!hasRequiredBangladeshDistrict(patientData.address)) {
+      showNotification("Patient district is required", "error");
+      return;
+    }
+
+    if (!isFormValid) return;
 
     if (testInfo.selectedTests.length > 0 && testInfo.subjectType === "UNKNOWN") {
       showNotification(

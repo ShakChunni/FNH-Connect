@@ -280,6 +280,21 @@ export interface CreateAdmissionPayload {
 
 export interface UpdateAdmissionPayload {
   id: number;
+  patient?: {
+    id: number | null;
+    firstName: string;
+    lastName: string;
+    fullName: string;
+    gender: string;
+    age: number | null;
+    dateOfBirth: Date | string | null;
+    address: string;
+    phoneNumber: string;
+    email: string;
+    bloodGroup: string;
+    guardianName: string;
+    guardianPhone: string;
+  };
   doctorId?: number;
   status?: AdmissionStatus;
   seatNumber?: string;

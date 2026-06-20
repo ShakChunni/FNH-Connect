@@ -7,11 +7,13 @@ import type { InfertilityPatientBasic } from "@/app/(authenticated)/infertility/
 export function useFetchPatientInformation(searchQuery: string) {
   // Use the global debounce hook
   const debouncedQuery = useDebounce(searchQuery || "", 150);
+  const trimmedQuery = debouncedQuery.trim();
+  const isLongEnough = trimmedQuery.length >= 2;
 
   return useQuery({
     queryKey: ["infertilityPatients", "search", debouncedQuery],
     queryFn: async (): Promise<InfertilityPatientBasic[]> => {
-      if (!debouncedQuery || !debouncedQuery.trim()) {
+      if (!isLongEnough) {
         return [];
       }
 
@@ -38,7 +40,7 @@ export function useFetchPatientInformation(searchQuery: string) {
         error?: string;
       }>("/patient-records", {
         params: {
-          search: debouncedQuery.trim(),
+          search: trimmedQuery,
           limit: 10,
         },
         timeout: 5000,
@@ -69,7 +71,7 @@ export function useFetchPatientInformation(searchQuery: string) {
         guardianOccupation: record.guardianOccupation,
       }));
     },
-    enabled: !!(debouncedQuery && debouncedQuery.trim()),
+    enabled: isLongEnough,
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes
     retry: (failureCount, error) => {

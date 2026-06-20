@@ -7,7 +7,7 @@ import React, {
 } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ClientPortal } from "@/components/ui/ClientPortal";
-import { User, Loader2, PlusCircle, X, UserCheck } from "lucide-react";
+import { User, Loader2, PlusCircle, X, UserCheck, MapPin } from "lucide-react";
 import {
   useFetchPathologyPatients,
   PathologyPatientBasic,
@@ -272,27 +272,38 @@ const PathologyPatientSearch: React.FC = () => {
                     >
                       <User className="w-5 h-5 text-gray-400 shrink-0" />
                       <div className="min-w-0 flex-1">
-                        <p className="font-medium text-gray-800 text-sm truncate">
+                        <p className="font-medium text-gray-800 text-sm">
                           {patient.patientFullName}
                         </p>
                         <div className="flex items-center gap-2 text-xs text-gray-500">
-                          <span>Phone: {patient.mobileNumber || "N/A"}</span>
+                          <span className="truncate">
+                            Phone: {patient.mobileNumber || "N/A"}
+                          </span>
                           {patient.guardianName && (
                             <>
                               <span>•</span>
-                              <span className="flex items-center gap-1">
+                              <span className="flex items-center gap-1 truncate">
                                 <UserCheck className="w-3 h-3" />
                                 Guardian: {patient.guardianName}
                               </span>
                             </>
                           )}
                         </div>
+                        {patient.address ? (
+                          <p className="text-xs text-gray-500 flex items-center gap-1 mt-0.5 break-words">
+                            <MapPin className="w-3 h-3 text-indigo-500 shrink-0" />
+                            <span className="whitespace-normal">
+                              {patient.address}
+                            </span>
+                          </p>
+                        ) : null}
                       </div>
                     </div>
                   ))}
                 </>
               )}
               {!loading &&
+                !error &&
                 searchQuery.length > 1 &&
                 !patients.some(
                   (p) =>
@@ -312,6 +323,11 @@ const PathologyPatientSearch: React.FC = () => {
                     </p>
                   </div>
                 )}
+              {!loading && error ? (
+                <div className="px-4 py-3 text-xs text-red-600 border-t border-gray-200">
+                  Unable to search patients. Please try again.
+                </div>
+              ) : null}
             </div>
           </motion.div>
         )}
@@ -324,6 +340,7 @@ const PathologyPatientSearch: React.FC = () => {
       loading,
       patients,
       searchQuery,
+      error,
     ],
   );
 
@@ -364,7 +381,7 @@ const PathologyPatientSearch: React.FC = () => {
               setIsDropdownOpen(true);
             }
           }}
-          placeholder="Search by patient name or mobile number..."
+          placeholder="Search by patient name, phone or address..."
           readOnly={isPatientSelected}
           autoComplete="off"
         />

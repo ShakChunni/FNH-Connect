@@ -32,15 +32,13 @@ export interface PathologyPatientBasic {
 export function useFetchPathologyPatients(searchQuery: string) {
   // Use the global debounce hook
   const debouncedQuery = useDebounce(searchQuery || "", 150);
+  const trimmedQuery = debouncedQuery.trim();
+  const isLongEnough = trimmedQuery.length >= 2;
 
   return useQuery({
     queryKey: ["patientRecords", "search", debouncedQuery],
     queryFn: async (): Promise<PathologyPatientBasic[]> => {
-      if (
-        !debouncedQuery ||
-        !debouncedQuery.trim() ||
-        debouncedQuery.trim().length < 2
-      ) {
+      if (!isLongEnough) {
         return [];
       }
 
@@ -64,7 +62,7 @@ export function useFetchPathologyPatients(searchQuery: string) {
         error?: string;
       }>("/patient-records", {
         params: {
-          search: debouncedQuery.trim(),
+          search: trimmedQuery,
         },
         timeout: 5000,
       });
@@ -91,11 +89,7 @@ export function useFetchPathologyPatients(searchQuery: string) {
         bloodGroup: patient.bloodGroup,
       }));
     },
-    enabled: !!(
-      debouncedQuery &&
-      debouncedQuery.trim() &&
-      debouncedQuery.trim().length >= 2
-    ),
+    enabled: isLongEnough,
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes
     retry: (failureCount, error) => {

@@ -6,26 +6,18 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/axios";
 import { useNotification } from "@/hooks/useNotification";
-import { UpdateAdmissionPayload } from "../types";
+import { AdmissionPatientData, UpdateAdmissionPayload } from "../types";
 import { useAdmissionFormStore } from "../stores/formStore";
 
 interface EditAdmissionResponse {
   success: boolean;
-  data: {
-    id: number;
-    admissionNumber: string;
-    patientFullName: string;
-    status: string;
-    grandTotal: number;
-    dueAmount: number;
-    updatedAt: string;
-  };
+  data: AdmissionPatientData;
   message?: string;
   error?: string;
 }
 
 interface UseEditAdmissionDataOptions {
-  onSuccess?: () => void;
+  onSuccess?: (admission: AdmissionPatientData) => void;
   onError?: (error: Error) => void;
 }
 
@@ -59,7 +51,7 @@ export function useEditAdmissionData(options?: UseEditAdmissionDataOptions) {
       );
 
       // Call custom onSuccess
-      options?.onSuccess?.();
+      options?.onSuccess?.(response.data);
     },
     onError: (error: Error) => {
       showNotification(

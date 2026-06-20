@@ -26,6 +26,8 @@ import { InfertilityPatientData } from "../../types";
 import { useInfertilityBMI } from "../../hooks/useInfertilityBMI";
 import { useInfertilityScrollSpy } from "../../hooks/useInfertilityScrollSpy";
 import { transformInfertilityDataForApi } from "../../utils/formTransformers";
+import { hasRequiredBangladeshDistrict } from "@/lib/bangladeshAddress";
+import { useNotification } from "@/hooks/useNotification";
 
 interface EditDataProps {
   isOpen: boolean;
@@ -41,6 +43,7 @@ const EditDataInfertility: React.FC<EditDataProps> = ({
   onClose,
   patientData: initialPatientData,
 }) => {
+  const { showNotification } = useNotification();
   const popupRef = useRef<HTMLDivElement>(null);
 
   // Store access
@@ -76,7 +79,7 @@ const EditDataInfertility: React.FC<EditDataProps> = ({
   const isFormValid = useMemo(() => {
     return (
       patientData.firstName.trim() !== "" &&
-      patientData.address.trim() !== "" &&
+      hasRequiredBangladeshDistrict(patientData.address) &&
       validationStatus.phone &&
       validationStatus.email
     );
@@ -89,7 +92,14 @@ const EditDataInfertility: React.FC<EditDataProps> = ({
   }, [isSubmitting, onClose]);
 
   const handleSubmit = useCallback(() => {
-    if (!isFormValid || isSubmitting) return;
+    if (isSubmitting) return;
+
+    if (!hasRequiredBangladeshDistrict(patientData.address)) {
+      showNotification("Patient district is required", "error");
+      return;
+    }
+
+    if (!isFormValid) return;
 
     const payload = transformInfertilityDataForApi(
       hospitalData,
@@ -115,6 +125,7 @@ const EditDataInfertility: React.FC<EditDataProps> = ({
     medicalInfo,
     editPatient,
     initialPatientData.id,
+    showNotification,
   ]);
 
   // Body scroll lock + keyboard handling
