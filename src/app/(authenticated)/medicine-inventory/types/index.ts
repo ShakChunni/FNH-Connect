@@ -205,6 +205,57 @@ export const createSaleSchema = z.object({
 export type CreateSaleInput = z.infer<typeof createSaleSchema>;
 
 // ============================================
+// Multi-Item Batch Sale (new — pharmacist direct cart)
+// ============================================
+
+export const createSaleBatchItemSchema = z.object({
+  medicineId: z.number().int().positive("Medicine is required"),
+  quantity: z.number().int().positive("Quantity must be positive"),
+  unitPrice: z.number().positive("Unit price must be positive"),
+});
+
+export const createSaleBatchSchema = z.object({
+  patientId: z.number().int().positive("Patient ID is required"),
+  saleDate: z.string().datetime({ offset: true }).optional(),
+  items: z
+    .array(createSaleBatchItemSchema)
+    .min(1, "At least one medicine is required")
+    .max(100, "A single cart can contain up to 100 medicines"),
+});
+
+export type CreateSaleBatchInput = z.infer<typeof createSaleBatchSchema>;
+export type CreateSaleBatchItemInput = z.infer<typeof createSaleBatchItemSchema>;
+
+export interface CreateSaleBatchResult {
+  patientId: number;
+  logicalItemCount: number;
+  fifoSaleRowCount: number;
+  totalQuantity: number;
+  totalAmount: number;
+  sales: MedicineSale[];
+}
+
+export interface SalePatientOption {
+  id: number;
+  fullName: string;
+  phoneNumber: string | null;
+  gender: string;
+  guardianName: string | null;
+  address: string | null;
+  email: string | null;
+}
+
+export interface GyneAdmissionContext {
+  admissionId: number;
+  admissionNumber: string;
+  status: string;
+  dateAdmitted: string;
+  departmentId: number;
+  departmentName: string;
+  hasLucsPackage: boolean;
+}
+
+// ============================================
 // Stats Types
 // ============================================
 

@@ -1,6 +1,6 @@
 "use client";
 import React, { useCallback, useMemo, useRef, useEffect } from "react";
-import { Save, User, Activity, Wallet } from "lucide-react";
+import { Save, User, Activity, Wallet, Pill } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/app/AuthContext";
 import {
@@ -15,6 +15,7 @@ import {
   AdmissionPatientInformation,
   DepartmentSelection,
   AdmissionStatusSection,
+  MedicineInformation,
   FinancialInformation,
 } from "../form-section";
 import {
@@ -38,7 +39,7 @@ interface EditDataProps {
   patientData: AdmissionPatientData;
 }
 
-const SECTION_IDS = ["patient", "status", "financial"];
+const SECTION_IDS = ["patient", "status", "medicines", "financial"];
 
 const getTabColors = (color: string, isActive: boolean) => {
   const colors: Record<string, { active: string; inactive: string }> = {
@@ -53,6 +54,10 @@ const getTabColors = (color: string, isActive: boolean) => {
     green: {
       active: "bg-green-600 text-white shadow-lg",
       inactive: "bg-green-100 text-green-700 hover:bg-green-200",
+    },
+    emerald: {
+      active: "bg-emerald-600 text-white shadow-lg",
+      inactive: "bg-emerald-100 text-emerald-700 hover:bg-emerald-200",
     },
   };
   return isActive ? colors[color]?.active : colors[color]?.inactive;
@@ -148,7 +153,10 @@ const EditDataAdmission: React.FC<EditDataProps> = ({
           `Medicine row ${index + 1}: select a pharmacy medicine or remove the row`,
         );
       }
-      if (item.unitPrice <= 0) {
+      if (
+        initialPatientData.medicineBillingEnabled &&
+        item.unitPrice <= 0
+      ) {
         errors.push(
           `Medicine row ${index + 1}: sale price must be greater than 0`,
         );
@@ -167,7 +175,12 @@ const EditDataAdmission: React.FC<EditDataProps> = ({
       isFormValid: errors.length === 0,
       validationErrors: errors,
     };
-  }, [patientData.firstName, patientData.address, medicineChargeItems]);
+  }, [
+    patientData.firstName,
+    patientData.address,
+    medicineChargeItems,
+    initialPatientData.medicineBillingEnabled,
+  ]);
 
   const { showNotification } = useNotification();
 
@@ -236,7 +249,9 @@ const EditDataAdmission: React.FC<EditDataProps> = ({
       surgeonCharge: financialData.surgeonCharge,
       anesthesiaFee: financialData.anesthesiaFee,
       assistantDoctorFee: financialData.assistantDoctorFee,
-      medicineCharge: financialData.medicineCharge,
+      ...(initialPatientData.medicineBillingEnabled
+        ? { medicineCharge: financialData.medicineCharge }
+        : {}),
       otherCharges: financialData.otherCharges,
       discountType: financialData.discountType,
       discountValue: financialData.discountValue,
@@ -259,6 +274,7 @@ const EditDataAdmission: React.FC<EditDataProps> = ({
     editAdmission,
     initialPatientData.id,
     initialPatientData.patientId,
+    initialPatientData.medicineBillingEnabled,
     patientData,
     canEditDoctorReassignment,
     doctorData.id,
@@ -294,6 +310,12 @@ const EditDataAdmission: React.FC<EditDataProps> = ({
       label: "Status & Room",
       icon: Activity,
       color: "amber",
+    },
+    {
+      id: "medicines",
+      label: "Medicines",
+      icon: Pill,
+      color: "emerald",
     },
     {
       id: "financial",
@@ -383,8 +405,19 @@ const EditDataAdmission: React.FC<EditDataProps> = ({
                 <div id="status">
                   <AdmissionStatusSection />
                 </div>
+                <div id="medicines">
+                  <MedicineInformation
+                    medicineBillingEnabled={
+                      initialPatientData.medicineBillingEnabled
+                    }
+                  />
+                </div>
                 <div id="financial">
-                  <FinancialInformation />
+                  <FinancialInformation
+                    medicineBillingEnabled={
+                      initialPatientData.medicineBillingEnabled
+                    }
+                  />
                 </div>
               </div>
             </div>

@@ -25,11 +25,23 @@ export type { PurchaseFormData, PurchaseLineItem } from "./purchaseFormStore";
 export {
   useSaleFormStore,
   useSaleFormData,
-  useSetSaleFormData,
-  useSetSaleFormDataWithFIFO,
+  useSetPatient,
+  useSetSaleDate,
+  useAppendBlankRow,
+  useRemoveRow,
+  useClearRows,
+  useUpdateRow,
+  useSetMedicineForRow,
+  useApplyPackage,
+  useSetGyneContext,
   useResetSaleForm,
 } from "./saleFormStore";
-export type { SaleFormData } from "./saleFormStore";
+export type {
+  SaleFormData,
+  SalePatientSelection,
+  MedicineSaleDraftItem,
+  GyneContextSnapshot,
+} from "./saleFormStore";
 
 // ═══════════════════════════════════════════════════════════════
 // UI Store - Modal and Tab State

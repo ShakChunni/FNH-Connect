@@ -181,6 +181,7 @@ export interface AdmissionPatientData {
   anesthesiaFee: number;
   assistantDoctorFee: number;
   medicineCharge: number;
+  medicineBillingEnabled: boolean;
   otherCharges: number;
   totalAmount: number;
   discountType: string | null;
@@ -269,7 +270,6 @@ export interface CreateAdmissionPayload {
   surgeonCharge?: number;
   anesthesiaFee?: number;
   assistantDoctorFee?: number;
-  medicineCharge?: number;
   otherCharges?: number;
   discountType?: DiscountType;
   discountValue?: number | null;

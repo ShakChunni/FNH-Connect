@@ -6,6 +6,7 @@
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
 import { SessionDeviceInfo } from "@/types/auth";
+import { isGynecologyDepartment } from "@/lib/departmentRecognition";
 
 // ═══════════════════════════════════════════════════════════════
 // TYPES
@@ -59,6 +60,27 @@ export interface CreateSaleWithTxResult {
   totalQuantity: number;
 }
 
+/**
+ * Internal prevalidated context for `createSaleWithTx`. When provided,
+ * the function trusts the supplied patient and medicine records and skips
+ * the per-call re-fetch, while still performing the full FIFO stock
+ * deduction. Used by the multi-item batch flow to avoid N+1 lookups.
+ *
+ * The context is intentionally not exported through the public API
+ * surface — it is only used inside the medicine-inventory service.
+ */
+interface PrevalidatedSaleContext {
+  patient: { id: number; fullName: string };
+  medicine: {
+    id: number;
+    genericName: string;
+    brandName: string | null;
+    isActive: boolean;
+    currentStock: number;
+    group: { id: number; name: string };
+  };
+}
+
 export interface MedicineFilters {
   search?: string;
   groupId?: number;
@@ -88,6 +110,21 @@ export interface SaleFilters {
   endDate?: string;
   page?: number;
   limit?: number;
+}
+
+export interface CreateSalesBatchItemInput {
+  medicineId: number;
+  quantity: number;
+  unitPrice: number;
+}
+
+export interface CreateSalesBatchResult {
+  patientId: number;
+  logicalItemCount: number;
+  fifoSaleRowCount: number;
+  totalQuantity: number;
+  totalAmount: number;
+  sales: MedicineSaleWithRelations[];
 }
 
 export interface GroupFilters {
@@ -1149,6 +1186,11 @@ export async function getSales(filters: SaleFilters) {
                 fullName: { contains: filters.search, mode: "insensitive" },
               },
             },
+            {
+              patient: {
+                phoneNumber: { contains: filters.search },
+              },
+            },
           ],
         }
       : {}),
@@ -1267,29 +1309,64 @@ export async function createSaleWithTx(
   userId: number,
   activityLogContext?: ActivityLogContext,
   linkContext?: MedicineSaleLinkContext,
+  prevalidated?: PrevalidatedSaleContext,
 ): Promise<CreateSaleWithTxResult> {
   const now = new Date();
   const effectiveSaleDate = data.saleDate || now;
+
+  if (Number.isNaN(effectiveSaleDate.getTime())) {
+    throw new Error("Sale date is invalid");
+  }
 
   if (effectiveSaleDate > now) {
     throw new Error("Sale date cannot be in the future");
   }
 
-  // Verify patient exists
-  const patient = await tx.patient.findUnique({
-    where: { id: data.patientId },
-  });
+  // Verify patient exists (or trust prevalidated context)
+  const patient = prevalidated
+    ? prevalidated.patient.id === data.patientId
+      ? {
+          id: prevalidated.patient.id,
+          fullName: prevalidated.patient.fullName,
+        }
+      : null
+    : await tx.patient.findUnique({ where: { id: data.patientId } });
 
   if (!patient) {
     throw new Error("Patient not found");
   }
 
-  // Verify medicine exists and has sufficient stock
-  const medicine = await tx.medicine.findUnique({
-    where: { id: data.medicineId },
-  });
+  // Verify medicine exists and has sufficient stock (or trust prevalidated context)
+  let medicine: {
+    id: number;
+    genericName: string;
+    brandName: string | null;
+    isActive: boolean;
+    currentStock: number;
+    group: { id: number; name: string };
+  };
 
-  if (!medicine || !medicine.isActive) {
+  if (prevalidated && prevalidated.medicine.id === data.medicineId) {
+    medicine = prevalidated.medicine;
+  } else {
+    const found = await tx.medicine.findUnique({
+      where: { id: data.medicineId },
+      select: {
+        id: true,
+        genericName: true,
+        brandName: true,
+        isActive: true,
+        currentStock: true,
+        group: { select: { id: true, name: true } },
+      },
+    });
+    if (!found || !found.isActive) {
+      throw new Error("Invalid or inactive medicine");
+    }
+    medicine = found;
+  }
+
+  if (!medicine.isActive) {
     throw new Error("Invalid or inactive medicine");
   }
 
@@ -1483,8 +1560,227 @@ export async function createSaleWithTx(
 }
 
 /**
+ * Atomic multi-item direct pharmacy sale.
+ *
+ * Validates the patient, all referenced medicines, and combined stock in
+ * one pass, then runs the existing `createSaleWithTx` primitive for each
+ * item using a shared transaction. The cart succeeds or fails as a
+ * whole: any failure rolls back every FIFO deduction, `Medicine.currentStock`
+ * decrement, and `MedicineSale` insert.
+ *
+ * Pricing: the pharmacist's per-item `unitPrice` is multiplied by the
+ * actual FIFO quantity at the server. The client never submits a line
+ * total or a cart total.
+ */
+export async function createSalesBatch(
+  data: {
+    patientId: number;
+    saleDate?: Date;
+    items: CreateSalesBatchItemInput[];
+  },
+  staffId: number,
+  userId: number,
+  activityLogContext?: ActivityLogContext,
+): Promise<CreateSalesBatchResult> {
+  const now = new Date();
+  const effectiveSaleDate = data.saleDate || now;
+
+  if (Number.isNaN(effectiveSaleDate.getTime())) {
+    throw new Error("Sale date is invalid");
+  }
+
+  if (effectiveSaleDate > now) {
+    throw new Error("Sale date cannot be in the future");
+  }
+
+  if (!Number.isFinite(data.patientId) || data.patientId <= 0) {
+    throw new Error("Patient is required.");
+  }
+
+  if (!Array.isArray(data.items) || data.items.length === 0) {
+    throw new Error("At least one medicine is required.");
+  }
+
+  if (data.items.length > 100) {
+    throw new Error("A single cart can contain up to 100 medicines.");
+  }
+
+  // Reject duplicate medicine IDs at the service boundary as well, in
+  // case a future caller skips the client-side merge step.
+  const seenMedicineIds = new Set<number>();
+  for (const item of data.items) {
+    if (!Number.isInteger(item.medicineId) || item.medicineId <= 0) {
+      throw new Error("Selected medicine is not available.");
+    }
+    if (!Number.isInteger(item.quantity) || item.quantity <= 0) {
+      throw new Error("Quantity must be a positive whole number.");
+    }
+    if (!Number.isFinite(item.unitPrice) || item.unitPrice <= 0) {
+      throw new Error("Unit price must be greater than zero.");
+    }
+    if (seenMedicineIds.has(item.medicineId)) {
+      throw new Error(
+        `Duplicate medicine in cart: ${item.medicineId}. Merge quantities before submitting.`,
+      );
+    }
+    seenMedicineIds.add(item.medicineId);
+  }
+
+  return prisma.$transaction(async (tx) => {
+    const patient = await tx.patient.findUnique({
+      where: { id: data.patientId },
+      select: { id: true, fullName: true },
+    });
+
+    if (!patient) {
+      throw new Error("Patient not found");
+    }
+
+    const medicineIds = data.items.map((item) => item.medicineId);
+    const medicines = await tx.medicine.findMany({
+      where: { id: { in: medicineIds }, isActive: true },
+      select: {
+        id: true,
+        genericName: true,
+        brandName: true,
+        isActive: true,
+        currentStock: true,
+        group: { select: { id: true, name: true } },
+      },
+    });
+
+    if (medicines.length !== medicineIds.length) {
+      const foundIds = new Set(medicines.map((m) => m.id));
+      const missing = medicineIds.find((id) => !foundIds.has(id));
+      throw new Error(
+        `One or more medicines are missing or inactive (id: ${missing ?? "?"})`,
+      );
+    }
+
+    const medicineById = new Map(medicines.map((m) => [m.id, m]));
+
+    // Per-medicine stock is validated in the loop below; the earlier single
+    // query is enough because each medicine appears at most once (we
+    // rejected duplicates above).
+    const aggregated: MedicineSaleWithRelations[] = [];
+    let fifoRowCount = 0;
+    let totalQuantity = 0;
+    let totalAmount = 0;
+    for (const item of data.items) {
+      const medicine = medicineById.get(item.medicineId);
+      if (!medicine || !medicine.isActive) {
+        throw new Error(
+          `Selected medicine is not available (id: ${item.medicineId}).`,
+        );
+      }
+
+      const result = await createSaleWithTx(
+        tx,
+        {
+          patientId: data.patientId,
+          medicineId: item.medicineId,
+          quantity: item.quantity,
+          unitPrice: item.unitPrice,
+          saleDate: effectiveSaleDate,
+        },
+        staffId,
+        userId,
+        activityLogContext,
+        undefined,
+        {
+          patient: { id: patient.id, fullName: patient.fullName },
+          medicine,
+        },
+      );
+
+      aggregated.push(...result.sales);
+      fifoRowCount += result.sales.length;
+      totalQuantity += result.totalQuantity;
+      totalAmount += result.totalAmount;
+    }
+
+    return {
+      patientId: data.patientId,
+      logicalItemCount: data.items.length,
+      fifoSaleRowCount: fifoRowCount,
+      totalQuantity,
+      totalAmount,
+      sales: aggregated,
+    };
+  }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+}
+
+export interface PatientGyneContextResult {
+  admissionId: number;
+  admissionNumber: string;
+  status: string;
+  dateAdmitted: Date;
+  departmentId: number;
+  departmentName: string;
+  hasLucsPackage: boolean;
+}
+
+/**
+ * Return the latest non-canceled, non-discharged Gynecology admission for
+ * a central patient, plus a flag indicating whether a LUCS admission
+ * package is already attached.
+ *
+ * Returns `null` when no active Gynecology admission exists. Used by the
+ * Medicine Inventory multi-item sale modal to enable the LUCS quick-fill
+ * action and to render a compact gynecology badge in the cart header.
+ */
+export async function getPatientGyneContext(
+  patientId: number,
+): Promise<PatientGyneContextResult | null> {
+  if (!Number.isFinite(patientId) || patientId <= 0) return null;
+
+  const activeAdmissions = await prisma.admission.findMany({
+    where: {
+      patientId,
+      isDischarged: false,
+      status: { not: "Canceled" },
+    },
+    orderBy: { dateAdmitted: "desc" },
+    select: {
+      id: true,
+      admissionNumber: true,
+      status: true,
+      dateAdmitted: true,
+      departmentId: true,
+      department: { select: { name: true } },
+      medicineChargeItems: {
+        where: { packageCode: "LUCS_OT_MEDICINE" },
+        select: { id: true },
+        take: 1,
+      },
+    },
+  });
+
+  const admission = activeAdmissions.find((candidate) =>
+    isGynecologyDepartment(candidate.department.name),
+  );
+
+  if (!admission) return null;
+
+  return {
+    admissionId: admission.id,
+    admissionNumber: admission.admissionNumber,
+    status: admission.status,
+    dateAdmitted: admission.dateAdmitted,
+    departmentId: admission.departmentId,
+    departmentName: admission.department.name,
+    hasLucsPackage: admission.medicineChargeItems.length > 0,
+  };
+}
+
+/**
  * Reverse (delete) all `MedicineSale` rows linked to a given admission and
  * restore stock back to the source purchase batches.
+ *
+ * Defensive predicate: only rows with a non-null `admissionMedicineChargeId`
+ * are considered admission-linked. Direct pharmacist sales (which this
+ * plan explicitly does not link to admissions) are never touched even if
+ * a future caller happened to set `admissionId` for some other reason.
  *
  * Must be called from inside an existing Prisma transaction. The caller is
  * responsible for deleting `AdmissionMedicineCharge` rows and any other
@@ -1495,7 +1791,10 @@ export async function reverseAdmissionMedicineSales(
   admissionId: number,
 ): Promise<{ reversed: number }> {
   const sales = await tx.medicineSale.findMany({
-    where: { admissionId },
+    where: {
+      admissionId,
+      admissionMedicineChargeId: { not: null },
+    },
     select: {
       id: true,
       medicineId: true,
@@ -1525,7 +1824,9 @@ export async function reverseAdmissionMedicineSales(
   }
 
   await tx.medicineSale.deleteMany({
-    where: { admissionId },
+    where: {
+      id: { in: sales.map((sale) => sale.id) },
+    },
   });
 
   return { reversed: sales.length };

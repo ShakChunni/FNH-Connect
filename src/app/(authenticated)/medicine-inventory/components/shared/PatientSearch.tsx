@@ -1,6 +1,10 @@
 /**
  * Patient Search Component
- * Searchable dropdown for selecting patients for medicine sales
+ * Searchable dropdown for selecting patients for medicine sales.
+ *
+ * Surfaces the additional fields the central `/api/patient-records`
+ * endpoint returns (phone, address, guardian, gender) so pharmacists
+ * can confidently distinguish patients with similar names.
  */
 
 "use client";
@@ -14,23 +18,25 @@ import React, {
 } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ClientPortal } from "@/components/ui/ClientPortal";
-import { User, Loader2, X, Check, Phone } from "lucide-react";
+import {
+  User,
+  Loader2,
+  X,
+  Check,
+  Phone,
+  MapPin,
+  Users,
+} from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/axios";
 import { useDebounce } from "@/hooks/useDebounce";
-
-interface PatientBasic {
-  id: number;
-  fullName: string;
-  phoneNumber: string | null;
-  gender: string;
-}
+import type { SalePatientOption } from "../../types";
 
 interface PatientSearchProps {
   value: number | null;
   displayValue: string;
   displayPhone?: string;
-  onChange: (patient: PatientBasic | null) => void;
+  onChange: (patient: SalePatientOption | null) => void;
   placeholder?: string;
   disabled?: boolean;
   error?: boolean;
@@ -41,7 +47,7 @@ function useFetchPatients(searchQuery: string) {
 
   return useQuery({
     queryKey: ["patients", "search", debouncedQuery],
-    queryFn: async (): Promise<PatientBasic[]> => {
+    queryFn: async (): Promise<SalePatientOption[]> => {
       if (
         !debouncedQuery ||
         !debouncedQuery.trim() ||
@@ -57,6 +63,9 @@ function useFetchPatients(searchQuery: string) {
           fullName: string;
           phoneNumber: string | null;
           gender: string;
+          guardianName?: string | null;
+          address?: string | null;
+          email?: string | null;
         }>;
         error?: string;
       }>("/patient-records", {
@@ -75,6 +84,9 @@ function useFetchPatients(searchQuery: string) {
         fullName: patient.fullName,
         phoneNumber: patient.phoneNumber,
         gender: patient.gender,
+        guardianName: patient.guardianName ?? null,
+        address: patient.address ?? null,
+        email: patient.email ?? null,
       }));
     },
     enabled: debouncedQuery.trim().length >= 2,
@@ -88,7 +100,7 @@ export const PatientSearch: React.FC<PatientSearchProps> = ({
   displayValue,
   displayPhone,
   onChange,
-  placeholder = "Search patient by name or phone...",
+  placeholder = "Search by name, phone, guardian or address...",
   disabled = false,
   error = false,
 }) => {
@@ -111,9 +123,12 @@ export const PatientSearch: React.FC<PatientSearchProps> = ({
   }, [displayValue, isOpen]);
 
   // Fetch patients with search
-  const { data: patients = [], isLoading } = useFetchPatients(
-    isOpen ? searchQuery : "",
-  );
+  const {
+    data: patients = [],
+    isLoading,
+    isError,
+    error: searchError,
+  } = useFetchPatients(isOpen ? searchQuery : "");
 
   const updateDropdownPosition = useCallback(() => {
     if (inputRef.current) {
@@ -141,7 +156,7 @@ export const PatientSearch: React.FC<PatientSearchProps> = ({
     }
   };
 
-  const handleSelectPatient = (patient: PatientBasic) => {
+  const handleSelectPatient = (patient: SalePatientOption) => {
     onChange(patient);
     setSearchQuery(patient.fullName);
     setIsOpen(false);
@@ -250,11 +265,15 @@ export const PatientSearch: React.FC<PatientSearchProps> = ({
         )}
       </div>
 
-      {/* Show phone number when patient is selected */}
-      {value && displayPhone && (
-        <div className="mt-1 flex items-center gap-1.5 text-xs text-gray-500">
-          <Phone className="w-3 h-3" />
-          <span>{displayPhone}</span>
+      {/* Show extra context when patient is selected */}
+      {value && (
+        <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-500">
+          {displayPhone && (
+            <span className="inline-flex items-center gap-1">
+              <Phone className="w-3 h-3" />
+              <span>{displayPhone}</span>
+            </span>
+          )}
         </div>
       )}
 
@@ -297,46 +316,71 @@ export const PatientSearch: React.FC<PatientSearchProps> = ({
 
               {/* Results */}
               {showResults && (
-                <div className="max-h-[240px] overflow-y-auto">
+                <div className="max-h-[300px] overflow-y-auto">
                   {patients.map((patient) => (
                     <button
                       key={patient.id}
                       onClick={() => handleSelectPatient(patient)}
-                      className={`w-full px-4 py-3 text-left hover:bg-indigo-50 transition-colors flex items-center gap-3 cursor-pointer ${
+                      className={`w-full px-4 py-3 text-left hover:bg-indigo-50 transition-colors flex items-start gap-3 cursor-pointer ${
                         value === patient.id ? "bg-indigo-50" : ""
                       }`}
                     >
-                      <div className="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center shrink-0">
+                      <div className="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center shrink-0 mt-0.5">
                         <User className="w-4 h-4 text-indigo-600" />
                       </div>
                       <div className="min-w-0 flex-1">
                         <p className="text-sm font-semibold text-gray-900 truncate">
                           {patient.fullName}
                         </p>
-                        <div className="flex items-center gap-2 mt-0.5">
-                          <span className="text-xs text-gray-500">
+                        <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 mt-1">
+                          <span className="text-[11px] text-gray-500 font-medium">
                             {patient.gender}
                           </span>
                           {patient.phoneNumber && (
-                            <>
-                              <span className="text-gray-300">•</span>
-                              <span className="text-xs text-gray-500">
-                                {patient.phoneNumber}
+                            <span className="inline-flex items-center gap-0.5 text-[11px] text-gray-500">
+                              <Phone className="w-2.5 h-2.5" />
+                              {patient.phoneNumber}
+                            </span>
+                          )}
+                          {patient.guardianName && (
+                            <span className="inline-flex items-center gap-0.5 text-[11px] text-gray-500">
+                              <Users className="w-2.5 h-2.5" />
+                              <span className="truncate max-w-[120px]">
+                                {patient.guardianName}
                               </span>
-                            </>
+                            </span>
                           )}
                         </div>
+                        {patient.address && (
+                          <p className="inline-flex items-start gap-0.5 text-[11px] text-gray-400 mt-0.5 line-clamp-1">
+                            <MapPin className="w-2.5 h-2.5 mt-0.5 shrink-0" />
+                            <span className="truncate">{patient.address}</span>
+                          </p>
+                        )}
                       </div>
                       {value === patient.id && (
-                        <Check className="w-4 h-4 text-indigo-600 shrink-0" />
+                        <Check className="w-4 h-4 text-indigo-600 shrink-0 mt-1" />
                       )}
                     </button>
                   ))}
                 </div>
               )}
 
+              {isOpen && isError && (
+                <div className="p-4 text-center">
+                  <p className="text-sm font-medium text-red-600">
+                    {searchError instanceof Error
+                      ? searchError.message
+                      : "Failed to search patients"}
+                  </p>
+                  <p className="mt-1 text-xs text-gray-400">
+                    Check the connection and try again.
+                  </p>
+                </div>
+              )}
+
               {/* No Results */}
-              {showNoResults && (
+              {showNoResults && !isError && (
                 <div className="p-4 text-center">
                   <p className="text-sm text-gray-500">
                     No patients found for "{searchQuery}"

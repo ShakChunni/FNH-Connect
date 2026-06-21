@@ -43,9 +43,14 @@ export const admissionMedicineChargeItemSchema = z.object({
   groupName: z.string().trim().nullable(),
   companyName: z.string().trim().nullable(),
   quantity: z.number().int().min(1, "Quantity must be at least 1"),
-  unitPrice: z
-    .number()
-    .positive("Medicine price must be greater than 0"),
+  /**
+   * `unitPrice` is optional in the schema because the inventory-only
+   * mode hides the price field. The server enforces a positive price
+   * for legacy billable admissions; for inventory-only admissions the
+   * live `Medicine.defaultSalePrice` is used as the authoritative
+   * snapshot regardless of what the client submits.
+   */
+  unitPrice: z.number().min(0).optional(),
   totalAmount: z.number().min(0).optional(),
   currentStock: z.number().int().min(0).optional(),
   defaultSalePrice: z.number().min(0).optional(),
@@ -109,7 +114,6 @@ export const createAdmissionSchema = z.object({
   surgeonCharge: z.number().optional(),
   anesthesiaFee: z.number().optional(),
   assistantDoctorFee: z.number().optional(),
-  medicineCharge: z.number().optional(),
   otherCharges: z.number().optional(),
   discountType: z.enum(["percentage", "value"]).nullable().optional(),
   discountValue: z.number().nullable().optional(),
@@ -145,7 +149,7 @@ export const updateAdmissionSchema = z.object({
   surgeonCharge: z.number().optional(),
   anesthesiaFee: z.number().optional(),
   assistantDoctorFee: z.number().optional(),
-  medicineCharge: z.number().optional(),
+  medicineCharge: z.number().min(0).optional(),
   otherCharges: z.number().optional(),
   discountType: z.enum(["percentage", "value"]).nullable().optional(),
   discountValue: z.number().nullable().optional(),

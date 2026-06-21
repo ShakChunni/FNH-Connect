@@ -17,6 +17,7 @@ import {
   AdmissionMedicineChargeItem,
 } from "../types";
 import { parseDateOfBirth } from "@/lib/dateOfBirth";
+import { DEFAULT_ADMISSION_MEDICINE_BILLING_ENABLED } from "@/lib/admissionMedicineBilling";
 
 const roundToTwoDecimals = (value: number): number => {
   return Math.round(value * 100) / 100;
@@ -35,6 +36,7 @@ interface FormState {
   financialData: FinancialData;
   validationStatus: ValidationStatus;
   medicineChargeItems: AdmissionMedicineChargeItem[];
+  medicineBillingEnabled: boolean;
 }
 
 interface FormActions {
@@ -63,6 +65,7 @@ interface FormActions {
   initializeFormForEdit: (admission: AdmissionPatientData) => void;
   resetForm: () => void;
   calculateTotals: () => void;
+  setMedicineBillingEnabled: (enabled: boolean) => void;
 
   // Smart actions for financial calculations
   setCharge: (field: keyof FinancialData, amount: number) => void;
@@ -166,6 +169,7 @@ export const useAdmissionFormStore = create<FormStore>((set, get) => ({
   financialData: { ...initialFinancialData },
   validationStatus: { ...initialValidationStatus },
   medicineChargeItems: [],
+  medicineBillingEnabled: DEFAULT_ADMISSION_MEDICINE_BILLING_ENABLED,
 
   // Actions
   setHospitalData: (data) =>
@@ -252,16 +256,20 @@ export const useAdmissionFormStore = create<FormStore>((set, get) => ({
       };
       return normalizedItem;
     });
-    const medicineCharge = roundToTwoDecimals(
-      normalized.reduce((sum, item) => sum + item.totalAmount, 0),
-    );
-    set((state) => ({
-      medicineChargeItems: normalized,
-      financialData: {
-        ...state.financialData,
-        medicineCharge,
-      },
-    }));
+    set((state) => {
+      const medicineCharge = state.medicineBillingEnabled
+        ? roundToTwoDecimals(
+            normalized.reduce((sum, item) => sum + item.totalAmount, 0),
+          )
+        : 0;
+      return {
+        medicineChargeItems: normalized,
+        financialData: {
+          ...state.financialData,
+          medicineCharge,
+        },
+      };
+    });
     get().calculateTotals();
   },
 
@@ -277,9 +285,11 @@ export const useAdmissionFormStore = create<FormStore>((set, get) => ({
       item.isMatched =
         item.medicineId !== null && item.medicineId !== undefined;
       updated[index] = item;
-      const medicineCharge = roundToTwoDecimals(
-        updated.reduce((sum, r) => sum + r.totalAmount, 0),
-      );
+      const medicineCharge = state.medicineBillingEnabled
+        ? roundToTwoDecimals(
+            updated.reduce((sum, r) => sum + r.totalAmount, 0),
+          )
+        : 0;
       return {
         medicineChargeItems: updated,
         financialData: {
@@ -294,12 +304,13 @@ export const useAdmissionFormStore = create<FormStore>((set, get) => ({
   removeMedicineChargeItem: (index) => {
     set((state) => {
       const updated = state.medicineChargeItems.filter((_, i) => i !== index);
-      const medicineCharge =
-        updated.length > 0
+      const medicineCharge = state.medicineBillingEnabled
+        ? updated.length > 0
           ? roundToTwoDecimals(
               updated.reduce((sum, r) => sum + r.totalAmount, 0),
             )
-          : 0;
+          : 0
+        : 0;
       return {
         medicineChargeItems: updated,
         financialData: {
@@ -322,6 +333,27 @@ export const useAdmissionFormStore = create<FormStore>((set, get) => ({
     get().calculateTotals();
   },
 
+  setMedicineBillingEnabled: (enabled) => {
+    set((state) => {
+      const medicineCharge = enabled
+        ? roundToTwoDecimals(
+            state.medicineChargeItems.reduce(
+              (sum, r) => sum + r.totalAmount,
+              0,
+            ),
+          )
+        : 0;
+      return {
+        medicineBillingEnabled: enabled,
+        financialData: {
+          ...state.financialData,
+          medicineCharge,
+        },
+      };
+    });
+    get().calculateTotals();
+  },
+
   calculateTotals: () => {
     set((state) => {
       const {
@@ -340,6 +372,10 @@ export const useAdmissionFormStore = create<FormStore>((set, get) => ({
         paidAmount,
       } = state.financialData;
 
+      const effectiveMedicineCharge = state.medicineBillingEnabled
+        ? medicineCharge
+        : 0;
+
       // Calculate total before discount
       const totalAmount =
         admissionFee +
@@ -350,7 +386,7 @@ export const useAdmissionFormStore = create<FormStore>((set, get) => ({
         surgeonCharge +
         anesthesiaFee +
         assistantDoctorFee +
-        medicineCharge +
+        effectiveMedicineCharge +
         otherCharges;
 
       // Calculate discount amount
@@ -384,6 +420,7 @@ export const useAdmissionFormStore = create<FormStore>((set, get) => ({
 
   initializeFormForEdit: (admission) => {
     set({
+      medicineBillingEnabled: admission.medicineBillingEnabled,
       hospitalData: {
         id: admission.hospitalId,
         name: admission.hospitalName || "",
@@ -473,6 +510,7 @@ export const useAdmissionFormStore = create<FormStore>((set, get) => ({
       financialData: { ...initialFinancialData },
       validationStatus: { ...initialValidationStatus },
       medicineChargeItems: [],
+      medicineBillingEnabled: DEFAULT_ADMISSION_MEDICINE_BILLING_ENABLED,
     }),
 
   // Smart actions for financial calculations
@@ -526,6 +564,7 @@ export const useAdmissionFormStore = create<FormStore>((set, get) => ({
       financialData: { ...initialFinancialData },
       validationStatus: { ...initialValidationStatus },
       medicineChargeItems: [],
+      medicineBillingEnabled: DEFAULT_ADMISSION_MEDICINE_BILLING_ENABLED,
     });
   },
 
@@ -539,6 +578,7 @@ export const useAdmissionFormStore = create<FormStore>((set, get) => ({
       financialData: { ...initialFinancialData },
       validationStatus: { ...initialValidationStatus },
       medicineChargeItems: [],
+      medicineBillingEnabled: DEFAULT_ADMISSION_MEDICINE_BILLING_ENABLED,
     });
   },
 }));
@@ -571,6 +611,9 @@ export const useAdmissionValidationStatus = () =>
 export const useAdmissionMedicineChargeItems = () =>
   useAdmissionFormStore((state) => state.medicineChargeItems);
 
+export const useAdmissionMedicineBillingEnabled = () =>
+  useAdmissionFormStore((state) => state.medicineBillingEnabled);
+
 // Combined actions hook
 export const useAdmissionFormActions = () =>
   useAdmissionFormStore(
@@ -594,6 +637,7 @@ export const useAdmissionFormActions = () =>
       setCharge: state.setCharge,
       setDiscount: state.setDiscount,
       setPaidAmount: state.setPaidAmount,
+      setMedicineBillingEnabled: state.setMedicineBillingEnabled,
       afterAddModalClosed: state.afterAddModalClosed,
       afterEditModalClosed: state.afterEditModalClosed,
     })),

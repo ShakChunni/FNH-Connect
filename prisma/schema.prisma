@@ -39,15 +39,15 @@ model Patient {
   createdBy Int // Staff ID who created the record
 
   // Relations
-  admissions         Admission[]
-  pathologyTests     PathologyTest[]
-  legacyInfertilityTests InfertilityTest[] @relation("LegacyInfertilityTestPatient")
-  account            PatientAccount? // Central account for all charges/payments
-  infertilityRecords InfertilityPatient[] // Infertility department records
-  infertilityAccount InfertilityPatientAccount?
-  hospital           Hospital?            @relation(fields: [hospitalId], references: [id])
-  hospitalId         Int?
-  medicineSales      MedicineSale[] // Medicine sales to this patient
+  admissions             Admission[]
+  pathologyTests         PathologyTest[]
+  legacyInfertilityTests InfertilityTest[]          @relation("LegacyInfertilityTestPatient")
+  account                PatientAccount? // Central account for all charges/payments
+  infertilityRecords     InfertilityPatient[] // Infertility department records
+  infertilityAccount     InfertilityPatientAccount?
+  hospital               Hospital?                  @relation(fields: [hospitalId], references: [id])
+  hospitalId             Int?
+  medicineSales          MedicineSale[] // Medicine sales to this patient
 
   @@index([fullName])
   @@index([phoneNumber])
@@ -89,11 +89,11 @@ model Staff {
   shifts                Shift[] // New relation for cash management
 
   // Infertility relations
-  infertilityCreated  InfertilityPatient[] @relation("InfertilityCreatedBy")
-  infertilityModified InfertilityPatient[] @relation("InfertilityModifiedBy")
-  infertilityTestOrdered  InfertilityTest[] @relation("InfertilityTestOrderedBy")
-  infertilityTestDone     InfertilityTest[] @relation("InfertilityTestDoneBy")
-  infertilityShifts       InfertilityShift[]
+  infertilityCreated           InfertilityPatient[] @relation("InfertilityCreatedBy")
+  infertilityModified          InfertilityPatient[] @relation("InfertilityModifiedBy")
+  infertilityTestOrdered       InfertilityTest[]    @relation("InfertilityTestOrderedBy")
+  infertilityTestDone          InfertilityTest[]    @relation("InfertilityTestDoneBy")
+  infertilityShifts            InfertilityShift[]
   infertilityCollectedPayments InfertilityPayment[]
 
   // Login credentials
@@ -154,6 +154,13 @@ model Admission {
   medicineCharge     Decimal @default(0)
   otherCharges       Decimal @default(0)
 
+  // Inventory-only mode: when false, admission medicine rows still deduct
+  // stock and snapshot live inventory values, but are excluded from
+  // admission billing totals, discounts, patient-account charges, and
+  // service-charge / invoice money. The stored flag is the authoritative
+  // value for every later edit, print, cancel, delete, and serialization.
+  medicineBillingEnabled Boolean @default(false)
+
   totalAmount    Decimal  @default(0)
   discountType   String? // "percentage" or "value"
   discountValue  Decimal? // Raw input value (e.g., 10 for 10%)
@@ -180,14 +187,14 @@ model Admission {
   lastModifiedBy Int
 
   // Relations
-  patient        Patient         @relation(fields: [patientId], references: [id])
-  department     Department      @relation(fields: [departmentId], references: [id])
-  doctor         Staff           @relation("AdmittingDoctor", fields: [doctorId], references: [id])
-  pathologyTests    PathologyTest[]
-  infertilityTests  InfertilityTest[]
-  serviceCharges    ServiceCharge[] // Link to new payment system
+  patient             Patient                   @relation(fields: [patientId], references: [id])
+  department          Department                @relation(fields: [departmentId], references: [id])
+  doctor              Staff                     @relation("AdmittingDoctor", fields: [doctorId], references: [id])
+  pathologyTests      PathologyTest[]
+  infertilityTests    InfertilityTest[]
+  serviceCharges      ServiceCharge[] // Link to new payment system
   medicineChargeItems AdmissionMedicineCharge[]
-  medicineSales     MedicineSale[]
+  medicineSales       MedicineSale[]
 
   @@index([patientId])
   @@index([departmentId])
@@ -216,8 +223,8 @@ model AdmissionMedicineCharge {
   createdBy             Int
   lastModifiedBy        Int?
 
-  admission    Admission     @relation(fields: [admissionId], references: [id], onDelete: Cascade)
-  medicine     Medicine?     @relation(fields: [medicineId], references: [id])
+  admission     Admission      @relation(fields: [admissionId], references: [id], onDelete: Cascade)
+  medicine      Medicine?      @relation(fields: [medicineId], references: [id])
   medicineSales MedicineSale[]
 
   @@index([admissionId])
@@ -571,10 +578,10 @@ model InfertilityPatient {
   lastModifiedBy Int? // Staff ID who last modified
 
   // Relations
-  patient         Patient  @relation(fields: [patientId], references: [id])
-  hospital        Hospital @relation(fields: [hospitalId], references: [id])
-  createdByStaff  Staff    @relation("InfertilityCreatedBy", fields: [createdBy], references: [id])
-  modifiedByStaff Staff?   @relation("InfertilityModifiedBy", fields: [lastModifiedBy], references: [id])
+  patient         Patient           @relation(fields: [patientId], references: [id])
+  hospital        Hospital          @relation(fields: [hospitalId], references: [id])
+  createdByStaff  Staff             @relation("InfertilityCreatedBy", fields: [createdBy], references: [id])
+  modifiedByStaff Staff?            @relation("InfertilityModifiedBy", fields: [lastModifiedBy], references: [id])
   tests           InfertilityTest[]
 
   @@unique([patientId, hospitalId]) // One infertility record per patient per hospital
@@ -585,57 +592,57 @@ model InfertilityPatient {
 }
 
 model InfertilityTest {
-  id                   Int                      @id @default(autoincrement())
-  infertilityPatientId Int                      // Links to InfertilityPatient
-  legacyPatientId      Int?                     @map("patientId") // Legacy migration reference retained for non-destructive cleanup
-  testNumber           String                   @unique // Format: INFT-YY-XXXXX
+  id                   Int    @id @default(autoincrement())
+  infertilityPatientId Int // Links to InfertilityPatient
+  legacyPatientId      Int?   @map("patientId") // Legacy migration reference retained for non-destructive cleanup
+  testNumber           String @unique // Format: INFT-YY-XXXXX
 
   // Optional admission link — fees only apply when admitted
-  admissionId          Int?
+  admissionId Int?
 
   // Doctor references
-  orderedById          Int                      // Doctor who ordered
-  doneById             Int?                     // Staff who performed
+  orderedById Int // Doctor who ordered
+  doneById    Int? // Staff who performed
 
   // Investigation subject
   subjectType         InvestigationSubjectType @default(UNKNOWN)
   subjectNameSnapshot String?
 
   // Test info
-  testDate            DateTime                 @default(now())
-  reportDate          DateTime?
-  testCategory        String                   // Same categories as pathology
-  testResults         Json?                    // { tests: ["CBC", "RBS", ...] }
-  remarks             String?
-  isCompleted         Boolean                  @default(false)
+  testDate     DateTime  @default(now())
+  reportDate   DateTime?
+  testCategory String // Same categories as pathology
+  testResults  Json? // { tests: ["CBC", "RBS", ...] }
+  remarks      String?
+  isCompleted  Boolean   @default(false)
 
   // Financial — independent from pathology
-  testCharge          Decimal                  @default(0)
-  discountType        String?                  // "percentage" or "value"
-  discountValue       Decimal?
-  discountAmount      Decimal?
-  grandTotal          Decimal                  @default(0)
-  paidAmount          Decimal                  @default(0)
-  dueAmount           Decimal                  @default(0)
+  testCharge     Decimal  @default(0)
+  discountType   String? // "percentage" or "value"
+  discountValue  Decimal?
+  discountAmount Decimal?
+  grandTotal     Decimal  @default(0)
+  paidAmount     Decimal  @default(0)
+  dueAmount      Decimal  @default(0)
 
   // Tracking
-  createdAt           DateTime                 @default(now())
-  updatedAt           DateTime                 @updatedAt
-  createdBy           Int
-  lastModifiedBy      Int
-  sourcePathologyTestId Int?                   @unique
-  isMigrationSuperseded Boolean                @default(false)
-  migrationSupersededAt DateTime?
+  createdAt                 DateTime  @default(now())
+  updatedAt                 DateTime  @updatedAt
+  createdBy                 Int
+  lastModifiedBy            Int
+  sourcePathologyTestId     Int?      @unique
+  isMigrationSuperseded     Boolean   @default(false)
+  migrationSupersededAt     DateTime?
   migrationSupersededReason String?
-  migrationSupersededBatch String?
+  migrationSupersededBatch  String?
 
   // Relations
-  infertilityPatient  InfertilityPatient       @relation(fields: [infertilityPatientId], references: [id])
-  legacyPatient       Patient?                 @relation("LegacyInfertilityTestPatient", fields: [legacyPatientId], references: [id], map: "InfertilityTest_patientId_fkey")
-  admission           Admission?               @relation(fields: [admissionId], references: [id])
-  orderedBy           Staff                    @relation("InfertilityTestOrderedBy", fields: [orderedById], references: [id])
-  doneBy              Staff?                   @relation("InfertilityTestDoneBy", fields: [doneById], references: [id])
-  serviceCharges      InfertilityServiceCharge[]
+  infertilityPatient InfertilityPatient         @relation(fields: [infertilityPatientId], references: [id])
+  legacyPatient      Patient?                   @relation("LegacyInfertilityTestPatient", fields: [legacyPatientId], references: [id], map: "InfertilityTest_patientId_fkey")
+  admission          Admission?                 @relation(fields: [admissionId], references: [id])
+  orderedBy          Staff                      @relation("InfertilityTestOrderedBy", fields: [orderedById], references: [id])
+  doneBy             Staff?                     @relation("InfertilityTestDoneBy", fields: [doneById], references: [id])
+  serviceCharges     InfertilityServiceCharge[]
 
   @@index([infertilityPatientId])
   @@index([legacyPatientId], map: "InfertilityTest_patientId_idx")
@@ -683,12 +690,12 @@ model BlockedIP {
 // ============================================
 
 model InfertilityShift {
-  id        Int       @id @default(autoincrement())
-  staffId   Int
-  startTime DateTime
-  endTime   DateTime?
-  isActive  Boolean   @default(true)
-  sourceShiftId Int?  @unique
+  id            Int       @id @default(autoincrement())
+  staffId       Int
+  startTime     DateTime
+  endTime       DateTime?
+  isActive      Boolean   @default(true)
+  sourceShiftId Int?      @unique
 
   openingCash Decimal @default(0)
   closingCash Decimal @default(0)
@@ -702,7 +709,7 @@ model InfertilityShift {
   reconciledAt DateTime?
   reconciledBy Int?
 
-  staff         Staff                       @relation(fields: [staffId], references: [id])
+  staff         Staff                     @relation(fields: [staffId], references: [id])
   payments      InfertilityPayment[]
   cashMovements InfertilityCashMovement[]
 
@@ -712,21 +719,21 @@ model InfertilityShift {
 }
 
 model InfertilityCashMovement {
-  id           Int      @id @default(autoincrement())
-  shiftId      Int
-  amount       Decimal
-  movementType String // "PAYMENT_RECEIVED", "CHANGE_GIVEN", "CASH_FLOAT", "REFUND"
-  description  String?
-  timestamp    DateTime @default(now())
-  paymentId    Int?
-  sourceCashMovementId Int? @unique
-  isMigrationSuperseded Boolean @default(false)
-  migrationSupersededAt DateTime?
+  id                        Int       @id @default(autoincrement())
+  shiftId                   Int
+  amount                    Decimal
+  movementType              String // "PAYMENT_RECEIVED", "CHANGE_GIVEN", "CASH_FLOAT", "REFUND"
+  description               String?
+  timestamp                 DateTime  @default(now())
+  paymentId                 Int?
+  sourceCashMovementId      Int?      @unique
+  isMigrationSuperseded     Boolean   @default(false)
+  migrationSupersededAt     DateTime?
   migrationSupersededReason String?
-  migrationSupersededBatch String?
+  migrationSupersededBatch  String?
 
-  shift   InfertilityShift     @relation(fields: [shiftId], references: [id])
-  payment InfertilityPayment?  @relation(fields: [paymentId], references: [id])
+  shift   InfertilityShift    @relation(fields: [shiftId], references: [id])
+  payment InfertilityPayment? @relation(fields: [paymentId], references: [id])
 
   @@index([shiftId])
   @@index([timestamp])
@@ -761,13 +768,13 @@ model InfertilityServiceCharge {
   serviceDate DateTime @default(now())
   description String?
 
-  infertilityTestId Int?
-  infertilityTest   InfertilityTest?   @relation(fields: [infertilityTestId], references: [id])
-  sourceServiceChargeId Int? @unique
-  isMigrationSuperseded Boolean @default(false)
-  migrationSupersededAt DateTime?
+  infertilityTestId         Int?
+  infertilityTest           InfertilityTest? @relation(fields: [infertilityTestId], references: [id])
+  sourceServiceChargeId     Int?             @unique
+  isMigrationSuperseded     Boolean          @default(false)
+  migrationSupersededAt     DateTime?
   migrationSupersededReason String?
-  migrationSupersededBatch String?
+  migrationSupersededBatch  String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -790,13 +797,13 @@ model InfertilityPayment {
   collectedById    Int
   shiftId          Int
 
-  receiptNumber String  @unique
-  notes         String?
-  sourcePaymentId Int?  @unique
-  isMigrationSuperseded Boolean @default(false)
-  migrationSupersededAt DateTime?
+  receiptNumber             String    @unique
+  notes                     String?
+  sourcePaymentId           Int?      @unique
+  isMigrationSuperseded     Boolean   @default(false)
+  migrationSupersededAt     DateTime?
   migrationSupersededReason String?
-  migrationSupersededBatch String?
+  migrationSupersededBatch  String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -814,15 +821,15 @@ model InfertilityPayment {
 }
 
 model InfertilityPaymentAllocation {
-  id              Int     @id @default(autoincrement())
-  paymentId       Int
-  serviceChargeId Int
-  allocatedAmount Decimal
-  sourcePaymentAllocationId Int? @unique
-  isMigrationSuperseded Boolean @default(false)
-  migrationSupersededAt DateTime?
+  id                        Int       @id @default(autoincrement())
+  paymentId                 Int
+  serviceChargeId           Int
+  allocatedAmount           Decimal
+  sourcePaymentAllocationId Int?      @unique
+  isMigrationSuperseded     Boolean   @default(false)
+  migrationSupersededAt     DateTime?
   migrationSupersededReason String?
-  migrationSupersededBatch String?
+  migrationSupersededBatch  String?
 
   payment       InfertilityPayment       @relation(fields: [paymentId], references: [id])
   serviceCharge InfertilityServiceCharge @relation(fields: [serviceChargeId], references: [id])
@@ -911,9 +918,9 @@ model Medicine {
   updatedAt DateTime @updatedAt
 
   // Relations
-  group     MedicineGroup      @relation(fields: [groupId], references: [id])
-  purchases MedicinePurchase[]
-  sales     MedicineSale[]
+  group                    MedicineGroup             @relation(fields: [groupId], references: [id])
+  purchases                MedicinePurchase[]
+  sales                    MedicineSale[]
   admissionMedicineCharges AdmissionMedicineCharge[]
 
   @@unique([brandName, groupId])
@@ -958,7 +965,7 @@ model MedicinePurchase {
 
 // Sales entries - when medicine is sold to patients
 model MedicineSale {
-  id                        Int @id @default(autoincrement())
+  id                        Int  @id @default(autoincrement())
   patientId                 Int // Patient receiving medicine
   medicineId                Int // Medicine sold
   purchaseId                Int // Which purchase batch this came from
@@ -976,10 +983,10 @@ model MedicineSale {
   createdBy Int // Staff who recorded this
 
   // Relations
-  patient               Patient                 @relation(fields: [patientId], references: [id])
-  medicine              Medicine                @relation(fields: [medicineId], references: [id])
-  purchase              MedicinePurchase        @relation(fields: [purchaseId], references: [id])
-  admission             Admission?              @relation(fields: [admissionId], references: [id])
+  patient                 Patient                  @relation(fields: [patientId], references: [id])
+  medicine                Medicine                 @relation(fields: [medicineId], references: [id])
+  purchase                MedicinePurchase         @relation(fields: [purchaseId], references: [id])
+  admission               Admission?               @relation(fields: [admissionId], references: [id])
   admissionMedicineCharge AdmissionMedicineCharge? @relation(fields: [admissionMedicineChargeId], references: [id])
 
   @@index([patientId])

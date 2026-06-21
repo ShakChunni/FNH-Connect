@@ -84,7 +84,6 @@ export async function GET(request: NextRequest) {
       {
         success: false,
         error: "Failed to fetch admissions",
-        message: error instanceof Error ? error.message : "Unknown error",
       },
       { status: 500 }
     );
@@ -180,7 +179,9 @@ export async function POST(request: NextRequest) {
         surgeonCharge: validated.surgeonCharge,
         anesthesiaFee: validated.anesthesiaFee,
         assistantDoctorFee: validated.assistantDoctorFee,
-        medicineCharge: validated.medicineCharge,
+        // medicineCharge is intentionally NOT sent: the server derives it
+        // from the Admission.medicineBillingEnabled flag and the
+        // AdmissionMedicineCharge rows.
         otherCharges: validated.otherCharges,
         discountType: validated.discountType,
         discountValue: validated.discountValue,
@@ -244,7 +245,6 @@ export async function POST(request: NextRequest) {
       {
         success: false,
         error: "Failed to create admission",
-        message: error instanceof Error ? error.message : "Unknown error",
       },
       { status: 500 }
     );
