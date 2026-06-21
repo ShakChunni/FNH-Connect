@@ -82,7 +82,8 @@ export function transformFormToCreatePayload(
     surgeonCharge: financialData?.surgeonCharge,
     anesthesiaFee: financialData?.anesthesiaFee,
     assistantDoctorFee: financialData?.assistantDoctorFee,
-    medicineCharge: financialData?.medicineCharge,
+    // medicineCharge is intentionally NOT sent: the server derives it
+    // from the Admission.medicineBillingEnabled flag.
     otherCharges: financialData?.otherCharges,
     discountType: financialData?.discountType,
     discountValue: financialData?.discountValue,

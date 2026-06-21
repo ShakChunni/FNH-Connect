@@ -251,7 +251,6 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       {
         success: false,
         error: "Failed to update admission",
-        message: error instanceof Error ? error.message : "Unknown error",
       },
       { status: 500 }
     );
@@ -320,7 +319,6 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
       {
         success: false,
         error: "Failed to delete admission",
-        message: error instanceof Error ? error.message : "Unknown error",
       },
       { status: 500 }
     );

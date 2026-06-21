@@ -58,6 +58,13 @@ interface AdmissionMedicineItemsTableProps {
   onAddRow: () => void;
   onRefresh: () => void;
   onClearAll: () => void;
+  /**
+   * When true, render the table in inventory-only mode:
+   *  - no unit price / total columns,
+   *  - copy changes from "Gynecology medicines" to "Dispensed medicines",
+   *  - footer shows the total quantity instead of money.
+   */
+  inventoryOnly?: boolean;
 }
 
 const currency = (value: number) =>
@@ -507,6 +514,7 @@ export const AdmissionMedicineItemsTable: React.FC<
   onAddRow,
   onRefresh,
   onClearAll,
+  inventoryOnly = false,
 }) => {
   const matchedCount = items.filter((item) => item.medicineId !== null).length;
   const unmatchedCount = items.length - matchedCount;
@@ -534,11 +542,17 @@ export const AdmissionMedicineItemsTable: React.FC<
             </div>
             <div className="min-w-0">
               <h4 className="text-sm font-bold text-gray-800">
-                Gynecology medicines
+                {inventoryOnly
+                  ? "Dispensed medicines (inventory only)"
+                  : "Gynecology medicines"}
               </h4>
               <div className="mt-1 flex flex-wrap items-center gap-1.5">
                 <span className="text-[11px] text-gray-500">
-                  {items.length} item{items.length !== 1 ? "s" : ""}
+                  {items.length} item{items.length !== 1 ? "s" : ""} ·{" "}
+                  {items.reduce((sum, i) => sum + i.quantity, 0)} unit
+                  {items.reduce((sum, i) => sum + i.quantity, 0) !== 1
+                    ? "s"
+                    : ""}
                 </span>
                 <span className="inline-flex items-center gap-0.5 rounded-md bg-emerald-100 px-1.5 py-0.5 text-[11px] font-semibold text-emerald-700">
                   <CheckCircle2 className="h-2.5 w-2.5" />
@@ -548,6 +562,11 @@ export const AdmissionMedicineItemsTable: React.FC<
                   <span className="inline-flex items-center gap-0.5 rounded-md bg-amber-100 px-1.5 py-0.5 text-[11px] font-semibold text-amber-700">
                     <TriangleAlert className="h-2.5 w-2.5" />
                     {unmatchedCount} need selection
+                  </span>
+                )}
+                {inventoryOnly && (
+                  <span className="inline-flex items-center gap-0.5 rounded-md bg-slate-100 px-1.5 py-0.5 text-[11px] font-semibold text-slate-700">
+                    Not billed
                   </span>
                 )}
               </div>
@@ -637,8 +656,12 @@ export const AdmissionMedicineItemsTable: React.FC<
                   <th className="w-28 px-3 py-2.5 text-left font-semibold uppercase tracking-wider">Stock</th>
                   <th className="w-28 px-3 py-2.5 text-left font-semibold uppercase tracking-wider">Group</th>
                   <th className="w-32 px-3 py-2.5 text-center font-semibold uppercase tracking-wider">Qty</th>
-                  <th className="w-28 px-3 py-2.5 text-right font-semibold uppercase tracking-wider">Unit price</th>
-                  <th className="w-28 px-3 py-2.5 text-right font-semibold uppercase tracking-wider">Total</th>
+                  {!inventoryOnly && (
+                    <>
+                      <th className="w-28 px-3 py-2.5 text-right font-semibold uppercase tracking-wider">Unit price</th>
+                      <th className="w-28 px-3 py-2.5 text-right font-semibold uppercase tracking-wider">Total</th>
+                    </>
+                  )}
                   <th className="w-10 px-2 py-2.5" />
                 </tr>
               </thead>
@@ -719,18 +742,22 @@ export const AdmissionMedicineItemsTable: React.FC<
                             />
                           </div>
                         </td>
-                        <td className="px-3 py-3">
-                          <UnitPriceField
-                            value={item.unitPrice}
-                            hasMedicine={isMatched}
-                          />
-                        </td>
-                        <td className="px-3 py-3">
-                          <TotalField
-                            value={item.totalAmount}
-                            hasMedicine={isMatched}
-                          />
-                        </td>
+                        {!inventoryOnly && (
+                          <>
+                            <td className="px-3 py-3">
+                              <UnitPriceField
+                                value={item.unitPrice}
+                                hasMedicine={isMatched}
+                              />
+                            </td>
+                            <td className="px-3 py-3">
+                              <TotalField
+                                value={item.totalAmount}
+                                hasMedicine={isMatched}
+                              />
+                            </td>
+                          </>
+                        )}
                         <td className="px-2 py-3 text-center">
                           <motion.button
                             type="button"
@@ -751,13 +778,36 @@ export const AdmissionMedicineItemsTable: React.FC<
               </motion.tbody>
               <tfoot>
                 <tr className="border-t-2 border-emerald-200 bg-emerald-50/60">
-                  <td colSpan={7} className="px-3 py-2.5 text-right text-xs font-bold text-gray-600 uppercase tracking-wider">
-                    Total — {items.length} item{items.length !== 1 ? "s" : ""}
-                  </td>
-                  <td className="px-3 py-2.5">
-                    <TotalField value={totalAmount} hasMedicine={items.some((i) => i.medicineId !== null)} />
-                  </td>
-                  <td />
+                  {inventoryOnly ? (
+                    <>
+                      <td
+                        colSpan={6}
+                        className="px-3 py-2.5 text-right text-xs font-bold text-gray-600 uppercase tracking-wider"
+                      >
+                        Total units dispensed
+                      </td>
+                      <td className="px-3 py-2.5 text-right text-xs font-extrabold text-emerald-700">
+                        {items.reduce((sum, i) => sum + i.quantity, 0)}
+                      </td>
+                      <td />
+                    </>
+                  ) : (
+                    <>
+                      <td
+                        colSpan={7}
+                        className="px-3 py-2.5 text-right text-xs font-bold text-gray-600 uppercase tracking-wider"
+                      >
+                        Total — {items.length} item{items.length !== 1 ? "s" : ""}
+                      </td>
+                      <td className="px-3 py-2.5">
+                        <TotalField
+                          value={totalAmount}
+                          hasMedicine={items.some((i) => i.medicineId !== null)}
+                        />
+                      </td>
+                      <td />
+                    </>
+                  )}
                 </tr>
               </tfoot>
             </table>
@@ -833,7 +883,11 @@ export const AdmissionMedicineItemsTable: React.FC<
                       ) : null}
                     </div>
 
-                    <div className="mt-3 grid grid-cols-3 gap-2">
+                    <div
+                      className={`mt-3 gap-2 ${
+                        inventoryOnly ? "grid grid-cols-1" : "grid grid-cols-3"
+                      }`}
+                    >
                       <div>
                         <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-gray-400">
                           Qty
@@ -847,24 +901,28 @@ export const AdmissionMedicineItemsTable: React.FC<
                           }
                         />
                       </div>
-                      <div>
-                        <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-gray-400">
-                          Unit price
-                        </p>
-                        <UnitPriceField
-                          value={item.unitPrice}
-                          hasMedicine={isMatched}
-                        />
-                      </div>
-                      <div>
-                        <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-gray-400">
-                          Total
-                        </p>
-                        <TotalField
-                          value={item.totalAmount}
-                          hasMedicine={isMatched}
-                        />
-                      </div>
+                      {!inventoryOnly && (
+                        <>
+                          <div>
+                            <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-gray-400">
+                              Unit price
+                            </p>
+                            <UnitPriceField
+                              value={item.unitPrice}
+                              hasMedicine={isMatched}
+                            />
+                          </div>
+                          <div>
+                            <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-gray-400">
+                              Total
+                            </p>
+                            <TotalField
+                              value={item.totalAmount}
+                              hasMedicine={isMatched}
+                            />
+                          </div>
+                        </>
+                      )}
                     </div>
                   </motion.div>
                 );
@@ -877,10 +935,18 @@ export const AdmissionMedicineItemsTable: React.FC<
               className="flex items-center justify-between rounded-xl border-2 border-emerald-200 bg-emerald-50 px-4 py-3"
             >
               <p className="text-sm font-bold text-gray-700">
-                Total ({items.length} item{items.length !== 1 ? "s" : ""})
+                {inventoryOnly
+                  ? `Total units dispensed (${items.length} item${
+                      items.length !== 1 ? "s" : ""
+                    })`
+                  : `Total (${items.length} item${
+                      items.length !== 1 ? "s" : ""
+                    })`}
               </p>
               <p className="text-lg font-extrabold text-emerald-700">
-                {currency(totalAmount)}
+                {inventoryOnly
+                  ? items.reduce((sum, i) => sum + i.quantity, 0)
+                  : currency(totalAmount)}
               </p>
             </motion.div>
           </div>

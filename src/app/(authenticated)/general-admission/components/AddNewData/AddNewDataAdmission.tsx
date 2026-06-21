@@ -1,6 +1,13 @@
 "use client";
 import React, { useCallback, useMemo, useRef, useEffect } from "react";
-import { Save, User, Stethoscope, Activity, Wallet } from "lucide-react";
+import {
+  Save,
+  User,
+  Stethoscope,
+  Activity,
+  Wallet,
+  Pill,
+} from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   modalVariants,
@@ -14,6 +21,7 @@ import {
   AdmissionPatientInformation,
   DepartmentSelection,
   AdmissionStatusSection,
+  MedicineInformation,
   FinancialInformation,
 } from "../form-section";
 import {
@@ -31,6 +39,7 @@ import { useAddAdmissionData } from "../../hooks/useAddAdmissionData";
 import { useNotification } from "@/hooks/useNotification";
 import { AdmissionPatientData } from "../../types";
 import { hasRequiredBangladeshDistrict } from "@/lib/bangladeshAddress";
+import { DEFAULT_ADMISSION_MEDICINE_BILLING_ENABLED } from "@/lib/admissionMedicineBilling";
 
 interface AddNewDataProps {
   isOpen: boolean;
@@ -38,7 +47,13 @@ interface AddNewDataProps {
   onSuccess?: (data: AdmissionPatientData) => void;
 }
 
-const SECTION_IDS = ["patient", "department", "status", "financial"];
+const SECTION_IDS = [
+  "patient",
+  "department",
+  "status",
+  "medicines",
+  "financial",
+];
 
 const getTabColors = (color: string, isActive: boolean) => {
   const colors: Record<string, { active: string; inactive: string }> = {
@@ -57,6 +72,10 @@ const getTabColors = (color: string, isActive: boolean) => {
     green: {
       active: "bg-green-600 text-white shadow-lg",
       inactive: "bg-green-100 text-green-700 hover:bg-green-200",
+    },
+    emerald: {
+      active: "bg-emerald-600 text-white shadow-lg",
+      inactive: "bg-emerald-100 text-emerald-700 hover:bg-emerald-200",
     },
   };
   return isActive ? colors[color]?.active : colors[color]?.inactive;
@@ -146,7 +165,7 @@ const AddNewDataAdmission: React.FC<AddNewDataProps> = ({
           `Medicine row ${index + 1}: select a pharmacy medicine or remove the row`,
         );
       }
-      if (item.unitPrice <= 0) {
+      if (DEFAULT_ADMISSION_MEDICINE_BILLING_ENABLED && item.unitPrice <= 0) {
         errors.push(
           `Medicine row ${index + 1}: sale price must be greater than 0`,
         );
@@ -178,6 +197,7 @@ const AddNewDataAdmission: React.FC<AddNewDataProps> = ({
     financialData.seatRent,
     admissionInfo.seatNumber,
     medicineChargeItems,
+    DEFAULT_ADMISSION_MEDICINE_BILLING_ENABLED,
   ]);
 
   const { showNotification } = useNotification();
@@ -241,7 +261,9 @@ const AddNewDataAdmission: React.FC<AddNewDataProps> = ({
       surgeonCharge: financialData.surgeonCharge,
       anesthesiaFee: financialData.anesthesiaFee,
       assistantDoctorFee: financialData.assistantDoctorFee,
-      medicineCharge: financialData.medicineCharge,
+      // medicineCharge is intentionally NOT sent: the server derives it
+      // from the Admission.medicineBillingEnabled flag and the
+      // AdmissionMedicineCharge rows.
       otherCharges: financialData.otherCharges,
       discountType: financialData.discountType,
       discountValue: financialData.discountValue,
@@ -296,6 +318,12 @@ const AddNewDataAdmission: React.FC<AddNewDataProps> = ({
       label: "Status",
       icon: Activity,
       color: "amber",
+    },
+    {
+      id: "medicines",
+      label: "Medicines",
+      icon: Pill,
+      color: "emerald",
     },
     {
       id: "financial",
@@ -381,8 +409,19 @@ const AddNewDataAdmission: React.FC<AddNewDataProps> = ({
                 <div id="status">
                   <AdmissionStatusSection />
                 </div>
+                <div id="medicines">
+                  <MedicineInformation
+                    medicineBillingEnabled={
+                      DEFAULT_ADMISSION_MEDICINE_BILLING_ENABLED
+                    }
+                  />
+                </div>
                 <div id="financial">
-                  <FinancialInformation />
+                  <FinancialInformation
+                    medicineBillingEnabled={
+                      DEFAULT_ADMISSION_MEDICINE_BILLING_ENABLED
+                    }
+                  />
                 </div>
               </div>
             </div>

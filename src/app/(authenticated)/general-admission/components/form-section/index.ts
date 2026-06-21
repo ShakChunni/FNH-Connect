@@ -19,5 +19,8 @@ export { DoctorDropdown } from "./DepartmentSelection";
 // Admission Status
 export { AdmissionStatusSection } from "./AdmissionStatus";
 
+// Medicine Information
+export { default as MedicineInformation } from "./MedicineInformation/MedicineInformation";
+
 // Financial Information
 export { FinancialInformation } from "./FinancialInformation";

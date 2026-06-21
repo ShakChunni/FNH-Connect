@@ -20,6 +20,7 @@ import {
   createSaleWithTx,
   reverseAdmissionMedicineSales,
 } from "@/services/medicineInventoryService";
+import { DEFAULT_ADMISSION_MEDICINE_BILLING_ENABLED } from "@/lib/admissionMedicineBilling";
 
 // ═══════════════════════════════════════════════════════════════
 // TYPES
@@ -86,7 +87,14 @@ export interface AdmissionData {
   surgeonCharge?: number;
   anesthesiaFee?: number;
   assistantDoctorFee?: number;
-  medicineCharge?: number;
+  /**
+   * `medicineCharge` is intentionally NOT in this contract. The server
+   * derives the effective billed medicine charge from the stored
+   * `Admission.medicineBillingEnabled` flag, the new
+   * `DEFAULT_ADMISSION_MEDICINE_BILLING_ENABLED` constant, and the
+   * submitted `medicineChargeItems` rows. The client never controls
+   * this value.
+   */
   otherCharges?: number;
   discountType?: string | null;
   discountValue?: number | null;
@@ -106,7 +114,12 @@ export interface AdmissionMedicineChargeItemInput {
   groupName?: string | null;
   companyName?: string | null;
   quantity: number;
-  unitPrice: number;
+  /**
+   * `unitPrice` is optional in the input contract because the
+   * inventory-only mode hides the price field. The server enforces
+   * positivity only when the admission is in legacy billable mode.
+   */
+  unitPrice?: number;
   totalAmount?: number;
   currentStock?: number;
   defaultSalePrice?: number;
@@ -142,11 +155,19 @@ export class AdmissionMedicineValidationError extends Error {
  * `defaultSalePrice` / `currentStock` snapshot from the client. The actual
  * authoritative values are re-fetched from the `Medicine` table — the
  * client snapshot is only used as a UX hint.
+ *
+ * `medicineBillingEnabled` controls whether unit price must be positive:
+ *  - when true (legacy billable admission), a positive unit price is
+ *    required and the snapshot value feeds the billable total.
+ *  - when false (inventory-only admission), zero or positive unit price
+ *    is accepted and the live `Medicine.defaultSalePrice` is used as the
+ *    authoritative inventory snapshot. The resulting total is still saved
+ *    for pharmacy reporting but never feeds the admission bill.
  */
 async function normalizeAdmissionMedicineChargeItems(
   items: AdmissionMedicineChargeItemInput[] | undefined,
   tx: Prisma.TransactionClient,
-  context: { isUpdating: boolean },
+  context: { isUpdating: boolean; medicineBillingEnabled: boolean },
 ): Promise<NormalizedAdmissionMedicineChargeItem[]> {
   if (!items?.length) return [];
 
@@ -158,9 +179,6 @@ async function normalizeAdmissionMedicineChargeItems(
 
     if (item.medicineId === null || item.medicineId === undefined) {
       if (context.isUpdating) {
-        // For an update, the user is allowed to clear itemized rows
-        // (in which case the caller passes an empty array). Empty medicineId
-        // for an explicit row is rejected.
         fieldErrors[`${path}.medicineId`] = [
           "Select a pharmacy medicine or remove this row before saving.",
         ];
@@ -172,6 +190,49 @@ async function normalizeAdmissionMedicineChargeItems(
     }
   });
 
+  const requestedQuantityByMedicineId = new Map<number, number>();
+  for (let index = 0; index < items.length; index++) {
+    const item = items[index];
+    if (item.medicineId === null || item.medicineId === undefined) continue;
+    if (!Number.isInteger(item.quantity) || item.quantity <= 0) {
+      fieldErrors[`medicineChargeItems.${index}.quantity`] = [
+        "Quantity must be a positive whole number.",
+      ];
+      continue;
+    }
+    requestedQuantityByMedicineId.set(
+      item.medicineId,
+      (requestedQuantityByMedicineId.get(item.medicineId) ?? 0) +
+        item.quantity,
+    );
+  }
+
+  const medicines = await tx.medicine.findMany({
+    where: {
+      id: { in: [...requestedQuantityByMedicineId.keys()] },
+    },
+    select: {
+      id: true,
+      genericName: true,
+      brandName: true,
+      isActive: true,
+      currentStock: true,
+      defaultSalePrice: true,
+      group: { select: { id: true, name: true } },
+      purchases: {
+        where: { remainingQty: { gt: 0 } },
+        orderBy: { purchaseDate: "asc" },
+        take: 1,
+        select: {
+          company: { select: { name: true } },
+        },
+      },
+    },
+  });
+  const medicineById = new Map(
+    medicines.map((medicine) => [medicine.id, medicine]),
+  );
+
   for (let i = 0; i < items.length; i++) {
     const item = items[i];
     if (item.medicineId === null || item.medicineId === undefined) {
@@ -180,19 +241,7 @@ async function normalizeAdmissionMedicineChargeItems(
 
     const path = `medicineChargeItems.${i}`;
     const medicineId = item.medicineId;
-
-    const medicine = await tx.medicine.findUnique({
-      where: { id: medicineId },
-      select: {
-        id: true,
-        genericName: true,
-        brandName: true,
-        isActive: true,
-        currentStock: true,
-        defaultSalePrice: true,
-        group: { select: { id: true, name: true } },
-      },
-    });
+    const medicine = medicineById.get(medicineId);
 
     if (!medicine || !medicine.isActive) {
       fieldErrors[`${path}.medicineId`] = [
@@ -201,38 +250,43 @@ async function normalizeAdmissionMedicineChargeItems(
       continue;
     }
 
-    const quantity = Math.max(1, Math.trunc(item.quantity));
-    const unitPrice = Number(item.unitPrice);
+    if (!Number.isInteger(item.quantity) || item.quantity <= 0) {
+      continue;
+    }
+    const quantity = item.quantity;
+    const submittedUnitPrice =
+      item.unitPrice === undefined || item.unitPrice === null
+        ? Number.NaN
+        : Number(item.unitPrice);
 
-    if (medicine.currentStock < quantity) {
+    const totalRequested =
+      requestedQuantityByMedicineId.get(medicine.id) ?? quantity;
+    if (medicine.currentStock < totalRequested) {
       fieldErrors[`${path}.quantity`] = [
-        `Insufficient stock. Available: ${medicine.currentStock}, Requested: ${quantity}`,
+        `Insufficient stock. Available: ${medicine.currentStock}, Requested: ${totalRequested}`,
       ];
     }
 
-    if (!Number.isFinite(unitPrice) || unitPrice <= 0) {
-      fieldErrors[`${path}.unitPrice`] = [
-        "Medicine price must be greater than 0.",
-      ];
-      continue;
+    let unitPrice: number;
+    if (context.medicineBillingEnabled) {
+      if (!Number.isFinite(submittedUnitPrice) || submittedUnitPrice <= 0) {
+        fieldErrors[`${path}.unitPrice`] = [
+          "Medicine price must be greater than 0.",
+        ];
+        continue;
+      }
+      unitPrice = submittedUnitPrice;
+    } else {
+      // Inventory-only admission: trust the live `defaultSalePrice` as
+      // the authoritative inventory snapshot. The client's submitted
+      // value (if any) is ignored for the snapshot but still tolerated
+      // because the UI no longer renders a price field — a stray
+      // non-finite value must not block admission creation.
+      const livePrice = Number(medicine.defaultSalePrice);
+      unitPrice = Number.isFinite(livePrice) && livePrice > 0 ? livePrice : 0;
     }
 
     const displayName = medicine.brandName?.trim() || medicine.genericName;
-
-    // Resolve the source company for the snapshot. We pick the oldest
-    // purchase with stock because that is the FIFO batch the sale will
-    // consume from; if none has stock we still allow the row but leave
-    // company null (the sale flow will revalidate).
-    const oldestPurchase = await tx.medicinePurchase.findFirst({
-      where: {
-        medicineId: medicine.id,
-        remainingQty: { gt: 0 },
-      },
-      orderBy: { purchaseDate: "asc" },
-      select: {
-        company: { select: { name: true } },
-      },
-    });
 
     normalized.push({
       medicineId: medicine.id,
@@ -242,7 +296,7 @@ async function normalizeAdmissionMedicineChargeItems(
       medicineName: displayName,
       genericName: medicine.genericName,
       groupName: medicine.group.name,
-      companyName: oldestPurchase?.company?.name ?? null,
+      companyName: medicine.purchases[0]?.company.name ?? null,
       quantity,
       unitPrice,
       totalAmount: quantity * unitPrice,
@@ -348,6 +402,10 @@ export async function getAdmissions(filters: AdmissionFilters) {
     }),
     prisma.admission.count({ where }),
   ]);
+
+  // The `medicineBillingEnabled` column is automatically included by the
+  // findMany select without explicit `include` because it is a top-level
+  // scalar column. We just need to ensure the typed return matches.
 
   const staffIds = Array.from(
     new Set(
@@ -492,12 +550,22 @@ export async function createAdmission(
     );
 
     // 5. Normalize medicine charge items
+    //
+    // The server owns the medicine-billing mode. It always uses
+    // `DEFAULT_ADMISSION_MEDICINE_BILLING_ENABLED` for new admissions;
+    // legacy billable admissions are only created by an explicit
+    // backfill or by a future server-side override. The client never
+    // controls this flag.
+    const medicineBillingEnabled = !isCreatingCanceled
+      ? DEFAULT_ADMISSION_MEDICINE_BILLING_ENABLED
+      : false;
+
     const medicineItems = isCreatingCanceled
       ? []
       : await normalizeAdmissionMedicineChargeItems(
           admissionData.medicineChargeItems,
           tx,
-          { isUpdating: false },
+          { isUpdating: false, medicineBillingEnabled },
         );
 
     // 6. Calculate financial fields
@@ -522,12 +590,18 @@ export async function createAdmission(
       ? 0
       : (admissionData.otherCharges ?? 0);
 
-    const medicineCharge =
+    // Effective billed medicine charge: zero in inventory-only mode,
+    // sum of row totals in legacy billable mode.
+    const inventoryMedicineValue =
       medicineItems.length > 0
         ? medicineItems.reduce((sum, item) => sum + item.totalAmount, 0)
-        : isCreatingCanceled
-          ? 0
-          : (admissionData.medicineCharge ?? 0);
+        : 0;
+    const billedMedicineCharge = isCreatingCanceled
+      ? 0
+      : medicineBillingEnabled
+        ? inventoryMedicineValue
+        : 0;
+    const medicineCharge = billedMedicineCharge;
 
     const totalAmount =
       admissionFee +
@@ -590,6 +664,7 @@ export async function createAdmission(
         anesthesiaFee,
         assistantDoctorFee,
         medicineCharge,
+        medicineBillingEnabled,
         otherCharges,
         totalAmount,
         discountType,
@@ -946,7 +1021,10 @@ export async function updateAdmission(
       const medicineItems = await normalizeAdmissionMedicineChargeItems(
         updateData.medicineChargeItems,
         tx,
-        { isUpdating: true },
+        {
+          isUpdating: true,
+          medicineBillingEnabled: existingAdmission.medicineBillingEnabled,
+        },
       );
 
       for (const item of medicineItems) {
@@ -1035,20 +1113,29 @@ export async function updateAdmission(
       otherCharges = updateData.otherCharges ?? 0;
       paidAmountNew = updateData.paidAmount ?? 0;
 
-      if (updateData.medicineChargeItems !== undefined) {
-        // The actual normalization/validation has already happened
-        // above where the charge rows are recreated. Here we only need
-        // the total for the financial summary.
-        const existingCharges = await tx.admissionMedicineCharge.findMany({
-          where: { admissionId: id },
-          select: { totalAmount: true },
-        });
-        medicineCharge = existingCharges.reduce(
-          (sum, item) => sum + Number(item.totalAmount),
-          0,
-        );
+      if (existingAdmission.medicineBillingEnabled) {
+        if (
+          updateData.medicineChargeItems !== undefined &&
+          updateData.medicineChargeItems.length > 0
+        ) {
+          // The actual normalization/validation has already happened
+          // above where the charge rows are recreated. Here we only need
+          // the total for the financial summary.
+          const existingCharges = await tx.admissionMedicineCharge.findMany({
+            where: { admissionId: id },
+            select: { totalAmount: true },
+          });
+          medicineCharge = existingCharges.reduce(
+            (sum, item) => sum + Number(item.totalAmount),
+            0,
+          );
+        } else {
+          medicineCharge = updateData.medicineCharge ?? 0;
+        }
       } else {
-        medicineCharge = updateData.medicineCharge ?? 0;
+        // Inventory-only restore: medicines are still dispensed (stock is
+        // re-deducted), but they never enter the admission bill.
+        medicineCharge = 0;
       }
     } else {
       admissionFee = Number(existingAdmission.admissionFee);
@@ -1070,19 +1157,30 @@ export async function updateAdmission(
       paidAmountNew =
         updateData.paidAmount ?? Number(existingAdmission.paidAmount);
 
-      if (updateData.medicineChargeItems !== undefined) {
-        // Same as above — re-read totals from the freshly inserted rows
-        const existingCharges = await tx.admissionMedicineCharge.findMany({
-          where: { admissionId: id },
-          select: { totalAmount: true },
-        });
-        medicineCharge = existingCharges.reduce(
-          (sum, item) => sum + Number(item.totalAmount),
-          0,
-        );
+      if (existingAdmission.medicineBillingEnabled) {
+        if (
+          updateData.medicineChargeItems !== undefined &&
+          updateData.medicineChargeItems.length > 0
+        ) {
+          // Same as above — re-read totals from the freshly inserted rows
+          const existingCharges = await tx.admissionMedicineCharge.findMany({
+            where: { admissionId: id },
+            select: { totalAmount: true },
+          });
+          medicineCharge = existingCharges.reduce(
+            (sum, item) => sum + Number(item.totalAmount),
+            0,
+          );
+        } else {
+          medicineCharge =
+            updateData.medicineCharge ??
+            Number(existingAdmission.medicineCharge);
+        }
       } else {
-        medicineCharge =
-          updateData.medicineCharge ?? Number(existingAdmission.medicineCharge);
+        // Inventory-only: the effective billed charge is always zero
+        // regardless of what the rows snapshot. The submitted value
+        // (if any) is ignored.
+        medicineCharge = 0;
       }
     }
 
@@ -1470,6 +1568,7 @@ type AdmissionWithRelations = Prisma.AdmissionGetPayload<{
     medicineChargeItems: true;
   };
 }> & {
+  medicineBillingEnabled: boolean;
   createdByName?: string | null;
   lastModifiedByName?: string | null;
 };
@@ -1523,6 +1622,7 @@ export function transformAdmissionForResponse(admission: AdmissionWithRelations)
     anesthesiaFee: Number(admission.anesthesiaFee),
     assistantDoctorFee: Number(admission.assistantDoctorFee),
     medicineCharge: Number(admission.medicineCharge),
+    medicineBillingEnabled: admission.medicineBillingEnabled,
     otherCharges: Number(admission.otherCharges),
     totalAmount: Number(admission.totalAmount),
     discountType: admission.discountType,

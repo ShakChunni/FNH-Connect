@@ -499,7 +499,15 @@ export const generateAdmissionInvoice = async (
     },
   ].filter((c) => c.amount > 0);
 
-  if (data.medicineChargeItems && data.medicineChargeItems.length > 0) {
+  // Inventory-only admissions keep the medicine rows out of the monetary
+  // table. They are printed as a separate quantity-only section later.
+  const inventoryOnly = data.medicineBillingEnabled === false;
+
+  if (
+    data.medicineChargeItems &&
+    data.medicineChargeItems.length > 0 &&
+    !inventoryOnly
+  ) {
     for (const item of data.medicineChargeItems) {
       const baseDescription = `Medicine - ${item.medicineName} (${item.operationName}, Qty ${item.quantity} x ৳${item.unitPrice.toLocaleString()})`;
       let description = baseDescription;
@@ -516,7 +524,7 @@ export const generateAdmissionInvoice = async (
         amount: item.totalAmount,
       });
     }
-  } else if (data.medicineCharge > 0) {
+  } else if (data.medicineCharge > 0 && !inventoryOnly) {
     charges.push({ description: "Medicine Charge", amount: data.medicineCharge });
   }
 
@@ -530,9 +538,6 @@ export const generateAdmissionInvoice = async (
     charge.amount.toLocaleString(),
   ]);
 
-  // Chunk rows: first page max 8, continuation pages max 12
-  // Chunk rows: increased per page
-  // Chunk rows: increased per page
   const firstPageMax = 13;
   const continuationMax = 20;
   const chunks: (string | number)[][][] = [];
@@ -547,6 +552,22 @@ export const generateAdmissionInvoice = async (
       remaining = remaining.slice(continuationMax);
     }
   }
+
+  // Inventory-only medicines are rendered as a separate, non-monetary
+  // section after the totals table. Skip them in the chunks and draw
+  // them after the last page's totals.
+  const inventoryRows =
+    inventoryOnly &&
+    data.medicineChargeItems &&
+    data.medicineChargeItems.length > 0
+      ? data.medicineChargeItems.map((item, index) => [
+          index + 1,
+          item.requestedMedicineName && item.requestedMedicineName.trim()
+            ? `${item.medicineName} (req. ${item.requestedMedicineName})`
+            : item.medicineName,
+          `${item.quantity}`,
+        ])
+      : null;
 
   const totalPages = chunks.length;
 
@@ -1040,6 +1061,64 @@ export const generateAdmissionInvoice = async (
 
     // Status Stamp
     drawStatusStamp(doc, isPaid);
+
+    // Inventory-only medicine section: rendered on the last page after
+    // the monetary totals. Quantity-only, no currency, outside the
+    // invoice charges table.
+    if (isLastPage && inventoryRows && inventoryRows.length > 0) {
+      let sectionY = getLastTableFinalY(doc) + 14;
+      // If the totals pushed us too close to the footer, move to a new
+      // page so the section is never clipped.
+      if (sectionY > pageHeight - 70) {
+        doc.addPage();
+        await drawLogoWatermark(doc);
+        sectionY = 20;
+      }
+
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(11);
+      doc.setTextColor(COLORS.primary);
+      doc.text("Medicines dispensed (inventory only)", margin, sectionY);
+      sectionY += 3;
+
+      doc.setFont("helvetica", "italic");
+      doc.setFontSize(8);
+      doc.setTextColor(COLORS.lightText);
+      doc.text(
+        "Not included in admission billing",
+        margin,
+        sectionY + 4,
+      );
+      sectionY += 8;
+
+      autoTable(doc, {
+        startY: sectionY,
+        head: [["SN", "Medicine", "Quantity"]],
+        body: inventoryRows,
+        theme: "plain",
+        headStyles: {
+          fillColor: [16, 185, 129], // emerald
+          textColor: 255,
+          fontStyle: "bold",
+          halign: "left",
+          cellPadding: 4,
+        },
+        bodyStyles: {
+          textColor: COLORS.text,
+          cellPadding: 3,
+          fontSize: 9,
+        },
+        columnStyles: {
+          0: { cellWidth: 14, halign: "center", fontStyle: "bold" },
+          1: { cellWidth: "auto" },
+          2: { cellWidth: 30, halign: "right", fontStyle: "bold" },
+        },
+        alternateRowStyles: {
+          fillColor: [240, 253, 250],
+        },
+        margin: { left: margin, right: margin },
+      });
+    }
   }
 
   doc.autoPrint();

@@ -1,12 +1,12 @@
 /**
- * Admission Medicine Package API
+ * Medicine Inventory — Sale Package Resolver API
  *
- * Thin wrapper around the shared `resolveMedicinePackage` service that
- * keeps the historical response shape expected by the General Admission
- * client (it includes `unitPrice` and `totalAmount` per item even though
- * the service deliberately does not return those values).
+ * GET /api/medicine-inventory/sale-packages?code=LUCS_OT_MEDICINE
  *
- * GET /api/admissions/medicine-packages?code=LUCS_OT_MEDICINE
+ * Thin wrapper around the shared `resolveMedicinePackage` service used
+ * by the pharmacist-side multi-item sale modal. It returns one row per
+ * template item with live medicine match metadata, current stock and
+ * default sale price, in the same shape the Admission route uses.
  */
 
 import { NextRequest, NextResponse } from "next/server";
@@ -15,7 +15,9 @@ import { resolveMedicinePackage } from "@/services/medicinePackageService";
 import { MEDICINE_PACKAGE_TEMPLATES } from "@/lib/medicinePackageTemplates";
 import { medicinePackageQuerySchema } from "@/lib/medicinePackageSchemas";
 
-export interface AdmissionMedicinePackageItemResponse {
+const DEFAULT_QUANTITY = 1;
+
+export interface MedicineInventoryPackageItemResponse {
   templateName: string;
   matched: boolean;
   medicineId: number | null;
@@ -27,19 +29,15 @@ export interface AdmissionMedicinePackageItemResponse {
   currentStock: number;
   lowStockThreshold: number;
   quantity: number;
-  unitPrice: number;
-  totalAmount: number;
   matchReason: string | null;
 }
 
-export interface AdmissionMedicinePackageResponse {
+export interface MedicineInventoryPackageResponse {
   code: string;
   name: string;
   operationName: string;
-  items: AdmissionMedicinePackageItemResponse[];
+  items: MedicineInventoryPackageItemResponse[];
 }
-
-const DEFAULT_QUANTITY = 1;
 
 export async function GET(request: NextRequest) {
   try {
@@ -77,30 +75,24 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const response: AdmissionMedicinePackageResponse = {
+    const response: MedicineInventoryPackageResponse = {
       code: resolved.code,
       name: resolved.name,
       operationName: resolved.operationName,
-      items: resolved.items.map((item) => {
-        const unitPrice = item.defaultSalePrice;
-        const totalAmount = DEFAULT_QUANTITY * unitPrice;
-        return {
-          templateName: item.templateName,
-          matched: item.matched,
-          medicineId: item.medicineId,
-          medicineName: item.medicineName,
-          genericName: item.genericName,
-          groupName: item.groupName,
-          companyName: item.companyName,
-          defaultSalePrice: item.defaultSalePrice,
-          currentStock: item.currentStock,
-          lowStockThreshold: item.lowStockThreshold,
-          quantity: item.quantity,
-          unitPrice,
-          totalAmount,
-          matchReason: item.matchReason,
-        };
-      }),
+      items: resolved.items.map((item) => ({
+        templateName: item.templateName,
+        matched: item.matched,
+        medicineId: item.medicineId,
+        medicineName: item.medicineName,
+        genericName: item.genericName,
+        groupName: item.groupName,
+        companyName: item.companyName,
+        defaultSalePrice: item.defaultSalePrice,
+        currentStock: item.currentStock,
+        lowStockThreshold: item.lowStockThreshold,
+        quantity: item.quantity || DEFAULT_QUANTITY,
+        matchReason: item.matchReason,
+      })),
     };
 
     return NextResponse.json({
@@ -108,11 +100,11 @@ export async function GET(request: NextRequest) {
       data: response,
     });
   } catch (error) {
-    console.error("GET /api/admissions/medicine-packages error:", error);
+    console.error("GET /api/medicine-inventory/sale-packages error:", error);
     return NextResponse.json(
       {
         success: false,
-        error: "Failed to load admission medicine package",
+        error: "Failed to load medicine package",
       },
       { status: 500 },
     );
