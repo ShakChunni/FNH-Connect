@@ -28,6 +28,7 @@ import {
 } from "../../../stores";
 import { AdmissionMedicineChargeItem } from "../../../types";
 import { isGynecologyDepartment } from "@/lib/departmentRecognition";
+import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import {
   AdmissionMedicineItemsTable,
   type PharmacyMedicineOption,
@@ -112,6 +113,9 @@ const MedicineInformation: React.FC<MedicineInformationProps> = ({
   );
   const [packagesLoaded, setPackagesLoaded] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [applyPackageConfirmOpen, setApplyPackageConfirmOpen] = useState(false);
+  const [clearMedicinesConfirmOpen, setClearMedicinesConfirmOpen] =
+    useState(false);
 
   const loadPackage = useCallback(async (showSpinner = false) => {
     if (showSpinner) setRefreshing(true);
@@ -151,7 +155,7 @@ const MedicineInformation: React.FC<MedicineInformationProps> = ({
     void loadPackage(false);
   }, [isGynecology, loadPackage]);
 
-  const handlePackageSelect = useCallback(
+  const applyPackage = useCallback(
     (pkg: AdmissionMedicinePackageResponse) => {
       if (isCanceled) return;
       const items: AdmissionMedicineChargeItem[] = pkg.items.map((it) => ({
@@ -176,6 +180,29 @@ const MedicineInformation: React.FC<MedicineInformationProps> = ({
     },
     [isCanceled, setAdmissionInfo, setMedicineChargeItems],
   );
+
+  const handlePackageSelect = useCallback(
+    (pkg: AdmissionMedicinePackageResponse) => {
+      if (isCanceled) return;
+      if (medicineChargeItems.length > 0) {
+        setApplyPackageConfirmOpen(true);
+        return;
+      }
+      applyPackage(pkg);
+    },
+    [isCanceled, medicineChargeItems.length, applyPackage],
+  );
+
+  const handleClearAll = useCallback(() => {
+    if (isCanceled) return;
+    if (medicineChargeItems.length === 0) return;
+    setClearMedicinesConfirmOpen(true);
+  }, [isCanceled, medicineChargeItems.length]);
+
+  const confirmClearMedicines = useCallback(() => {
+    clearMedicineChargeItems();
+    setClearMedicinesConfirmOpen(false);
+  }, [clearMedicineChargeItems]);
 
   const handleAddEmptyMedicineRow = useCallback(() => {
     if (isCanceled) return;
@@ -426,7 +453,7 @@ const MedicineInformation: React.FC<MedicineInformationProps> = ({
               onRemove={removeMedicineChargeItem}
               onAddRow={handleAddEmptyMedicineRow}
               onRefresh={handleRefreshPharmacyValues}
-              onClearAll={clearMedicineChargeItems}
+              onClearAll={handleClearAll}
               inventoryOnly={!medicineBillingEnabled}
             />
           </motion.div>
@@ -477,6 +504,38 @@ const MedicineInformation: React.FC<MedicineInformationProps> = ({
           </p>
         </div>
       )}
+
+      <ConfirmModal
+        isOpen={applyPackageConfirmOpen && packageData !== null}
+        title="Apply LUCS package?"
+        confirmLabel="Apply package"
+        cancelLabel="Cancel"
+        variant="warning"
+        onClose={() => setApplyPackageConfirmOpen(false)}
+        onConfirm={() => {
+          if (packageData) applyPackage(packageData);
+          setApplyPackageConfirmOpen(false);
+        }}
+      >
+        Applying the LUCS package will replace the{" "}
+        {medicineChargeItems.length} medicine
+        {medicineChargeItems.length !== 1 ? "s" : ""} already added to this
+        admission. Any quantity or price changes you made will be lost.
+      </ConfirmModal>
+
+      <ConfirmModal
+        isOpen={clearMedicinesConfirmOpen}
+        title="Clear all medicines?"
+        confirmLabel="Clear"
+        cancelLabel="Cancel"
+        variant="destructive"
+        onClose={() => setClearMedicinesConfirmOpen(false)}
+        onConfirm={confirmClearMedicines}
+      >
+        This will remove all {medicineChargeItems.length} medicine
+        {medicineChargeItems.length !== 1 ? "s" : ""} from this admission. The
+        action cannot be undone.
+      </ConfirmModal>
     </div>
   );
 };

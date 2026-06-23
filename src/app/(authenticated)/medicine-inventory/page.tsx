@@ -568,10 +568,11 @@ const MedicineInventoryPage = () => {
                   placeholder={
                     activeTab === "medicines" ||
                     activeTab === "purchases" ||
-                    activeTab === "sales" ||
                     activeTab === "activity"
                       ? "Search medicine name, generic, or company..."
-                      : `Search ${activeTab}...`
+                      : activeTab === "sales"
+                        ? "Search patient, medicine, or admission number..."
+                        : `Search ${activeTab}...`
                   }
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}

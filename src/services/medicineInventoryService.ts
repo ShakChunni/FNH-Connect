@@ -1191,6 +1191,14 @@ export async function getSales(filters: SaleFilters) {
                 phoneNumber: { contains: filters.search },
               },
             },
+            {
+              admission: {
+                admissionNumber: {
+                  contains: filters.search,
+                  mode: "insensitive",
+                },
+              },
+            },
           ],
         }
       : {}),
