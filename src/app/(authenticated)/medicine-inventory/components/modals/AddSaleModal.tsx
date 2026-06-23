@@ -46,6 +46,7 @@ import {
 import { ModalHeader } from "@/components/ui/ModalHeader";
 import { ModalFooter } from "@/components/ui/ModalFooter";
 import { DropdownPortal } from "@/components/ui/DropdownPortal";
+import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { PatientSearch } from "../shared/PatientSearch";
 import {
   SaleItemsTable,
@@ -190,6 +191,13 @@ const AddSaleModal: React.FC<AddSaleModalProps> = ({ isOpen, onClose }) => {
   } = useFetchSalePackage(LUCS_PACKAGE_CODE, eligibleForLucs);
 
   const [applyConfirmOpen, setApplyConfirmOpen] = useState(false);
+  const [clearRowsConfirmOpen, setClearRowsConfirmOpen] = useState(false);
+  const [patientChangeConfirmOpen, setPatientChangeConfirmOpen] =
+    useState(false);
+  const [closeWithItemsConfirmOpen, setCloseWithItemsConfirmOpen] =
+    useState(false);
+  const [pendingPatientSelection, setPendingPatientSelection] =
+    useState<SalePatientSelection | null>(null);
 
   const requestApplyLucsPackage = useCallback(() => {
     if (!lucsPackage) return;
@@ -250,39 +258,32 @@ const AddSaleModal: React.FC<AddSaleModalProps> = ({ isOpen, onClose }) => {
 
   const handleClearAllRows = useCallback(() => {
     if (formData.items.length === 0) return;
-    if (
-      window.confirm(
-        "Clear all medicines from this cart? This cannot be undone.",
-      )
-    ) {
-      clearRows();
-    }
-  }, [clearRows, formData.items.length]);
+    setClearRowsConfirmOpen(true);
+  }, [formData.items.length]);
+
+  const confirmClearRows = useCallback(() => {
+    clearRows();
+    setClearRowsConfirmOpen(false);
+  }, [clearRows]);
 
   const handlePatientChange = useCallback(
     (patient: SalePatientSelection | null) => {
-      if (patient) {
-        if (formData.items.length > 0) {
-          const ok = window.confirm(
-            "Changing the patient will clear the current cart. Continue?",
-          );
-          if (!ok) return;
-          clearRows();
-        }
-        setPatient(patient);
-      } else {
-        if (formData.items.length > 0) {
-          const ok = window.confirm(
-            "Clearing the patient will clear the current cart. Continue?",
-          );
-          if (!ok) return;
-          clearRows();
-        }
-        setPatient(null);
+      if (formData.items.length > 0) {
+        setPendingPatientSelection(patient);
+        setPatientChangeConfirmOpen(true);
+        return;
       }
+      setPatient(patient);
     },
-    [clearRows, formData.items.length, setPatient],
+    [formData.items.length, setPatient],
   );
+
+  const confirmPatientChange = useCallback(() => {
+    clearRows();
+    setPatient(pendingPatientSelection);
+    setPendingPatientSelection(null);
+    setPatientChangeConfirmOpen(false);
+  }, [clearRows, pendingPatientSelection, setPatient]);
 
   const isFormValid = useMemo(() => {
     if (!formData.patient) return false;
@@ -327,14 +328,18 @@ const AddSaleModal: React.FC<AddSaleModalProps> = ({ isOpen, onClose }) => {
   const handleClose = useCallback(() => {
     if (isSubmitting) return;
     if (formData.items.length > 0) {
-      const ok = window.confirm(
-        "Discard the current cart? Added medicines will be lost.",
-      );
-      if (!ok) return;
+      setCloseWithItemsConfirmOpen(true);
+      return;
     }
     resetForm();
     onClose();
   }, [isSubmitting, formData.items.length, onClose, resetForm]);
+
+  const confirmCloseWithItems = useCallback(() => {
+    resetForm();
+    setCloseWithItemsConfirmOpen(false);
+    onClose();
+  }, [onClose, resetForm]);
 
   const handleSubmit = useCallback(() => {
     if (isSubmitting) return;
@@ -773,6 +778,53 @@ const AddSaleModal: React.FC<AddSaleModalProps> = ({ isOpen, onClose }) => {
           </motion.div>
         </motion.div>
       )}
+
+      <ConfirmModal
+        isOpen={clearRowsConfirmOpen}
+        title="Clear all medicines?"
+        confirmLabel="Clear"
+        cancelLabel="Cancel"
+        variant="destructive"
+        onClose={() => setClearRowsConfirmOpen(false)}
+        onConfirm={confirmClearRows}
+        zIndex={100100}
+      >
+        This will remove all {formData.items.length} medicine
+        {formData.items.length !== 1 ? "s" : ""} from the cart. The action
+        cannot be undone.
+      </ConfirmModal>
+
+      <ConfirmModal
+        isOpen={patientChangeConfirmOpen}
+        title="Change patient?"
+        confirmLabel="Continue"
+        cancelLabel="Cancel"
+        variant="warning"
+        onClose={() => {
+          setPatientChangeConfirmOpen(false);
+          setPendingPatientSelection(null);
+        }}
+        onConfirm={confirmPatientChange}
+        zIndex={100100}
+      >
+        {pendingPatientSelection
+          ? "Changing the patient will clear the current cart. Added medicines will be lost."
+          : "Clearing the patient will clear the current cart. Added medicines will be lost."}
+      </ConfirmModal>
+
+      <ConfirmModal
+        isOpen={closeWithItemsConfirmOpen}
+        title="Discard cart?"
+        confirmLabel="Discard"
+        cancelLabel="Keep editing"
+        variant="destructive"
+        onClose={() => setCloseWithItemsConfirmOpen(false)}
+        onConfirm={confirmCloseWithItems}
+        zIndex={100100}
+      >
+        Closing will discard the {formData.items.length} medicine
+        {formData.items.length !== 1 ? "s" : ""} currently in the cart.
+      </ConfirmModal>
     </AnimatePresence>
   );
 };
