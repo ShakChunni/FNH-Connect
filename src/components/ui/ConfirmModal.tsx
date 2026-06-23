@@ -29,6 +29,12 @@ interface ConfirmModalProps {
     | "warning"
     | "success"
     | "info";
+  /**
+   * Override the overlay's z-index. Use a value higher than the parent
+   * modal's z-index when nesting a ConfirmModal inside another modal
+   * (for example, set to 100100 when the parent modal is z-100000).
+   */
+  zIndex?: number;
 }
 
 // Helper to get icon based on variant
@@ -91,6 +97,7 @@ export function ConfirmModal({
   isLoading = false,
   variant = "default",
   icon,
+  zIndex,
 }: ConfirmModalProps) {
   useEffect(() => {
     if (isOpen) {
@@ -108,7 +115,10 @@ export function ConfirmModal({
     <ClientPortal>
       <AnimatePresence>
         {isOpen && (
-          <div className="fixed inset-0 z-9999 flex items-center justify-center p-4 overflow-hidden">
+          <div
+            className="fixed inset-0 z-9999 flex items-center justify-center p-4 overflow-hidden"
+            style={zIndex !== undefined ? { zIndex } : undefined}
+          >
             <motion.div
               className="fixed inset-0 bg-[#09090b]/50"
               variants={backdropVariants}
