@@ -414,9 +414,9 @@ const MedicineInventoryPage = () => {
 
           {/* Enhanced Stats Grid - Mobile First */}
           <div className="px-1 sm:px-2 lg:px-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
+            <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 lg:gap-6">
               {/* Total Stock Value */}
-              <div className="col-span-1 sm:col-span-2 lg:col-span-1 bg-emerald-50/50 rounded-2xl p-4 sm:p-5 border border-emerald-100 shadow-sm shadow-emerald-100/20 relative overflow-hidden group hover:shadow-md transition-all duration-300">
+              <div className="col-span-1 bg-emerald-50/50 rounded-2xl p-4 sm:p-5 border border-emerald-100 shadow-sm shadow-emerald-100/20 relative overflow-hidden group hover:shadow-md transition-all duration-300">
                 <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-100/50 rounded-full -translate-y-1/2 translate-x-1/2 group-hover:scale-110 transition-transform duration-500" />
                 <div className="relative z-10">
                   <div className="flex items-center gap-3 mb-3">
@@ -430,7 +430,7 @@ const MedicineInventoryPage = () => {
                   {isLoading ? (
                     <div className="h-8 w-32 bg-emerald-100/50 rounded animate-pulse mb-1" />
                   ) : (
-                    <p className="text-xl sm:text-2xl lg:text-2xl xl:text-3xl font-black text-emerald-950 wrap-break-word">
+                    <p className="text-xl sm:text-2xl lg:text-2xl xl:text-3xl font-black text-emerald-950 wrap-break-word min-w-0">
                       {formatCurrency(stats?.totalStockValue || 0)}
                     </p>
                   )}
@@ -441,7 +441,7 @@ const MedicineInventoryPage = () => {
               </div>
 
               {/* Low Stock Items */}
-              <div className="col-span-1 sm:col-span-2 lg:col-span-1 bg-rose-50/50 rounded-2xl p-4 sm:p-5 border border-rose-100 shadow-sm shadow-rose-100/20 relative overflow-hidden group hover:shadow-md transition-all duration-300">
+              <div className="col-span-1 bg-rose-50/50 rounded-2xl p-4 sm:p-5 border border-rose-100 shadow-sm shadow-rose-100/20 relative overflow-hidden group hover:shadow-md transition-all duration-300">
                 <div className="absolute top-0 right-0 w-24 h-24 bg-rose-100/50 rounded-full -translate-y-1/2 translate-x-1/2 group-hover:scale-110 transition-transform duration-500" />
                 <div className="relative z-10">
                   <div className="flex items-center gap-3 mb-3">
@@ -455,7 +455,7 @@ const MedicineInventoryPage = () => {
                   {isLoading ? (
                     <div className="h-8 w-16 bg-rose-100/50 rounded animate-pulse mb-1" />
                   ) : (
-                    <p className="text-xl sm:text-2xl lg:text-2xl xl:text-3xl font-black text-rose-950">
+                    <p className="text-xl sm:text-2xl lg:text-2xl xl:text-3xl font-black text-rose-950 min-w-0">
                       {stats?.lowStockCount || 0}
                     </p>
                   )}
@@ -466,7 +466,7 @@ const MedicineInventoryPage = () => {
               </div>
 
               {/* Today's Sales */}
-              <div className="col-span-1 sm:col-span-2 lg:col-span-1 bg-blue-50/50 rounded-2xl p-4 sm:p-5 border border-blue-100 shadow-sm shadow-blue-100/20 relative overflow-hidden group hover:shadow-md transition-all duration-300">
+              <div className="col-span-1 bg-blue-50/50 rounded-2xl p-4 sm:p-5 border border-blue-100 shadow-sm shadow-blue-100/20 relative overflow-hidden group hover:shadow-md transition-all duration-300">
                 <div className="absolute top-0 right-0 w-24 h-24 bg-blue-100/50 rounded-full -translate-y-1/2 translate-x-1/2 group-hover:scale-110 transition-transform duration-500" />
                 <div className="relative z-10">
                   <div className="flex items-center gap-3 mb-3">
@@ -480,7 +480,7 @@ const MedicineInventoryPage = () => {
                   {isLoading ? (
                     <div className="h-8 w-32 bg-blue-100/50 rounded animate-pulse mb-1" />
                   ) : (
-                    <p className="text-xl sm:text-2xl lg:text-2xl xl:text-3xl font-black text-blue-950 wrap-break-word">
+                    <p className="text-xl sm:text-2xl lg:text-2xl xl:text-3xl font-black text-blue-950 wrap-break-word min-w-0">
                       {formatCurrency(stats?.totalSalesAmount || 0)}
                     </p>
                   )}
@@ -491,7 +491,7 @@ const MedicineInventoryPage = () => {
               </div>
 
               {/* Total Purchases */}
-              <div className="col-span-1 sm:col-span-2 lg:col-span-1 bg-violet-50/50 rounded-2xl p-4 sm:p-5 border border-violet-100 shadow-sm shadow-violet-100/20 relative overflow-hidden group hover:shadow-md transition-all duration-300">
+              <div className="col-span-1 bg-violet-50/50 rounded-2xl p-4 sm:p-5 border border-violet-100 shadow-sm shadow-violet-100/20 relative overflow-hidden group hover:shadow-md transition-all duration-300">
                 <div className="absolute top-0 right-0 w-24 h-24 bg-violet-100/50 rounded-full -translate-y-1/2 translate-x-1/2 group-hover:scale-110 transition-transform duration-500" />
                 <div className="relative z-10">
                   <div className="flex items-center gap-3 mb-3">
@@ -505,7 +505,7 @@ const MedicineInventoryPage = () => {
                   {isLoading ? (
                     <div className="h-8 w-32 bg-violet-100/50 rounded animate-pulse mb-1" />
                   ) : (
-                    <p className="text-xl sm:text-2xl lg:text-2xl xl:text-3xl font-black text-violet-950 wrap-break-word">
+                    <p className="text-xl sm:text-2xl lg:text-2xl xl:text-3xl font-black text-violet-950 wrap-break-word min-w-0">
                       {formatCurrency(stats?.totalPurchasesAmount || 0)}
                     </p>
                   )}
