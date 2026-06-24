@@ -48,10 +48,8 @@ import { ModalFooter } from "@/components/ui/ModalFooter";
 import { DropdownPortal } from "@/components/ui/DropdownPortal";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { PatientSearch } from "../shared/PatientSearch";
-import {
-  SaleItemsTable,
-  fetchOldestPurchase,
-} from "../sales/SaleItemsTable";
+import { SaleItemsTable } from "../sales/SaleItemsTable";
+import { fetchOldestPurchase } from "../../utils/fetchOldestPurchase";
 import { useAddBatchSaleData } from "../../hooks/useAddBatchSaleData";
 import { useFetchPatientGyneContext } from "../../hooks/useFetchPatientGyneContext";
 import { useFetchSalePackage } from "../../hooks/useFetchSalePackage";
