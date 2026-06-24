@@ -25,6 +25,7 @@ import {
   X as XIcon,
 } from "lucide-react";
 import { api } from "@/lib/axios";
+import { cn } from "@/lib/utils";
 import NumberInput from "@/components/form-sections/Fields/NumberInput";
 import { getMedicineDisplayName } from "../../utils/medicineDisplay";
 import type { Medicine } from "../../types";
@@ -152,27 +153,12 @@ function MedicineLookupInput({ item, onSelect, disabled }: MedicineLookupProps) 
 
   return (
     <div className="relative min-w-0">
-      <div className="mb-1 flex min-w-0 items-center gap-1 text-[11px]">
-        {item.medicineId ? (
-          <>
-            <CheckCircle2 className="h-3 w-3 shrink-0 text-emerald-600" />
-            <span className="truncate font-semibold text-emerald-700">
-              {item.medicineName}
-            </span>
-          </>
-        ) : (
-          <>
-            <AlertTriangle className="h-3 w-3 shrink-0 text-amber-500" />
-            <span className="font-semibold text-amber-600">
-              {item.requestedMedicineName
-                ? `Match "${item.requestedMedicineName}"`
-                : "Select medicine"}
-            </span>
-          </>
-        )}
-      </div>
       <div className="relative">
-        <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-400" />
+        {item.medicineId ? (
+          <CheckCircle2 className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-emerald-600" />
+        ) : (
+          <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-400" />
+        )}
         <input
           type="text"
           value={query}
@@ -184,7 +170,12 @@ function MedicineLookupInput({ item, onSelect, disabled }: MedicineLookupProps) 
           onFocus={() => setIsOpen(true)}
           onBlur={() => setTimeout(() => setIsOpen(false), 150)}
           placeholder="Search pharmacy"
-          className="h-9 w-full rounded-lg border border-gray-300 bg-white pl-8 pr-7 text-xs font-medium text-gray-800 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100 disabled:cursor-not-allowed disabled:bg-gray-100"
+          className={cn(
+            "h-9 w-full rounded-lg border bg-white pl-8 pr-7 text-xs font-medium outline-none transition focus:ring-2 disabled:cursor-not-allowed disabled:bg-gray-100",
+            item.medicineId
+              ? "border-emerald-300 text-emerald-900 focus:border-emerald-500 focus:ring-emerald-100"
+              : "border-gray-300 text-gray-800 focus:border-blue-500 focus:ring-blue-100"
+          )}
         />
         {isLoading ? (
           <Loader2 className="absolute right-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 animate-spin text-blue-600" />
