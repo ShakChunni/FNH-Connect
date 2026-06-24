@@ -88,15 +88,6 @@ interface MedicineListApiResponse {
   error?: string;
 }
 
-interface OldestPurchaseApiResponse {
-  success: boolean;
-  data: {
-    id: number;
-    company: { name: string };
-  } | null;
-  error?: string;
-}
-
 interface MedicineLookupProps {
   item: MedicineSaleDraftItem;
   onSelect: (medicine: Medicine) => void;
@@ -803,24 +794,4 @@ export const SaleItemsTable: React.FC<SaleItemsTableProps> = ({
   );
 };
 
-/**
- * Asynchronously fetch the oldest purchase (FIFO) for a medicine so the
- * cart row can show which company batch the stock will be consumed
- * from. Failures are silent — the FIFO company preview is informational
- * only; the server still performs the correct deduction on submit.
- */
-export async function fetchOldestPurchase(
-  medicineId: number,
-): Promise<string | null> {
-  try {
-    const response = await api.get<OldestPurchaseApiResponse>(
-      `/medicine-inventory/medicines/${medicineId}/oldest-purchase`,
-    );
-    if (response.data.success && response.data.data) {
-      return response.data.data.company.name;
-    }
-  } catch {
-    // best-effort
-  }
-  return null;
-}
+
