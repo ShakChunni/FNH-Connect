@@ -46,11 +46,15 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
     const showAll = searchParams.get("all") === "true";
+    const includeInactive = searchParams.get("includeInactive") === "true";
     const search = searchParams.get("search") || undefined;
 
-    const where: Record<string, unknown> = {
-      isActive: true,
-    };
+    const where: Record<string, unknown> = {};
+
+    // By default, only return active staff. Pass includeInactive=true to include inactive ones.
+    if (!includeInactive) {
+      where.isActive = true;
+    }
 
     // If not showing all, only return staff without a linked User account
     if (!showAll) {

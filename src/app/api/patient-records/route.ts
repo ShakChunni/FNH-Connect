@@ -6,6 +6,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
+import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { getAuthenticatedUserForAPI } from "@/lib/auth-validation";
 import { isReceptionistRole, isReceptionistInfertilityRole } from "@/lib/roles";
@@ -45,6 +46,8 @@ export async function GET(request: NextRequest) {
     // 2. Get query params
     const { searchParams } = new URL(request.url);
     const search = searchParams.get("search");
+    const gyneOnly = searchParams.get("gyneOnly") === "true";
+    const dischargedOnly = searchParams.get("dischargedOnly") === "true";
     const startDate = searchParams.get("startDate");
     const endDate = searchParams.get("endDate");
     const page = parseInt(searchParams.get("page") || "1", 10);
@@ -56,6 +59,28 @@ export async function GET(request: NextRequest) {
     Object.assign(where, getPatientAccessWhereByRole(user.role));
 
     const normalizedSearch = search?.trim() ?? "";
+
+    const admissionEligibilityWhere: Prisma.AdmissionWhereInput = {};
+
+    if (gyneOnly) {
+      admissionEligibilityWhere.department = {
+        OR: [
+          { name: { contains: "gyn", mode: "insensitive" } },
+          { name: { contains: "obstet", mode: "insensitive" } },
+        ],
+      };
+    }
+
+    if (dischargedOnly) {
+      admissionEligibilityWhere.isDischarged = true;
+    }
+
+    if (gyneOnly || dischargedOnly) {
+      where.admissions = {
+        some: admissionEligibilityWhere,
+      };
+    }
+
     if (normalizedSearch.length >= 2) {
       where.OR = [
         { fullName: { contains: normalizedSearch, mode: "insensitive" } },
@@ -119,12 +144,15 @@ export async function GET(request: NextRequest) {
           createdAt: true,
           updatedAt: true,
           admissions: {
-            where: {
-              admissionNumber: {
-                contains: normalizedSearch,
-                mode: "insensitive",
-              },
-            },
+            where:
+              gyneOnly || dischargedOnly
+                ? admissionEligibilityWhere
+                : {
+                    admissionNumber: {
+                      contains: normalizedSearch,
+                      mode: "insensitive",
+                    },
+                  },
             select: {
               id: true,
               admissionNumber: true,

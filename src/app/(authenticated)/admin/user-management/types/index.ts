@@ -137,6 +137,22 @@ export const createStaffSchema = z.object({
 export type CreateStaffInput = z.infer<typeof createStaffSchema>;
 
 // ============================================
+// Zod Schemas — Update Staff (standalone)
+// ============================================
+
+export const updateStaffSchema = z.object({
+  firstName: z.string().min(1, "First name is required").max(100).optional(),
+  lastName: z.string().max(100).optional(),
+  role: z.string().min(1, "Role is required").max(100).optional(),
+  specialization: z.string().max(200).optional(),
+  phoneNumber: z.string().max(50).optional(),
+  email: z.string().email("Invalid email address").optional().or(z.literal("")),
+  isActive: z.boolean().optional(),
+});
+
+export type UpdateStaffInput = z.infer<typeof updateStaffSchema>;
+
+// ============================================
 // Zod Schemas — Update User
 // ============================================
 
@@ -218,6 +234,7 @@ export type ModalType =
   | "archiveUser"
   | "resetPassword"
   | "addStaff"
+  | "editStaff"
   | null;
 
 // ============================================
