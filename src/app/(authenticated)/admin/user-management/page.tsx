@@ -27,13 +27,14 @@ import {
   AddUserModal,
   AddStaffModal,
   EditUserModal,
+  EditStaffModal,
   ArchiveUserModal,
   ResetPasswordModal,
 } from "./components/modals";
-import { UserTable } from "./components/shared";
+import { UserTable, StaffTable } from "./components/shared";
 import { useAuth } from "@/app/AuthContext";
 import { isSystemAdminRole } from "@/lib/roles";
-import type { UserWithStaff } from "./types";
+import type { UserWithStaff, StaffRecord } from "./types";
 
 const UserManagementPage = () => {
   const { user } = useAuth();
@@ -59,6 +60,11 @@ const UserManagementPage = () => {
   // Status filter dropdown
   const [statusFilterOpen, setStatusFilterOpen] = useState(false);
   const statusFilterRef = useRef<HTMLButtonElement>(null);
+
+  // Section tabs: users vs standalone staff
+  const [activeSection, setActiveSection] = useState<"users" | "staff">(
+    "users",
+  );
 
   // Sync debounced search
   useEffect(() => {
@@ -203,144 +209,178 @@ const UserManagementPage = () => {
             </div>
           </div>
 
-          {/* Filters */}
+          {/* Section Tabs */}
           <div className="px-1 sm:px-2 lg:px-4">
-            <div className="p-3 sm:p-4 bg-white rounded-2xl border border-gray-100 shadow-sm flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-3 sm:gap-4">
-              {/* Search */}
-              <div className="flex-1 min-w-[180px] sm:min-w-[200px] relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Search users..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 bg-gray-50/50 border border-gray-100 rounded-xl text-xs sm:text-sm font-bold focus:outline-none focus:ring-2 focus:ring-fnh-blue/20 transition-all"
-                />
-              </div>
+            <div className="inline-flex p-1 bg-white rounded-xl border border-gray-100 shadow-sm">
+              <button
+                onClick={() => setActiveSection("users")}
+                className={cn(
+                  "px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all cursor-pointer",
+                  activeSection === "users"
+                    ? "bg-fnh-navy text-white shadow-sm"
+                    : "text-gray-600 hover:bg-gray-50",
+                )}
+              >
+                Users
+              </button>
+              <button
+                onClick={() => setActiveSection("staff")}
+                className={cn(
+                  "px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all cursor-pointer",
+                  activeSection === "staff"
+                    ? "bg-indigo-600 text-white shadow-sm"
+                    : "text-gray-600 hover:bg-gray-50",
+                )}
+              >
+                Staff without Accounts
+              </button>
+            </div>
+          </div>
 
-              {/* Role Filter */}
-              <div className="relative">
-                <button
-                  ref={roleFilterRef}
-                  onClick={() => setRoleFilterOpen(!roleFilterOpen)}
-                  className="flex items-center justify-between gap-1.5 min-w-[160px] px-3 py-2.5 bg-gray-50 hover:bg-gray-100 rounded-xl text-xs font-semibold text-gray-700 transition-colors cursor-pointer border border-gray-100"
-                >
-                  <div className="flex items-center gap-1.5">
-                    <Shield className="w-3.5 h-3.5 text-purple-500 shrink-0" />
-                    <span className="truncate">{selectedRoleLabel}</span>
-                  </div>
-                  <ChevronDown
-                    className={cn(
-                      "w-3.5 h-3.5 text-gray-400 transition-transform",
-                      roleFilterOpen && "rotate-180",
-                    )}
+          {/* Filters */}
+          {activeSection === "users" && (
+            <div className="px-1 sm:px-2 lg:px-4">
+              <div className="p-3 sm:p-4 bg-white rounded-2xl border border-gray-100 shadow-sm flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-3 sm:gap-4">
+                {/* Search */}
+                <div className="flex-1 min-w-[180px] sm:min-w-[200px] relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Search users..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2.5 bg-gray-50/50 border border-gray-100 rounded-xl text-xs sm:text-sm font-bold focus:outline-none focus:ring-2 focus:ring-fnh-blue/20 transition-all"
                   />
-                </button>
-                <DropdownPortal
-                  isOpen={roleFilterOpen}
-                  onClose={() => setRoleFilterOpen(false)}
-                  buttonRef={roleFilterRef}
-                  className="w-52"
-                >
-                  <div className="py-1 max-h-64 overflow-y-auto">
-                    <button
-                      onClick={() => {
-                        setFilter("role", undefined);
-                        setFilter("page", 1);
-                        setRoleFilterOpen(false);
-                      }}
+                </div>
+
+                {/* Role Filter */}
+                <div className="relative">
+                  <button
+                    ref={roleFilterRef}
+                    onClick={() => setRoleFilterOpen(!roleFilterOpen)}
+                    className="flex items-center justify-between gap-1.5 min-w-[160px] px-3 py-2.5 bg-gray-50 hover:bg-gray-100 rounded-xl text-xs font-semibold text-gray-700 transition-colors cursor-pointer border border-gray-100"
+                  >
+                    <div className="flex items-center gap-1.5">
+                      <Shield className="w-3.5 h-3.5 text-purple-500 shrink-0" />
+                      <span className="truncate">{selectedRoleLabel}</span>
+                    </div>
+                    <ChevronDown
                       className={cn(
-                        "w-full px-3 py-2 text-left text-xs font-medium hover:bg-gray-50 transition-colors cursor-pointer",
-                        !filters.role
-                          ? "text-fnh-navy bg-fnh-navy/5"
-                          : "text-gray-700",
+                        "w-3.5 h-3.5 text-gray-400 transition-transform",
+                        roleFilterOpen && "rotate-180",
                       )}
-                    >
-                      All Roles
-                    </button>
-                    {SYSTEM_ROLES.map((r) => (
+                    />
+                  </button>
+                  <DropdownPortal
+                    isOpen={roleFilterOpen}
+                    onClose={() => setRoleFilterOpen(false)}
+                    buttonRef={roleFilterRef}
+                    className="w-52"
+                  >
+                    <div className="py-1 max-h-64 overflow-y-auto">
                       <button
-                        key={r.value}
                         onClick={() => {
-                          setFilter("role", r.value);
+                          setFilter("role", undefined);
                           setFilter("page", 1);
                           setRoleFilterOpen(false);
                         }}
                         className={cn(
                           "w-full px-3 py-2 text-left text-xs font-medium hover:bg-gray-50 transition-colors cursor-pointer",
-                          filters.role === r.value
+                          !filters.role
                             ? "text-fnh-navy bg-fnh-navy/5"
                             : "text-gray-700",
                         )}
                       >
-                        {r.label}
+                        All Roles
                       </button>
-                    ))}
-                  </div>
-                </DropdownPortal>
-              </div>
+                      {SYSTEM_ROLES.map((r) => (
+                        <button
+                          key={r.value}
+                          onClick={() => {
+                            setFilter("role", r.value);
+                            setFilter("page", 1);
+                            setRoleFilterOpen(false);
+                          }}
+                          className={cn(
+                            "w-full px-3 py-2 text-left text-xs font-medium hover:bg-gray-50 transition-colors cursor-pointer",
+                            filters.role === r.value
+                              ? "text-fnh-navy bg-fnh-navy/5"
+                              : "text-gray-700",
+                          )}
+                        >
+                          {r.label}
+                        </button>
+                      ))}
+                    </div>
+                  </DropdownPortal>
+                </div>
 
-              {/* Status Filter */}
-              <div className="relative">
-                <button
-                  ref={statusFilterRef}
-                  onClick={() => setStatusFilterOpen(!statusFilterOpen)}
-                  className="flex items-center justify-between gap-1.5 min-w-[140px] px-3 py-2.5 bg-gray-50 hover:bg-gray-100 rounded-xl text-xs font-semibold text-gray-700 transition-colors cursor-pointer border border-gray-100"
-                >
-                  <span>{selectedStatusLabel}</span>
-                  <ChevronDown
-                    className={cn(
-                      "w-3.5 h-3.5 text-gray-400 transition-transform",
-                      statusFilterOpen && "rotate-180",
-                    )}
-                  />
-                </button>
-                <DropdownPortal
-                  isOpen={statusFilterOpen}
-                  onClose={() => setStatusFilterOpen(false)}
-                  buttonRef={statusFilterRef}
-                  className="w-40"
-                >
-                  <div className="py-1">
-                    {(["all", "active", "archived"] as const).map((s) => (
-                      <button
-                        key={s}
-                        onClick={() => {
-                          setFilter("status", s);
-                          setFilter("page", 1);
-                          setStatusFilterOpen(false);
-                        }}
-                        className={cn(
-                          "w-full px-3 py-2 text-left text-xs font-medium hover:bg-gray-50 transition-colors cursor-pointer capitalize",
-                          filters.status === s
-                            ? "text-fnh-navy bg-fnh-navy/5"
-                            : "text-gray-700",
-                        )}
-                      >
-                        {statusLabels[s]}
-                      </button>
-                    ))}
-                  </div>
-                </DropdownPortal>
-              </div>
+                {/* Status Filter */}
+                <div className="relative">
+                  <button
+                    ref={statusFilterRef}
+                    onClick={() => setStatusFilterOpen(!statusFilterOpen)}
+                    className="flex items-center justify-between gap-1.5 min-w-[140px] px-3 py-2.5 bg-gray-50 hover:bg-gray-100 rounded-xl text-xs font-semibold text-gray-700 transition-colors cursor-pointer border border-gray-100"
+                  >
+                    <span>{selectedStatusLabel}</span>
+                    <ChevronDown
+                      className={cn(
+                        "w-3.5 h-3.5 text-gray-400 transition-transform",
+                        statusFilterOpen && "rotate-180",
+                      )}
+                    />
+                  </button>
+                  <DropdownPortal
+                    isOpen={statusFilterOpen}
+                    onClose={() => setStatusFilterOpen(false)}
+                    buttonRef={statusFilterRef}
+                    className="w-40"
+                  >
+                    <div className="py-1">
+                      {(["all", "active", "archived"] as const).map((s) => (
+                        <button
+                          key={s}
+                          onClick={() => {
+                            setFilter("status", s);
+                            setFilter("page", 1);
+                            setStatusFilterOpen(false);
+                          }}
+                          className={cn(
+                            "w-full px-3 py-2 text-left text-xs font-medium hover:bg-gray-50 transition-colors cursor-pointer capitalize",
+                            filters.status === s
+                              ? "text-fnh-navy bg-fnh-navy/5"
+                              : "text-gray-700",
+                          )}
+                        >
+                          {statusLabels[s]}
+                        </button>
+                      ))}
+                    </div>
+                  </DropdownPortal>
+                </div>
 
-              {hasFilters && (
-                <button
-                  onClick={() => {
-                    resetFilters();
-                    setSearchTerm("");
-                  }}
-                  className="px-3 py-2 text-[10px] sm:text-xs font-black text-rose-500 uppercase tracking-widest hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
-                >
-                  Clear Filters
-                </button>
-              )}
+                {hasFilters && (
+                  <button
+                    onClick={() => {
+                      resetFilters();
+                      setSearchTerm("");
+                    }}
+                    className="px-3 py-2 text-[10px] sm:text-xs font-black text-rose-500 uppercase tracking-widest hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                  >
+                    Clear Filters
+                  </button>
+                )}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Table */}
           <div className="px-1 sm:px-2 lg:px-4 pb-10">
-            <UserTable />
+            {activeSection === "users" ? (
+              <UserTable />
+            ) : (
+              <StaffTable onAddStaff={() => openModal("addStaff")} />
+            )}
           </div>
         </div>
       </div>
@@ -352,6 +392,11 @@ const UserManagementPage = () => {
         isOpen={activeModal === "editUser"}
         onClose={closeModal}
         user={(modalData?.user as UserWithStaff) || null}
+      />
+      <EditStaffModal
+        isOpen={activeModal === "editStaff"}
+        onClose={closeModal}
+        staff={(modalData?.staff as StaffRecord) || null}
       />
       <ArchiveUserModal
         isOpen={activeModal === "archiveUser"}

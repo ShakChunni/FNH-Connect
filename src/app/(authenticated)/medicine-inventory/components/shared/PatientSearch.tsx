@@ -27,6 +27,8 @@ import {
   MapPin,
   Users,
   Hash,
+  Stethoscope,
+  LogOut,
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/axios";
@@ -43,17 +45,32 @@ interface PatientSearchProps {
   error?: boolean;
 }
 
-function useFetchPatients(searchQuery: string) {
+interface PatientSearchFilters {
+  gyneOnly: boolean;
+  dischargedOnly: boolean;
+}
+
+function useFetchPatients(
+  searchQuery: string,
+  filters: PatientSearchFilters,
+  isOpen: boolean,
+) {
   const debouncedQuery = useDebounce(searchQuery || "", 150);
+  const canSearch =
+    debouncedQuery.trim().length >= 2 ||
+    filters.gyneOnly ||
+    filters.dischargedOnly;
 
   return useQuery({
-    queryKey: ["patients", "search", debouncedQuery],
+    queryKey: [
+      "patients",
+      "search",
+      debouncedQuery,
+      filters.gyneOnly,
+      filters.dischargedOnly,
+    ],
     queryFn: async (): Promise<SalePatientOption[]> => {
-      if (
-        !debouncedQuery ||
-        !debouncedQuery.trim() ||
-        debouncedQuery.trim().length < 2
-      ) {
+      if (!canSearch) {
         return [];
       }
 
@@ -75,7 +92,10 @@ function useFetchPatients(searchQuery: string) {
         error?: string;
       }>("/patient-records", {
         params: {
-          search: debouncedQuery.trim(),
+          search: debouncedQuery.trim() || undefined,
+          gyneOnly: filters.gyneOnly || undefined,
+          dischargedOnly: filters.dischargedOnly || undefined,
+          limit: 10,
         },
         timeout: 5000,
       });
@@ -96,7 +116,7 @@ function useFetchPatients(searchQuery: string) {
           patient.admissions?.[0]?.admissionNumber ?? null,
       }));
     },
-    enabled: debouncedQuery.trim().length >= 2,
+    enabled: isOpen && canSearch,
     staleTime: 30000,
     gcTime: 60000,
   });
@@ -113,6 +133,8 @@ export const PatientSearch: React.FC<PatientSearchProps> = ({
 }) => {
   const [searchQuery, setSearchQuery] = useState(displayValue);
   const [isOpen, setIsOpen] = useState(false);
+  const [gyneOnly, setGyneOnly] = useState(false);
+  const [dischargedOnly, setDischargedOnly] = useState(false);
   const [dropdownPosition, setDropdownPosition] = useState({
     top: 0,
     left: 0,
@@ -120,6 +142,7 @@ export const PatientSearch: React.FC<PatientSearchProps> = ({
   });
 
   const inputRef = useRef<HTMLInputElement>(null);
+  const searchControlsRef = useRef<HTMLDivElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Sync search query with display value from parent
@@ -135,11 +158,18 @@ export const PatientSearch: React.FC<PatientSearchProps> = ({
     isLoading,
     isError,
     error: searchError,
-  } = useFetchPatients(isOpen ? searchQuery : "");
+  } = useFetchPatients(
+    searchQuery,
+    {
+      gyneOnly,
+      dischargedOnly,
+    },
+    isOpen,
+  );
 
   const updateDropdownPosition = useCallback(() => {
-    if (inputRef.current) {
-      const rect = inputRef.current.getBoundingClientRect();
+    if (searchControlsRef.current) {
+      const rect = searchControlsRef.current.getBoundingClientRect();
       setDropdownPosition({
         top: rect.bottom + 4,
         left: rect.left,
@@ -151,7 +181,7 @@ export const PatientSearch: React.FC<PatientSearchProps> = ({
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newQuery = e.target.value;
     setSearchQuery(newQuery);
-    if (newQuery.length >= 2) {
+    if (newQuery.trim().length >= 2 || gyneOnly || dischargedOnly) {
       updateDropdownPosition();
       setIsOpen(true);
     } else {
@@ -176,12 +206,25 @@ export const PatientSearch: React.FC<PatientSearchProps> = ({
     inputRef.current?.focus();
   };
 
+  const handleFilterChange = (filter: keyof PatientSearchFilters) => {
+    if (disabled) return;
+
+    if (filter === "gyneOnly") {
+      setGyneOnly((current) => !current);
+    } else {
+      setDischargedOnly((current) => !current);
+    }
+
+    updateDropdownPosition();
+    setIsOpen(true);
+  };
+
   // Click outside handling
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
-        inputRef.current &&
-        !inputRef.current.contains(event.target as Node) &&
+        searchControlsRef.current &&
+        !searchControlsRef.current.contains(event.target as Node) &&
         dropdownRef.current &&
         !dropdownRef.current.contains(event.target as Node)
       ) {
@@ -237,39 +280,107 @@ export const PatientSearch: React.FC<PatientSearchProps> = ({
     isOpen &&
     !isLoading &&
     patients.length === 0 &&
-    searchQuery.trim().length >= 2;
+    (searchQuery.trim().length >= 2 || gyneOnly || dischargedOnly);
   const showResults = isOpen && patients.length > 0;
   const showHint =
-    isOpen && !isLoading && searchQuery.trim().length < 2 && !value;
+    isOpen &&
+    !isLoading &&
+    searchQuery.trim().length < 2 &&
+    !gyneOnly &&
+    !dischargedOnly &&
+    !value;
 
   return (
     <div className="relative">
-      <div className="relative">
-        <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-        <input
-          ref={inputRef}
-          type="text"
-          value={searchQuery}
-          onChange={handleInputChange}
-          onFocus={() => {
-            if (searchQuery.length >= 2) {
-              updateDropdownPosition();
-              setIsOpen(true);
-            }
-          }}
-          placeholder={placeholder}
-          disabled={disabled}
-          className={`${inputClassName} pl-10`}
-        />
-        {value && !disabled && (
-          <button
-            onClick={handleClear}
-            className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-full hover:bg-gray-100 transition-colors cursor-pointer"
+      <div ref={searchControlsRef} className="space-y-2.5">
+        <div className="relative">
+          <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <input
+            ref={inputRef}
+            type="text"
+            value={searchQuery}
+            onChange={handleInputChange}
+            onFocus={() => {
+              if (searchQuery.length >= 2 || gyneOnly || dischargedOnly) {
+                updateDropdownPosition();
+                setIsOpen(true);
+              }
+            }}
+            placeholder={placeholder}
+            disabled={disabled}
+            className={`${inputClassName} pl-10`}
+          />
+          {value && !disabled && (
+            <button
+              onClick={handleClear}
+              className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-full hover:bg-gray-100 transition-colors cursor-pointer"
+              type="button"
+              aria-label="Clear selected patient"
+            >
+              <X className="w-4 h-4 text-gray-400" />
+            </button>
+          )}
+        </div>
+
+        <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
+          <motion.button
             type="button"
+            onClick={() => handleFilterChange("gyneOnly")}
+            disabled={disabled}
+            aria-pressed={gyneOnly}
+            whileTap={disabled ? undefined : { scale: 0.97 }}
+            transition={{ type: "spring", stiffness: 420, damping: 24 }}
+            className={`flex min-h-10 items-center justify-center gap-1.5 rounded-xl border px-2.5 py-2 text-[11px] font-bold transition-colors sm:min-h-0 sm:px-3 sm:text-xs ${
+              gyneOnly
+                ? "border-pink-200 bg-pink-50 text-pink-700 shadow-sm"
+                : "border-gray-200 bg-white text-gray-600 hover:bg-gray-50"
+            } disabled:cursor-not-allowed disabled:opacity-50`}
           >
-            <X className="w-4 h-4 text-gray-400" />
-          </button>
-        )}
+            <Stethoscope className="h-3.5 w-3.5 shrink-0" />
+            <span>Gyne patients</span>
+            <AnimatePresence initial={false}>
+              {gyneOnly && (
+                <motion.span
+                  initial={{ scale: 0, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={{ scale: 0, opacity: 0 }}
+                  className="flex h-4 w-4 items-center justify-center rounded-full bg-pink-600 text-white"
+                >
+                  <Check className="h-2.5 w-2.5" />
+                </motion.span>
+              )}
+            </AnimatePresence>
+          </motion.button>
+
+          <motion.button
+            type="button"
+            onClick={() => handleFilterChange("dischargedOnly")}
+            disabled={disabled}
+            aria-pressed={dischargedOnly}
+            whileTap={disabled ? undefined : { scale: 0.97 }}
+            transition={{ type: "spring", stiffness: 420, damping: 24 }}
+            className={`flex min-h-10 items-center justify-center gap-1.5 rounded-xl border px-2.5 py-2 text-[11px] font-bold transition-colors sm:min-h-0 sm:px-3 sm:text-xs ${
+              dischargedOnly
+                ? "border-emerald-200 bg-emerald-50 text-emerald-700 shadow-sm"
+                : "border-gray-200 bg-white text-gray-600 hover:bg-gray-50"
+            } disabled:cursor-not-allowed disabled:opacity-50`}
+          >
+            <LogOut className="h-3.5 w-3.5 shrink-0" />
+            <span>Discharged</span>
+            <AnimatePresence initial={false}>
+              {dischargedOnly && (
+                <motion.span
+                  initial={{ scale: 0, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={{ scale: 0, opacity: 0 }}
+                  className="flex h-4 w-4 items-center justify-center rounded-full bg-emerald-600 text-white"
+                >
+                  <Check className="h-2.5 w-2.5" />
+                </motion.span>
+              )}
+            </AnimatePresence>
+          </motion.button>
+        </div>
       </div>
 
       {/* Show extra context when patient is selected */}
@@ -285,9 +396,9 @@ export const PatientSearch: React.FC<PatientSearchProps> = ({
       )}
 
       {/* Dropdown Portal */}
-      {isOpen && (
-        <ClientPortal>
-          <AnimatePresence>
+      <ClientPortal>
+        <AnimatePresence>
+          {isOpen && (
             <motion.div
               ref={dropdownRef}
               initial={{ opacity: 0, y: -8 }}
@@ -396,7 +507,9 @@ export const PatientSearch: React.FC<PatientSearchProps> = ({
               {showNoResults && !isError && (
                 <div className="p-4 text-center">
                   <p className="text-sm text-gray-500">
-                    No patients found for "{searchQuery}"
+                    {searchQuery.trim()
+                      ? `No patients found for "${searchQuery}"`
+                      : "No patients match the selected filters"}
                   </p>
                   <p className="text-xs text-gray-400 mt-1">
                     Make sure the patient is registered in the system
@@ -404,9 +517,9 @@ export const PatientSearch: React.FC<PatientSearchProps> = ({
                 </div>
               )}
             </motion.div>
-          </AnimatePresence>
-        </ClientPortal>
-      )}
+          )}
+        </AnimatePresence>
+      </ClientPortal>
     </div>
   );
 };
