@@ -126,7 +126,7 @@ export const CashFlowTracker: React.FC<CashFlowTrackerProps> = ({
             Session Cash
           </h2>
           <p className="text-xs lg:text-sm text-gray-500">
-            {session.staffName}'s shift
+            {session.staffName}&apos;s shift
           </p>
         </div>
         <div className="flex items-center gap-2">

@@ -744,8 +744,9 @@ export interface InfertilityTestData {
   subjectNameSnapshot?: string | null;
 }
 
-export interface InfertilityTestUpdateData
-  extends Partial<Omit<InfertilityTestData, "infertilityPatientId">> {}
+export type InfertilityTestUpdateData = Partial<
+  Omit<InfertilityTestData, "infertilityPatientId">
+>;
 
 interface SerializedTestResults {
   tests: string[];

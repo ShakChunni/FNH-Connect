@@ -696,7 +696,7 @@ export async function createAdmission(
     });
 
     // 8. Create medicine charge items and linked pharmacy sales
-    let createdChargeRows: Array<{
+    const createdChargeRows: Array<{
       id: number;
       medicineId: number | null;
       quantity: number;
@@ -998,7 +998,7 @@ export async function updateAdmission(
       updateData.status !== "Canceled";
 
     // Handle medicine charge items + linked pharmacy sales
-    let recreatedChargeRows: Array<{
+    const recreatedChargeRows: Array<{
       id: number;
       medicineId: number | null;
       quantity: number;

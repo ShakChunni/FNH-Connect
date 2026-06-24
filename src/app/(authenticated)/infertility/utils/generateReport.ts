@@ -416,7 +416,7 @@ export const generateInfertilityReport = async (
     "#16a34a"
   );
 
-  let pDetailY = physicalContentY + 2;
+  const pDetailY = physicalContentY + 2;
   doc.setFontSize(10);
 
   // Single Row - all measurements

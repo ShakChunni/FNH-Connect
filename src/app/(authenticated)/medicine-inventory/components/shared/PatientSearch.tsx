@@ -258,7 +258,7 @@ export const PatientSearch: React.FC<PatientSearchProps> = ({
   }, [isOpen, updateDropdownPosition]);
 
   const inputClassName = useMemo(() => {
-    let base =
+    const base =
       "text-gray-700 font-normal rounded-lg h-12 md:h-14 py-2 px-4 pr-10 w-full focus:border-blue-900 focus:ring-2 focus:ring-blue-950 outline-none shadow-sm hover:shadow-md transition-all duration-300 placeholder:text-gray-400 placeholder:font-light text-xs sm:text-sm";
 
     if (disabled) {

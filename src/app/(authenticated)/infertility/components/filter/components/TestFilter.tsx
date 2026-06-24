@@ -102,7 +102,9 @@ export const TestFilter: React.FC = () => {
           </div>
         ) : (
           <div className="py-8 text-center">
-            <p className="text-xs text-gray-400 font-medium italic">No investigations found matching "{searchTerm}"</p>
+            <p className="text-xs text-gray-400 font-medium italic">
+              No investigations found matching &quot;{searchTerm}&quot;
+            </p>
           </div>
         )}
       </div>

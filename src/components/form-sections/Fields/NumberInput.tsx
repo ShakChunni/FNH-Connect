@@ -1,8 +1,6 @@
 import React, { memo } from "react";
 
-interface NumberInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
-  // Allow any standard input props
-}
+type NumberInputProps = React.InputHTMLAttributes<HTMLInputElement>;
 
 const NumberInput = memo<NumberInputProps>(
   ({ onWheel, onKeyDown, ...props }) => {
