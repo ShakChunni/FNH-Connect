@@ -3,13 +3,15 @@
  *
  * GET /api/medicine-inventory/patients/:patientId/gyne-context
  *
- * Returns the latest non-canceled, non-discharged Gynecology admission
+ * Returns the latest non-canceled Gynecology admission, including discharged
+ * admissions, because LUCS is applied as a Medicine Inventory cart template
+ * and does not modify the admission.
  * for the given central patient, plus a flag indicating whether a LUCS
  * admission package is already attached. Used by the multi-item sale
  * modal to enable the LUCS quick-fill action.
  *
  * Response shape: `{ data: GyneContext | null }` (null when there is no
- * active Gynecology admission — not a 404, to keep the modal simple).
+ * eligible Gynecology admission — not a 404, to keep the modal simple).
  *
  * The endpoint never returns full admission financials; only the minimum
  * fields needed to display a context badge.

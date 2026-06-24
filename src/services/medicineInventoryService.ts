@@ -1741,11 +1741,13 @@ export interface PatientGyneContextResult {
 }
 
 /**
- * Return the latest non-canceled, non-discharged Gynecology admission for
+ * Return the latest non-canceled Gynecology admission for
  * a central patient, plus a flag indicating whether a LUCS admission
  * package is already attached.
  *
- * Returns `null` when no active Gynecology admission exists. Used by the
+ * Discharged admissions remain eligible because Medicine Inventory uses
+ * the LUCS package as a dispensing template rather than an admission write.
+ * Returns `null` when no eligible Gynecology admission exists. Used by the
  * Medicine Inventory multi-item sale modal to enable the LUCS quick-fill
  * action and to render a compact gynecology badge in the cart header.
  */
@@ -1754,10 +1756,9 @@ export async function getPatientGyneContext(
 ): Promise<PatientGyneContextResult | null> {
   if (!Number.isFinite(patientId) || patientId <= 0) return null;
 
-  const activeAdmissions = await prisma.admission.findMany({
+  const eligibleAdmissions = await prisma.admission.findMany({
     where: {
       patientId,
-      isDischarged: false,
       status: { not: "Canceled" },
     },
     orderBy: { dateAdmitted: "desc" },
@@ -1776,7 +1777,7 @@ export async function getPatientGyneContext(
     },
   });
 
-  const admission = activeAdmissions.find((candidate) =>
+  const admission = eligibleAdmissions.find((candidate) =>
     isGynecologyDepartment(candidate.department.name),
   );
 

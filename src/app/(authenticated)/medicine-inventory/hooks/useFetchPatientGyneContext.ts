@@ -34,7 +34,9 @@ export function useFetchPatientGyneContext(
       return response.data.data;
     },
     enabled: enabled && Boolean(patientId),
-    staleTime: 30000,
+    // Admission status directly controls LUCS eligibility, so always refresh
+    // when a patient is selected instead of reusing a recently cached null.
+    staleTime: 0,
     gcTime: 60000,
   });
 }

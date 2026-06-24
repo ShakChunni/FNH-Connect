@@ -70,10 +70,7 @@ export async function GET(request: NextRequest) {
         ],
       };
 
-      if (!dischargedOnly) {
-        admissionEligibilityWhere.isDischarged = false;
-        admissionEligibilityWhere.status = { not: "Canceled" };
-      }
+      admissionEligibilityWhere.status = { not: "Canceled" };
     }
 
     if (dischargedOnly) {
