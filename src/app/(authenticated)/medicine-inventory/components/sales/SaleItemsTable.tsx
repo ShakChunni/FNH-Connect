@@ -25,6 +25,7 @@ import {
   X as XIcon,
 } from "lucide-react";
 import { api } from "@/lib/axios";
+import { cn } from "@/lib/utils";
 import NumberInput from "@/components/form-sections/Fields/NumberInput";
 import { getMedicineDisplayName } from "../../utils/medicineDisplay";
 import type { Medicine } from "../../types";
@@ -150,6 +151,9 @@ function MedicineLookupInput({ item, onSelect, disabled }: MedicineLookupProps) 
     };
   }, [disabled, isOpen, query]);
 
+  const isMatched = item.medicineId !== null;
+  const needsMatch = !isMatched && item.requestedMedicineName;
+
   return (
     <div className="relative min-w-0">
       <div className="relative">
@@ -165,10 +169,21 @@ function MedicineLookupInput({ item, onSelect, disabled }: MedicineLookupProps) 
           onFocus={() => setIsOpen(true)}
           onBlur={() => setTimeout(() => setIsOpen(false), 150)}
           placeholder="Search pharmacy"
-          className="h-9 w-full rounded-lg border border-gray-300 bg-white pl-8 pr-7 text-xs font-medium text-gray-800 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100 disabled:cursor-not-allowed disabled:bg-gray-100"
+          className={cn(
+            "h-9 w-full rounded-lg border bg-white pl-8 pr-8 text-xs font-medium outline-none transition focus:ring-2 disabled:cursor-not-allowed disabled:bg-gray-100",
+            isMatched
+              ? "border-emerald-300 text-emerald-900 focus:border-emerald-500 focus:ring-emerald-100"
+              : needsMatch
+                ? "border-amber-300 text-amber-900 focus:border-amber-500 focus:ring-amber-100"
+                : "border-gray-300 text-gray-800 focus:border-blue-500 focus:ring-blue-100"
+          )}
         />
         {isLoading ? (
           <Loader2 className="absolute right-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 animate-spin text-blue-600" />
+        ) : isMatched ? (
+          <CheckCircle2 className="pointer-events-none absolute right-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-emerald-600" />
+        ) : needsMatch ? (
+          <AlertTriangle className="pointer-events-none absolute right-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-amber-500" />
         ) : null}
       </div>
       {isOpen && !disabled ? (
@@ -381,14 +396,11 @@ export const SaleItemsTable: React.FC<SaleItemsTableProps> = ({
             exit="exit"
           >
             <div className="hidden lg:block overflow-x-auto">
-                <table className="w-full min-w-[900px] table-fixed text-xs">
+                <table className="w-full min-w-[820px] table-fixed text-xs">
                 <thead>
                   <tr className="border-b border-gray-200 bg-gray-50 text-gray-500">
                     <th className="w-8 px-3 py-2.5 text-left font-semibold uppercase tracking-wider">
                       #
-                    </th>
-                    <th className="w-24 px-3 py-2.5 text-left font-semibold uppercase tracking-wider">
-                      Status
                     </th>
                     <th className="w-[18%] px-3 py-2.5 text-left font-semibold uppercase tracking-wider">
                       Medicine
@@ -434,24 +446,6 @@ export const SaleItemsTable: React.FC<SaleItemsTableProps> = ({
                         >
                           <td className="px-3 py-3 text-[11px] font-bold text-gray-400">
                             {index + 1}
-                          </td>
-                          <td className="px-3 py-3">
-                            {item.medicineId ? (
-                              <span className="inline-flex h-9 w-full items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 text-[11px] font-bold text-emerald-700">
-                                <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
-                                <span className="truncate">Matched</span>
-                              </span>
-                            ) : item.requestedMedicineName ? (
-                              <span className="inline-flex h-9 w-full items-center gap-1.5 rounded-lg border border-amber-200 bg-amber-50 px-2.5 text-[11px] font-bold text-amber-700">
-                                <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
-                                <span className="truncate">Match</span>
-                              </span>
-                            ) : (
-                              <span className="inline-flex h-9 w-full items-center gap-1.5 rounded-lg border border-amber-200 bg-amber-50 px-2.5 text-[11px] font-bold text-amber-700">
-                                <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
-                                <span className="truncate">Select</span>
-                              </span>
-                            )}
                           </td>
                           <td className="px-3 py-3">
                             <MedicineLookupInput
@@ -606,7 +600,7 @@ export const SaleItemsTable: React.FC<SaleItemsTableProps> = ({
                 <tfoot>
                   <tr className="border-t-2 border-blue-200 bg-blue-50/60">
                     <td
-                      colSpan={8}
+                      colSpan={7}
                       className="px-3 py-2.5 text-right text-xs font-bold text-gray-600 uppercase tracking-wider"
                     >
                       Cart total
