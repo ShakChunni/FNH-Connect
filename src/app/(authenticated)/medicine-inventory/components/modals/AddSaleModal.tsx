@@ -475,6 +475,7 @@ const AddSaleModal: React.FC<AddSaleModalProps> = ({ isOpen, onClose }) => {
     >
       {isOpen && (
         <motion.div
+          key="sale-modal"
           className="fixed inset-0 bg-slate-900/70 flex items-center justify-center z-100000"
           variants={backdropVariants}
           initial="hidden"
@@ -807,6 +808,7 @@ const AddSaleModal: React.FC<AddSaleModalProps> = ({ isOpen, onClose }) => {
       )}
 
       <ConfirmModal
+        key="apply-lucs-confirmation"
         isOpen={applyConfirmOpen}
         title="LUCS package already attached"
         confirmLabel="Add anyway"
@@ -823,6 +825,7 @@ const AddSaleModal: React.FC<AddSaleModalProps> = ({ isOpen, onClose }) => {
       </ConfirmModal>
 
       <ConfirmModal
+        key="clear-sale-items-confirmation"
         isOpen={clearRowsConfirmOpen}
         title="Clear all medicines?"
         confirmLabel="Clear"
@@ -839,6 +842,7 @@ const AddSaleModal: React.FC<AddSaleModalProps> = ({ isOpen, onClose }) => {
       </ConfirmModal>
 
       <ConfirmModal
+        key="change-sale-patient-confirmation"
         isOpen={patientChangeConfirmOpen}
         title="Change patient?"
         confirmLabel="Continue"
@@ -858,6 +862,7 @@ const AddSaleModal: React.FC<AddSaleModalProps> = ({ isOpen, onClose }) => {
       </ConfirmModal>
 
       <ConfirmModal
+        key="discard-sale-cart-confirmation"
         isOpen={closeWithItemsConfirmOpen}
         title="Discard cart?"
         confirmLabel="Discard"
@@ -873,6 +878,7 @@ const AddSaleModal: React.FC<AddSaleModalProps> = ({ isOpen, onClose }) => {
       </ConfirmModal>
 
       <ConfirmModal
+        key="submit-sale-confirmation"
         isOpen={submitConfirmOpen}
         title="Confirm medicine sale"
         confirmLabel="Record Sale"
