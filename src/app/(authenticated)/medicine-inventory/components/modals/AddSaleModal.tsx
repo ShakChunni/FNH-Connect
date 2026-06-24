@@ -544,7 +544,7 @@ const AddSaleModal: React.FC<AddSaleModalProps> = ({ isOpen, onClose }) => {
                         className="mt-3 flex items-center gap-2 text-xs text-gray-500"
                       >
                         <Activity className="w-3.5 h-3.5 animate-pulse" />
-                        Checking active admissions…
+                        Checking Gynecology admission history…
                       </motion.div>
                     )}
                   </AnimatePresence>
@@ -697,7 +697,7 @@ const AddSaleModal: React.FC<AddSaleModalProps> = ({ isOpen, onClose }) => {
                     </h3>
                     <p className="text-xs text-gray-500 max-w-sm mx-auto">
                       Use <strong>Add medicine</strong> to start a manual
-                      cart, or pick an active Gynecology patient and use{" "}
+                      cart, or pick a Gynecology patient and use{" "}
                       <strong>Add LUCS package</strong> for the full template.
                     </p>
                   </div>
