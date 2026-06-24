@@ -69,6 +69,11 @@ export async function GET(request: NextRequest) {
           { name: { contains: "obstet", mode: "insensitive" } },
         ],
       };
+
+      if (!dischargedOnly) {
+        admissionEligibilityWhere.isDischarged = false;
+        admissionEligibilityWhere.status = { not: "Canceled" };
+      }
     }
 
     if (dischargedOnly) {

@@ -136,7 +136,7 @@ const UserManagementPage = () => {
                   {statsLoading ? (
                     <div className="h-8 w-16 bg-blue-100/50 rounded animate-pulse mb-1" />
                   ) : (
-                    <p className="text-xl sm:text-2xl lg:text-3xl font-black text-blue-950">
+                    <p className="text-xl sm:text-2xl lg:text-3xl font-black text-blue-950 truncate min-w-0">
                       {stats?.totalUsers || 0}
                     </p>
                   )}
@@ -157,7 +157,7 @@ const UserManagementPage = () => {
                   {statsLoading ? (
                     <div className="h-8 w-16 bg-emerald-100/50 rounded animate-pulse mb-1" />
                   ) : (
-                    <p className="text-xl sm:text-2xl lg:text-3xl font-black text-emerald-950">
+                    <p className="text-xl sm:text-2xl lg:text-3xl font-black text-emerald-950 truncate min-w-0">
                       {stats?.activeUsers || 0}
                     </p>
                   )}
@@ -178,7 +178,7 @@ const UserManagementPage = () => {
                   {statsLoading ? (
                     <div className="h-8 w-16 bg-rose-100/50 rounded animate-pulse mb-1" />
                   ) : (
-                    <p className="text-xl sm:text-2xl lg:text-3xl font-black text-rose-950">
+                    <p className="text-xl sm:text-2xl lg:text-3xl font-black text-rose-950 truncate min-w-0">
                       {stats?.archivedUsers || 0}
                     </p>
                   )}
@@ -199,7 +199,7 @@ const UserManagementPage = () => {
                   {statsLoading ? (
                     <div className="h-8 w-16 bg-violet-100/50 rounded animate-pulse mb-1" />
                   ) : (
-                    <p className="text-xl sm:text-2xl lg:text-3xl font-black text-violet-950">
+                    <p className="text-xl sm:text-2xl lg:text-3xl font-black text-violet-950 truncate min-w-0">
                       {(stats?.byRole?.["admin"] || 0) +
                         (stats?.byRole?.["system-admin"] || 0)}
                     </p>

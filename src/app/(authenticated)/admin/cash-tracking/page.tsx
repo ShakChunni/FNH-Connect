@@ -250,7 +250,7 @@ const CashTrackingPage = () => {
 
           {/* Stats Grid */}
           <div className="px-1 sm:px-2 lg:px-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-6 gap-3 sm:gap-4 lg:gap-5">
+            <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 lg:gap-5">
               <StatCard
                 title="Net Cash Flow"
                 value={formatCurrency(netCashFlow)}
