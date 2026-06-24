@@ -1199,6 +1199,18 @@ export async function getSales(filters: SaleFilters) {
                 },
               },
             },
+            {
+              patient: {
+                admissions: {
+                  some: {
+                    admissionNumber: {
+                      contains: filters.search,
+                      mode: "insensitive",
+                    },
+                  },
+                },
+              },
+            },
           ],
         }
       : {}),

@@ -62,6 +62,16 @@ export async function GET(request: NextRequest) {
         { phoneNumber: { contains: normalizedSearch, mode: "insensitive" } },
         { guardianName: { contains: normalizedSearch, mode: "insensitive" } },
         { address: { contains: normalizedSearch, mode: "insensitive" } },
+        {
+          admissions: {
+            some: {
+              admissionNumber: {
+                contains: normalizedSearch,
+                mode: "insensitive",
+              },
+            },
+          },
+        },
       ];
     }
 
@@ -108,6 +118,22 @@ export async function GET(request: NextRequest) {
           createdBy: true,
           createdAt: true,
           updatedAt: true,
+          admissions: {
+            where: {
+              admissionNumber: {
+                contains: normalizedSearch,
+                mode: "insensitive",
+              },
+            },
+            select: {
+              id: true,
+              admissionNumber: true,
+            },
+            orderBy: {
+              dateAdmitted: "desc",
+            },
+            take: 1,
+          },
         },
       }),
     ]);

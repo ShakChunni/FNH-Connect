@@ -243,6 +243,7 @@ export interface SalePatientOption {
   guardianName: string | null;
   address: string | null;
   email: string | null;
+  matchedAdmissionNumber?: string | null;
 }
 
 export interface GyneAdmissionContext {

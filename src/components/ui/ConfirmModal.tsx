@@ -35,6 +35,7 @@ interface ConfirmModalProps {
    * (for example, set to 100100 when the parent modal is z-100000).
    */
   zIndex?: number;
+  manageBodyScroll?: boolean;
 }
 
 // Helper to get icon based on variant
@@ -98,8 +99,19 @@ export function ConfirmModal({
   variant = "default",
   icon,
   zIndex,
+  manageBodyScroll = true,
 }: ConfirmModalProps) {
+  const handleClose = () => {
+    if (!isLoading) {
+      onClose();
+    }
+  };
+
   useEffect(() => {
+    if (!manageBodyScroll) {
+      return;
+    }
+
     if (isOpen) {
       preserveLockBodyScroll();
     } else {
@@ -109,7 +121,7 @@ export function ConfirmModal({
     return () => {
       preserveUnlockBodyScroll();
     };
-  }, [isOpen]);
+  }, [isOpen, manageBodyScroll]);
 
   return (
     <ClientPortal>
@@ -125,7 +137,7 @@ export function ConfirmModal({
               initial="hidden"
               animate="visible"
               exit="exit"
-              onClick={onClose}
+              onClick={handleClose}
             />
 
             <motion.div
@@ -133,16 +145,16 @@ export function ConfirmModal({
               style={{
                 borderRadius: "28px",
               }}
-            variants={modalVariants}
-            initial="hidden"
-            animate="visible"
-            exit="exit"
-            onClick={(e) => e.stopPropagation()}
-          >
+              variants={modalVariants}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
+              onClick={(e) => e.stopPropagation()}
+            >
             {/* Close Button */}
             <div className="absolute top-4 right-4 z-10">
               <button
-                onClick={onClose}
+                onClick={handleClose}
                 disabled={isLoading}
                 className="w-8 h-8 rounded-full bg-gray-50 hover:bg-gray-100 flex items-center justify-center transition-colors duration-200 cursor-pointer disabled:opacity-50"
               >
@@ -170,7 +182,7 @@ export function ConfirmModal({
               {/* Buttons */}
               <div className="flex w-full items-center gap-3">
                 <Button
-                  onClick={onClose}
+                  onClick={handleClose}
                   disabled={isLoading}
                   className="flex-1 bg-white border border-[#E0E0E0] hover:bg-gray-50 text-[#666666] font-semibold py-2.5 h-auto rounded-xl transition-all duration-200 text-xs shadow-sm"
                 >
