@@ -154,7 +154,7 @@ export const CompanySearch: React.FC<CompanySearchProps> = ({
   }, [isOpen, updateDropdownPosition]);
 
   const inputClassName = useMemo(() => {
-    let base =
+    const base =
       "text-gray-700 font-normal rounded-lg h-12 md:h-14 py-2 px-4 pr-10 w-full focus:border-blue-900 focus:ring-2 focus:ring-blue-950 outline-none shadow-sm hover:shadow-md transition-all duration-300 placeholder:text-gray-400 placeholder:font-light text-xs sm:text-sm";
 
     if (disabled) {
@@ -278,7 +278,7 @@ export const CompanySearch: React.FC<CompanySearchProps> = ({
               {showNoResults && (
                 <div className="p-4">
                   <p className="text-sm text-gray-500 mb-3 text-center">
-                    No companies found for "{searchQuery}"
+                    No companies found for &quot;{searchQuery}&quot;
                   </p>
                   {onAddNew && (
                     <button
@@ -287,7 +287,7 @@ export const CompanySearch: React.FC<CompanySearchProps> = ({
                     >
                       <PlusCircle className="w-4 h-4 text-emerald-600" />
                       <span className="text-sm font-semibold text-emerald-700">
-                        Add "{searchQuery}" as new company
+                        Add &quot;{searchQuery}&quot; as new company
                       </span>
                     </button>
                   )}

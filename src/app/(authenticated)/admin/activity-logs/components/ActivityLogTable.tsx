@@ -66,14 +66,14 @@ const ActivityLogTable: React.FC<ActivityLogTableProps> = ({
     }
   };
 
+  // Hooks must run before any early return so their order stays stable.
+  const dragScroll = useHorizontalDragScroll();
+
   if (isLoading && logs.length === 0) {
     return <ActivityLogTableSkeleton />;
   }
 
   const USER_COL_WIDTH = "w-[180px] min-w-[180px]";
-
-  // Drag to scroll horizontally
-  const dragScroll = useHorizontalDragScroll();
 
   return (
     <div className="bg-white rounded-xl sm:rounded-2xl border border-gray-100 shadow-sm overflow-hidden relative">

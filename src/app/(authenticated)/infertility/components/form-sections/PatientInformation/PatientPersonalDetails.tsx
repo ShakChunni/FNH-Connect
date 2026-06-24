@@ -25,7 +25,7 @@ const PatientPersonalDetails: React.FC = () => {
       isValid: boolean = true,
       disabled: boolean = false
     ) => {
-      let style = disabled
+      const style = disabled
         ? `bg-gray-200 border-2 border-gray-300 cursor-not-allowed ${baseStyle}`
         : baseStyle;
       return style;
