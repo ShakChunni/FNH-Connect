@@ -170,9 +170,9 @@ const AddSaleModal: React.FC<AddSaleModalProps> = ({ isOpen, onClose }) => {
   }, [isOpen, resetForm]);
 
   const closeAfterSuccess = useCallback(() => {
-    resetForm();
+    setSubmitConfirmOpen(false);
     onClose();
-  }, [onClose, resetForm]);
+  }, [onClose]);
 
   const { addBatchSale, isLoading: isSubmitting } = useAddBatchSaleData({
     onSuccess: () => {
@@ -196,6 +196,7 @@ const AddSaleModal: React.FC<AddSaleModalProps> = ({ isOpen, onClose }) => {
     useState(false);
   const [closeWithItemsConfirmOpen, setCloseWithItemsConfirmOpen] =
     useState(false);
+  const [submitConfirmOpen, setSubmitConfirmOpen] = useState(false);
   const [pendingPatientSelection, setPendingPatientSelection] =
     useState<SalePatientSelection | null>(null);
 
@@ -331,17 +332,15 @@ const AddSaleModal: React.FC<AddSaleModalProps> = ({ isOpen, onClose }) => {
       setCloseWithItemsConfirmOpen(true);
       return;
     }
-    resetForm();
     onClose();
-  }, [isSubmitting, formData.items.length, onClose, resetForm]);
+  }, [isSubmitting, formData.items.length, onClose]);
 
   const confirmCloseWithItems = useCallback(() => {
-    resetForm();
     setCloseWithItemsConfirmOpen(false);
     onClose();
-  }, [onClose, resetForm]);
+  }, [onClose]);
 
-  const handleSubmit = useCallback(() => {
+  const requestSubmit = useCallback(() => {
     if (isSubmitting) return;
     if (!isFormValid) {
       showNotification(
@@ -351,14 +350,42 @@ const AddSaleModal: React.FC<AddSaleModalProps> = ({ isOpen, onClose }) => {
       return;
     }
 
+    setSubmitConfirmOpen(true);
+  }, [
+    isFormValid,
+    isSubmitting,
+    showNotification,
+    validationError,
+  ]);
+
+  const confirmSubmit = useCallback(() => {
+    if (isSubmitting || !isFormValid || !formData.patient) return;
+
+    const items = formData.items.flatMap((item) =>
+      item.medicineId === null
+        ? []
+        : [
+            {
+              medicineId: item.medicineId,
+              quantity: item.quantity,
+              unitPrice: item.unitPrice,
+            },
+          ],
+    );
+
+    if (items.length !== formData.items.length) {
+      setSubmitConfirmOpen(false);
+      showNotification(
+        "Resolve or remove every unmatched medicine row before submitting.",
+        "error",
+      );
+      return;
+    }
+
     addBatchSale({
-      patientId: formData.patient!.id,
+      patientId: formData.patient.id,
       saleDate: formData.saleDate.toISOString(),
-      items: formData.items.map((item) => ({
-        medicineId: item.medicineId!,
-        quantity: item.quantity,
-        unitPrice: item.unitPrice,
-      })),
+      items,
     });
   }, [
     addBatchSale,
@@ -368,13 +395,34 @@ const AddSaleModal: React.FC<AddSaleModalProps> = ({ isOpen, onClose }) => {
     isFormValid,
     isSubmitting,
     showNotification,
-    validationError,
   ]);
 
   // Keyboard handling
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
+        if (isSubmitting) return;
+        if (submitConfirmOpen) {
+          setSubmitConfirmOpen(false);
+          return;
+        }
+        if (applyConfirmOpen) {
+          setApplyConfirmOpen(false);
+          return;
+        }
+        if (clearRowsConfirmOpen) {
+          setClearRowsConfirmOpen(false);
+          return;
+        }
+        if (patientChangeConfirmOpen) {
+          setPatientChangeConfirmOpen(false);
+          setPendingPatientSelection(null);
+          return;
+        }
+        if (closeWithItemsConfirmOpen) {
+          setCloseWithItemsConfirmOpen(false);
+          return;
+        }
         handleClose();
       }
     };
@@ -384,7 +432,16 @@ const AddSaleModal: React.FC<AddSaleModalProps> = ({ isOpen, onClose }) => {
     return () => {
       document.removeEventListener("keydown", handleKeyDown);
     };
-  }, [isOpen, handleClose]);
+  }, [
+    applyConfirmOpen,
+    clearRowsConfirmOpen,
+    closeWithItemsConfirmOpen,
+    handleClose,
+    isOpen,
+    isSubmitting,
+    patientChangeConfirmOpen,
+    submitConfirmOpen,
+  ]);
 
   const formatCurrency = (amount: number) =>
     new Intl.NumberFormat("en-BD", {
@@ -404,7 +461,18 @@ const AddSaleModal: React.FC<AddSaleModalProps> = ({ isOpen, onClose }) => {
     ) / 100;
 
   return (
-    <AnimatePresence mode="wait" onExitComplete={() => resetForm()}>
+    <AnimatePresence
+      mode="wait"
+      onExitComplete={() => {
+        resetForm();
+        setApplyConfirmOpen(false);
+        setClearRowsConfirmOpen(false);
+        setPatientChangeConfirmOpen(false);
+        setCloseWithItemsConfirmOpen(false);
+        setSubmitConfirmOpen(false);
+        setPendingPatientSelection(null);
+      }}
+    >
       {isOpen && (
         <motion.div
           className="fixed inset-0 bg-slate-900/70 flex items-center justify-center z-100000"
@@ -418,6 +486,7 @@ const AddSaleModal: React.FC<AddSaleModalProps> = ({ isOpen, onClose }) => {
             backfaceVisibility: "hidden",
             perspective: 1000,
           }}
+          onClick={handleClose}
         >
           <motion.div
             ref={popupRef}
@@ -431,6 +500,7 @@ const AddSaleModal: React.FC<AddSaleModalProps> = ({ isOpen, onClose }) => {
               backfaceVisibility: "hidden",
               transformStyle: "preserve-3d",
             }}
+            onClick={(event) => event.stopPropagation()}
           >
             <ModalHeader
               icon={ShoppingCart}
@@ -722,7 +792,7 @@ const AddSaleModal: React.FC<AddSaleModalProps> = ({ isOpen, onClose }) => {
 
             <ModalFooter
               onCancel={handleClose}
-              onSubmit={handleSubmit}
+              onSubmit={requestSubmit}
               isSubmitting={isSubmitting}
               isDisabled={!isFormValid}
               cancelText="Cancel"
@@ -732,52 +802,25 @@ const AddSaleModal: React.FC<AddSaleModalProps> = ({ isOpen, onClose }) => {
               theme="indigo"
             />
 
-            <AnimatePresence>
-              {applyConfirmOpen && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  className="absolute inset-0 bg-slate-900/60 z-50 flex items-center justify-center p-4"
-                >
-                  <motion.div
-                    initial={{ scale: 0.95 }}
-                    animate={{ scale: 1 }}
-                    exit={{ scale: 0.95 }}
-                    className="bg-white rounded-2xl shadow-xl max-w-sm w-full p-5"
-                  >
-                    <h4 className="text-sm font-bold text-gray-900 mb-2">
-                      LUCS package already attached
-                    </h4>
-                    <p className="text-xs text-gray-600 mb-4">
-                      The selected Gynecology admission already has a LUCS
-                      package applied. Applying the package again will add
-                      fresh medicine rows to this cart; the admission rows
-                      will not be changed.
-                    </p>
-                    <div className="flex justify-end gap-2">
-                      <button
-                        type="button"
-                        onClick={() => setApplyConfirmOpen(false)}
-                        className="px-3 py-1.5 text-xs font-semibold text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50"
-                      >
-                        Cancel
-                      </button>
-                      <button
-                        type="button"
-                        onClick={doApplyLucsPackage}
-                        className="px-3 py-1.5 text-xs font-semibold text-white bg-pink-600 hover:bg-pink-700 rounded-lg"
-                      >
-                        Add anyway
-                      </button>
-                    </div>
-                  </motion.div>
-                </motion.div>
-              )}
-            </AnimatePresence>
           </motion.div>
         </motion.div>
       )}
+
+      <ConfirmModal
+        isOpen={applyConfirmOpen}
+        title="LUCS package already attached"
+        confirmLabel="Add anyway"
+        cancelLabel="Cancel"
+        variant="warning"
+        onClose={() => setApplyConfirmOpen(false)}
+        onConfirm={doApplyLucsPackage}
+        zIndex={100100}
+        manageBodyScroll={false}
+      >
+        This admission already has a LUCS package. Applying it again adds fresh
+        medicine rows to this cart and does not edit the existing admission
+        rows.
+      </ConfirmModal>
 
       <ConfirmModal
         isOpen={clearRowsConfirmOpen}
@@ -788,6 +831,7 @@ const AddSaleModal: React.FC<AddSaleModalProps> = ({ isOpen, onClose }) => {
         onClose={() => setClearRowsConfirmOpen(false)}
         onConfirm={confirmClearRows}
         zIndex={100100}
+        manageBodyScroll={false}
       >
         This will remove all {formData.items.length} medicine
         {formData.items.length !== 1 ? "s" : ""} from the cart. The action
@@ -806,6 +850,7 @@ const AddSaleModal: React.FC<AddSaleModalProps> = ({ isOpen, onClose }) => {
         }}
         onConfirm={confirmPatientChange}
         zIndex={100100}
+        manageBodyScroll={false}
       >
         {pendingPatientSelection
           ? "Changing the patient will clear the current cart. Added medicines will be lost."
@@ -821,9 +866,29 @@ const AddSaleModal: React.FC<AddSaleModalProps> = ({ isOpen, onClose }) => {
         onClose={() => setCloseWithItemsConfirmOpen(false)}
         onConfirm={confirmCloseWithItems}
         zIndex={100100}
+        manageBodyScroll={false}
       >
         Closing will discard the {formData.items.length} medicine
         {formData.items.length !== 1 ? "s" : ""} currently in the cart.
+      </ConfirmModal>
+
+      <ConfirmModal
+        isOpen={submitConfirmOpen}
+        title="Confirm medicine sale"
+        confirmLabel="Record Sale"
+        cancelLabel="Review cart"
+        variant="info"
+        onClose={() => setSubmitConfirmOpen(false)}
+        onConfirm={confirmSubmit}
+        isLoading={isSubmitting}
+        zIndex={100100}
+        manageBodyScroll={false}
+      >
+        Record {formData.items.length} medicine
+        {formData.items.length !== 1 ? "s" : ""} ({totalUnits} unit
+        {totalUnits !== 1 ? "s" : ""}) for{" "}
+        {formData.patient?.fullName ?? "the selected patient"} at{" "}
+        {formatCurrency(totalAmount)}?
       </ConfirmModal>
     </AnimatePresence>
   );

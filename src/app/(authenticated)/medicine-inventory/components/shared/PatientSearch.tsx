@@ -26,6 +26,7 @@ import {
   Phone,
   MapPin,
   Users,
+  Hash,
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/axios";
@@ -66,6 +67,10 @@ function useFetchPatients(searchQuery: string) {
           guardianName?: string | null;
           address?: string | null;
           email?: string | null;
+          admissions?: Array<{
+            id: number;
+            admissionNumber: string;
+          }>;
         }>;
         error?: string;
       }>("/patient-records", {
@@ -87,6 +92,8 @@ function useFetchPatients(searchQuery: string) {
         guardianName: patient.guardianName ?? null,
         address: patient.address ?? null,
         email: patient.email ?? null,
+        matchedAdmissionNumber:
+          patient.admissions?.[0]?.admissionNumber ?? null,
       }));
     },
     enabled: debouncedQuery.trim().length >= 2,
@@ -100,7 +107,7 @@ export const PatientSearch: React.FC<PatientSearchProps> = ({
   displayValue,
   displayPhone,
   onChange,
-  placeholder = "Search by name, phone, guardian or address...",
+  placeholder = "Search by name, phone, or admission ID...",
   disabled = false,
   error = false,
 }) => {
@@ -348,6 +355,12 @@ export const PatientSearch: React.FC<PatientSearchProps> = ({
                               <span className="truncate max-w-[120px]">
                                 {patient.guardianName}
                               </span>
+                            </span>
+                          )}
+                          {patient.matchedAdmissionNumber && (
+                            <span className="inline-flex items-center gap-0.5 rounded-md bg-emerald-50 border border-emerald-100 px-1.5 py-0.5 text-[11px] font-semibold text-emerald-700">
+                              <Hash className="w-2.5 h-2.5" />
+                              {patient.matchedAdmissionNumber}
                             </span>
                           )}
                         </div>
