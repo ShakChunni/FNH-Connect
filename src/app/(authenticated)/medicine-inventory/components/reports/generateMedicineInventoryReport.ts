@@ -186,17 +186,22 @@ export const generateMedicineInventoryReport = async (
     currentY += 6;
 
     if (input.report.lowStockMedicines.length > 0) {
-      const lowStockRows = input.report.lowStockMedicines.map((medicine) => [
-        safeText(medicine.brandName || medicine.genericName),
-        safeText(medicine.group?.name || "Unknown Group"),
-        safeText(medicine.strength || "—"),
-        formatNumber(medicine.currentStock),
-        formatNumber(medicine.lowStockThreshold),
+      const lowStockRows = getLowStockSummary(
+        input.report.lowStockMedicines,
+      ).map((item, index) => [
+        (index + 1).toString(),
+        item.groupName,
+        item.genericName,
+        formatNumber(item.medicineCount),
+        formatNumber(item.totalCurrentStock),
+        formatNumber(item.lowestThreshold),
       ]);
 
       autoTable(doc, {
         startY: currentY,
-        head: [["Medicine", "Group", "Strength", "Current Stock", "Threshold"]],
+        head: [
+          ["#", "Group", "Generic", "Medicines", "Current Stock", "Lowest Threshold"],
+        ],
         body: lowStockRows,
         theme: "plain",
         headStyles: {
@@ -212,11 +217,12 @@ export const generateMedicineInventoryReport = async (
           textColor: COLORS.text,
         },
         columnStyles: {
-          0: { cellWidth: "auto", fontStyle: "bold" },
-          1: { cellWidth: 45 },
-          2: { cellWidth: 35 },
-          3: { cellWidth: 30, halign: "center", fontStyle: "bold" },
-          4: { cellWidth: 30, halign: "center" },
+          0: { cellWidth: 10, halign: "center" },
+          1: { cellWidth: 42, fontStyle: "bold" },
+          2: { cellWidth: "auto" },
+          3: { cellWidth: 25, halign: "center" },
+          4: { cellWidth: 30, halign: "center", fontStyle: "bold" },
+          5: { cellWidth: 25, halign: "center" },
         },
         alternateRowStyles: {
           fillColor: [254, 252, 232],
@@ -497,6 +503,14 @@ interface GroupSummaryItem {
   stockValue: number;
 }
 
+interface LowStockSummaryItem {
+  groupName: string;
+  genericName: string;
+  medicineCount: number;
+  totalCurrentStock: number;
+  lowestThreshold: number;
+}
+
 function getGroupSummary(
   medicines: MedicineReportInput["report"]["availableMedicines"],
 ): GroupSummaryItem[] {
@@ -523,6 +537,45 @@ function getGroupSummary(
   return Array.from(groups.values()).sort((a, b) =>
     a.groupName.localeCompare(b.groupName),
   );
+}
+
+function getLowStockSummary(
+  medicines: MedicineReportInput["report"]["lowStockMedicines"],
+): LowStockSummaryItem[] {
+  const groups = new Map<string, LowStockSummaryItem>();
+
+  for (const medicine of medicines) {
+    const groupName = medicine.group?.name || "Unknown Group";
+    const genericName = safeText(medicine.genericName, "Unknown Generic");
+    const key = `${groupName.toLowerCase()}-${genericName.toLowerCase()}`;
+    const existing = groups.get(key);
+
+    if (existing) {
+      existing.medicineCount += 1;
+      existing.totalCurrentStock += medicine.currentStock;
+      existing.lowestThreshold = Math.min(
+        existing.lowestThreshold,
+        medicine.lowStockThreshold,
+      );
+    } else {
+      groups.set(key, {
+        groupName,
+        genericName,
+        medicineCount: 1,
+        totalCurrentStock: medicine.currentStock,
+        lowestThreshold: medicine.lowStockThreshold,
+      });
+    }
+  }
+
+  return Array.from(groups.values()).sort((a, b) => {
+    const groupCompare = a.groupName.localeCompare(b.groupName);
+    if (groupCompare !== 0) {
+      return groupCompare;
+    }
+
+    return a.genericName.localeCompare(b.genericName);
+  });
 }
 
 interface PurchaseSummaryItem {
