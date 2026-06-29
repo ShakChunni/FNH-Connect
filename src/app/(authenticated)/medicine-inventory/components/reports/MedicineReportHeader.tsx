@@ -106,58 +106,63 @@ export const MedicineReportHeader: React.FC<MedicineReportHeaderProps> = ({
         isOpen={isOpen}
         onClose={() => setIsOpen(false)}
         buttonRef={buttonRef}
-        className="w-[310px] max-w-[calc(100vw-2rem)] py-2"
+        matchButtonWidth={false}
+        className="w-[min(22rem,calc(100vw-1rem))] max-h-[min(78vh,34rem)] overflow-hidden p-0"
       >
-        <div className="px-3 pb-2">
-          <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">
-            Print Report
+        <div className="border-b border-gray-100 px-3 py-2.5">
+          <p className="text-xs font-bold text-fnh-navy-dark">Print Report</p>
+          <p className="text-[10px] text-gray-500">
+            Choose a section, then print summary or detailed.
           </p>
         </div>
 
-        <div className="max-h-[420px] overflow-y-auto">
+        <div className="max-h-[calc(min(78vh,34rem)-3.5rem)] overflow-y-auto p-2">
           {reportOptions.map((option, index) => {
             const Icon = option.icon;
 
             return (
               <div key={option.target}>
                 {index > 0 ? (
-                  <div className="h-px bg-gray-100 mx-3 my-1" />
+                  <div className="h-px bg-gray-100 mx-1 my-1" />
                 ) : null}
 
-                <div className="px-3 py-2">
-                  <div className="flex items-start gap-2">
-                    <div className="w-8 h-8 rounded-lg bg-fnh-navy/5 flex items-center justify-center shrink-0">
-                      <Icon className="w-4 h-4 text-fnh-navy" />
+                <div className="rounded-lg px-2 py-2 hover:bg-gray-50">
+                  <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
+                    <div className="flex min-w-0 items-center gap-2">
+                      <div className="w-8 h-8 rounded-lg bg-fnh-navy/5 flex items-center justify-center shrink-0">
+                        <Icon className="w-4 h-4 text-fnh-navy" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="truncate text-xs font-bold text-fnh-navy-dark">
+                          {option.label}
+                        </p>
+                        <p className="truncate text-[10px] text-gray-500">
+                          {option.description}
+                        </p>
+                      </div>
                     </div>
 
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-bold text-fnh-navy-dark">
-                        {option.label}
-                      </p>
-                      <p className="text-[10px] text-gray-500 leading-snug">
-                        {option.description}
-                      </p>
-
-                      <div className="grid grid-cols-2 gap-2 mt-2">
-                        <button
-                          type="button"
-                          onClick={() => handleReport("summary", option.target)}
-                          disabled={isLoading}
-                          className="flex items-center justify-center gap-1.5 rounded-lg border border-fnh-navy/10 bg-fnh-navy/5 px-2 py-1.5 text-[10px] font-bold text-fnh-navy hover:bg-fnh-navy/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          <FileText className="w-3 h-3" />
-                          Summary
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleReport("detailed", option.target)}
-                          disabled={isLoading}
-                          className="flex items-center justify-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-2 py-1.5 text-[10px] font-bold text-emerald-700 hover:bg-emerald-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          <List className="w-3 h-3" />
-                          Detailed
-                        </button>
-                      </div>
+                    <div className="grid grid-cols-2 gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => handleReport("summary", option.target)}
+                        disabled={isLoading}
+                        className="flex h-8 w-9 items-center justify-center rounded-lg border border-fnh-navy/10 bg-fnh-navy/5 text-fnh-navy hover:bg-fnh-navy/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        title={`${option.label} summary`}
+                        aria-label={`${option.label} summary report`}
+                      >
+                        <FileText className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleReport("detailed", option.target)}
+                        disabled={isLoading}
+                        className="flex h-8 w-9 items-center justify-center rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        title={`${option.label} detailed`}
+                        aria-label={`${option.label} detailed report`}
+                      >
+                        <List className="w-3.5 h-3.5" />
+                      </button>
                     </div>
                   </div>
                 </div>

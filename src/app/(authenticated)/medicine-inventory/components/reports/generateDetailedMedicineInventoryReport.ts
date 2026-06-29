@@ -26,7 +26,7 @@ import {
 export const generateDetailedMedicineInventoryReport = async (
   input: MedicineReportInput,
 ) => {
-  const doc = new jsPDF();
+  const doc = new jsPDF({ orientation: "landscape" });
   const margin = 15;
 
   await drawLogoWatermark(doc);
@@ -132,9 +132,10 @@ export const generateDetailedMedicineInventoryReport = async (
           cellPadding: 3,
         },
         bodyStyles: {
-          fontSize: 8,
-          cellPadding: 2.5,
+          fontSize: 7.5,
+          cellPadding: 2.2,
           textColor: COLORS.text,
+          overflow: "linebreak",
         },
         columnStyles: {
           0: { cellWidth: 10, halign: "center" },
@@ -202,9 +203,10 @@ export const generateDetailedMedicineInventoryReport = async (
           cellPadding: 3,
         },
         bodyStyles: {
-          fontSize: 8,
-          cellPadding: 2.5,
+          fontSize: 7.5,
+          cellPadding: 2.2,
           textColor: COLORS.text,
+          overflow: "linebreak",
         },
         columnStyles: {
           0: { cellWidth: 42, fontStyle: "bold" },
@@ -272,9 +274,10 @@ export const generateDetailedMedicineInventoryReport = async (
           cellPadding: 3,
         },
         bodyStyles: {
-          fontSize: 8,
-          cellPadding: 2.5,
+          fontSize: 7.5,
+          cellPadding: 2.2,
           textColor: COLORS.text,
+          overflow: "linebreak",
         },
         columnStyles: {
           0: { cellWidth: 28 },
@@ -361,9 +364,10 @@ export const generateDetailedMedicineInventoryReport = async (
             cellPadding: 2.5,
           },
           bodyStyles: {
-            fontSize: 7.5,
-            cellPadding: 2.5,
+            fontSize: 7.2,
+            cellPadding: 2.1,
             textColor: COLORS.text,
+            overflow: "linebreak",
           },
           columnStyles: {
             0: { cellWidth: 38, fontStyle: "bold" },
