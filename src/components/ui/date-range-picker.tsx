@@ -29,7 +29,95 @@ interface DateRangePickerProps {
   hideSelectedSummary?: boolean;
   disableFutureDates?: boolean;
   autoOpen?: boolean;
+  showQuickPresets?: boolean;
 }
+
+interface QuickPreset {
+  id: string;
+  label: string;
+  getRange: () => DateRange;
+}
+
+const normalizeDate = (date: Date): Date => {
+  const normalized = new Date(date);
+  normalized.setHours(0, 0, 0, 0);
+  return normalized;
+};
+
+const addDays = (date: Date, days: number): Date => {
+  const next = new Date(date);
+  next.setDate(next.getDate() + days);
+  return normalizeDate(next);
+};
+
+const addMonths = (date: Date, months: number): Date => {
+  const targetYear = date.getFullYear();
+  const targetMonth = date.getMonth() + months;
+  const lastDayOfTargetMonth = new Date(
+    targetYear,
+    targetMonth + 1,
+    0,
+  ).getDate();
+  const targetDay = Math.min(date.getDate(), lastDayOfTargetMonth);
+
+  return normalizeDate(new Date(targetYear, targetMonth, targetDay));
+};
+
+const getLastMonthRange = (): DateRange => {
+  const today = normalizeDate(new Date());
+  const firstDayOfThisMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+  const firstDayOfLastMonth = new Date(
+    today.getFullYear(),
+    today.getMonth() - 1,
+    1,
+  );
+  const lastDayOfLastMonth = addDays(firstDayOfThisMonth, -1);
+
+  return {
+    from: normalizeDate(firstDayOfLastMonth),
+    to: normalizeDate(lastDayOfLastMonth),
+  };
+};
+
+const QUICK_PRESETS: QuickPreset[] = [
+  {
+    id: "today",
+    label: "Today",
+    getRange: () => {
+      const today = normalizeDate(new Date());
+      return { from: today, to: today };
+    },
+  },
+  {
+    id: "last7Days",
+    label: "Last 7 Days",
+    getRange: () => {
+      const today = normalizeDate(new Date());
+      return { from: addDays(today, -6), to: today };
+    },
+  },
+  {
+    id: "last30Days",
+    label: "Last 30 Days",
+    getRange: () => {
+      const today = normalizeDate(new Date());
+      return { from: addDays(today, -29), to: today };
+    },
+  },
+  {
+    id: "lastMonth",
+    label: "Last Month",
+    getRange: getLastMonthRange,
+  },
+  {
+    id: "last6Months",
+    label: "Last 6 Months",
+    getRange: () => {
+      const today = normalizeDate(new Date());
+      return { from: addMonths(today, -6), to: today };
+    },
+  },
+];
 
 const parseDateString = (
   value: Date | string | undefined,
@@ -63,6 +151,7 @@ export function DateRangePicker({
   hideSelectedSummary = false,
   disableFutureDates = false,
   autoOpen = false,
+  showQuickPresets = false,
 }: DateRangePickerProps) {
   const [isOpen, setIsOpen] = React.useState(autoOpen);
 
@@ -80,8 +169,7 @@ export function DateRangePicker({
   }, [value]);
 
   const handleDateClick = (date: Date) => {
-    const normalizedDate = new Date(date);
-    normalizedDate.setHours(0, 0, 0, 0);
+    const normalizedDate = normalizeDate(date);
 
     // If no start date, set it
     if (!tempRange.from) {
@@ -117,6 +205,14 @@ export function DateRangePicker({
     setTempRange({ from: undefined, to: undefined });
     setRange({ from: undefined, to: undefined });
     onChange(undefined);
+    setIsOpen(false);
+  };
+
+  const handlePresetSelect = (preset: QuickPreset) => {
+    const nextRange = preset.getRange();
+    setTempRange(nextRange);
+    setRange(nextRange);
+    onChange(nextRange);
     setIsOpen(false);
   };
 
@@ -166,11 +262,43 @@ export function DateRangePicker({
           </Button>
         </PopoverTrigger>
         <PopoverContent
-          className={cn("w-auto p-0", popoverClassName)}
+          className={cn(
+            "w-[min(24rem,calc(100vw-1rem))] p-0 overflow-hidden rounded-2xl border border-gray-200 shadow-2xl shadow-fnh-navy/10 data-[state=open]:duration-200 data-[state=closed]:duration-150",
+            popoverClassName,
+          )}
           align="start"
           sideOffset={8}
         >
-          <div className="p-4 space-y-4">
+          <div className="max-h-[min(82vh,42rem)] overflow-y-auto p-4 space-y-4">
+            {showQuickPresets ? (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-xs font-bold text-fnh-navy-dark">
+                      Quick Date Range
+                    </p>
+                    <p className="text-[10px] text-gray-500">
+                      Apply a common reporting period.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  {QUICK_PRESETS.map((preset) => (
+                    <button
+                      key={preset.id}
+                      type="button"
+                      onClick={() => handlePresetSelect(preset)}
+                      disabled={disabled}
+                      className="rounded-lg border border-gray-100 bg-gray-50 px-3 py-2 text-left text-[11px] font-bold text-gray-700 transition-colors hover:border-fnh-navy/20 hover:bg-fnh-navy/5 hover:text-fnh-navy disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {preset.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+
             <CalendarWithMonthYearPicker
               value={tempRange.from}
               onSelect={handleDateClick}

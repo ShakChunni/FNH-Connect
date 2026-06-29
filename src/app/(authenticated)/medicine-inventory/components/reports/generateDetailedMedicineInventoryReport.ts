@@ -26,7 +26,7 @@ import {
 export const generateDetailedMedicineInventoryReport = async (
   input: MedicineReportInput,
 ) => {
-  const doc = new jsPDF({ orientation: "landscape" });
+  const doc = new jsPDF();
   const margin = 15;
 
   await drawLogoWatermark(doc);
@@ -128,24 +128,24 @@ export const generateDetailedMedicineInventoryReport = async (
           fillColor: COLORS.primary,
           textColor: [255, 255, 255],
           fontStyle: "bold",
-          fontSize: 8,
-          cellPadding: 3,
+          fontSize: 7,
+          cellPadding: 2,
         },
         bodyStyles: {
-          fontSize: 7.5,
-          cellPadding: 2.2,
+          fontSize: 7,
+          cellPadding: 2,
           textColor: COLORS.text,
           overflow: "linebreak",
         },
         columnStyles: {
-          0: { cellWidth: 10, halign: "center" },
-          1: { cellWidth: 42, fontStyle: "bold" },
-          2: { cellWidth: 35 },
-          3: { cellWidth: 30 },
-          4: { cellWidth: 25 },
-          5: { cellWidth: 22 },
-          6: { cellWidth: 18, halign: "center", fontStyle: "bold" },
-          7: { cellWidth: 28, halign: "right" },
+          0: { cellWidth: 8, halign: "center" },
+          1: { cellWidth: 34, fontStyle: "bold" },
+          2: { cellWidth: 30 },
+          3: { cellWidth: 25 },
+          4: { cellWidth: 20 },
+          5: { cellWidth: 18 },
+          6: { cellWidth: 15, halign: "center", fontStyle: "bold" },
+          7: { cellWidth: 30, halign: "right" },
         },
         alternateRowStyles: {
           fillColor: [248, 250, 252],
@@ -178,52 +178,66 @@ export const generateDetailedMedicineInventoryReport = async (
     currentY += 6;
 
     if (input.report.lowStockMedicines.length > 0) {
-      const lowStockRows = input.report.lowStockMedicines.map((medicine) => [
-        safeText(medicine.brandName || medicine.genericName),
-        safeText(medicine.genericName),
-        safeText(medicine.group?.name || "Unknown Group"),
-        safeText(medicine.strength || "—"),
-        formatNumber(medicine.currentStock),
-        formatNumber(medicine.lowStockThreshold),
-        formatCurrency(medicine.defaultSalePrice),
-      ]);
+      const lowStockGroups = getLowStockGroups(input.report.lowStockMedicines);
 
-      autoTable(doc, {
-        startY: currentY,
-        head: [
-          ["Medicine", "Generic", "Group", "Strength", "Current Stock", "Threshold", "Price"],
-        ],
-        body: lowStockRows,
-        theme: "plain",
-        headStyles: {
-          fillColor: COLORS.warning,
-          textColor: [255, 255, 255],
-          fontStyle: "bold",
-          fontSize: 8,
-          cellPadding: 3,
-        },
-        bodyStyles: {
-          fontSize: 7.5,
-          cellPadding: 2.2,
-          textColor: COLORS.text,
-          overflow: "linebreak",
-        },
-        columnStyles: {
-          0: { cellWidth: 42, fontStyle: "bold" },
-          1: { cellWidth: 35 },
-          2: { cellWidth: 32 },
-          3: { cellWidth: 25 },
-          4: { cellWidth: 25, halign: "center", fontStyle: "bold" },
-          5: { cellWidth: 22, halign: "center" },
-          6: { cellWidth: 25, halign: "right" },
-        },
-        alternateRowStyles: {
-          fillColor: [254, 252, 232],
-        },
-        margin: { left: margin, right: margin },
-      });
+      for (const group of lowStockGroups) {
+        currentY = checkNewPage(doc, currentY, 45);
 
-      currentY = (doc as JsPDFWithAutoTable).lastAutoTable.finalY + 10;
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(9);
+        doc.setTextColor(COLORS.primary);
+        doc.text(
+          `${group.groupName} - ${formatNumber(group.medicines.length)} medicine${group.medicines.length !== 1 ? "s" : ""}`,
+          margin,
+          currentY,
+        );
+        currentY += 5;
+
+        const lowStockRows = group.medicines.map((medicine) => [
+          safeText(medicine.brandName || medicine.genericName),
+          safeText(medicine.genericName),
+          safeText(medicine.strength || "—"),
+          formatNumber(medicine.currentStock),
+          formatNumber(medicine.lowStockThreshold),
+          formatCurrency(medicine.defaultSalePrice),
+        ]);
+
+        autoTable(doc, {
+          startY: currentY,
+          head: [
+            ["Medicine", "Generic", "Strength", "Current Stock", "Threshold", "Price"],
+          ],
+          body: lowStockRows,
+          theme: "plain",
+          headStyles: {
+            fillColor: COLORS.warning,
+            textColor: [255, 255, 255],
+            fontStyle: "bold",
+            fontSize: 7,
+            cellPadding: 2,
+          },
+          bodyStyles: {
+            fontSize: 7,
+            cellPadding: 2,
+            textColor: COLORS.text,
+            overflow: "linebreak",
+          },
+          columnStyles: {
+            0: { cellWidth: 42, fontStyle: "bold" },
+            1: { cellWidth: 38 },
+            2: { cellWidth: 25 },
+            3: { cellWidth: 25, halign: "center", fontStyle: "bold" },
+            4: { cellWidth: 22, halign: "center" },
+            5: { cellWidth: 28, halign: "right" },
+          },
+          alternateRowStyles: {
+            fillColor: [254, 252, 232],
+          },
+          margin: { left: margin, right: margin },
+        });
+
+        currentY = (doc as JsPDFWithAutoTable).lastAutoTable.finalY + 8;
+      }
     } else {
       doc.setFont("helvetica", "italic");
       doc.setFontSize(9);
@@ -270,24 +284,24 @@ export const generateDetailedMedicineInventoryReport = async (
           fillColor: COLORS.success,
           textColor: [255, 255, 255],
           fontStyle: "bold",
-          fontSize: 8,
-          cellPadding: 3,
+          fontSize: 7,
+          cellPadding: 2,
         },
         bodyStyles: {
-          fontSize: 7.5,
-          cellPadding: 2.2,
+          fontSize: 7,
+          cellPadding: 2,
           textColor: COLORS.text,
           overflow: "linebreak",
         },
         columnStyles: {
-          0: { cellWidth: 28 },
-          1: { cellWidth: 35 },
-          2: { cellWidth: 38, fontStyle: "bold" },
-          3: { cellWidth: 28 },
-          4: { cellWidth: 15, halign: "center" },
-          5: { cellWidth: 25, halign: "right" },
-          6: { cellWidth: 25, halign: "right", fontStyle: "bold" },
-          7: { cellWidth: 25 },
+          0: { cellWidth: 24 },
+          1: { cellWidth: 28 },
+          2: { cellWidth: 32, fontStyle: "bold" },
+          3: { cellWidth: 22 },
+          4: { cellWidth: 13, halign: "center" },
+          5: { cellWidth: 20, halign: "right" },
+          6: { cellWidth: 22, halign: "right", fontStyle: "bold" },
+          7: { cellWidth: 19 },
         },
         alternateRowStyles: {
           fillColor: [240, 253, 244],
@@ -361,22 +375,22 @@ export const generateDetailedMedicineInventoryReport = async (
             textColor: [255, 255, 255],
             fontStyle: "bold",
             fontSize: 7,
-            cellPadding: 2.5,
+            cellPadding: 2,
           },
           bodyStyles: {
-            fontSize: 7.2,
-            cellPadding: 2.1,
+            fontSize: 6.8,
+            cellPadding: 1.8,
             textColor: COLORS.text,
             overflow: "linebreak",
           },
           columnStyles: {
-            0: { cellWidth: 38, fontStyle: "bold" },
-            1: { cellWidth: 26 },
-            2: { cellWidth: 30 },
+            0: { cellWidth: 32, fontStyle: "bold" },
+            1: { cellWidth: 22 },
+            2: { cellWidth: 25 },
             3: { cellWidth: 12, halign: "center" },
-            4: { cellWidth: 22, halign: "right" },
-            5: { cellWidth: 22, halign: "right", fontStyle: "bold" },
-            6: { cellWidth: 28 },
+            4: { cellWidth: 20, halign: "right" },
+            5: { cellWidth: 20, halign: "right", fontStyle: "bold" },
+            6: { cellWidth: 25 },
             7: { cellWidth: 24 },
           },
           alternateRowStyles: {
@@ -483,6 +497,47 @@ function shouldRender(
   sectionTarget: Exclude<MedicineReportTarget, "combined">,
 ): boolean {
   return selectedTarget === "combined" || selectedTarget === sectionTarget;
+}
+
+interface LowStockGroup {
+  groupName: string;
+  medicines: MedicineReportInput["report"]["lowStockMedicines"];
+}
+
+function getLowStockGroups(
+  medicines: MedicineReportInput["report"]["lowStockMedicines"],
+): LowStockGroup[] {
+  const groups = new Map<string, LowStockGroup>();
+
+  for (const medicine of medicines) {
+    const groupName = medicine.group?.name || "Unknown Group";
+    const existing = groups.get(groupName);
+
+    if (existing) {
+      existing.medicines.push(medicine);
+    } else {
+      groups.set(groupName, {
+        groupName,
+        medicines: [medicine],
+      });
+    }
+  }
+
+  return Array.from(groups.values())
+    .map((group) => ({
+      ...group,
+      medicines: group.medicines.sort((a, b) => {
+        const genericCompare = a.genericName.localeCompare(b.genericName);
+        if (genericCompare !== 0) {
+          return genericCompare;
+        }
+
+        return safeText(a.brandName || a.genericName).localeCompare(
+          safeText(b.brandName || b.genericName),
+        );
+      }),
+    }))
+    .sort((a, b) => a.groupName.localeCompare(b.groupName));
 }
 
 interface PatientSaleGroup {

@@ -33,6 +33,7 @@ import { cn } from "@/lib/utils";
 import { DropdownPortal } from "@/components/ui/DropdownPortal";
 import { DateRangePicker } from "@/components/ui/date-range-picker";
 import { formatBDT } from "@/lib/timezone";
+import { format } from "date-fns";
 import {
   AddPurchaseModal,
   AddSaleModal,
@@ -348,12 +349,16 @@ const MedicineInventoryPage = () => {
     }).format(amount);
   };
 
+  const formatSelectedDate = useCallback((date: Date): string => {
+    return format(date, "MMM dd, yyyy");
+  }, []);
+
   const getPeriodLabel = useCallback((): string => {
     if (startDate && endDate) {
-      return `${formatBDT(startDate, "MMM dd, yyyy")} - ${formatBDT(endDate, "MMM dd, yyyy")}`;
+      return `${formatSelectedDate(startDate)} - ${formatSelectedDate(endDate)}`;
     }
     return "All Time";
-  }, [startDate, endDate]);
+  }, [endDate, formatSelectedDate, startDate]);
 
   const handleGenerateReport = useCallback(
     async (mode: MedicineReportMode, target: MedicineReportTarget) => {
@@ -379,10 +384,10 @@ const MedicineInventoryPage = () => {
           generatedAt: formatBDT(new Date(), "MMM dd, yyyy hh:mm a"),
           periodLabel: getPeriodLabel(),
           startDate: startDate
-            ? formatBDT(startDate, "MMM dd, yyyy")
+            ? formatSelectedDate(startDate)
             : "All Time",
           endDate: endDate
-            ? formatBDT(endDate, "MMM dd, yyyy")
+            ? formatSelectedDate(endDate)
             : "All Time",
           generatedBy: user?.fullName || user?.username || "Staff",
         };
@@ -409,6 +414,7 @@ const MedicineInventoryPage = () => {
     [
       endDate,
       getPeriodLabel,
+      formatSelectedDate,
       hideNotification,
       refetchReport,
       showNotification,
@@ -442,8 +448,9 @@ const MedicineInventoryPage = () => {
                       placeholder="Filter date range"
                       hideSelectedSummary
                       className="bg-gray-50/80 border-gray-100 hover:bg-gray-100 hover:border-gray-200 focus:border-fnh-blue focus:ring-fnh-blue/20 text-xs font-semibold text-gray-700 shadow-sm"
-                      popoverClassName="rounded-2xl border border-gray-200 shadow-xl"
+                      popoverClassName="shadow-xl"
                       disableFutureDates
+                      showQuickPresets
                     />
                   </div>
 
