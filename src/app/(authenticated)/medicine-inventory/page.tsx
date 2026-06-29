@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { PageHeader } from "@/components/ui/PageHeader";
 import {
@@ -19,7 +19,9 @@ import {
   ChevronRight,
   Building2,
 } from "lucide-react";
-import { useFetchMedicineStats, useFetchMedicineGroups } from "./hooks";
+import { useAuth } from "@/app/AuthContext";
+import { useNotification } from "@/hooks/useNotification";
+import { useFetchMedicineStats, useFetchMedicineGroups, useFetchMedicineReport } from "./hooks";
 import {
   useUIStore,
   useMedicineFilterStore,
@@ -30,6 +32,7 @@ import { useDebounce } from "@/hooks/useDebounce";
 import { cn } from "@/lib/utils";
 import { DropdownPortal } from "@/components/ui/DropdownPortal";
 import { DateRangePicker } from "@/components/ui/date-range-picker";
+import { formatBDT } from "@/lib/timezone";
 import {
   AddPurchaseModal,
   AddSaleModal,
@@ -48,6 +51,11 @@ import {
   SaleTable,
   ActivityTable,
 } from "./components/shared";
+import {
+  MedicineReportHeader,
+  generateMedicineInventoryReport,
+  generateDetailedMedicineInventoryReport,
+} from "./components/reports";
 import { getMedicineDisplayName } from "./utils/medicineDisplay";
 
 // Manage Dropdown — clean way to access Add Medicine/Group/Company
@@ -248,6 +256,17 @@ const MedicineInventoryPage = () => {
     return getDhakaBoundaryIso(endDate, "end");
   }, [endDate, getDhakaBoundaryIso]);
 
+  const { user } = useAuth();
+  const { showNotification, hideNotification } = useNotification();
+  const [isGeneratingReport, setIsGeneratingReport] = useState(false);
+
+  // Report data is fetched on-demand when the user clicks print
+  const { refetch: refetchReport } = useFetchMedicineReport(
+    startDateIso,
+    endDateIso,
+    false,
+  );
+
   // Sync debounced search to active tab store
   useEffect(() => {
     if (activeTab === "medicines") {
@@ -324,6 +343,74 @@ const MedicineInventoryPage = () => {
     }).format(amount);
   };
 
+  const getPeriodLabel = useCallback((): string => {
+    if (startDate && endDate) {
+      return `${formatBDT(startDate, "MMM dd, yyyy")} - ${formatBDT(endDate, "MMM dd, yyyy")}`;
+    }
+    return "All Time";
+  }, [startDate, endDate]);
+
+  const handleGenerateReport = useCallback(
+    async (mode: "summary" | "detailed") => {
+      setIsGeneratingReport(true);
+      const loadingId = showNotification(
+        `Generating ${mode} report`,
+        "loading",
+      );
+
+      try {
+        const result = await refetchReport();
+
+        if (result.error || !result.data) {
+          throw new Error(
+            result.error?.message || "Failed to fetch report data",
+          );
+        }
+
+        const reportInput = {
+          report: result.data,
+          generatedAt: formatBDT(new Date(), "MMM dd, yyyy hh:mm a"),
+          periodLabel: getPeriodLabel(),
+          startDate: startDate
+            ? formatBDT(startDate, "MMM dd, yyyy")
+            : "All Time",
+          endDate: endDate
+            ? formatBDT(endDate, "MMM dd, yyyy")
+            : "All Time",
+          generatedBy: user?.fullName || user?.username || "Staff",
+        };
+
+        if (mode === "summary") {
+          await generateMedicineInventoryReport(reportInput);
+        } else {
+          await generateDetailedMedicineInventoryReport(reportInput);
+        }
+
+        hideNotification(loadingId);
+        showNotification(
+          `${mode === "summary" ? "Summary" : "Detailed"} report generated successfully`,
+          "success",
+        );
+      } catch (error) {
+        console.error("Error generating medicine inventory report:", error);
+        hideNotification(loadingId);
+        showNotification("Failed to generate report", "error");
+      } finally {
+        setIsGeneratingReport(false);
+      }
+    },
+    [
+      endDate,
+      getPeriodLabel,
+      hideNotification,
+      refetchReport,
+      showNotification,
+      startDate,
+      user?.fullName,
+      user?.username,
+    ],
+  );
+
   return (
     <div className="min-h-screen bg-fnh-porcelain pb-4 sm:pb-6 lg:pb-8 w-full overflow-x-hidden">
       <div className="mx-auto w-full max-w-full px-3 sm:px-4 lg:px-6 pt-16 sm:pt-12 lg:pt-2">
@@ -367,6 +454,13 @@ const MedicineInventoryPage = () => {
                     <ShoppingCart className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                     <span>Record Sale</span>
                   </button>
+
+                  <MedicineReportHeader
+                    disabled={isGeneratingReport}
+                    isLoading={isGeneratingReport}
+                    onGenerateSummary={() => handleGenerateReport("summary")}
+                    onGenerateDetailed={() => handleGenerateReport("detailed")}
+                  />
                 </div>
               }
             />

@@ -349,6 +349,331 @@ export async function getMedicineInventoryStats(
 }
 
 // ═══════════════════════════════════════════════════════════════
+// MEDICINE INVENTORY REPORT
+// ═══════════════════════════════════════════════════════════════
+
+export interface MedicineInventoryReport {
+  stats: {
+    totalMedicines: number;
+    lowStockCount: number;
+    totalSalesAmount: number;
+    totalSalesCount: number;
+    totalPurchasesAmount: number;
+    totalPurchasesCount: number;
+    totalStockValue: number;
+  };
+  availableMedicines: Array<{
+    id: number;
+    genericName: string;
+    brandName: string | null;
+    strength: string | null;
+    dosageForm: string | null;
+    defaultSalePrice: number;
+    currentStock: number;
+    lowStockThreshold: number;
+    group: { id: number; name: string };
+  }>;
+  lowStockMedicines: Array<{
+    id: number;
+    genericName: string;
+    brandName: string | null;
+    strength: string | null;
+    dosageForm: string | null;
+    defaultSalePrice: number;
+    currentStock: number;
+    lowStockThreshold: number;
+    group: { id: number; name: string };
+  }>;
+  purchases: Array<{
+    id: number;
+    invoiceNumber: string;
+    quantity: number;
+    unitPrice: number;
+    totalAmount: number;
+    purchaseDate: Date;
+    expiryDate: Date | null;
+    batchNumber: string | null;
+    remainingQty: number;
+    createdAt: Date;
+    company: { id: number; name: string };
+    medicine: {
+      id: number;
+      genericName: string;
+      brandName: string | null;
+      group: { id: number; name: string };
+    };
+  }>;
+  sales: Array<{
+    id: number;
+    quantity: number;
+    unitPrice: number;
+    totalAmount: number;
+    saleDate: Date;
+    createdAt: Date;
+    admissionId: number | null;
+    admission: { id: number; admissionNumber: string } | null;
+    patient: { id: number; fullName: string; phoneNumber: string | null };
+    medicine: {
+      id: number;
+      genericName: string;
+      brandName: string | null;
+      group: { id: number; name: string };
+    };
+    purchase: {
+      id: number;
+      invoiceNumber: string;
+      batchNumber: string | null;
+      company: { id: number; name: string };
+    };
+  }>;
+}
+
+export async function getMedicineInventoryReport(
+  startDate?: Date,
+  endDate?: Date,
+): Promise<MedicineInventoryReport> {
+  const purchasesDateFilter =
+    startDate || endDate
+      ? {
+          purchaseDate: {
+            ...(startDate ? { gte: startDate } : {}),
+            ...(endDate ? { lte: endDate } : {}),
+          },
+        }
+      : {};
+
+  const salesDateFilter =
+    startDate || endDate
+      ? {
+          saleDate: {
+            ...(startDate ? { gte: startDate } : {}),
+            ...(endDate ? { lte: endDate } : {}),
+          },
+        }
+      : {};
+
+  const [
+    availableMedicines,
+    lowStockMedicineRows,
+    purchases,
+    sales,
+    totalSales,
+    totalPurchases,
+  ] = await Promise.all([
+    prisma.medicine.findMany({
+      where: {
+        isActive: true,
+        currentStock: {
+          gt: 0,
+        },
+      },
+      select: {
+        id: true,
+        genericName: true,
+        brandName: true,
+        strength: true,
+        dosageForm: true,
+        defaultSalePrice: true,
+        currentStock: true,
+        lowStockThreshold: true,
+        group: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+      orderBy: [{ brandName: "asc" }, { genericName: "asc" }],
+    }),
+
+    prisma.medicine.findMany({
+      where: {
+        isActive: true,
+      },
+      select: {
+        id: true,
+        genericName: true,
+        brandName: true,
+        strength: true,
+        dosageForm: true,
+        defaultSalePrice: true,
+        currentStock: true,
+        lowStockThreshold: true,
+        group: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+      orderBy: [
+        { currentStock: "asc" },
+        { brandName: "asc" },
+        { genericName: "asc" },
+      ],
+    }),
+
+    prisma.medicinePurchase.findMany({
+      where: purchasesDateFilter,
+      select: {
+        id: true,
+        invoiceNumber: true,
+        quantity: true,
+        unitPrice: true,
+        totalAmount: true,
+        purchaseDate: true,
+        expiryDate: true,
+        batchNumber: true,
+        remainingQty: true,
+        createdAt: true,
+        company: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+        medicine: {
+          select: {
+            id: true,
+            genericName: true,
+            brandName: true,
+            group: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+          },
+        },
+      },
+      orderBy: { purchaseDate: "desc" },
+    }),
+
+    prisma.medicineSale.findMany({
+      where: salesDateFilter,
+      select: {
+        id: true,
+        quantity: true,
+        unitPrice: true,
+        totalAmount: true,
+        saleDate: true,
+        createdAt: true,
+        admissionId: true,
+        admission: {
+          select: {
+            id: true,
+            admissionNumber: true,
+          },
+        },
+        patient: {
+          select: {
+            id: true,
+            fullName: true,
+            phoneNumber: true,
+          },
+        },
+        medicine: {
+          select: {
+            id: true,
+            genericName: true,
+            brandName: true,
+            group: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+          },
+        },
+        purchase: {
+          select: {
+            id: true,
+            invoiceNumber: true,
+            batchNumber: true,
+            company: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+          },
+        },
+      },
+      orderBy: { saleDate: "desc" },
+    }),
+
+    prisma.medicineSale.aggregate({
+      where: salesDateFilter,
+      _sum: { totalAmount: true },
+      _count: true,
+    }),
+
+    prisma.medicinePurchase.aggregate({
+      where: purchasesDateFilter,
+      _sum: { totalAmount: true },
+      _count: true,
+    }),
+  ]);
+
+  const normalizedMedicines = availableMedicines.map((medicine) => ({
+    ...medicine,
+    defaultSalePrice: Number(medicine.defaultSalePrice),
+  }));
+
+  const lowStockMedicines = lowStockMedicineRows
+    .map((medicine) => ({
+      ...medicine,
+      defaultSalePrice: Number(medicine.defaultSalePrice),
+    }))
+    .filter(
+      (medicine) => medicine.currentStock <= medicine.lowStockThreshold,
+    );
+
+  const stockValue = await prisma.$queryRaw<{ total: number }[]>`
+    SELECT COALESCE(SUM(m."currentStock" * COALESCE(
+      (SELECT mp."unitPrice"::numeric
+       FROM "MedicinePurchase" mp
+       WHERE mp."medicineId" = m.id
+       ORDER BY mp."purchaseDate" DESC
+       LIMIT 1), 0
+    )), 0) as total
+    FROM "Medicine" m
+    WHERE m."isActive" = true
+      AND m."currentStock" > 0
+  `;
+
+  const totalStockValue = Number(stockValue[0]?.total || 0);
+
+  const normalizedPurchases = purchases.map((purchase) => ({
+    ...purchase,
+    unitPrice: Number(purchase.unitPrice),
+    totalAmount: Number(purchase.totalAmount),
+  }));
+
+  const normalizedSales = sales.map((sale) => ({
+    ...sale,
+    unitPrice: Number(sale.unitPrice),
+    totalAmount: Number(sale.totalAmount),
+  }));
+
+  return {
+    stats: {
+      totalMedicines: normalizedMedicines.length,
+      lowStockCount: lowStockMedicines.length,
+      totalSalesAmount: Number(totalSales._sum.totalAmount || 0),
+      totalSalesCount: totalSales._count,
+      totalPurchasesAmount: Number(totalPurchases._sum.totalAmount || 0),
+      totalPurchasesCount: totalPurchases._count,
+      totalStockValue,
+    },
+    availableMedicines: normalizedMedicines,
+    lowStockMedicines,
+    purchases: normalizedPurchases,
+    sales: normalizedSales,
+  };
+}
+
+// ═══════════════════════════════════════════════════════════════
 // MEDICINE GROUPS
 // ═══════════════════════════════════════════════════════════════
 

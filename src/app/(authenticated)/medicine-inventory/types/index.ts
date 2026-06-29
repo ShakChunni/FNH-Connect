@@ -282,6 +282,33 @@ export interface LowStockItem {
 }
 
 // ============================================
+// Report Types
+// ============================================
+
+export interface ReportMedicine {
+  id: number;
+  genericName: string;
+  brandName?: string | null;
+  strength?: string | null;
+  dosageForm?: string | null;
+  defaultSalePrice: number;
+  currentStock: number;
+  lowStockThreshold: number;
+  group: {
+    id: number;
+    name: string;
+  };
+}
+
+export interface MedicineInventoryReport {
+  stats: MedicineInventoryStats;
+  availableMedicines: ReportMedicine[];
+  lowStockMedicines: ReportMedicine[];
+  purchases: MedicinePurchase[];
+  sales: MedicineSale[];
+}
+
+// ============================================
 // API Response Types
 // ============================================
 

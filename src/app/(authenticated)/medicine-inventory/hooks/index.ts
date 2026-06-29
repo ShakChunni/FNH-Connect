@@ -13,6 +13,7 @@ export { useFetchMedicineCompanies } from "./useFetchMedicineCompanies";
 export { useFetchPaginatedMedicineGroups } from "./useFetchPaginatedMedicineGroups";
 export { useFetchPaginatedMedicineCompanies } from "./useFetchPaginatedMedicineCompanies";
 export { useFetchActivity } from "./useFetchActivity";
+export { useFetchMedicineReport } from "./useFetchMedicineReport";
 
 // Mutation hooks
 export { useAddMedicineData } from "./useAddMedicineData";
