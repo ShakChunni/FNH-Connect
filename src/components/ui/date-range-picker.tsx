@@ -94,11 +94,10 @@ export function DateRangePicker({
       if (normalizedDate < tempRange.from) {
         // If clicked date is before start, swap them
         setTempRange({ from: normalizedDate, to: tempRange.from });
-      } else if (normalizedDate > tempRange.from) {
-        // Only set end date if it's after start date
+      } else if (normalizedDate >= tempRange.from) {
+        // Allow a single-day range when the same date is selected twice.
         setTempRange({ from: tempRange.from, to: normalizedDate });
       }
-      // If same date, do nothing
       return;
     }
 
