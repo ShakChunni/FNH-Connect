@@ -56,6 +56,11 @@ import {
   generateMedicineInventoryReport,
   generateDetailedMedicineInventoryReport,
 } from "./components/reports";
+import type {
+  MedicineReportMode,
+  MedicineReportTarget,
+} from "./components/reports/types";
+import { MEDICINE_REPORT_TARGET_LABELS } from "./components/reports/types";
 import { getMedicineDisplayName } from "./utils/medicineDisplay";
 
 // Manage Dropdown — clean way to access Add Medicine/Group/Company
@@ -351,10 +356,11 @@ const MedicineInventoryPage = () => {
   }, [startDate, endDate]);
 
   const handleGenerateReport = useCallback(
-    async (mode: "summary" | "detailed") => {
+    async (mode: MedicineReportMode, target: MedicineReportTarget) => {
       setIsGeneratingReport(true);
+      const targetLabel = MEDICINE_REPORT_TARGET_LABELS[target];
       const loadingId = showNotification(
-        `Generating ${mode} report`,
+        `Generating ${targetLabel.toLowerCase()} ${mode} report`,
         "loading",
       );
 
@@ -369,6 +375,7 @@ const MedicineInventoryPage = () => {
 
         const reportInput = {
           report: result.data,
+          target,
           generatedAt: formatBDT(new Date(), "MMM dd, yyyy hh:mm a"),
           periodLabel: getPeriodLabel(),
           startDate: startDate
@@ -388,7 +395,7 @@ const MedicineInventoryPage = () => {
 
         hideNotification(loadingId);
         showNotification(
-          `${mode === "summary" ? "Summary" : "Detailed"} report generated successfully`,
+          `${targetLabel} ${mode === "summary" ? "summary" : "detailed"} report generated successfully`,
           "success",
         );
       } catch (error) {
@@ -458,8 +465,7 @@ const MedicineInventoryPage = () => {
                   <MedicineReportHeader
                     disabled={isGeneratingReport}
                     isLoading={isGeneratingReport}
-                    onGenerateSummary={() => handleGenerateReport("summary")}
-                    onGenerateDetailed={() => handleGenerateReport("detailed")}
+                    onGenerateReport={handleGenerateReport}
                   />
                 </div>
               }
