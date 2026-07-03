@@ -53,6 +53,43 @@ export interface MedicineSaleWithRelations {
   };
 }
 
+export interface MedicineSaleResponse {
+  id: number;
+  quantity: number;
+  unitPrice: number;
+  totalAmount: number;
+  saleDate: string;
+  createdAt: string;
+  admissionId: number | null;
+  admission: {
+    id: number;
+    admissionNumber: string;
+  } | null;
+  patient: {
+    id: number;
+    fullName: string;
+    phoneNumber: string | null;
+  };
+  medicine: {
+    id: number;
+    genericName: string;
+    brandName: string | null;
+    group: {
+      id: number;
+      name: string;
+    };
+  };
+  purchase: {
+    id: number;
+    invoiceNumber: string;
+    batchNumber: string | null;
+    company: {
+      id: number;
+      name: string;
+    };
+  };
+}
+
 export interface CreateSaleWithTxResult {
   primarySale: MedicineSaleWithRelations;
   sales: MedicineSaleWithRelations[];
@@ -124,7 +161,7 @@ export interface CreateSalesBatchResult {
   fifoSaleRowCount: number;
   totalQuantity: number;
   totalAmount: number;
-  sales: MedicineSaleWithRelations[];
+  sales: MedicineSaleResponse[];
 }
 
 export interface GroupFilters {
@@ -188,6 +225,67 @@ const getMedicineDisplayLabel = (medicine: {
   }
 
   return `${medicineName} (${genericName})`;
+};
+
+const toFiniteMoney = (value: number | Prisma.Decimal, fieldName: string) => {
+  const amount = Number(value);
+
+  if (!Number.isFinite(amount)) {
+    throw new Error(`Invalid medicine sale ${fieldName}.`);
+  }
+
+  return amount;
+};
+
+const transformMedicineSaleForResponse = (sale: {
+  id: number;
+  quantity: number;
+  unitPrice: number | Prisma.Decimal;
+  totalAmount: number | Prisma.Decimal;
+  saleDate: Date;
+  createdAt?: Date;
+  admissionId?: number | null;
+  admission?: {
+    id: number;
+    admissionNumber: string;
+  } | null;
+  patient: {
+    id: number;
+    fullName: string;
+    phoneNumber: string | null;
+  };
+  medicine: {
+    id: number;
+    genericName: string;
+    brandName: string | null;
+    group: {
+      id: number;
+      name: string;
+    };
+  };
+  purchase: {
+    id: number;
+    invoiceNumber: string;
+    batchNumber: string | null;
+    company: {
+      id: number;
+      name: string;
+    };
+  };
+}): MedicineSaleResponse => {
+  return {
+    id: sale.id,
+    quantity: sale.quantity,
+    unitPrice: toFiniteMoney(sale.unitPrice, "unit price"),
+    totalAmount: toFiniteMoney(sale.totalAmount, "total amount"),
+    saleDate: sale.saleDate.toISOString(),
+    createdAt: (sale.createdAt ?? sale.saleDate).toISOString(),
+    admissionId: sale.admissionId ?? null,
+    admission: sale.admission ?? null,
+    patient: sale.patient,
+    medicine: sale.medicine,
+    purchase: sale.purchase,
+  };
 };
 
 // ═══════════════════════════════════════════════════════════════
@@ -1609,7 +1707,12 @@ export async function getSales(filters: SaleFilters) {
     prisma.medicineSale.count({ where }),
   ]);
 
-  return { sales, total, page, limit };
+  return {
+    sales: sales.map(transformMedicineSaleForResponse),
+    total,
+    page,
+    limit,
+  };
 }
 
 export async function createSale(
@@ -1630,7 +1733,7 @@ export async function createSale(
   );
 
   // Return the first sale record for backward compatibility
-  return result.primarySale;
+  return transformMedicineSaleForResponse(result.primarySale);
 }
 
 /**
@@ -1719,6 +1822,12 @@ export async function createSaleWithTx(
     throw new Error(
       `Insufficient stock. Available: ${medicine.currentStock}, Requested: ${data.quantity}`,
     );
+  }
+
+  if (data.unitPrice !== undefined) {
+    if (!Number.isFinite(data.unitPrice) || data.unitPrice <= 0) {
+      throw new Error("Unit price must be greater than zero.");
+    }
   }
 
   const firstPurchase = await tx.medicinePurchase.findFirst({
@@ -2050,7 +2159,7 @@ export async function createSalesBatch(
       fifoSaleRowCount: fifoRowCount,
       totalQuantity,
       totalAmount,
-      sales: aggregated,
+      sales: aggregated.map(transformMedicineSaleForResponse),
     };
   }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
 }

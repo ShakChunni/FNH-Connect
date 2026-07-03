@@ -25,10 +25,22 @@ const saleFiltersSchema = z.object({
   search: z.string().optional(),
   patientId: z.coerce.number().int().positive().optional(),
   medicineId: z.coerce.number().int().positive().optional(),
-  startDate: z.string().optional(),
-  endDate: z.string().optional(),
+  startDate: z.string().datetime({ offset: true }).optional(),
+  endDate: z.string().datetime({ offset: true }).optional(),
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(20).default(20),
+}).superRefine((value, ctx) => {
+  if (!value.startDate || !value.endDate) {
+    return;
+  }
+
+  if (new Date(value.startDate) > new Date(value.endDate)) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["endDate"],
+      message: "End date must be after start date",
+    });
+  }
 });
 
 // ═══════════════════════════════════════════════════════════════
@@ -79,7 +91,6 @@ export async function GET(request: NextRequest) {
       {
         success: false,
         error: "Failed to fetch sales",
-        message: error instanceof Error ? error.message : "Unknown error",
       },
       { status: 500 },
     );
@@ -108,7 +119,7 @@ export async function POST(request: NextRequest) {
     }
     const { id: userId, staffId } = user;
 
-    const body = await request.json();
+    const body: unknown = await request.json();
     const validation = createSaleSchema.safeParse(body);
 
     if (!validation.success) {
@@ -171,7 +182,6 @@ export async function POST(request: NextRequest) {
       {
         success: false,
         error: "Failed to create sale",
-        message: error instanceof Error ? error.message : "Unknown error",
       },
       { status: 500 },
     );
