@@ -37,6 +37,26 @@ const getPatientGroupKey = (sale: MedicineSale) => {
   return sale.patient?.id ? `patient-${sale.patient.id}` : `unknown-${sale.id}`;
 };
 
+const getFiniteNumber = (value: number) => {
+  return Number.isFinite(value) ? value : 0;
+};
+
+const getSaleQuantity = (sale: MedicineSale) => {
+  return getFiniteNumber(sale.quantity);
+};
+
+const getSaleUnitPrice = (sale: MedicineSale) => {
+  return getFiniteNumber(sale.unitPrice);
+};
+
+const getSaleTotalAmount = (sale: MedicineSale) => {
+  if (Number.isFinite(sale.totalAmount)) {
+    return sale.totalAmount;
+  }
+
+  return getSaleQuantity(sale) * getSaleUnitPrice(sale);
+};
+
 const SaleTable: React.FC = () => {
   const { filters, setFilter } = useSaleFilterStore();
   const { data, isLoading, isError, error } = useFetchSales(filters);
@@ -57,7 +77,7 @@ const SaleTable: React.FC = () => {
       style: "currency",
       currency: "BDT",
       minimumFractionDigits: 0,
-    }).format(amount);
+    }).format(getFiniteNumber(amount));
   };
 
   const formatDate = (dateStr: string) => {
@@ -70,7 +90,7 @@ const SaleTable: React.FC = () => {
   };
 
   const formatNumber = (num: number) => {
-    return new Intl.NumberFormat("en-BD").format(num);
+    return new Intl.NumberFormat("en-BD").format(getFiniteNumber(num));
   };
 
   const patientGroups = useMemo<PatientSaleGroup[]>(() => {
@@ -82,8 +102,8 @@ const SaleTable: React.FC = () => {
 
       if (existingGroup) {
         existingGroup.sales.push(sale);
-        existingGroup.totalQuantity += sale.quantity;
-        existingGroup.totalAmount += sale.totalAmount;
+        existingGroup.totalQuantity += getSaleQuantity(sale);
+        existingGroup.totalAmount += getSaleTotalAmount(sale);
 
         if (new Date(sale.saleDate) > new Date(existingGroup.latestSaleDate)) {
           existingGroup.latestSaleDate = sale.saleDate;
@@ -98,8 +118,8 @@ const SaleTable: React.FC = () => {
         patientName: sale.patient?.fullName || "Unknown Patient",
         phoneNumber: sale.patient?.phoneNumber ?? null,
         sales: [sale],
-        totalQuantity: sale.quantity,
-        totalAmount: sale.totalAmount,
+        totalQuantity: getSaleQuantity(sale),
+        totalAmount: getSaleTotalAmount(sale),
         latestSaleDate: sale.saleDate,
       });
     });
@@ -343,14 +363,14 @@ const SaleTable: React.FC = () => {
                               {sale.purchase.company?.name || "Unknown Company"}
                             </td>
                             <td className="px-6 py-3.5 text-right text-sm font-bold text-gray-900">
-                              {formatNumber(sale.quantity)}
+                              {formatNumber(getSaleQuantity(sale))}
                             </td>
                             <td className="px-6 py-3.5 text-right text-sm text-gray-700">
-                              {formatCurrency(sale.unitPrice)}
+                              {formatCurrency(getSaleUnitPrice(sale))}
                             </td>
                             <td className="px-6 py-3.5 text-right">
                               <span className="text-sm font-bold text-blue-700">
-                                {formatCurrency(sale.totalAmount)}
+                                {formatCurrency(getSaleTotalAmount(sale))}
                               </span>
                             </td>
                             <td className="px-6 py-3.5">
@@ -462,7 +482,7 @@ const SaleTable: React.FC = () => {
                               ) : null}
                             </div>
                             <span className="shrink-0 text-sm font-bold text-blue-700">
-                              {formatCurrency(sale.totalAmount)}
+                              {formatCurrency(getSaleTotalAmount(sale))}
                             </span>
                           </div>
                           <div className="mt-2 flex flex-wrap gap-3 text-xs text-gray-600">
@@ -477,8 +497,8 @@ const SaleTable: React.FC = () => {
                               <span className="font-semibold text-gray-500">
                                 Qty:
                               </span>{" "}
-                              {formatNumber(sale.quantity)} ×{" "}
-                              {formatCurrency(sale.unitPrice)}
+                              {formatNumber(getSaleQuantity(sale))} ×{" "}
+                              {formatCurrency(getSaleUnitPrice(sale))}
                             </span>
                             <span>
                               <span className="font-semibold text-gray-500">
