@@ -14,6 +14,7 @@ interface TableRowProps {
   headers: TableHeader[];
   onEdit?: (patient: InfertilityPatientData) => void;
   onOrderInvestigation?: (patient: InfertilityPatientData) => void;
+  onManageInvestigation?: (patient: InfertilityPatientData) => void;
   onSetAdmitted?: (patient: InfertilityPatientData) => void;
   isStatusUpdating?: boolean;
   onClick?: () => void;
@@ -40,6 +41,7 @@ const TableRow: React.FC<TableRowProps> = ({
   headers,
   onEdit,
   onOrderInvestigation,
+  onManageInvestigation,
   onSetAdmitted,
   isStatusUpdating = false,
   onClick,
@@ -122,10 +124,15 @@ const TableRow: React.FC<TableRowProps> = ({
             <button
               onClick={(e) => {
                 e.stopPropagation();
+                if (onManageInvestigation) {
+                  onManageInvestigation(row);
+                  return;
+                }
+
                 onOrderInvestigation?.(row);
               }}
               className="p-1.5 bg-teal-100 text-teal-700 rounded-lg hover:bg-teal-200 transition-all cursor-pointer shadow-sm hover:shadow-md active:scale-95"
-              title="Order Investigation"
+              title="Manage Investigations"
             >
               <Beaker size={16} />
             </button>

@@ -10,10 +10,10 @@ import { getTableHeaders, TableHeader } from "./utils";
 
 interface PatientTableProps {
   tableData: InfertilityPatientData[];
-  customOptions?: any;
   onEdit?: (patient: InfertilityPatientData) => void;
   onEditInvestigation?: (test: InfertilityTestData) => void;
   onOrderInvestigation?: (patient: InfertilityPatientData) => void;
+  onManageInvestigation?: (patient: InfertilityPatientData) => void;
   onSetAdmitted?: (patient: InfertilityPatientData) => void;
   isStatusUpdating?: boolean;
   isLoading?: boolean;
@@ -22,10 +22,10 @@ interface PatientTableProps {
 
 const PatientTable: React.FC<PatientTableProps> = ({
   tableData = [],
-  customOptions,
   onEdit,
   onEditInvestigation,
   onOrderInvestigation,
+  onManageInvestigation,
   onSetAdmitted,
   isStatusUpdating = false,
   isLoading = false,
@@ -272,6 +272,7 @@ const PatientTable: React.FC<PatientTableProps> = ({
                     headers={headers}
                     onEdit={onEdit}
                     onOrderInvestigation={onOrderInvestigation}
+                    onManageInvestigation={onManageInvestigation}
                     onSetAdmitted={onSetAdmitted}
                     isStatusUpdating={isStatusUpdating}
                     onClick={() => handleRowClick(row)}

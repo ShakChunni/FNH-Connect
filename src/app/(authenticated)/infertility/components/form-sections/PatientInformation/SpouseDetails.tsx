@@ -1,5 +1,5 @@
 import React, { useMemo } from "react";
-import { Heart, User } from "lucide-react";
+import { Briefcase, Heart } from "lucide-react";
 import {
   useInfertilitySpouseData,
   useInfertilityActions,
@@ -7,6 +7,8 @@ import {
 import DateOfBirthDropdown from "../../../../../../components/form-sections/Fields/DobDropdown";
 
 import NumberInput from "@/components/form-sections/Fields/NumberInput";
+import ContactEmailInput from "@/components/form-sections/Fields/ContactEmailInput";
+import ContactPhoneInput from "@/components/form-sections/Fields/ContactPhoneInput";
 
 const SpouseDetails: React.FC = () => {
   const spouseData = useInfertilitySpouseData();
@@ -41,7 +43,7 @@ const SpouseDetails: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label className="block text-gray-700 text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2">
-            Spouse Name
+            Husband / Spouse Name
           </label>
           <input
             type="text"
@@ -50,7 +52,7 @@ const SpouseDetails: React.FC = () => {
             onChange={(e) =>
               setSpouseData({ ...spouseData, name: e.target.value })
             }
-            placeholder="Spouse full name"
+            placeholder="Husband or spouse full name"
           />
         </div>
         <div>
@@ -73,6 +75,45 @@ const SpouseDetails: React.FC = () => {
             value={spouseData.age ?? ""}
             readOnly
             placeholder="Auto-calculated"
+          />
+        </div>
+        <div>
+          <label className="block text-gray-700 text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2">
+            Husband / Spouse Phone Number
+          </label>
+          <ContactPhoneInput
+            value={spouseData.phoneNumber || ""}
+            onChange={(val) =>
+              setSpouseData({ ...spouseData, phoneNumber: val })
+            }
+            onValidationChange={() => {}}
+            defaultCountry="BD"
+          />
+        </div>
+        <div>
+          <label className="block text-gray-700 text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2">
+            Husband / Spouse Email
+          </label>
+          <ContactEmailInput
+            value={spouseData.email || ""}
+            onChange={(val) => setSpouseData({ ...spouseData, email: val })}
+            onValidationChange={() => {}}
+            placeholder="Husband or spouse email"
+          />
+        </div>
+        <div className="md:col-span-2">
+          <label className="text-gray-700 text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2 flex items-center gap-2">
+            <Briefcase className="w-4 h-4 text-rose-500" />
+            Husband / Spouse Occupation
+          </label>
+          <input
+            type="text"
+            className={inputClassName(spouseData.occupation)}
+            value={spouseData.occupation}
+            onChange={(e) =>
+              setSpouseData({ ...spouseData, occupation: e.target.value })
+            }
+            placeholder="Husband or spouse occupation"
           />
         </div>
       </div>

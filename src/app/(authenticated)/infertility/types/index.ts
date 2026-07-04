@@ -76,12 +76,22 @@ export interface SpouseInfo {
   email?: string;
 }
 
+export interface InfertilityPatientRequestData
+  extends Omit<PatientData, "dateOfBirth"> {
+  dateOfBirth: string | null;
+}
+
+export interface InfertilitySpouseRequestInfo
+  extends Omit<SpouseInfo, "dateOfBirth"> {
+  dateOfBirth: string | null;
+}
+
 // Complete submission data
 export interface AddInfertilityPatientRequest {
-  patient: PatientData;
+  patient: InfertilityPatientRequestData;
   hospital: HospitalData;
   medicalInfo: InfertilityMedicalData;
-  spouseInfo: SpouseInfo;
+  spouseInfo: InfertilitySpouseRequestInfo;
 }
 
 // API Response types
@@ -111,9 +121,9 @@ export interface AddInfertilityPatientResponse {
 // Edit request type
 export interface EditInfertilityPatientRequest {
   id: number; // Infertility patient record ID
-  patient: PatientData;
+  patient: InfertilityPatientRequestData;
   hospital: HospitalData;
-  spouseInfo: SpouseInfo;
+  spouseInfo: InfertilitySpouseRequestInfo;
   medicalInfo: InfertilityMedicalData;
 }
 
