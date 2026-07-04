@@ -16,6 +16,7 @@ import { useNotification } from "@/hooks/useNotification";
 import { InvestigationInformation } from "./form-sections/InvestigationInformation";
 import { InfertilityPatientData, InfertilityTestData } from "../types";
 import { useInfertilityTestFormStore } from "../stores/testFormStore";
+import { INFERTILITY_ORDERING_DOCTOR_ID } from "../stores/testFormStore";
 import { useAddInfertilityTest } from "../hooks/useAddInfertilityTest";
 import { useUpdateInfertilityPatientStatus } from "../hooks/useUpdateInfertilityPatientStatus";
 import { buildInvestigationSubjectCards } from "../utils/investigationSubjects";
@@ -99,13 +100,11 @@ export const OrderInvestigationModal: React.FC<OrderInvestigationModalProps> = (
   const isFormValid = useMemo(
     () =>
       testInfo.selectedTests.length > 0 &&
-      !!testInfo.orderedById &&
       testInfo.subjectType !== "UNKNOWN" &&
       (testInfo.subjectType !== "SPOUSE" || Boolean(subjectCards?.spouse.isAvailable)),
     [
       subjectCards?.spouse.isAvailable,
       testInfo.selectedTests.length,
-      testInfo.orderedById,
       testInfo.subjectType,
     ]
   );
@@ -198,7 +197,7 @@ export const OrderInvestigationModal: React.FC<OrderInvestigationModalProps> = (
         grandTotal: testInfo.grandTotal,
         paidAmount: testInfo.paidAmount,
         dueAmount: testInfo.dueAmount,
-        orderedById: testInfo.orderedById || 0,
+        orderedById: INFERTILITY_ORDERING_DOCTOR_ID,
         doneById: testInfo.doneById || null,
         remarks: testInfo.remarks || "",
         testDate: testInfo.testDate || undefined,

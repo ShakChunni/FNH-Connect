@@ -4,6 +4,7 @@ import {
   useInfertilityTestInfo,
   useInfertilityTestFormActions,
 } from "../../../stores";
+import { INFERTILITY_ORDERING_DOCTOR_ID } from "../../../stores/testFormStore";
 import InvestigationTestSelector from "./InvestigationTestSelector";
 import OrderingDoctorDropdown from "./OrderingDoctorDropdown";
 import InvestigationSubjectSelector from "./InvestigationSubjectSelector";
@@ -14,13 +15,11 @@ import NumberInput from "@/components/form-sections/Fields/NumberInput";
 interface InvestigationInformationProps {
   patientSubject: InvestigationSubjectCardData;
   spouseSubject: InvestigationSubjectCardData;
-  orderedByReadOnly?: boolean;
 }
 
 const InvestigationInformation: React.FC<InvestigationInformationProps> = ({
   patientSubject,
   spouseSubject,
-  orderedByReadOnly = false,
 }) => {
   const testInfo = useInfertilityTestInfo();
   // Destructure smart actions
@@ -121,6 +120,14 @@ const InvestigationInformation: React.FC<InvestigationInformationProps> = ({
   };
 
   useEffect(() => {
+    if (testInfo.orderedById !== INFERTILITY_ORDERING_DOCTOR_ID) {
+      setInfertilityTestInfo({
+        ...testInfo,
+        orderedById: INFERTILITY_ORDERING_DOCTOR_ID,
+      });
+      return;
+    }
+
     if (
       testInfo.subjectType === "SPOUSE" &&
       spouseSubject.isAvailable &&
@@ -214,8 +221,8 @@ const InvestigationInformation: React.FC<InvestigationInformationProps> = ({
             )}
           </div>
 
-          <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_minmax(0,1.35fr)]">
-            <div className="rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3">
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="flex min-h-[104px] flex-col justify-center rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3">
               <p className="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">
                 Current Investigation Subject
               </p>
@@ -227,31 +234,29 @@ const InvestigationInformation: React.FC<InvestigationInformationProps> = ({
               <p className="mt-1 text-xs text-slate-500">
                 {testInfo.subjectType === "SPOUSE"
                   ? spouseSubject.detailLine
-                  : patientSubject.detailLine}
+                : patientSubject.detailLine}
               </p>
             </div>
-            <div>
-              <label className="block text-gray-700 text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2">
-                Ordered By<span className="text-red-500">*</span>
-              </label>
+            <div className="flex min-h-[104px] flex-col justify-center rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3">
+              <p className="mb-2 text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">
+                Ordered By
+              </p>
               <OrderingDoctorDropdown
-                value={testInfo.orderedById}
-                onSelect={(doctorId) =>
+                value={INFERTILITY_ORDERING_DOCTOR_ID}
+                onSelect={() =>
                   setInfertilityTestInfo({
                     ...testInfo,
-                    orderedById: doctorId,
+                    orderedById: INFERTILITY_ORDERING_DOCTOR_ID,
                   })
                 }
-                disabled={orderedByReadOnly}
+                disabled
                 inputClassName={inputClassName(
-                  testInfo.orderedById?.toString() || "",
-                  orderedByReadOnly
+                  INFERTILITY_ORDERING_DOCTOR_ID.toString(),
+                  true
                 )}
               />
               <p className="text-xs text-gray-500 mt-1">
-                {orderedByReadOnly
-                  ? "Ordering doctor is locked for existing investigations."
-                  : "Select a doctor or Self if patient is self-referred"}
+                Locked to Prof. Dr. Sufia Khatun for infertility investigations.
               </p>
             </div>
           </div>

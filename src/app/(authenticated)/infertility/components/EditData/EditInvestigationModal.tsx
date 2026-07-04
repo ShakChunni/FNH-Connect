@@ -13,6 +13,7 @@ import { ModalHeader } from "@/components/ui/ModalHeader";
 import { ModalFooter } from "@/components/ui/ModalFooter";
 import { InvestigationInformation } from "../form-sections/InvestigationInformation";
 import { useInfertilityTestFormStore } from "../../stores/testFormStore";
+import { INFERTILITY_ORDERING_DOCTOR_ID } from "../../stores/testFormStore";
 import { useEditInfertilityTest } from "../../hooks/useEditInfertilityTest";
 import { InfertilityTestData } from "../../types";
 import { useNotification } from "@/hooks/useNotification";
@@ -92,7 +93,7 @@ export const EditInvestigationModal: React.FC<EditInvestigationModalProps> = ({
         grandTotal: testInfo.grandTotal,
         paidAmount: testInfo.paidAmount,
         dueAmount: testInfo.dueAmount,
-        orderedById: testInfo.orderedById || 0,
+        orderedById: INFERTILITY_ORDERING_DOCTOR_ID,
         remarks: testInfo.remarks,
         isCompleted: testInfo.isCompleted,
       },
@@ -187,7 +188,6 @@ export const EditInvestigationModal: React.FC<EditInvestigationModalProps> = ({
               <InvestigationInformation
                 patientSubject={subjectCards.patient}
                 spouseSubject={subjectCards.spouse}
-                orderedByReadOnly
               />
             </div>
 

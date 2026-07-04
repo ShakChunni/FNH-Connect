@@ -27,7 +27,10 @@ import { useInfertilityScrollSpy } from "../../hooks/useInfertilityScrollSpy";
 import { transformInfertilityDataForApi } from "../../utils/formTransformers";
 import { buildInvestigationSubjectCards } from "../../utils/investigationSubjects";
 
-import { useInfertilityTestFormStore } from "../../stores/testFormStore";
+import {
+  INFERTILITY_ORDERING_DOCTOR_ID,
+  useInfertilityTestFormStore,
+} from "../../stores/testFormStore";
 import { useAddInfertilityTest } from "../../hooks/useAddInfertilityTest";
 import { InvestigationInformation } from "../form-sections/InvestigationInformation";
 import { useInfertilityTestInfo } from "../../stores";
@@ -127,7 +130,7 @@ const AddNewDataInfertility: React.FC<AddNewDataProps> = ({
           grandTotal: testInfo.grandTotal,
           paidAmount: testInfo.paidAmount,
           dueAmount: testInfo.dueAmount,
-          orderedById: testInfo.orderedById || 0,
+          orderedById: INFERTILITY_ORDERING_DOCTOR_ID,
           remarks: testInfo.remarks,
         });
       }
