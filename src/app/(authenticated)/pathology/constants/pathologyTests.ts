@@ -459,7 +459,7 @@ export const PATHOLOGY_TESTS: PathologyTestItem[] = [
   // Pregnancy Test
   {
     code: "PREGNANCY",
-    name: "Pregnancy",
+    name: "Urine for pregnancy",
     category: "Pregnancy",
     price: 250,
   },
