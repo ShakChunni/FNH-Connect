@@ -16,6 +16,8 @@ import type {
 } from "../types";
 import { parseDateOfBirth } from "@/lib/dateOfBirth";
 
+export const INFERTILITY_ORDERING_DOCTOR_ID = 3;
+
 // ═══════════════════════════════════════════════════════════════
 // TYPE DEFINITIONS
 // ═══════════════════════════════════════════════════════════════
@@ -121,7 +123,7 @@ const initialFormState: FormState = {
     testCategory: "",
     remarks: "",
     isCompleted: false,
-    orderedById: 3, // Prof. Dr. Sufia Khatun — default infertility doctor
+    orderedById: INFERTILITY_ORDERING_DOCTOR_ID, // Prof. Dr. Sufia Khatun
     doneById: null,
     subjectNameSnapshot: null,
   },
@@ -241,7 +243,7 @@ export const useInfertilityTestFormStore = create<FormState & FormActions>()(
             testCategory: patient.testCategory || "",
             remarks: patient.remarks || "",
             isCompleted: patient.isCompleted || false,
-            orderedById: patient.orderedById,
+            orderedById: INFERTILITY_ORDERING_DOCTOR_ID,
             doneById: patient.doneById,
             subjectNameSnapshot: patient.subjectNameSnapshot,
           },
