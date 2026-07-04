@@ -14,11 +14,13 @@ import NumberInput from "@/components/form-sections/Fields/NumberInput";
 interface InvestigationInformationProps {
   patientSubject: InvestigationSubjectCardData;
   spouseSubject: InvestigationSubjectCardData;
+  orderedByReadOnly?: boolean;
 }
 
 const InvestigationInformation: React.FC<InvestigationInformationProps> = ({
   patientSubject,
   spouseSubject,
+  orderedByReadOnly = false,
 }) => {
   const testInfo = useInfertilityTestInfo();
   // Destructure smart actions
@@ -212,7 +214,7 @@ const InvestigationInformation: React.FC<InvestigationInformationProps> = ({
             )}
           </div>
 
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_minmax(0,1.35fr)]">
             <div className="rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3">
               <p className="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">
                 Current Investigation Subject
@@ -240,13 +242,16 @@ const InvestigationInformation: React.FC<InvestigationInformationProps> = ({
                     orderedById: doctorId,
                   })
                 }
+                disabled={orderedByReadOnly}
                 inputClassName={inputClassName(
                   testInfo.orderedById?.toString() || "",
-                  false
+                  orderedByReadOnly
                 )}
               />
               <p className="text-xs text-gray-500 mt-1">
-                Select a doctor or &ldquo;Self&rdquo; if patient is self-referred
+                {orderedByReadOnly
+                  ? "Ordering doctor is locked for existing investigations."
+                  : "Select a doctor or Self if patient is self-referred"}
               </p>
             </div>
           </div>

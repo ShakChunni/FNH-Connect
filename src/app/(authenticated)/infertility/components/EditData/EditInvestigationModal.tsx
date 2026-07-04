@@ -187,6 +187,7 @@ export const EditInvestigationModal: React.FC<EditInvestigationModalProps> = ({
               <InvestigationInformation
                 patientSubject={subjectCards.patient}
                 spouseSubject={subjectCards.spouse}
+                orderedByReadOnly
               />
             </div>
 

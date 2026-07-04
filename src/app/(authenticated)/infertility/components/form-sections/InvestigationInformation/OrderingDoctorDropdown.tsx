@@ -181,10 +181,12 @@ const OrderingDoctorDropdown: React.FC<OrderingDoctorDropdownProps> = ({
         onClick={toggleDropdown}
         disabled={disabled}
         type="button"
-        className={`${inputClassName} flex justify-between items-center pr-3 cursor-pointer`}
+        className={`${inputClassName} flex min-w-0 items-center justify-between gap-3 pr-3 ${
+          disabled ? "cursor-not-allowed" : "cursor-pointer"
+        }`}
       >
         <span
-          className={`flex items-center gap-2 ${
+          className={`flex min-w-0 flex-1 items-center gap-2 ${
             value !== null
               ? "text-gray-700 font-normal"
               : "text-gray-400 font-light"
@@ -199,18 +201,20 @@ const OrderingDoctorDropdown: React.FC<OrderingDoctorDropdownProps> = ({
               ) : (
                 <Stethoscope size={16} className="text-blue-600" />
               )}
-              {selectedDoctorName}
+              <span className="min-w-0 truncate">{selectedDoctorName}</span>
             </>
           ) : (
-            "Select ordering doctor"
+            <span className="min-w-0 truncate">Select ordering doctor</span>
           )}
         </span>
-        <ChevronDown
-          className={`transition-transform duration-200 text-gray-400 ${
-            isOpen ? "rotate-180" : ""
-          }`}
-          size={16}
-        />
+        {!disabled ? (
+          <ChevronDown
+            className={`shrink-0 transition-transform duration-200 text-gray-400 ${
+              isOpen ? "rotate-180" : ""
+            }`}
+            size={16}
+          />
+        ) : null}
       </button>
 
       {/* Dropdown Content via Portal */}
