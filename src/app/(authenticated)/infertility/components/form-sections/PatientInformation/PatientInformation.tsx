@@ -143,7 +143,7 @@ const PatientInformation: React.FC = () => {
           <div>
             <div className="flex items-center justify-between mb-1.5 sm:mb-2">
               <label className="block text-gray-700 text-xs sm:text-sm font-semibold">
-                Phone Number
+                Patient Phone Number
               </label>
               {isExisting && patientData.phoneNumber && (
                 <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 text-xs font-semibold border border-indigo-200 shadow-sm">
@@ -211,7 +211,7 @@ const PatientInformation: React.FC = () => {
           <div className="mb-4">
             <div className="flex items-center justify-between mb-1.5 sm:mb-2">
               <label className="block text-gray-700 text-xs sm:text-sm font-semibold">
-                Spouse Name
+                Husband / Spouse Name
               </label>
               {isExisting && spouseData.name && (
                 <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded-full bg-rose-100 text-rose-700 text-xs font-semibold border border-rose-200 shadow-sm">
@@ -229,7 +229,7 @@ const PatientInformation: React.FC = () => {
                 // Also update guardianName to keep data in sync
                 setPatientData({ ...patientData, guardianName: newName });
               }}
-              placeholder="Spouse full name"
+              placeholder="Husband or spouse full name"
             />
           </div>
 
@@ -258,7 +258,7 @@ const PatientInformation: React.FC = () => {
             <div>
               <div className="flex items-center justify-between mb-1.5 sm:mb-2">
                 <label className="block text-gray-700 text-xs sm:text-sm font-semibold">
-                  Spouse Phone
+                  Husband / Spouse Phone Number
                 </label>
                 {isExisting && spouseData.phoneNumber && (
                   <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded-full bg-rose-100 text-rose-700 text-xs font-semibold border border-rose-200 shadow-sm">
@@ -281,7 +281,7 @@ const PatientInformation: React.FC = () => {
             <div>
               <div className="flex items-center justify-between mb-1.5 sm:mb-2">
                 <label className="block text-gray-700 text-xs sm:text-sm font-semibold">
-                  Spouse Email
+                  Husband / Spouse Email
                 </label>
                 {isExisting && spouseData.email && (
                   <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded-full bg-rose-100 text-rose-700 text-xs font-semibold border border-rose-200 shadow-sm">
@@ -293,7 +293,7 @@ const PatientInformation: React.FC = () => {
                 value={spouseData.email || ""}
                 onChange={(val) => setSpouseData({ ...spouseData, email: val })}
                 onValidationChange={() => {}} // Simple validation for now
-                placeholder="Spouse email"
+                placeholder="Husband or spouse email"
                 isAutofilled={isExisting}
               />
             </div>
@@ -303,7 +303,7 @@ const PatientInformation: React.FC = () => {
           <div className="mt-4">
             <div className="flex items-center justify-between mb-1.5 sm:mb-2">
               <label className="block text-gray-700 text-xs sm:text-sm font-semibold">
-                Spouse Occupation
+                Husband / Spouse Occupation
               </label>
               {isExisting && spouseData.occupation && (
                 <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded-full bg-rose-100 text-rose-700 text-xs font-semibold border border-rose-200 shadow-sm">
@@ -319,7 +319,7 @@ const PatientInformation: React.FC = () => {
               onChange={(e) =>
                 setSpouseData({ ...spouseData, occupation: e.target.value })
               }
-              placeholder="Spouse's occupation"
+              placeholder="Husband or spouse occupation"
             />
           </div>
         </div>

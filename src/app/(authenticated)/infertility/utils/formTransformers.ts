@@ -26,7 +26,7 @@ export interface InfertilityApiPayload {
     fullName: string;
     gender: string;
     age: number | null;
-    dateOfBirth: Date | null;
+    dateOfBirth: string | null;
     guardianName: string;
     address: string;
     phoneNumber: string;
@@ -37,7 +37,7 @@ export interface InfertilityApiPayload {
   spouseInfo: {
     name: string;
     age: number | null;
-    dateOfBirth: Date | null;
+    dateOfBirth: string | null;
     gender: string;
     occupation: string;
     phoneNumber?: string;
@@ -100,7 +100,7 @@ export const transformInfertilityDataForApi = (
       fullName: patientData.fullName,
       gender: patientData.gender || "Female",
       age: patientData.age,
-      dateOfBirth: serializeDateOfBirth(patientData.dateOfBirth) as any,
+      dateOfBirth: serializeDateOfBirth(patientData.dateOfBirth),
       guardianName: spouseData.name || "", // Often spouse name is used as guardian for infertility cases
       address: patientData.address || "",
       phoneNumber: patientData.phoneNumber || "",
@@ -111,7 +111,7 @@ export const transformInfertilityDataForApi = (
     spouseInfo: {
       name: spouseData.name || "",
       age: spouseData.age,
-      dateOfBirth: serializeDateOfBirth(spouseData.dateOfBirth) as any,
+      dateOfBirth: serializeDateOfBirth(spouseData.dateOfBirth),
       gender: spouseData.gender || "Male",
       occupation: spouseData.occupation || "",
       phoneNumber: spouseData.phoneNumber || "",

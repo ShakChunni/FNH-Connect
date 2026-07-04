@@ -10,6 +10,7 @@ import AddNewDataInfertility from "./components/AddNewData/AddNewDataInfertility
 import EditDataInfertility from "./components/EditData/EditDataInfertility";
 import { EditInvestigationModal } from "./components/EditData/EditInvestigationModal";
 import OrderInvestigationModal from "./components/OrderInvestigationModal";
+import InvestigationManagementModal from "./components/PatientTable/components/InvestigationManagementModal";
 import PatientTable from "./components/PatientTable/PatientTable";
 import { NewPatientButton } from "./components/NewPatientButton";
 import InfertilitySearch from "./components/InfertilitySearch";
@@ -44,6 +45,12 @@ const InfertilityManagement = React.memo(() => {
   const [selectedPatientForInvestigation, setSelectedPatientForInvestigation] =
     useState<InfertilityPatientData | null>(null);
   const [isOrderInvestigationOpen, setIsOrderInvestigationOpen] =
+    useState(false);
+  const [
+    selectedPatientForInvestigationManager,
+    setSelectedPatientForInvestigationManager,
+  ] = useState<InfertilityPatientData | null>(null);
+  const [isInvestigationManagerOpen, setIsInvestigationManagerOpen] =
     useState(false);
   const tableContainerRef = useRef<HTMLDivElement>(null);
 
@@ -144,6 +151,34 @@ const InfertilityManagement = React.memo(() => {
     []
   );
 
+  const handleManageInvestigation = useCallback(
+    (patient: InfertilityPatientData) => {
+      setSelectedPatientForInvestigationManager(patient);
+      setIsInvestigationManagerOpen(true);
+    },
+    []
+  );
+
+  const handleAddInvestigationFromManager = useCallback(
+    (patient: InfertilityPatientData) => {
+      setIsInvestigationManagerOpen(false);
+      setSelectedPatientForInvestigationManager(null);
+      setSelectedPatientForInvestigation(patient);
+      setIsOrderInvestigationOpen(true);
+    },
+    []
+  );
+
+  const handleEditInvestigationFromManager = useCallback(
+    (test: InfertilityTestData) => {
+      setIsInvestigationManagerOpen(false);
+      setSelectedPatientForInvestigationManager(null);
+      setSelectedInvestigation(test);
+      setIsEditInvestigationOpen(true);
+    },
+    []
+  );
+
   const handleSetAdmitted = useCallback(
     (patient: InfertilityPatientData) => {
       if (patient.status?.toLowerCase() === "admitted") return;
@@ -159,6 +194,11 @@ const InfertilityManagement = React.memo(() => {
   const handleCloseOrderInvestigation = useCallback(() => {
     setIsOrderInvestigationOpen(false);
     setSelectedPatientForInvestigation(null);
+  }, []);
+
+  const handleCloseInvestigationManager = useCallback(() => {
+    setIsInvestigationManagerOpen(false);
+    setSelectedPatientForInvestigationManager(null);
   }, []);
 
   return (
@@ -227,13 +267,14 @@ const InfertilityManagement = React.memo(() => {
                   onEdit={actions.openEditModal}
                   onEditInvestigation={handleEditInvestigation}
                   onOrderInvestigation={handleOrderInvestigation}
+                  onManageInvestigation={handleManageInvestigation}
                   onSetAdmitted={handleSetAdmitted}
                   isStatusUpdating={isUpdatingPatientStatus}
                   startIndex={startIndex}
                 />
               ) : (
                 <InvestigationsTable
-                  tableData={(testsResult?.data as any) || []}
+                  tableData={testsResult?.data || []}
                   isLoading={isTestsLoading}
                   onEdit={handleEditInvestigation}
                   startIndex={startIndex}
@@ -271,6 +312,16 @@ const InfertilityManagement = React.memo(() => {
         patient={selectedPatientForInvestigation}
       />
 
+      <ClientPortal>
+        <InvestigationManagementModal
+          isOpen={isInvestigationManagerOpen}
+          onClose={handleCloseInvestigationManager}
+          patient={selectedPatientForInvestigationManager}
+          onAddInvestigation={handleAddInvestigationFromManager}
+          onEditInvestigation={handleEditInvestigationFromManager}
+        />
+      </ClientPortal>
+
       {/* Portals */}
       {(modals.isAddOpen || modals.isAddClosing) && (
         <ClientPortal>
@@ -296,7 +347,10 @@ const InfertilityManagement = React.memo(() => {
         <ClientPortal>
           <EditInvestigationModal
             isOpen={isEditInvestigationOpen}
-            onClose={() => setIsEditInvestigationOpen(false)}
+            onClose={() => {
+              setIsEditInvestigationOpen(false);
+              setSelectedInvestigation(null);
+            }}
             investigationData={selectedInvestigation}
           />
         </ClientPortal>
