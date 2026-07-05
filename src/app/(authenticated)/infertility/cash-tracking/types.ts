@@ -40,6 +40,8 @@ export interface CashTrackingData {
   shifts: CashTrackingShift[];
   summary: CashTrackingSummary;
   filterOptions: CashTrackingFilterOptions;
+  selectedStaffId: number | null;
+  canSelectStaff: boolean;
 }
 
 export interface PaymentAllocationDetail {

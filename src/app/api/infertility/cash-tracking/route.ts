@@ -5,6 +5,7 @@ import {
   getInfertilityCashTrackingSummary,
   getInfertilityCashTrackingStaff,
 } from "@/services/infertilityCashTrackingService";
+import { isAdminRole } from "@/lib/roles";
 import { z } from "zod";
 
 const filtersSchema = z.object({
@@ -46,12 +47,24 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const filters = validation.data;
+    const canSelectStaff = isAdminRole(user.role);
+    const filters = {
+      ...validation.data,
+      staffId: canSelectStaff ? validation.data.staffId : user.staffId,
+    };
 
     const [shifts, summary, staff] = await Promise.all([
       getInfertilityCashTrackingShifts(filters),
       getInfertilityCashTrackingSummary(filters),
-      getInfertilityCashTrackingStaff(),
+      canSelectStaff
+        ? getInfertilityCashTrackingStaff()
+        : Promise.resolve([
+            {
+              id: user.staffId,
+              fullName: user.fullName,
+              role: user.staffRole,
+            },
+          ]),
     ]);
 
     return NextResponse.json({
@@ -62,6 +75,8 @@ export async function GET(request: NextRequest) {
         filterOptions: {
           staff,
         },
+        selectedStaffId: filters.staffId ?? null,
+        canSelectStaff,
       },
     });
   } catch (error) {

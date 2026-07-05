@@ -184,6 +184,7 @@ const InfertilityCashTrackingPage = () => {
     activeShiftsCount: 0,
   };
   const staffOptions = data?.filterOptions?.staff || [];
+  const canSelectStaff = data?.canSelectStaff ?? false;
 
   const netCashFlow = summary.totalCollected - summary.totalRefunded;
   const totalVariance = shifts.reduce((sum, shift) => sum + shift.variance, 0);
@@ -335,15 +336,17 @@ const InfertilityCashTrackingPage = () => {
 
                 {/* Filter Controls */}
                 <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-2 sm:gap-3">
-                  <div className="col-span-1 sm:w-[170px]">
-                    <StaffFilter
-                      staff={staffOptions}
-                      currentStaffId={filters.staffId}
-                      onStaffChange={(staffId) => setFilter("staffId", staffId)}
-                      disabled={isLoading && !data}
-                      placeholder="All Staff"
-                    />
-                  </div>
+                  {canSelectStaff ? (
+                    <div className="col-span-1 sm:w-[170px]">
+                      <StaffFilter
+                        staff={staffOptions}
+                        currentStaffId={filters.staffId}
+                        onStaffChange={(staffId) => setFilter("staffId", staffId)}
+                        disabled={isLoading && !data}
+                        placeholder="All Staff"
+                      />
+                    </div>
+                  ) : null}
 
                   <div className="col-span-1 sm:w-[140px]">
                     <ShiftStatusFilter

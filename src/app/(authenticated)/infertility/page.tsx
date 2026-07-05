@@ -12,6 +12,7 @@ import { EditInvestigationModal } from "./components/EditData/EditInvestigationM
 import OrderInvestigationModal from "./components/OrderInvestigationModal";
 import PatientTable from "./components/PatientTable/PatientTable";
 import { NewPatientButton } from "./components/NewPatientButton";
+import { InfertilityCashTrackerWidget } from "./components/InfertilityCashTrackerWidget";
 import InfertilitySearch from "./components/InfertilitySearch";
 import { Filters, ExportActionBar } from "./components/filter";
 
@@ -171,10 +172,13 @@ const InfertilityManagement = React.memo(() => {
               title="HSI Center Patients"
               subtitle="Manage and track HSI Center patient records"
               actions={
-                <NewPatientButton
-                  onClick={actions.openAddModal}
-                  disabled={isPatientsLoading}
-                />
+                <div className="flex w-full flex-col items-stretch gap-3 sm:w-auto sm:items-end">
+                  <InfertilityCashTrackerWidget />
+                  <NewPatientButton
+                    onClick={actions.openAddModal}
+                    disabled={isPatientsLoading}
+                  />
+                </div>
               }
             />
           </div>
