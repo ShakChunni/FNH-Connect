@@ -274,18 +274,12 @@ const AdmissionPatientInformation: React.FC<
           </div>
         </div>
 
-        {/* Admission Details & Address - Responsive Grid */}
+        {/* Admission Details & Address */}
         <div className="mt-6 pt-6 border-t border-gray-200">
-          <div
-            className={`grid grid-cols-1 ${
-              showAdmissionDetails ? "lg:grid-cols-2" : ""
-            } gap-6`}
-          >
-            {/* Ward & Room Column (Only in Admission Form) */}
-            {showAdmissionDetails && (
+          <div className="space-y-6">
+            {showAdmissionDetails ? (
               <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  {/* Ward / Cabin */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-gray-700 text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2">
                       <Bed className="w-3.5 h-3.5 inline mr-1 text-indigo-500" />
@@ -293,7 +287,7 @@ const AdmissionPatientInformation: React.FC<
                     </label>
                     <input
                       type="text"
-                      className={inputClassName(patientData.address)} // Reusing logic for styling
+                      className={inputClassName(admissionInfo.ward || "")}
                       placeholder="e.g. Male Ward"
                       value={admissionInfo.ward || ""}
                       onChange={(e) =>
@@ -302,14 +296,14 @@ const AdmissionPatientInformation: React.FC<
                       style={{ height: "48px" }}
                     />
                   </div>
-                  {/* Room / Seat No */}
+
                   <div>
                     <label className="block text-gray-700 text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2">
                       Room / Seat No.
                     </label>
                     <input
                       type="text"
-                      className={inputClassName(patientData.address)}
+                      className={inputClassName(admissionInfo.seatNumber || "")}
                       placeholder="e.g. 101"
                       value={admissionInfo.seatNumber || ""}
                       onChange={(e) =>
@@ -319,13 +313,13 @@ const AdmissionPatientInformation: React.FC<
                     />
                   </div>
                 </div>
+
                 <p className="text-[10px] text-gray-400 font-medium bg-gray-50/50 p-2 rounded-lg border border-gray-100 italic">
                   Note: Specify patient location for this admission.
                 </p>
               </div>
-            )}
+            ) : null}
 
-            {/* Address Column */}
             <PatientAddressFields
               value={patientData.address}
               onChange={(address) => setPatientData({ ...patientData, address })}
