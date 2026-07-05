@@ -15,6 +15,7 @@ import { CashTrackerShifts } from "@/app/(authenticated)/dashboard/components/Se
 import { generateSessionCashReport } from "@/app/(authenticated)/dashboard/components/SessionCashTracker/generateCashReport";
 import { generateDetailedCashReport } from "@/app/(authenticated)/dashboard/components/SessionCashTracker/generateDetailedCashReport";
 import type {
+  CashReportBranding,
   CustomDateRange,
   DatePreset,
   DetailedCashReportData,
@@ -58,6 +59,16 @@ const DATE_PRESETS: { value: DatePreset; label: string }[] = [
   { value: "last30Days", label: "Last 30 Days" },
   { value: "custom", label: "Custom Range" },
 ];
+
+const HSI_CASH_REPORT_BRANDING: CashReportBranding = {
+  name: "HSI Center",
+  address:
+    "1257, Sholakia, Khorompatti Kishoreganj Sadar, Kishoreganj Dhaka, Bangladesh",
+  phone: "Mobile: +8801726219350, +8801701295016, +8801787993086",
+  department: "HSI Center",
+  logoPath: "/hsi-logo.png",
+  thankYouText: "Thank you for choosing HSI Center",
+};
 
 const addDays = (parts: CalendarDateParts, days: number): CalendarDateParts => {
   const result = new Date(Date.UTC(parts.year, parts.month, parts.day + days));
@@ -271,6 +282,7 @@ export const InfertilityCashTrackerWidget: React.FC = () => {
     try {
       await generateSessionCashReport({
         reportTitle: "HSI CENTER CASH COLLECTION REPORT",
+        branding: HSI_CASH_REPORT_BRANDING,
         staffName: staffNameForReport,
         generatedAt: formatBDT(new Date(), "MMM dd, yyyy hh:mm a"),
         periodLabel: selectedRange.label,
@@ -412,6 +424,7 @@ export const InfertilityCashTrackerWidget: React.FC = () => {
 
       await generateDetailedCashReport({
         reportTitle: "DETAILED HSI CENTER CASH COLLECTION REPORT",
+        branding: HSI_CASH_REPORT_BRANDING,
         staffName: staffNameForReport,
         generatedAt: formatBDT(new Date(), "MMM dd, yyyy hh:mm a"),
         periodLabel: selectedRange.label,

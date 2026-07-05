@@ -66,8 +66,19 @@ export interface SessionCashData {
   canSelectStaff?: boolean;
 }
 
+export interface CashReportBranding {
+  name: string;
+  address: string;
+  phone: string;
+  email?: string;
+  department?: string;
+  logoPath: string;
+  thankYouText: string;
+}
+
 export interface SessionCashReportData {
   reportTitle?: string;
+  branding?: CashReportBranding;
   staffName: string;
   generatedAt: string;
   periodLabel: string;
