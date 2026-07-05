@@ -3,9 +3,9 @@
  * Professional PDF report matching FNH brand standards
  */
 
-import jsPDF from "jspdf";
+import jsPDF, { GState } from "jspdf";
 import autoTable from "jspdf-autotable";
-import type { SessionCashReportData } from "./types";
+import type { CashReportBranding, SessionCashReportData } from "./types";
 import { formatBDT } from "@/lib/timezone";
 
 // FNH Brand Colors - matching pathology receipt
@@ -20,13 +20,21 @@ const COLORS = {
   danger: "#dc2626",
 };
 
-const COMPANY_INFO = {
+const COMPANY_INFO: CashReportBranding = {
   name: "Feroza Nursing Home",
   address:
     "1257, Sholakia, Khorompatti Kishoreganj Sadar, Kishoreganj Dhaka, Bangladesh",
   email: "Email: firozanursinghome@gmail.com",
   phone: "Mobile: +8801726219350, +8801701295016, +8801787993086",
+  logoPath: "/fnh-logo.png",
+  thankYouText: "Thank you for choosing Feroza Nursing Home",
 };
+
+interface JsPdfWithAutoTable extends jsPDF {
+  lastAutoTable: {
+    finalY: number;
+  };
+}
 
 const loadImage = (src: string): Promise<HTMLImageElement> => {
   return new Promise((resolve, reject) => {
@@ -51,14 +59,18 @@ const formatTime = (dateString: string): string => {
 /**
  * Draw a subtle logo watermark
  */
-const drawLogoWatermark = async (doc: jsPDF) => {
+const getLastAutoTableFinalY = (doc: jsPDF): number => {
+  return (doc as JsPdfWithAutoTable).lastAutoTable.finalY;
+};
+
+const drawLogoWatermark = async (doc: jsPDF, logoPath: string) => {
   const pageWidth = doc.internal.pageSize.width;
   const pageHeight = doc.internal.pageSize.height;
 
   try {
-    const logo = await loadImage("/fnh-logo.png");
+    const logo = await loadImage(logoPath);
     doc.saveGraphicsState();
-    doc.setGState(new (doc as any).GState({ opacity: 0.04 }));
+    doc.setGState(new GState({ opacity: 0.04 }));
     const logoSize = 100;
     const logoX = pageWidth / 2 - logoSize / 2;
     const logoY = pageHeight * 0.65 - logoSize / 2;
@@ -79,15 +91,19 @@ export const generateSessionCashReport = async (
   const pageWidth = doc.internal.pageSize.width;
   const pageHeight = doc.internal.pageSize.height;
   const margin = 15;
+  const branding = data.branding ?? COMPANY_INFO;
+  const contactLine = branding.email
+    ? `${branding.phone}  |  ${branding.email}`
+    : branding.phone;
 
   // Draw watermark
-  await drawLogoWatermark(doc);
+  await drawLogoWatermark(doc, branding.logoPath);
 
   let currentY = 10;
 
   // === HEADER ===
   try {
-    const logo = await loadImage("/fnh-logo.png");
+    const logo = await loadImage(branding.logoPath);
     const logoW = 20;
     const logoH = 20;
     const logoX = pageWidth / 2 - logoW / 2;
@@ -100,22 +116,28 @@ export const generateSessionCashReport = async (
   doc.setFont("helvetica", "bold");
   doc.setFontSize(24);
   doc.setTextColor(COLORS.primary);
-  doc.text(COMPANY_INFO.name, pageWidth / 2, currentY, { align: "center" });
+  doc.text(branding.name, pageWidth / 2, currentY, { align: "center" });
   currentY += 7;
 
   // Address & Contact
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
   doc.setTextColor(COLORS.lightText);
-  doc.text(COMPANY_INFO.address, pageWidth / 2, currentY, { align: "center" });
+  doc.text(branding.address, pageWidth / 2, currentY, { align: "center" });
   currentY += 5;
-  doc.text(
-    `${COMPANY_INFO.phone}  |  ${COMPANY_INFO.email}`,
-    pageWidth / 2,
-    currentY,
-    { align: "center" },
-  );
-  currentY += 6;
+  doc.text(contactLine, pageWidth / 2, currentY, { align: "center" });
+  currentY += 5;
+
+  if (branding.department) {
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(COLORS.accent);
+    doc.text(branding.department, pageWidth / 2, currentY, {
+      align: "center",
+    });
+    currentY += 5;
+  }
+
+  currentY += 1;
 
   // Divider
   doc.setDrawColor(COLORS.border);
@@ -249,7 +271,7 @@ export const generateSessionCashReport = async (
     margin: { left: margin, right: margin },
   });
 
-  currentY = (doc as any).lastAutoTable.finalY + 8;
+  currentY = getLastAutoTableFinalY(doc) + 8;
 
   // === SHIFT-WISE BREAKDOWN (Compact Table Format) ===
   if (data.shifts && data.shifts.length > 0) {
@@ -326,7 +348,7 @@ export const generateSessionCashReport = async (
       margin: { left: margin, right: margin },
     });
 
-    currentY = (doc as any).lastAutoTable.finalY + 8;
+    currentY = getLastAutoTableFinalY(doc) + 8;
   }
 
   // === OVERALL DEPARTMENT BREAKDOWN TABLE ===
@@ -424,7 +446,7 @@ export const generateSessionCashReport = async (
     { align: "center" },
   );
   doc.text(
-    "Thank you for choosing Feroza Nursing Home",
+    branding.thankYouText,
     pageWidth / 2,
     pageHeight - 6,
     { align: "center" },
