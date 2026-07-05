@@ -31,10 +31,7 @@ const RECEPTIONIST_SIDEBAR_ROUTES = [
 const PHARMACIST_SIDEBAR_ROUTES = ["/medicine-inventory"];
 
 // Infertility portal sidebar routes
-const INFERTILITY_SIDEBAR_ROUTES = [
-  "/infertility",
-  "/infertility/cash-tracking",
-];
+const INFERTILITY_SIDEBAR_ROUTES = ["/infertility"];
 
 // Full navigation items - will be filtered based on user role
 export const navigationItems: NavigationItem[] = [
@@ -102,11 +99,6 @@ export const infertilityNavigationItems: NavigationItem[] = [
     label: "HSI Center Patients",
     href: "/infertility",
     icon: Baby,
-  },
-  {
-    label: "Cash Tracking",
-    href: "/infertility/cash-tracking",
-    icon: Wallet,
   },
 ];
 

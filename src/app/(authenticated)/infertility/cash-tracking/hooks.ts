@@ -2,13 +2,16 @@ import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/axios";
 import { CashTrackingData, DetailedShift } from "./types";
 
-export function useInfertilityCashTrackingShifts(filters: {
+export function useInfertilityCashTrackingShifts(
+  filters: {
   staffId?: number | null;
   startDate?: string;
   endDate?: string;
   status?: string;
   search?: string;
-}) {
+  },
+  options: { enabled?: boolean } = {},
+) {
   return useQuery({
     queryKey: ["infertility-cash-tracking-shifts", filters],
     queryFn: async (): Promise<CashTrackingData> => {
@@ -25,6 +28,7 @@ export function useInfertilityCashTrackingShifts(filters: {
       );
       return response.data.data;
     },
+    enabled: options.enabled ?? true,
   });
 }
 

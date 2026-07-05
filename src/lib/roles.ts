@@ -65,11 +65,9 @@ export const BASE_RECEPTIONIST_ALLOWED_ROUTES = [
 // Regular receptionists logging into infertility portal also use these
 export const INFERTILITY_RECEPTIONIST_ALLOWED_ROUTES = [
   "/infertility",
-  "/infertility/cash-tracking",
   "/profile",
   "/api/infertility",
   "/api/infertility-patients",
-  "/api/admin/infertility-cash-tracking",
   "/api/infertility/cash-tracking",
   "/api/profile",
   "/api/auth",

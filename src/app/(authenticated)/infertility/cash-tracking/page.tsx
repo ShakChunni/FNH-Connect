@@ -25,6 +25,9 @@ import { ShiftStatusFilter } from "@/components/ui/ShiftStatusFilter";
 import { ShiftTable } from "./components/ShiftTable";
 import { ShiftDetailModal } from "./components/ShiftDetailModal";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/app/AuthContext";
+import { isAdminRole } from "@/lib/roles";
+import { useRouter } from "next/navigation";
 
 const formatCurrency = (amount: number) => {
   return new Intl.NumberFormat("en-BD", {
@@ -162,8 +165,11 @@ const StatCard: React.FC<StatCardProps> = ({
 };
 
 const InfertilityCashTrackingPage = () => {
+  const router = useRouter();
+  const { user, loading: isAuthLoading } = useAuth();
   const { filters, setFilter, selectedShiftId, setSelectedShiftId } =
     useInfertilityCashTrackingStore();
+  const canViewCashTracking = Boolean(user?.role && isAdminRole(user.role));
 
   const [searchTerm, setSearchTerm] = useState(filters.search);
   const [datePreset, setDatePreset] = useState<DateRangePresetValue | null>(null);
@@ -174,8 +180,16 @@ const InfertilityCashTrackingPage = () => {
     setFilter("search", debouncedSearch);
   }, [debouncedSearch, setFilter]);
 
+  useEffect(() => {
+    if (!isAuthLoading && !canViewCashTracking) {
+      router.replace("/infertility");
+    }
+  }, [canViewCashTracking, isAuthLoading, router]);
+
   const { data, isLoading, refetch, isFetching } =
-    useInfertilityCashTrackingShifts(filters);
+    useInfertilityCashTrackingShifts(filters, {
+      enabled: canViewCashTracking,
+    });
 
   const shifts = data?.shifts || [];
   const summary = data?.summary || {
@@ -220,6 +234,10 @@ const InfertilityCashTrackingPage = () => {
     setSearchTerm("");
     setDatePreset(null);
   };
+
+  if (isAuthLoading || !canViewCashTracking) {
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-fnh-porcelain pb-4 sm:pb-6 lg:pb-8 w-full overflow-x-hidden">

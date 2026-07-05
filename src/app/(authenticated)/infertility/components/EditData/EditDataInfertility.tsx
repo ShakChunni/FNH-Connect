@@ -1,6 +1,6 @@
 "use client";
 import React, { useCallback, useMemo, useRef, useEffect } from "react";
-import { Save, User, Stethoscope } from "lucide-react";
+import { Beaker, Save, User, Stethoscope } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useEditInfertilityData } from "../../hooks/useEditInfertilityData";
 import {
@@ -33,6 +33,7 @@ interface EditDataProps {
   isOpen: boolean;
   onClose: () => void;
   patientData: InfertilityPatientData;
+  onOpenInvestigation?: (patient: InfertilityPatientData) => void;
 }
 
 // Hospital is auto-filled as Feroza Nursing Home, only patient and medical sections are user-editable
@@ -42,6 +43,7 @@ const EditDataInfertility: React.FC<EditDataProps> = ({
   isOpen,
   onClose,
   patientData: initialPatientData,
+  onOpenInvestigation,
 }) => {
   const { showNotification } = useNotification();
   const popupRef = useRef<HTMLDivElement>(null);
@@ -127,6 +129,11 @@ const EditDataInfertility: React.FC<EditDataProps> = ({
     initialPatientData.id,
     showNotification,
   ]);
+
+  const handleOpenInvestigation = useCallback(() => {
+    if (isSubmitting) return;
+    onOpenInvestigation?.(initialPatientData);
+  }, [initialPatientData, isSubmitting, onOpenInvestigation]);
 
   // Body scroll lock + keyboard handling
   useEffect(() => {
@@ -230,6 +237,22 @@ const EditDataInfertility: React.FC<EditDataProps> = ({
                     </button>
                   );
                 })}
+                <button
+                  type="button"
+                  onClick={handleOpenInvestigation}
+                  disabled={isSubmitting || !onOpenInvestigation}
+                  className={`flex items-center gap-1 sm:gap-2 px-2 sm:px-3 md:px-4 py-2 sm:py-2.5 md:py-3 rounded-lg sm:rounded-xl text-xs sm:text-sm font-semibold transition-all duration-300 shadow-sm ${
+                    isSubmitting || !onOpenInvestigation
+                      ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                      : `${getTabColors("emerald", false)} cursor-pointer hover:shadow-md`
+                  }`}
+                  title="Open investigations for this patient"
+                >
+                  <Beaker className="w-3.5 h-3.5 sm:w-4 sm:h-4 md:w-[18px] md:h-[18px] shrink-0" />
+                  <span className="hidden sm:inline whitespace-nowrap">
+                    Investigation
+                  </span>
+                </button>
               </div>
             </ModalHeader>
 
