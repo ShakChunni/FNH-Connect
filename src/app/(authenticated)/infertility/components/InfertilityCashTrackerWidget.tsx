@@ -5,16 +5,19 @@ import { format } from "date-fns";
 import {
   Calendar,
   ChevronDown,
-  RefreshCw,
   Wallet,
   X,
 } from "lucide-react";
 import { useAuth } from "@/app/AuthContext";
+import { CashTrackerHeader } from "@/app/(authenticated)/dashboard/components/SessionCashTracker/CashTrackerHeader";
 import { CashTrackerSummary } from "@/app/(authenticated)/dashboard/components/SessionCashTracker/CashTrackerSummary";
 import { CashTrackerShifts } from "@/app/(authenticated)/dashboard/components/SessionCashTracker/CashTrackerShifts";
+import { generateSessionCashReport } from "@/app/(authenticated)/dashboard/components/SessionCashTracker/generateCashReport";
+import { generateDetailedCashReport } from "@/app/(authenticated)/dashboard/components/SessionCashTracker/generateDetailedCashReport";
 import type {
   CustomDateRange,
   DatePreset,
+  DetailedCashReportData,
   ShiftSummary,
 } from "@/app/(authenticated)/dashboard/components/SessionCashTracker/types";
 import { StaffFilter } from "@/components/ui/StaffFilter";
@@ -23,6 +26,7 @@ import { ModalHeader } from "@/components/ui/ModalHeader";
 import { DropdownPortal } from "@/components/ui/DropdownPortal";
 import { CalendarWithMonthYearPicker } from "@/components/ui/calendar";
 import {
+  formatBDT,
   formatCalendarDateISO,
   formatCalendarPartsISO,
   getTodayBDTCalendarDateParts,
@@ -30,6 +34,9 @@ import {
 import { cn } from "@/lib/utils";
 import { isAdminRole } from "@/lib/roles";
 import { useInfertilityCashTrackingShifts } from "../cash-tracking/hooks";
+import type { DetailedShift } from "../cash-tracking/types";
+import { api } from "@/lib/axios";
+import { useNotification } from "@/hooks/useNotification";
 
 interface DateRangeState {
   from?: Date;
@@ -143,9 +150,23 @@ const getPresetRange = (
   }
 };
 
+const formatCalendarDateForReport = (value: string): string => {
+  const [year, month, day] = value.split("-").map(Number);
+  return format(new Date(year, month - 1, day), "MMM dd, yyyy");
+};
+
+interface ShiftDetailResponse {
+  success: boolean;
+  shift: DetailedShift;
+  error?: string;
+}
+
 export const InfertilityCashTrackerWidget: React.FC = () => {
   const { user } = useAuth();
+  const { showNotification, hideNotification } = useNotification();
   const [isOpen, setIsOpen] = useState(false);
+  const [isLoadingDetailedReport, setIsLoadingDetailedReport] =
+    useState(false);
   const [datePreset, setDatePreset] = useState<DatePreset>("today");
   const [customDateRange, setCustomDateRange] =
     useState<CustomDateRange | null>(null);
@@ -200,6 +221,234 @@ export const InfertilityCashTrackerWidget: React.FC = () => {
         (shift.paymentsCount || 0) + (shift.cashMovementsCount || 0),
       departmentBreakdown: [],
     })) ?? [];
+
+  const staffNameForReport = useMemo(() => {
+    if (canSelectStaff) {
+      if (!staffId) return "All Staff";
+
+      return (
+        staffOptions.find((staff) => staff.id === staffId)?.fullName ||
+        "Selected Staff"
+      );
+    }
+
+    return data?.filterOptions.staff[0]?.fullName || user?.fullName || "Staff";
+  }, [canSelectStaff, data?.filterOptions.staff, staffId, staffOptions, user]);
+
+  const reportDepartmentBreakdown = useMemo(
+    () => [
+      {
+        departmentId: 0,
+        departmentName: "HSI Center",
+        totalCollected: summary.totalCollected,
+        transactionCount,
+      },
+    ],
+    [summary.totalCollected, transactionCount],
+  );
+
+  const reportShifts = useMemo(
+    () =>
+      shifts.map((shift) => ({
+        ...shift,
+        departmentBreakdown: [
+          {
+            departmentId: 0,
+            departmentName: "HSI Center",
+            totalCollected: shift.totalCollected,
+            transactionCount: shift.transactionCount,
+          },
+        ],
+      })),
+    [shifts],
+  );
+
+  const handleGenerateSummaryReport = useCallback(async () => {
+    if (!data) return;
+
+    const loadingId = showNotification("Generating summary report", "loading");
+
+    try {
+      await generateSessionCashReport({
+        reportTitle: "HSI CENTER CASH COLLECTION REPORT",
+        staffName: staffNameForReport,
+        generatedAt: formatBDT(new Date(), "MMM dd, yyyy hh:mm a"),
+        periodLabel: selectedRange.label,
+        startDate: formatCalendarDateForReport(selectedRange.startDate),
+        endDate: formatCalendarDateForReport(selectedRange.endDate),
+        departmentFilter: "HSI Center",
+        totalCollected: summary.totalCollected,
+        totalRefunded: summary.totalRefunded,
+        netCash,
+        transactionCount,
+        departmentBreakdown: reportDepartmentBreakdown,
+        shifts: reportShifts,
+      });
+
+      hideNotification(loadingId);
+      showNotification("Summary report generated successfully", "success");
+    } catch (error) {
+      console.error("Error generating HSI cash summary report:", error);
+      hideNotification(loadingId);
+      showNotification("Failed to generate summary report", "error");
+    }
+  }, [
+    data,
+    hideNotification,
+    netCash,
+    reportDepartmentBreakdown,
+    reportShifts,
+    selectedRange.endDate,
+    selectedRange.label,
+    selectedRange.startDate,
+    showNotification,
+    staffNameForReport,
+    summary.totalCollected,
+    summary.totalRefunded,
+    transactionCount,
+  ]);
+
+  const handleGenerateDetailedReport = useCallback(async () => {
+    if (!data) return;
+
+    setIsLoadingDetailedReport(true);
+    const loadingId = showNotification("Generating detailed report", "loading");
+
+    try {
+      const shiftDetails = await Promise.all(
+        data.shifts.map(async (shift) => {
+          const response = await api.get<ShiftDetailResponse>(
+            `/infertility/cash-tracking/${shift.id}`,
+          );
+
+          if (!response.data.success) {
+            throw new Error(
+              response.data.error || "Failed to fetch shift details",
+            );
+          }
+
+          return response.data.shift;
+        }),
+      );
+
+      const detailedShifts: DetailedCashReportData["shifts"] =
+        shiftDetails.map((shift) => {
+          const payments = shift.payments.flatMap((payment) => {
+            if (payment.paymentAllocations.length === 0) {
+              return [
+                {
+                  paymentId: payment.id,
+                  registrationId: payment.receiptNumber,
+                  paymentDate: payment.paymentDate,
+                  amount: Number(payment.amount),
+                  paymentMethod: "Cash",
+                  patientId: payment.patientAccount.patient.id,
+                  patientName: payment.patientAccount.patient.fullName,
+                  patientPhone:
+                    payment.patientAccount.patient.phoneNumber || undefined,
+                  serviceName: "Infertility payment",
+                  serviceType: "HSI Center",
+                  departmentName: "HSI Center",
+                },
+              ];
+            }
+
+            return payment.paymentAllocations.map((allocation) => ({
+              paymentId: payment.id,
+              registrationId: payment.receiptNumber,
+              paymentDate: payment.paymentDate,
+              amount: Number(allocation.allocatedAmount),
+              paymentMethod: "Cash",
+              patientId: payment.patientAccount.patient.id,
+              patientName: payment.patientAccount.patient.fullName,
+              patientPhone:
+                payment.patientAccount.patient.phoneNumber || undefined,
+              serviceName: allocation.serviceCharge.serviceName,
+              serviceType: allocation.serviceCharge.serviceType,
+              departmentName: "HSI Center",
+            }));
+          });
+
+          const refunds = shift.cashMovements
+            .filter((movement) => movement.movementType === "REFUND")
+            .map((movement) => ({
+              paymentId: movement.payment?.id,
+              registrationId: movement.payment?.receiptNumber || "Refund",
+              refundDate: movement.timestamp,
+              amount: Number(movement.amount),
+              patientId: movement.payment?.patientAccount.patient.id,
+              patientName:
+                movement.payment?.patientAccount.patient.fullName || "Unknown",
+              patientPhone:
+                movement.payment?.patientAccount.patient.phoneNumber ||
+                undefined,
+              serviceName: movement.description || "Refund",
+              serviceType: "HSI Center",
+              departmentName: "HSI Center",
+              description: movement.description || undefined,
+            }));
+
+          return {
+            shiftId: shift.id,
+            startTime: shift.startTime,
+            endTime: shift.endTime ?? undefined,
+            isActive: shift.isActive,
+            totalCollected: Number(shift.totalCollected),
+            totalRefunded: Number(shift.totalRefunded),
+            transactionCount: payments.length + refunds.length,
+            departmentBreakdown: [
+              {
+                departmentId: 0,
+                departmentName: "HSI Center",
+                totalCollected: Number(shift.totalCollected),
+                transactionCount: payments.length,
+              },
+            ],
+            shiftDate: formatBDT(shift.startTime, "MMM dd, yyyy"),
+            payments,
+            refunds,
+          };
+        });
+
+      await generateDetailedCashReport({
+        reportTitle: "DETAILED HSI CENTER CASH COLLECTION REPORT",
+        staffName: staffNameForReport,
+        generatedAt: formatBDT(new Date(), "MMM dd, yyyy hh:mm a"),
+        periodLabel: selectedRange.label,
+        startDate: formatCalendarDateForReport(selectedRange.startDate),
+        endDate: formatCalendarDateForReport(selectedRange.endDate),
+        departmentFilter: "HSI Center",
+        totalCollected: summary.totalCollected,
+        totalRefunded: summary.totalRefunded,
+        netCash,
+        transactionCount,
+        departmentBreakdown: reportDepartmentBreakdown,
+        shifts: detailedShifts,
+      });
+
+      hideNotification(loadingId);
+      showNotification("Detailed report generated successfully", "success");
+    } catch (error) {
+      console.error("Error generating HSI cash detailed report:", error);
+      hideNotification(loadingId);
+      showNotification("Failed to generate detailed report", "error");
+    } finally {
+      setIsLoadingDetailedReport(false);
+    }
+  }, [
+    data,
+    hideNotification,
+    netCash,
+    reportDepartmentBreakdown,
+    selectedRange.endDate,
+    selectedRange.label,
+    selectedRange.startDate,
+    showNotification,
+    staffNameForReport,
+    summary.totalCollected,
+    summary.totalRefunded,
+    transactionCount,
+  ]);
 
   const handleDateClick = (date: Date) => {
     const normalizedDate = new Date(date);
@@ -291,22 +540,21 @@ export const InfertilityCashTrackerWidget: React.FC = () => {
           subtitle="Infertility cash collections, refunds, and shifts."
           onClose={handleClose}
           isDisabled={false}
-        >
-          <button
-            type="button"
-            onClick={handleRefresh}
-            disabled={isFetching}
-            className="inline-flex items-center gap-2 rounded-xl bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-700 transition hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            <RefreshCw
-              className={cn("h-3.5 w-3.5", isFetching ? "animate-spin" : "")}
-            />
-            Refresh
-          </button>
-        </ModalHeader>
+        />
 
         <div className="flex-1 overflow-y-auto p-4 sm:p-5 custom-scrollbar">
           <div className="rounded-2xl border border-slate-100 bg-white p-3 sm:p-4 shadow-sm">
+            <CashTrackerHeader
+              periodLabel={selectedRange.label}
+              shiftsCount={data?.shifts.length || 0}
+              isFetching={isFetching}
+              hasData={Boolean(data)}
+              isLoadingDetailedReport={isLoadingDetailedReport}
+              onGenerateReport={handleGenerateSummaryReport}
+              onGenerateDetailedReport={handleGenerateDetailedReport}
+              onRefresh={handleRefresh}
+            />
+
             <div className="mb-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
               {canSelectStaff ? (
                 <StaffFilter

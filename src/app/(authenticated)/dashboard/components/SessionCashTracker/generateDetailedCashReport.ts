@@ -140,9 +140,14 @@ export const generateDetailedCashReport = async (
   doc.setFont("helvetica", "bold");
   doc.setFontSize(14);
   doc.setTextColor(COLORS.primary);
-  doc.text("DETAILED CASH COLLECTION REPORT", pageWidth / 2, currentY, {
-    align: "center",
-  });
+  doc.text(
+    data.reportTitle || "DETAILED CASH COLLECTION REPORT",
+    pageWidth / 2,
+    currentY,
+    {
+      align: "center",
+    },
+  );
   currentY += 8;
 
   // === REPORT INFO BOX ===
