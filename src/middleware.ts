@@ -356,6 +356,9 @@ export async function middleware(request: NextRequest) {
   const isAdminRoute =
     normalizedPath.startsWith("/admin") ||
     normalizedPath.startsWith("/api/admin");
+  const isInfertilityCashTrackingRoute =
+    normalizedPath === "/infertility/cash-tracking" ||
+    normalizedPath.startsWith("/infertility/cash-tracking/");
   const portalAccess =
     userPortal === "infertility" ? "infertility" : "general";
   const authenticatedHomeRoute = getDefaultRouteForRole(
@@ -424,6 +427,28 @@ export async function middleware(request: NextRequest) {
   if (isAdminRoute && hasValidSession) {
     // Normalize role and check for admin access
     // Handles: system-admin, SysAdmin, admin, Admin, etc.
+    const normalizedRole = userRole?.toLowerCase().replace(/[\s_-]/g, "") || "";
+    const isAdmin =
+      normalizedRole === "systemadmin" ||
+      normalizedRole === "sysadmin" ||
+      normalizedRole === "admin";
+
+    if (!isAdmin) {
+      if (isAPIRoute) {
+        return new NextResponse(
+          JSON.stringify({ message: "Forbidden - Admin access required" }),
+          {
+            status: 403,
+            headers: { "Content-Type": "application/json" },
+          },
+        );
+      }
+      return NextResponse.redirect(new URL(authenticatedHomeRoute, request.url));
+    }
+  }
+
+  // REDIRECT 5.0.1: HSI Center cash tracking is admin-only even under /infertility
+  if (isInfertilityCashTrackingRoute && hasValidSession) {
     const normalizedRole = userRole?.toLowerCase().replace(/[\s_-]/g, "") || "";
     const isAdmin =
       normalizedRole === "systemadmin" ||

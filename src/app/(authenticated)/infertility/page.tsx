@@ -145,6 +145,18 @@ const InfertilityManagement = React.memo(() => {
     []
   );
 
+  const handleOpenInvestigationFromEdit = useCallback(
+    (patient: InfertilityPatientData) => {
+      actions.closeEditModal();
+      setSelectedPatientForInvestigation(patient);
+
+      window.setTimeout(() => {
+        setIsOrderInvestigationOpen(true);
+      }, 320);
+    },
+    [actions]
+  );
+
   const handleSetAdmitted = useCallback(
     (patient: InfertilityPatientData) => {
       if (patient.status?.toLowerCase() === "admitted") return;
@@ -293,6 +305,7 @@ const InfertilityManagement = React.memo(() => {
               isOpen={modals.isEditOpen && !modals.isEditClosing}
               onClose={actions.closeEditModal}
               patientData={modals.selectedPatient}
+              onOpenInvestigation={handleOpenInvestigationFromEdit}
             />
           </ClientPortal>
         )}
