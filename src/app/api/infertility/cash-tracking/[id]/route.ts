@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthenticatedUserForAPI } from "@/lib/auth-validation";
 import { getInfertilityCashTrackingShiftDetails } from "@/services/infertilityCashTrackingService";
+import { isAdminRole } from "@/lib/roles";
 import { z } from "zod";
 
 const paramsSchema = z.object({
@@ -37,6 +38,13 @@ export async function GET(
     const shift = await getInfertilityCashTrackingShiftDetails(validation.data.id);
 
     if (!shift) {
+      return NextResponse.json(
+        { success: false, error: "Shift not found" },
+        { status: 404 }
+      );
+    }
+
+    if (!isAdminRole(user.role) && shift.staffId !== user.staffId) {
       return NextResponse.json(
         { success: false, error: "Shift not found" },
         { status: 404 }
