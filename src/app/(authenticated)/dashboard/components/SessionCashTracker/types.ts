@@ -67,6 +67,7 @@ export interface SessionCashData {
 }
 
 export interface SessionCashReportData {
+  reportTitle?: string;
   staffName: string;
   generatedAt: string;
   periodLabel: string;

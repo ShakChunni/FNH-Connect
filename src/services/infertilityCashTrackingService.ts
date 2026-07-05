@@ -1,4 +1,6 @@
 import { prisma } from "@/lib/prisma";
+import { BDT_OFFSET_MS } from "@/lib/timezone";
+import type { Prisma } from "@prisma/client";
 
 export interface InfertilityCashTrackingFilters {
   staffId?: number;
@@ -14,13 +16,65 @@ export interface InfertilityCashTrackingStaffOption {
   role: string;
 }
 
-/**
- * Get infertility shifts from the dedicated InfertilityShift table
- */
-export async function getInfertilityCashTrackingShifts(
-  filters: InfertilityCashTrackingFilters
-) {
-  const where: Record<string, unknown> = {};
+const calendarDatePattern = /^(\d{4})-(\d{2})-(\d{2})$/;
+
+function parseCalendarDate(value: string) {
+  const match = calendarDatePattern.exec(value.trim());
+  if (!match) return null;
+
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const normalized = new Date(Date.UTC(year, month - 1, day));
+
+  if (
+    normalized.getUTCFullYear() !== year ||
+    normalized.getUTCMonth() !== month - 1 ||
+    normalized.getUTCDate() !== day
+  ) {
+    return null;
+  }
+
+  return { year, month, day };
+}
+
+export function isValidInfertilityCashTrackingDateFilter(value: string): boolean {
+  if (parseCalendarDate(value)) return true;
+
+  return !Number.isNaN(new Date(value).getTime());
+}
+
+export function getInfertilityCashTrackingDateBoundary(
+  value: string,
+  boundary: "start" | "end",
+): Date {
+  const calendarDate = parseCalendarDate(value);
+
+  if (calendarDate) {
+    const dayOffset = boundary === "end" ? 1 : 0;
+    return new Date(
+      Date.UTC(
+        calendarDate.year,
+        calendarDate.month - 1,
+        calendarDate.day + dayOffset,
+      ) - BDT_OFFSET_MS,
+    );
+  }
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    throw new Error("Invalid infertility cash tracking date filter");
+  }
+
+  return date;
+}
+
+function buildInfertilityCashTrackingWhere(
+  filters?: InfertilityCashTrackingFilters,
+): Prisma.InfertilityShiftWhereInput {
+  const where: Prisma.InfertilityShiftWhereInput = {};
+
+  if (!filters) return where;
 
   if (filters.staffId) {
     where.staffId = filters.staffId;
@@ -28,21 +82,19 @@ export async function getInfertilityCashTrackingShifts(
 
   if (filters.startDate || filters.endDate) {
     where.startTime = {};
-    const BDT_OFFSET_MS = 6 * 60 * 60 * 1000;
 
     if (filters.startDate) {
-      const [year, month, day] = filters.startDate.split("-").map(Number);
-      const startBDT = new Date(
-        Date.UTC(year, month - 1, day) - BDT_OFFSET_MS
+      where.startTime.gte = getInfertilityCashTrackingDateBoundary(
+        filters.startDate,
+        "start",
       );
-      (where.startTime as Record<string, Date>).gte = startBDT;
     }
+
     if (filters.endDate) {
-      const [year, month, day] = filters.endDate.split("-").map(Number);
-      const endBDT = new Date(
-        Date.UTC(year, month - 1, day + 1) - BDT_OFFSET_MS
+      where.startTime.lt = getInfertilityCashTrackingDateBoundary(
+        filters.endDate,
+        "end",
       );
-      (where.startTime as Record<string, Date>).lte = endBDT;
     }
   }
 
@@ -55,6 +107,17 @@ export async function getInfertilityCashTrackingShifts(
       fullName: { contains: filters.search, mode: "insensitive" },
     };
   }
+
+  return where;
+}
+
+/**
+ * Get infertility shifts from the dedicated InfertilityShift table
+ */
+export async function getInfertilityCashTrackingShifts(
+  filters: InfertilityCashTrackingFilters
+) {
+  const where = buildInfertilityCashTrackingWhere(filters);
 
   const shifts = await prisma.infertilityShift.findMany({
     where,
@@ -248,41 +311,7 @@ export async function getInfertilityCashTrackingShiftDetails(id: number) {
 export async function getInfertilityCashTrackingSummary(
   filters?: InfertilityCashTrackingFilters
 ) {
-  const where: Record<string, unknown> = {};
-
-  if (filters?.staffId) {
-    where.staffId = filters.staffId;
-  }
-
-  if (filters?.startDate || filters?.endDate) {
-    where.startTime = {};
-    const BDT_OFFSET_MS = 6 * 60 * 60 * 1000;
-
-    if (filters.startDate) {
-      const [year, month, day] = filters.startDate.split("-").map(Number);
-      const startBDT = new Date(
-        Date.UTC(year, month - 1, day) - BDT_OFFSET_MS
-      );
-      (where.startTime as Record<string, Date>).gte = startBDT;
-    }
-    if (filters.endDate) {
-      const [year, month, day] = filters.endDate.split("-").map(Number);
-      const endBDT = new Date(
-        Date.UTC(year, month - 1, day + 1) - BDT_OFFSET_MS
-      );
-      (where.startTime as Record<string, Date>).lte = endBDT;
-    }
-  }
-
-  if (filters?.status && filters.status !== "All") {
-    where.isActive = filters.status === "Active";
-  }
-
-  if (filters?.search) {
-    where.staff = {
-      fullName: { contains: filters.search, mode: "insensitive" },
-    };
-  }
+  const where = buildInfertilityCashTrackingWhere(filters);
 
   const aggregate = await prisma.infertilityShift.aggregate({
     where,

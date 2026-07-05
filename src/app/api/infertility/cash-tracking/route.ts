@@ -1,20 +1,50 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthenticatedUserForAPI } from "@/lib/auth-validation";
 import {
+  getInfertilityCashTrackingDateBoundary,
   getInfertilityCashTrackingShifts,
   getInfertilityCashTrackingSummary,
   getInfertilityCashTrackingStaff,
+  isValidInfertilityCashTrackingDateFilter,
 } from "@/services/infertilityCashTrackingService";
 import { isAdminRole } from "@/lib/roles";
 import { z } from "zod";
 
-const filtersSchema = z.object({
-  staffId: z.coerce.number().optional(),
-  startDate: z.string().optional(),
-  endDate: z.string().optional(),
-  status: z.enum(["Active", "Closed", "All"]).optional(),
-  search: z.string().optional(),
-});
+const cashTrackingDateSchema = z
+  .string()
+  .trim()
+  .refine(isValidInfertilityCashTrackingDateFilter, {
+    message: "Invalid date filter",
+  });
+
+const filtersSchema = z
+  .object({
+    staffId: z.coerce.number().optional(),
+    startDate: cashTrackingDateSchema.optional(),
+    endDate: cashTrackingDateSchema.optional(),
+    status: z.enum(["Active", "Closed", "All"]).optional(),
+    search: z.string().optional(),
+  })
+  .superRefine((value, ctx) => {
+    if (!value.startDate || !value.endDate) return;
+
+    const startDate = getInfertilityCashTrackingDateBoundary(
+      value.startDate,
+      "start",
+    );
+    const endDate = getInfertilityCashTrackingDateBoundary(
+      value.endDate,
+      "end",
+    );
+
+    if (startDate >= endDate) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["endDate"],
+        message: "End date must be after start date",
+      });
+    }
+  });
 
 export async function GET(request: NextRequest) {
   try {
