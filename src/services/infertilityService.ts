@@ -1319,22 +1319,7 @@ export async function createInfertilityTest(
     if (testData.paidAmount > 0) {
       const activeShift = shiftId
         ? { id: shiftId }
-        : await tx.infertilityShift.findFirst({
-            where: { staffId, isActive: true },
-          }) ||
-          await tx.infertilityShift.create({
-            data: {
-              staffId,
-              startTime: new Date(),
-              isActive: true,
-              openingCash: 0,
-              systemCash: 0,
-              totalCollected: 0,
-              totalRefunded: 0,
-              closingCash: 0,
-              variance: 0,
-            },
-          });
+        : await infertilityShiftService.ensureActiveShift(staffId, tx);
 
       const paymentCount = await tx.infertilityPayment.count();
       const receiptNumber = `RCP-INF-${Date.now()}-${paymentCount + 1}`;
