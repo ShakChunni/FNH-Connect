@@ -1,4 +1,4 @@
-import { PrismaClient } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 
 export const shiftService = {
@@ -10,7 +10,7 @@ export const shiftService = {
    * This is designed to support multi-device logins where the user
    * should ideally remain on the same "logical" shift until they explicitly close it.
    */
-  ensureActiveShift: async (staffId: number, tx?: any) => {
+  ensureActiveShift: async (staffId: number, tx?: Prisma.TransactionClient) => {
     const db = tx || prisma;
 
     // 1. Check for an existing active shift

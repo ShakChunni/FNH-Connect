@@ -1,3 +1,4 @@
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 
 export const infertilityShiftService = {
@@ -6,7 +7,7 @@ export const infertilityShiftService = {
    * If an active shift exists, it returns it.
    * If not, it creates a new one.
    */
-  ensureActiveShift: async (staffId: number, tx?: any) => {
+  ensureActiveShift: async (staffId: number, tx?: Prisma.TransactionClient) => {
     const db = tx || prisma;
 
     const activeShift = await db.infertilityShift.findFirst({

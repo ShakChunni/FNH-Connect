@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { cookies } from "next/headers";
 import { validateCSRFToken } from "@/lib/csrfProtection";
 import type { LogoutResponse } from "@/types/auth";
+import { closeActiveStaffCashShifts } from "@/services/staffShiftClosureService";
 
 const COOKIE_SECURE = process.env.SESSION_COOKIE_SECURE
   ? process.env.SESSION_COOKIE_SECURE === "true"
@@ -47,36 +48,25 @@ export async function POST(request: NextRequest) {
         throw new Error("Session not found");
       }
 
-      // IMPORTANT: End any active shift for this user's staff
-      // This ensures shifts don't stay open indefinitely
+      const logoutAt = new Date();
+
       if (session.user.staff) {
-        // Close general shift if active
-        const activeShift = await tx.shift.findFirst({
-          where: {
-            staffId: session.user.staff.id,
-            isActive: true,
-          },
+        const closedShifts = await closeActiveStaffCashShifts({
+          tx,
+          staffId: session.user.staff.id,
+          endedAt: logoutAt,
+          generalNotes: "Shift auto-closed on logout",
+          infertilityNotes: "HSI Center shift auto-closed on logout",
         });
 
-        if (activeShift) {
-          await tx.shift.update({
-            where: { id: activeShift.id },
-            data: {
-              isActive: false,
-              endTime: new Date(),
-              closingCash: activeShift.systemCash,
-              variance: 0,
-              notes: "Shift auto-closed on logout",
-            },
-          });
-
+        if (closedShifts.generalShiftId) {
           await tx.activityLog.create({
             data: {
               userId: session.userId,
               action: "SHIFT_AUTO_CLOSED",
-              description: `Shift #${activeShift.id} auto-closed on logout for ${session.user.username}`,
+              description: `Shift #${closedShifts.generalShiftId} auto-closed on logout for ${session.user.username}`,
               entityType: "Shift",
-              entityId: activeShift.id,
+              entityId: closedShifts.generalShiftId,
               ipAddress: session.ipAddress,
               sessionId: session.id,
               deviceFingerprint: session.deviceFingerprint,
@@ -85,38 +75,19 @@ export async function POST(request: NextRequest) {
               browserName: session.browserName,
               browserVersion: session.browserVersion,
               osType: session.osType,
-              timestamp: new Date(),
+              timestamp: logoutAt,
             },
           });
         }
 
-        // Close infertility shift if active
-        const activeInfertilityShift = await tx.infertilityShift.findFirst({
-          where: {
-            staffId: session.user.staff.id,
-            isActive: true,
-          },
-        });
-
-        if (activeInfertilityShift) {
-          await tx.infertilityShift.update({
-            where: { id: activeInfertilityShift.id },
-            data: {
-              isActive: false,
-              endTime: new Date(),
-              closingCash: activeInfertilityShift.systemCash,
-              variance: 0,
-              notes: "HSI Center shift auto-closed on logout",
-            },
-          });
-
+        if (closedShifts.infertilityShiftId) {
           await tx.activityLog.create({
             data: {
               userId: session.userId,
               action: "INFERTILITY_SHIFT_AUTO_CLOSED",
-              description: `Infertility shift #${activeInfertilityShift.id} auto-closed on logout for ${session.user.username}`,
+              description: `Infertility shift #${closedShifts.infertilityShiftId} auto-closed on logout for ${session.user.username}`,
               entityType: "InfertilityShift",
-              entityId: activeInfertilityShift.id,
+              entityId: closedShifts.infertilityShiftId,
               ipAddress: session.ipAddress,
               sessionId: session.id,
               deviceFingerprint: session.deviceFingerprint,
@@ -125,7 +96,7 @@ export async function POST(request: NextRequest) {
               browserName: session.browserName,
               browserVersion: session.browserVersion,
               osType: session.osType,
-              timestamp: new Date(),
+              timestamp: logoutAt,
             },
           });
         }
@@ -152,7 +123,7 @@ export async function POST(request: NextRequest) {
           browserName: session.browserName,
           browserVersion: session.browserVersion,
           osType: session.osType,
-          timestamp: new Date(),
+          timestamp: logoutAt,
         },
       });
 
