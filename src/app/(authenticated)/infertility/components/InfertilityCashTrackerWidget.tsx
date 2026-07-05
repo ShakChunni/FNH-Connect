@@ -65,7 +65,6 @@ const HSI_CASH_REPORT_BRANDING: CashReportBranding = {
   address:
     "1257, Sholakia, Khorompatti Kishoreganj Sadar, Kishoreganj Dhaka, Bangladesh",
   phone: "Mobile: +8801726219350, +8801701295016, +8801787993086",
-  department: "HSI Center",
   logoPath: "/hsi-logo.png",
   thankYouText: "Thank you for choosing HSI Center",
 };
