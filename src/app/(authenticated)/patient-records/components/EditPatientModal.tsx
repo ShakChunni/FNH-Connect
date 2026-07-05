@@ -241,7 +241,7 @@ export const EditPatientModal: React.FC<EditPatientModalProps> = ({
                 </div>
 
                 {/* Address */}
-                <div>
+                <div className="sm:col-span-2">
                   <PatientAddressFields
                     value={formData.address}
                     onChange={(address) =>
