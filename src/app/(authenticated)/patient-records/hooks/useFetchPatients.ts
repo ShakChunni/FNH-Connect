@@ -39,6 +39,9 @@ export function useFetchPatients(filters: PatientFilters = {}) {
       if (filters.endDate) {
         params.append("endDate", filters.endDate);
       }
+      if (filters.infertilityOnly) {
+        params.append("infertilityOnly", "true");
+      }
       // Add pagination params
       if (filters.page) {
         params.append("page", filters.page.toString());

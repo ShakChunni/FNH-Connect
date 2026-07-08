@@ -26,6 +26,9 @@ export interface PatientFilters {
   search?: string;
   startDate?: string;
   endDate?: string;
+  // Scope to patients that have infertility (HSI Center) records only.
+  // Used by the infertility portal's Patient Records page.
+  infertilityOnly?: boolean;
   // Pagination params
   page?: number;
   limit?: number;

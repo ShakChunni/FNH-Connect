@@ -48,6 +48,7 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get("search");
     const gyneOnly = searchParams.get("gyneOnly") === "true";
     const dischargedOnly = searchParams.get("dischargedOnly") === "true";
+    const infertilityOnly = searchParams.get("infertilityOnly") === "true";
     const startDate = searchParams.get("startDate");
     const endDate = searchParams.get("endDate");
     const page = parseInt(searchParams.get("page") || "1", 10);
@@ -57,6 +58,17 @@ export async function GET(request: NextRequest) {
     const where: Record<string, unknown> = {};
 
     Object.assign(where, getPatientAccessWhereByRole(user.role));
+
+    // Infertility portal Patient Records: restrict to patients that have
+    // infertility records. Combined via AND so it can only *narrow* the
+    // role-based scope, never widen it (a role restricted to non-infertility
+    // patients still cannot see infertility patients by passing this flag).
+    if (infertilityOnly) {
+      const existingAnd = Array.isArray(where.AND)
+        ? (where.AND as Prisma.PatientWhereInput[])
+        : [];
+      where.AND = [...existingAnd, { infertilityRecords: { some: {} } }];
+    }
 
     const normalizedSearch = search?.trim() ?? "";
 

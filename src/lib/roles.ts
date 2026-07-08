@@ -69,6 +69,10 @@ export const INFERTILITY_RECEPTIONIST_ALLOWED_ROUTES = [
   "/api/infertility",
   "/api/infertility-patients",
   "/api/infertility/cash-tracking",
+  // Patient Records page in the infertility portal (/infertility/patient-records)
+  // is covered by the "/infertility" prefix above; this exposes its data API.
+  // Results are scoped to infertility patients (see /api/patient-records).
+  "/api/patient-records",
   "/api/profile",
   "/api/auth",
   "/api/staff",

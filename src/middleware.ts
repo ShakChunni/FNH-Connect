@@ -382,6 +382,10 @@ export async function middleware(request: NextRequest) {
 
   // General-only routes (infertility users must NOT access)
   // Note: /admin/activity-logs is shared; /admin/user-management is handled separately below.
+  // Note: /api/patient-records is intentionally NOT general-only. It is shared
+  // by the infertility portal's Patient Records page (/infertility/patient-records)
+  // and scoped to infertility patients via the `infertilityOnly` param + role.
+  // The general /patient-records *page* remains general-only.
   const generalOnlyRoutes = [
     "/dashboard",
     "/general-admission",
@@ -392,7 +396,6 @@ export async function middleware(request: NextRequest) {
     "/api/dashboard",
     "/api/general-admission",
     "/api/pathology",
-    "/api/patient-records",
     "/api/medicine-inventory",
     "/api/admin/cash-tracking",
   ];

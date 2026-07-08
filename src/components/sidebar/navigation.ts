@@ -121,6 +121,11 @@ export function getNavigationItems(
           icon: Baby,
         },
         {
+          label: "Patient Records",
+          href: "/infertility/patient-records",
+          icon: ClipboardList,
+        },
+        {
           label: "HSI Center Cash",
           href: "/admin/infertility-cash-tracking",
           icon: Wallet,
@@ -142,7 +147,22 @@ export function getNavigationItems(
 
       return items;
     }
-    // Receptionists (any type) in infertility: only infertility nav items
+    // Infertility receptionist: infertility patients + patient records.
+    // Regular receptionists in the infertility portal are excluded because
+    // Patient Records data is scoped to infertility patients (which their role
+    // cannot access), so the page would render empty for them.
+    if (userRole && isReceptionistInfertilityRole(userRole)) {
+      return [
+        ...infertilityNavigationItems,
+        {
+          label: "Patient Records",
+          href: "/infertility/patient-records",
+          icon: ClipboardList,
+        },
+      ];
+    }
+
+    // Other receptionists in infertility: only infertility nav items
     return infertilityNavigationItems;
   }
 
