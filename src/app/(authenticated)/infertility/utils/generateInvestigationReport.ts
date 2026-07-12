@@ -235,12 +235,15 @@ export const generateInfertilityInvestigationReport = async (
 
     autoTable(doc, {
       startY: currentY,
-      head: [["#", "Test No.", "Date", "Patient", "Investigations", "Status", "Total", "Paid", "Due"]],
+      head: [["#", "Test No.", "Date", "Patient", "For", "Investigations", "Status", "Total", "Paid", "Due"]],
       body: data.map((item, i) => [
         (i + 1).toString(),
         item.testNumber,
         format(new Date(item.testDate), "dd/MM/yy"),
         item.patientFullName,
+        item.subjectType === "SPOUSE"
+          ? `Spouse: ${item.subjectName || item.guardianName || "Not recorded"}`
+          : `Patient: ${item.patientFullName}`,
         item.selectedTests.join(", ").substring(0, 30),
         item.isCompleted ? "Done" : "Pending",
         Number(item.grandTotal).toLocaleString(),
@@ -248,8 +251,8 @@ export const generateInfertilityInvestigationReport = async (
         Number(item.dueAmount).toLocaleString(),
       ]),
       theme: "striped",
-      headStyles: { fillColor: COLORS.primary, fontSize: 7 },
-      styles: { fontSize: 7 },
+      headStyles: { fillColor: COLORS.primary, fontSize: 6.5 },
+      styles: { fontSize: 6.5 },
       margin: { left: margin, right: margin },
     });
   }

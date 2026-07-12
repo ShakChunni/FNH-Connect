@@ -268,7 +268,11 @@ export async function getInfertilityPatients(filters: InfertilityFilters) {
         },
         _count: {
           select: {
-            tests: true,
+            tests: {
+              where: {
+                isMigrationSuperseded: false,
+              },
+            },
           },
         },
       },
