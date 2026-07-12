@@ -577,18 +577,48 @@ model InfertilityPatient {
   createdBy      Int // Staff ID who created the record
   lastModifiedBy Int? // Staff ID who last modified
 
+  // Non-destructive case merge marker. The original case remains available
+  // for audit/history, but normal infertility queries exclude merged cases.
+  mergedIntoId Int?
+  mergedAt     DateTime?
+  mergedReason String?
+
   // Relations
   patient         Patient           @relation(fields: [patientId], references: [id])
   hospital        Hospital          @relation(fields: [hospitalId], references: [id])
   createdByStaff  Staff             @relation("InfertilityCreatedBy", fields: [createdBy], references: [id])
   modifiedByStaff Staff?            @relation("InfertilityModifiedBy", fields: [lastModifiedBy], references: [id])
   tests           InfertilityTest[]
+  mergedInto      InfertilityPatient?  @relation("InfertilityPatientMerge", fields: [mergedIntoId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  mergedCases     InfertilityPatient[] @relation("InfertilityPatientMerge")
 
   @@unique([patientId, hospitalId]) // One infertility record per patient per hospital
   @@index([patientId])
   @@index([hospitalId])
   @@index([createdAt])
   @@index([status])
+  @@index([mergedIntoId])
+}
+
+model InfertilityCaseMergeArchive {
+  id                  Int      @id @default(autoincrement())
+  sourceCaseId        Int
+  sourceCaseNumber    String
+  canonicalCaseId     Int
+  canonicalCaseNumber String
+  sourcePatientId     Int
+  sourceCaseSnapshot  String   @db.Text
+  sourcePatientSnapshot String @db.Text
+  sourceTestsSnapshot String   @db.Text
+  sourcePathologyTestsSnapshot String @db.Text
+  sourceAccountSnapshot String? @db.Text
+  mergedAt            DateTime @default(now())
+  reason              String
+
+  @@unique([sourceCaseId, canonicalCaseId])
+  @@index([sourceCaseId])
+  @@index([canonicalCaseId])
+  @@index([mergedAt])
 }
 
 model InfertilityTest {

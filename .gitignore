@@ -19,6 +19,7 @@
 /build
 /scripts/*
 !/scripts/standardize-patient-addresses.ts
+!/scripts/merge-infertility-cases.ts
 # misc
 .DS_Store
 *.pem

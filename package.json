@@ -22,6 +22,7 @@
     "db:migrate-pathology-to-infertility-v2": "tsx scripts/migrate-pathology-to-infertility-v2.ts",
     "db:fix-payments": "tsx scripts/fix-payment-allocations.ts",
     "db:fix-patient-dobs": "tsx scripts/fix-patient-dobs.ts --apply",
+    "db:merge-infertility-cases": "tsx scripts/merge-infertility-cases.ts",
     "db:cleanup-test": "tsx scripts/cleanup-test-data.ts",
     "db:fix-cash-tracking": "tsx scripts/fix-cash-tracking-data.ts",
     "seed:test-user": "tsx scripts/seed-test-user.ts",

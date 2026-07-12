@@ -27,6 +27,78 @@ export interface ActivityLogContext {
   deviceInfo?: SessionDeviceInfo;
 }
 
+function normalizeIdentity(value: string | null | undefined): string {
+  return (
+    value
+      ?.toLowerCase()
+      .replace(/[^a-z0-9]+/g, " ")
+      .replace(/\b(mr|mrs|ms|miss|md)\b/g, "")
+      .replace(/\s+/g, " ")
+      .trim() ?? ""
+  );
+}
+
+function normalizePhone(value: string | null | undefined): string {
+  return value?.replace(/\D/g, "") ?? "";
+}
+
+async function findPotentialSpouseCase(
+  tx: Prisma.TransactionClient,
+  hospitalId: number,
+  patientData: PatientData,
+) {
+  const incomingName = normalizeIdentity(patientData.fullName);
+  const incomingPhone = normalizePhone(patientData.phoneNumber);
+  const incomingAddress = normalizeIdentity(patientData.address);
+  const incomingGender = normalizeIdentity(patientData.gender);
+
+  if (!incomingName || (incomingGender !== "male" && !incomingPhone)) {
+    return null;
+  }
+
+  const existingCases = await tx.infertilityPatient.findMany({
+    where: {
+      hospitalId,
+      mergedIntoId: null,
+      patient: {
+        gender: {
+          equals: "Female",
+          mode: "insensitive",
+        },
+      },
+    },
+    select: {
+      id: true,
+      caseNumber: true,
+      patient: {
+        select: {
+          fullName: true,
+          guardianName: true,
+          guardianPhone: true,
+          phoneNumber: true,
+          address: true,
+        },
+      },
+    },
+  });
+
+  return (
+    existingCases.find((existingCase) => {
+      const guardianNameMatches =
+        normalizeIdentity(existingCase.patient.guardianName) === incomingName;
+      const sameAddress =
+        incomingAddress.length > 0 &&
+        normalizeIdentity(existingCase.patient.address) === incomingAddress;
+      const samePhone =
+        incomingPhone.length > 0 &&
+        (normalizePhone(existingCase.patient.guardianPhone) === incomingPhone ||
+          normalizePhone(existingCase.patient.phoneNumber) === incomingPhone);
+
+      return guardianNameMatches || (incomingGender === "male" && sameAddress && samePhone);
+    }) ?? null
+  );
+}
+
 export interface InfertilityFilters {
   status?: string;
   hospitalId?: number;
@@ -103,7 +175,9 @@ export interface MedicalData {
 // ═══════════════════════════════════════════════════════════════
 
 export async function getInfertilityPatients(filters: InfertilityFilters) {
-  const where: Prisma.InfertilityPatientWhereInput = {};
+  const where: Prisma.InfertilityPatientWhereInput = {
+    mergedIntoId: null,
+  };
 
   if (filters.status) {
     where.status = filters.status;
@@ -227,7 +301,7 @@ export async function getInfertilityPatients(filters: InfertilityFilters) {
 
 export async function getInfertilityPatientById(id: number) {
   return await prisma.infertilityPatient.findUnique({
-    where: { id },
+    where: { id, mergedIntoId: null },
     include: {
       patient: true,
       hospital: true,
@@ -284,6 +358,18 @@ export async function createInfertilityPatient(
           },
         });
       }
+    }
+
+    const potentialSpouseCase = await findPotentialSpouseCase(
+      tx,
+      hospital.id,
+      patientData,
+    );
+
+    if (potentialSpouseCase) {
+      throw new Error(
+        `This person appears to be the spouse of the existing infertility patient in case ${potentialSpouseCase.caseNumber}. Edit that case and order a spouse investigation instead of creating another patient row.`,
+      );
     }
 
     // 2. Create or update patient
@@ -469,6 +555,12 @@ export async function updateInfertilityPatient(
       throw new Error("HSI Center patient record not found");
     }
 
+    if (existingRecord.mergedIntoId !== null) {
+      throw new Error(
+        "This HSI Center patient record has already been merged into another case.",
+      );
+    }
+
     // 1. Update or create hospital (moved to start)
     let hospital;
     if (hospitalData.id && hospitalData.id === existingRecord.hospitalId) {
@@ -624,6 +716,12 @@ export async function deleteInfertilityPatient(
       throw new Error("HSI Center patient record not found");
     }
 
+    if (existingRecord.mergedIntoId !== null) {
+      throw new Error(
+        "This HSI Center patient record has already been merged into another case.",
+      );
+    }
+
     await tx.infertilityPatient.delete({
       where: { id },
     });
@@ -666,6 +764,12 @@ export async function updateInfertilityPatientStatus(
 
     if (!existingRecord) {
       throw new Error("HSI Center patient record not found");
+    }
+
+    if (existingRecord.mergedIntoId !== null) {
+      throw new Error(
+        "This HSI Center patient record has already been merged into another case.",
+      );
     }
 
     const updatedRecord = await tx.infertilityPatient.update({
@@ -1037,6 +1141,9 @@ function serializeInfertilityTestRow(
 export async function getInfertilityTests(filters: InfertilityTestFilters) {
   const where: Prisma.InfertilityTestWhereInput = {
     isMigrationSuperseded: false,
+    infertilityPatient: {
+      mergedIntoId: null,
+    },
   };
 
   if (filters.infertilityPatientId) {
@@ -1180,6 +1287,9 @@ export async function getInfertilityTestById(id: number) {
     where: {
       id,
       isMigrationSuperseded: false,
+      infertilityPatient: {
+        mergedIntoId: null,
+      },
     },
     include: {
       infertilityPatient: {
