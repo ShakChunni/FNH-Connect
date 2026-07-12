@@ -1,6 +1,7 @@
 export { MedicineReportHeader } from "./MedicineReportHeader";
 export { generateMedicineInventoryReport } from "./generateMedicineInventoryReport";
 export { generateDetailedMedicineInventoryReport } from "./generateDetailedMedicineInventoryReport";
+export { exportMedicineInventoryToExcel } from "./exportMedicineInventoryToExcel";
 export type {
   MedicineReportInput,
   MedicineReportMode,
