@@ -4,6 +4,7 @@ import React, { useRef, useState } from "react";
 import {
   AlertTriangle,
   ClipboardList,
+  FileSpreadsheet,
   FileText,
   Layers,
   List,
@@ -22,6 +23,7 @@ interface MedicineReportHeaderProps {
     mode: MedicineReportMode,
     target: MedicineReportTarget,
   ) => void;
+  onExportExcel: (target: MedicineReportTarget) => void;
 }
 
 const reportOptions: Array<{
@@ -73,6 +75,7 @@ export const MedicineReportHeader: React.FC<MedicineReportHeaderProps> = ({
   disabled = false,
   isLoading = false,
   onGenerateReport,
+  onExportExcel,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -82,6 +85,11 @@ export const MedicineReportHeader: React.FC<MedicineReportHeaderProps> = ({
     target: MedicineReportTarget,
   ) => {
     onGenerateReport(mode, target);
+    setIsOpen(false);
+  };
+
+  const handleExcelExport = (target: MedicineReportTarget) => {
+    onExportExcel(target);
     setIsOpen(false);
   };
 
@@ -112,11 +120,19 @@ export const MedicineReportHeader: React.FC<MedicineReportHeaderProps> = ({
         <div className="border-b border-gray-100 px-3 py-2.5">
           <p className="text-xs font-bold text-fnh-navy-dark">Print Report</p>
           <p className="text-[10px] text-gray-500">
-            Choose a section, then print summary or detailed.
+            Choose a section, then print or download Excel.
           </p>
         </div>
 
         <div className="max-h-[calc(min(78vh,34rem)-3.5rem)] overflow-y-auto p-2">
+          <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 px-2 pb-1 text-[9px] font-bold uppercase tracking-wider text-gray-400">
+            <span>Report section</span>
+            <span className="grid grid-cols-3 gap-1.5 text-center">
+              <span className="w-9">PDF</span>
+              <span className="w-9">List</span>
+              <span className="w-9">Excel</span>
+            </span>
+          </div>
           {reportOptions.map((option, index) => {
             const Icon = option.icon;
 
@@ -142,7 +158,7 @@ export const MedicineReportHeader: React.FC<MedicineReportHeaderProps> = ({
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-1.5">
+                    <div className="grid grid-cols-3 gap-1.5">
                       <button
                         type="button"
                         onClick={() => handleReport("summary", option.target)}
@@ -162,6 +178,16 @@ export const MedicineReportHeader: React.FC<MedicineReportHeaderProps> = ({
                         aria-label={`${option.label} detailed report`}
                       >
                         <List className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleExcelExport(option.target)}
+                        disabled={isLoading}
+                        className="flex h-8 w-9 items-center justify-center rounded-lg border border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        title={`${option.label} Excel download`}
+                        aria-label={`${option.label} Excel download`}
+                      >
+                        <FileSpreadsheet className="w-3.5 h-3.5" />
                       </button>
                     </div>
                   </div>

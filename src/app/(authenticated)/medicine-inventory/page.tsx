@@ -54,10 +54,15 @@ import {
 } from "./components/shared";
 import {
   MedicineReportHeader,
+  exportMedicineInventoryToExcel,
   generateMedicineInventoryReport,
   generateDetailedMedicineInventoryReport,
 } from "./components/reports";
 import type {
+  MedicineInventoryReport,
+} from "./types";
+import type {
+  MedicineReportInput,
   MedicineReportMode,
   MedicineReportTarget,
 } from "./components/reports/types";
@@ -360,6 +365,29 @@ const MedicineInventoryPage = () => {
     return "All Time";
   }, [endDate, formatSelectedDate, startDate]);
 
+  const buildReportInput = useCallback(
+    (
+      report: MedicineInventoryReport,
+      target: MedicineReportTarget,
+    ): MedicineReportInput => ({
+      report,
+      target,
+      generatedAt: formatBDT(new Date(), "MMM dd, yyyy hh:mm a"),
+      periodLabel: getPeriodLabel(),
+      startDate: startDate ? formatSelectedDate(startDate) : "All Time",
+      endDate: endDate ? formatSelectedDate(endDate) : "All Time",
+      generatedBy: user?.fullName || user?.username || "Staff",
+    }),
+    [
+      endDate,
+      formatSelectedDate,
+      getPeriodLabel,
+      startDate,
+      user?.fullName,
+      user?.username,
+    ],
+  );
+
   const handleGenerateReport = useCallback(
     async (mode: MedicineReportMode, target: MedicineReportTarget) => {
       setIsGeneratingReport(true);
@@ -378,19 +406,7 @@ const MedicineInventoryPage = () => {
           );
         }
 
-        const reportInput = {
-          report: result.data,
-          target,
-          generatedAt: formatBDT(new Date(), "MMM dd, yyyy hh:mm a"),
-          periodLabel: getPeriodLabel(),
-          startDate: startDate
-            ? formatSelectedDate(startDate)
-            : "All Time",
-          endDate: endDate
-            ? formatSelectedDate(endDate)
-            : "All Time",
-          generatedBy: user?.fullName || user?.username || "Staff",
-        };
+        const reportInput = buildReportInput(result.data, target);
 
         if (mode === "summary") {
           await generateMedicineInventoryReport(reportInput);
@@ -412,16 +428,49 @@ const MedicineInventoryPage = () => {
       }
     },
     [
-      endDate,
-      getPeriodLabel,
-      formatSelectedDate,
+      buildReportInput,
       hideNotification,
       refetchReport,
       showNotification,
-      startDate,
-      user?.fullName,
-      user?.username,
     ],
+  );
+
+  const handleExportExcel = useCallback(
+    async (target: MedicineReportTarget) => {
+      setIsGeneratingReport(true);
+      const targetLabel = MEDICINE_REPORT_TARGET_LABELS[target];
+      const loadingId = showNotification(
+        `Preparing ${targetLabel.toLowerCase()} Excel workbook`,
+        "loading",
+      );
+
+      try {
+        const result = await refetchReport();
+
+        if (result.error || !result.data) {
+          throw new Error(
+            result.error?.message || "Failed to fetch report data",
+          );
+        }
+
+        await exportMedicineInventoryToExcel(
+          buildReportInput(result.data, target),
+        );
+
+        hideNotification(loadingId);
+        showNotification(
+          `${targetLabel} Excel workbook downloaded successfully`,
+          "success",
+        );
+      } catch (error) {
+        console.error("Error exporting medicine inventory Excel workbook:", error);
+        hideNotification(loadingId);
+        showNotification("Failed to export Excel workbook", "error");
+      } finally {
+        setIsGeneratingReport(false);
+      }
+    },
+    [buildReportInput, hideNotification, refetchReport, showNotification],
   );
 
   return (
@@ -473,6 +522,7 @@ const MedicineInventoryPage = () => {
                     disabled={isGeneratingReport}
                     isLoading={isGeneratingReport}
                     onGenerateReport={handleGenerateReport}
+                    onExportExcel={handleExportExcel}
                   />
                 </div>
               }
