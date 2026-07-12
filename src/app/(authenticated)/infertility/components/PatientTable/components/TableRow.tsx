@@ -193,6 +193,12 @@ const TableRow: React.FC<TableRowProps> = ({
               {row.patientAge ? `, ${row.patientAge}y` : ""}
               {row.bloodGroup ? ` • ${row.bloodGroup}` : ""}
             </div>
+            {(row.testCount ?? 0) > 0 ? (
+              <div className="mt-1 inline-flex items-center gap-1 rounded-full bg-emerald-50 px-1.5 py-0.5 text-[9px] font-semibold text-emerald-700">
+                <Beaker size={10} />
+                {row.testCount} {row.testCount === 1 ? "investigation" : "investigations"}
+              </div>
+            ) : null}
           </div>
         );
 
@@ -213,7 +219,7 @@ const TableRow: React.FC<TableRowProps> = ({
       case "husbandName":
         return (
           <div>
-            <div className="text-gray-700">{row.husbandName || "N/A"}</div>
+            <div className="text-gray-700">{row.husbandName || "Not recorded"}</div>
             {row.husbandAge && (
               <div className="text-[10px] text-gray-500">{row.husbandAge}y</div>
             )}
