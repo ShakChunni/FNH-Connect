@@ -38,6 +38,13 @@ function removeLastAddressSegment(address: string): string {
   return segments.length > 1 ? segments.slice(0, -1).join(", ") : "";
 }
 
+function getExactAddressForOutput(address: string): string {
+  const parsed = parseBangladeshAddress(address);
+  return parsed.district
+    ? formatBangladeshAddress(parsed.addressDetails, parsed.district)
+    : address.trim();
+}
+
 const PatientAddressFields: React.FC<PatientAddressFieldsProps> = ({
   value,
   onChange,
@@ -47,7 +54,9 @@ const PatientAddressFields: React.FC<PatientAddressFieldsProps> = ({
   const addressId = useId();
   const suggestionsId = `${addressId}-suggestions`;
   const parsed = useMemo(() => parseBangladeshAddress(value), [value]);
-  const [detailsDraft, setDetailsDraft] = useState(parsed.addressDetails);
+  const [addressDraft, setAddressDraft] = useState(() =>
+    getExactAddressForOutput(value),
+  );
   const [selectedDistrict, setSelectedDistrict] = useState<
     BangladeshDistrict | ""
   >(parsed.district);
@@ -55,7 +64,11 @@ const PatientAddressFields: React.FC<PatientAddressFieldsProps> = ({
   const addressInputRef = useRef<HTMLTextAreaElement>(null);
   const lastEmittedValueRef = useRef<string | null>(null);
 
-  const districtQuery = getLastAddressSegment(detailsDraft);
+  const currentAddress = useMemo(
+    () => parseBangladeshAddress(addressDraft),
+    [addressDraft],
+  );
+  const districtQuery = getLastAddressSegment(addressDraft);
   const suggestions = useMemo(
     () => getBangladeshDistrictSuggestions(districtQuery),
     [districtQuery],
@@ -67,17 +80,13 @@ const PatientAddressFields: React.FC<PatientAddressFieldsProps> = ({
       return;
     }
 
-    setDetailsDraft(parsed.addressDetails || value.trim());
+    setAddressDraft(getExactAddressForOutput(value));
     setSelectedDistrict(parsed.district);
     setIsSuggestionOpen(false);
   }, [parsed.addressDetails, parsed.district, value]);
 
   const emitAddress = useCallback(
-    (nextDetails: string, district: BangladeshDistrict | "") => {
-      const nextAddress = district
-        ? formatBangladeshAddress(nextDetails, district)
-        : nextDetails;
-
+    (nextAddress: string) => {
       lastEmittedValueRef.current = nextAddress;
       onChange(nextAddress);
     },
@@ -86,42 +95,47 @@ const PatientAddressFields: React.FC<PatientAddressFieldsProps> = ({
 
   const handleAddressChange = useCallback(
     (event: React.ChangeEvent<HTMLTextAreaElement>) => {
-      const nextDetails = event.target.value;
-      setDetailsDraft(nextDetails);
-
-      if (selectedDistrict) {
-        setIsSuggestionOpen(false);
-        emitAddress(nextDetails, selectedDistrict);
-        return;
-      }
-
-      setIsSuggestionOpen(getLastAddressSegment(nextDetails).length >= 2);
-      emitAddress(nextDetails, "");
+      const nextAddress = event.target.value;
+      const nextParsed = parseBangladeshAddress(nextAddress);
+      setAddressDraft(nextAddress);
+      setSelectedDistrict(nextParsed.district);
+      setIsSuggestionOpen(
+        !nextParsed.district && getLastAddressSegment(nextAddress).length >= 2,
+      );
+      emitAddress(nextAddress);
     },
-    [emitAddress, selectedDistrict],
+    [emitAddress],
   );
 
   const handleDistrictSelect = useCallback(
     (district: BangladeshDistrict) => {
-      const nextDetails = removeLastAddressSegment(detailsDraft);
-      setDetailsDraft(nextDetails);
+      const nextDetails = removeLastAddressSegment(addressDraft);
+      const nextAddress = formatBangladeshAddress(nextDetails, district);
+      setAddressDraft(nextAddress);
       setSelectedDistrict(district);
       setIsSuggestionOpen(false);
-      emitAddress(nextDetails, district);
+      emitAddress(nextAddress);
     },
-    [detailsDraft, emitAddress],
+    [addressDraft, emitAddress],
   );
 
   const clearDistrictSelection = useCallback(() => {
-    const nextDetails = detailsDraft.trim();
+    const nextDetails = removeLastAddressSegment(addressDraft);
     setSelectedDistrict("");
     setIsSuggestionOpen(getLastAddressSegment(nextDetails).length >= 2);
-    emitAddress(nextDetails, "");
+    setAddressDraft(nextDetails);
+    emitAddress(nextDetails);
     window.requestAnimationFrame(() => addressInputRef.current?.focus());
-  }, [detailsDraft, emitAddress]);
+  }, [addressDraft, emitAddress]);
 
   const showSuggestions =
     isSuggestionOpen && !selectedDistrict && suggestions.length > 0;
+  const exactAddressForOutput = currentAddress.district
+    ? formatBangladeshAddress(
+        currentAddress.addressDetails,
+        currentAddress.district,
+      )
+    : addressDraft.trim();
 
   return (
     <section
@@ -155,7 +169,7 @@ const PatientAddressFields: React.FC<PatientAddressFieldsProps> = ({
         <textarea
           id={addressId}
           ref={addressInputRef}
-          value={detailsDraft}
+          value={addressDraft}
           onChange={handleAddressChange}
           onFocus={() => {
             if (!selectedDistrict && districtQuery.length >= 2) {
@@ -173,7 +187,7 @@ const PatientAddressFields: React.FC<PatientAddressFieldsProps> = ({
               ? "cursor-not-allowed border-gray-300 bg-gray-200"
               : selectedDistrict
                 ? "border-green-300 bg-white shadow-sm"
-                : detailsDraft.trim()
+                : addressDraft.trim()
                   ? "border-green-700 bg-white shadow-sm"
                   : "border-gray-300 bg-white shadow-sm"
           }`}
@@ -237,6 +251,33 @@ const PatientAddressFields: React.FC<PatientAddressFieldsProps> = ({
           )}
         </div>
 
+        <div className="mt-3 rounded-xl border border-indigo-200 bg-white px-3 py-2.5 shadow-sm sm:px-4 sm:py-3">
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-indigo-500 sm:text-xs">
+              Exact address on report / receipt
+            </p>
+            {currentAddress.district ? (
+              <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-green-50 px-2 py-0.5 text-[10px] font-semibold text-green-700">
+                <Check className="h-3 w-3" /> Ready
+              </span>
+            ) : null}
+          </div>
+          <p
+            className={`mt-1.5 break-words text-xs leading-5 sm:text-sm ${
+              exactAddressForOutput
+                ? "font-semibold text-gray-800"
+                : "font-medium text-gray-400"
+            }`}
+          >
+            {exactAddressForOutput || "Your complete address will appear here"}
+          </p>
+          {!currentAddress.district && addressDraft.trim() ? (
+            <p className="mt-1 text-[11px] font-medium text-amber-700 sm:text-xs">
+              Select a zilla from the suggestions before saving this patient.
+            </p>
+          ) : null}
+        </div>
+
         {parsed.isLegacy && isAutofilled ? (
           <div
             role="status"
@@ -244,8 +285,8 @@ const PatientAddressFields: React.FC<PatientAddressFieldsProps> = ({
           >
             <MapPin className="mt-0.5 h-4 w-4 shrink-0" />
             <p>
-              This saved address uses an older district spelling. Choose a
-              suggestion if you want to standardize it.
+              This saved address used an older zilla spelling. The standard
+              zilla name is shown above; use × if you need to edit it.
             </p>
           </div>
         ) : null}
