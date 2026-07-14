@@ -27,6 +27,7 @@ import { useInfertilityBMI } from "../../hooks/useInfertilityBMI";
 import { useInfertilityScrollSpy } from "../../hooks/useInfertilityScrollSpy";
 import { transformInfertilityDataForApi } from "../../utils/formTransformers";
 import { useNotification } from "@/hooks/useNotification";
+import { hasRequiredBangladeshDistrict } from "@/lib/bangladeshAddress";
 
 interface EditDataProps {
   isOpen: boolean;
@@ -80,7 +81,7 @@ const EditDataInfertility: React.FC<EditDataProps> = ({
   const isFormValid = useMemo(() => {
     return (
       patientData.firstName.trim() !== "" &&
-      patientData.address.trim() !== "" &&
+      hasRequiredBangladeshDistrict(patientData.address) &&
       validationStatus.phone &&
       validationStatus.email
     );
@@ -95,8 +96,8 @@ const EditDataInfertility: React.FC<EditDataProps> = ({
   const handleSubmit = useCallback(() => {
     if (isSubmitting) return;
 
-    if (!patientData.address.trim()) {
-      showNotification("Patient address is required", "error");
+    if (!hasRequiredBangladeshDistrict(patientData.address)) {
+      showNotification("Patient district is required", "error");
       return;
     }
 

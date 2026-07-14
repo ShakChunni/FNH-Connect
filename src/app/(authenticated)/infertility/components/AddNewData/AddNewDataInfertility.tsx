@@ -36,6 +36,7 @@ import { InvestigationInformation } from "../form-sections/InvestigationInformat
 import { useInfertilityTestInfo } from "../../stores";
 import { useNotification } from "@/hooks/useNotification";
 import type { AddInfertilityPatientRequest, AddInfertilityPatientResponse } from "../../types";
+import { hasRequiredBangladeshDistrict } from "@/lib/bangladeshAddress";
 
 
 interface AddNewDataProps {
@@ -141,7 +142,7 @@ const AddNewDataInfertility: React.FC<AddNewDataProps> = ({
   const isFormValid = useMemo(() => {
     return (
       patientData.firstName.trim() !== "" &&
-      patientData.address.trim() !== "" &&
+      hasRequiredBangladeshDistrict(patientData.address) &&
       validationStatus.phone &&
       validationStatus.email
     );
@@ -156,8 +157,8 @@ const AddNewDataInfertility: React.FC<AddNewDataProps> = ({
   const handleSubmit = useCallback(() => {
     if (isSubmitting) return;
 
-    if (!patientData.address.trim()) {
-      showNotification("Patient address is required", "error");
+    if (!hasRequiredBangladeshDistrict(patientData.address)) {
+      showNotification("Patient district is required", "error");
       return;
     }
 

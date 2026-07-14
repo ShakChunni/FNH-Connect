@@ -31,6 +31,7 @@ import { useEditAdmissionData } from "../../hooks/useEditAdmissionData";
 import { useNotification } from "@/hooks/useNotification";
 import { isAdminRole, isReceptionistRole } from "@/lib/roles";
 import { AdmissionPatientData } from "../../types";
+import { hasRequiredBangladeshDistrict } from "@/lib/bangladeshAddress";
 
 interface EditDataProps {
   isOpen: boolean;
@@ -142,8 +143,8 @@ const EditDataAdmission: React.FC<EditDataProps> = ({
     if (!patientData.firstName.trim()) {
       errors.push("Patient name is required");
     }
-    if (!patientData.address.trim()) {
-      errors.push("Patient address is required");
+    if (!hasRequiredBangladeshDistrict(patientData.address)) {
+      errors.push("Patient district is required");
     }
 
     medicineChargeItems.forEach((item, index) => {
