@@ -256,7 +256,7 @@ const PatientAddressFields: React.FC<PatientAddressFieldsProps> = ({
             <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-indigo-500 sm:text-xs">
               Exact address on report / receipt
             </p>
-            {currentAddress.district ? (
+            {exactAddressForOutput ? (
               <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-green-50 px-2 py-0.5 text-[10px] font-semibold text-green-700">
                 <Check className="h-3 w-3" /> Ready
               </span>
@@ -271,9 +271,14 @@ const PatientAddressFields: React.FC<PatientAddressFieldsProps> = ({
           >
             {exactAddressForOutput || "Your complete address will appear here"}
           </p>
-          {!currentAddress.district && addressDraft.trim() ? (
+          {!exactAddressForOutput ? (
             <p className="mt-1 text-[11px] font-medium text-amber-700 sm:text-xs">
-              Select a zilla from the suggestions before saving this patient.
+              Enter the patient address before saving.
+            </p>
+          ) : !currentAddress.district ? (
+            <p className="mt-1 text-[11px] font-medium text-gray-500 sm:text-xs">
+              You can save the address as typed, or choose a zilla suggestion
+              to standardize its spelling.
             </p>
           ) : null}
         </div>

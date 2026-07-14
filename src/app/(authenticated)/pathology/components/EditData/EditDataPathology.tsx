@@ -28,7 +28,6 @@ import { transformPathologyDataForEdit } from "../../utils/formTransformers";
 import { PathologyPatientData } from "../../types";
 import { useNotification } from "@/hooks/useNotification";
 import { serializeDateOfBirth } from "@/lib/dateOfBirth";
-import { hasRequiredBangladeshDistrict } from "@/lib/bangladeshAddress";
 
 interface EditDataProps {
   isOpen: boolean;
@@ -179,8 +178,8 @@ const EditDataPathology: React.FC<EditDataProps> = ({
     if (!patientData.gender.trim()) {
       errors.push("Patient gender is required");
     }
-    if (!hasRequiredBangladeshDistrict(patientData.address)) {
-      errors.push("Patient district is required");
+    if (!patientData.address.trim()) {
+      errors.push("Patient address is required");
     }
     if (pathologyInfo.selectedTests.length === 0) {
       errors.push("At least one test must be selected");

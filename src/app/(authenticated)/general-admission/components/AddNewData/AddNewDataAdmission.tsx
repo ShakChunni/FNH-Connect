@@ -38,7 +38,6 @@ import { useAdmissionScrollSpy } from "../../hooks";
 import { useAddAdmissionData } from "../../hooks/useAddAdmissionData";
 import { useNotification } from "@/hooks/useNotification";
 import { AdmissionPatientData } from "../../types";
-import { hasRequiredBangladeshDistrict } from "@/lib/bangladeshAddress";
 import { DEFAULT_ADMISSION_MEDICINE_BILLING_ENABLED } from "@/lib/admissionMedicineBilling";
 
 interface AddNewDataProps {
@@ -137,8 +136,8 @@ const AddNewDataAdmission: React.FC<AddNewDataProps> = ({
     if (!patientData.dateOfBirth) {
       errors.push("Patient date of birth is required");
     }
-    if (!hasRequiredBangladeshDistrict(patientData.address)) {
-      errors.push("Patient district is required");
+    if (!patientData.address.trim()) {
+      errors.push("Patient address is required");
     }
     if (!patientData.guardianName?.trim()) {
       errors.push("Guardian name is required");

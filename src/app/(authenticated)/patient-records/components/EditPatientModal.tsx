@@ -15,7 +15,6 @@ import type { PatientData } from "../types";
 import { useUpdatePatient } from "../hooks";
 import { useNotificationContext } from "@/app/NotificationProvider";
 import { parseDateOfBirth, serializeDateOfBirth } from "@/lib/dateOfBirth";
-import { hasRequiredBangladeshDistrict } from "@/lib/bangladeshAddress";
 
 interface EditPatientModalProps {
   isOpen: boolean;
@@ -89,8 +88,8 @@ export const EditPatientModal: React.FC<EditPatientModalProps> = ({
       return;
     }
 
-    if (!hasRequiredBangladeshDistrict(formData.address)) {
-      showNotification("Patient district is required", "error");
+    if (!formData.address.trim()) {
+      showNotification("Patient address is required", "error");
       return;
     }
 

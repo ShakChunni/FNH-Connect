@@ -281,6 +281,11 @@ export default function DoctorChamberForm({
       scrollToSection("patient");
       return;
     }
+    if (!patient.address.trim()) {
+      setFormError("Patient address is required.");
+      scrollToSection("patient");
+      return;
+    }
     if (!visitingChargeText.trim() || !Number.isFinite(numericVisitingCharge) || numericVisitingCharge < 0) {
       setFormError("Visiting charge is required. Enter 0 if there is no charge.");
       scrollToSection("billing");
