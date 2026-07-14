@@ -117,7 +117,7 @@ const patientInputSchema = z.object({
   fullName: z.string().trim().min(1, "Patient full name is required").max(205),
   gender: z.string().trim().min(1, "Patient gender is required").max(30),
   dateOfBirth: dateOfBirthSchema,
-  address: z.string().trim().max(1000),
+  address: z.string().trim().min(1, "Patient address is required").max(1000),
   phoneNumber: z.string().trim().max(30),
   email: z.string().trim().email("Invalid email").or(z.literal("")),
   bloodGroup: z.string().trim().max(10),

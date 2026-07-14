@@ -28,7 +28,6 @@ import { useFetchDoctors } from "../../hooks";
 import { transformPathologyDataForApi } from "../../utils/formTransformers";
 import { useNotification } from "@/hooks/useNotification";
 import { serializeDateOfBirth } from "@/lib/dateOfBirth";
-import { hasRequiredBangladeshDistrict } from "@/lib/bangladeshAddress";
 import type { PathologyPatientData } from "../../types";
 
 interface AddNewDataProps {
@@ -179,8 +178,8 @@ const AddNewDataPathology: React.FC<AddNewDataProps> = ({
     if (!patientData.dateOfBirth) {
       errors.push("Patient date of birth is required");
     }
-    if (!hasRequiredBangladeshDistrict(patientData.address)) {
-      errors.push("Patient district is required");
+    if (!patientData.address.trim()) {
+      errors.push("Patient address is required");
     }
     if (pathologyInfo.selectedTests.length === 0) {
       errors.push("At least one test must be selected");
