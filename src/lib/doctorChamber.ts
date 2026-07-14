@@ -40,6 +40,7 @@ export interface DoctorChamberPatientInput {
 
 export interface DoctorChamberVisitInput {
   patient: DoctorChamberPatientInput;
+  includeUltrasound: boolean;
   visitingCharge: number;
   fees: DoctorChamberFeeInput[];
   discountType: DoctorChamberDiscountType | null;
@@ -143,6 +144,7 @@ const discountValueSchema = z
 
 export const doctorChamberVisitSchema = z.object({
   patient: patientInputSchema,
+  includeUltrasound: z.boolean().default(false),
   visitingCharge: z
     .number()
     .finite()

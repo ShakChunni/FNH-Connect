@@ -99,6 +99,25 @@ const LEGACY_ALIAS_TO_CANONICAL: Record<string, BangladeshDistrict> = {
   "cox’s bazar": "Cox's Bazar",
 };
 
+function normalizeDistrictSearch(value: string): string {
+  return value
+    .toLowerCase()
+    .replace(/[’']/g, "")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim()
+    .replace(/\s+/g, " ");
+}
+
+const DISTRICT_SEARCH_ENTRIES = BANGLADESH_DISTRICTS.map((district) => ({
+  district,
+  terms: [
+    district,
+    ...Object.entries(LEGACY_ALIAS_TO_CANONICAL)
+      .filter(([, canonical]) => canonical === district)
+      .map(([alias]) => alias),
+  ].map(normalizeDistrictSearch),
+}));
+
 const CANONICAL_NAME_SET: ReadonlySet<string> = new Set(
   BANGLADESH_DISTRICTS.map((name) => name.toLowerCase()),
 );
@@ -132,6 +151,26 @@ export function isBangladeshDistrict(
   value: string,
 ): value is BangladeshDistrict {
   return CANONICAL_NAME_SET.has(value.trim().toLowerCase());
+}
+
+/**
+ * Returns canonical zilla names for the manual address autocomplete.
+ * Suggestions start after two typed characters and include legacy spellings.
+ */
+export function getBangladeshDistrictSuggestions(
+  query: string,
+): BangladeshDistrict[] {
+  const normalizedQuery = normalizeDistrictSearch(query);
+  if (normalizedQuery.length < 2) return [];
+
+  return DISTRICT_SEARCH_ENTRIES
+    .filter(({ terms }) =>
+      terms.some(
+        (term) => term.includes(normalizedQuery) || normalizedQuery.includes(term),
+      ),
+    )
+    .map(({ district }) => district)
+    .slice(0, 8);
 }
 
 export function formatBangladeshAddress(

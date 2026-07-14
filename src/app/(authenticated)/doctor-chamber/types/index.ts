@@ -95,6 +95,7 @@ export const EMPTY_PATIENT: DoctorChamberPatientInput = {
 
 export const EMPTY_VISIT: DoctorChamberVisitInput = {
   patient: EMPTY_PATIENT,
+  includeUltrasound: false,
   visitingCharge: 0,
   fees: [],
   discountType: "value",
