@@ -30,7 +30,9 @@ export default function DoctorChamberOverview({
   if (!visit) return null;
 
   const charges = [
-    { name: visit.ultrasoundName, amount: visit.ultrasoundCharge, fixed: true },
+    ...(visit.ultrasoundCharge > 0
+      ? [{ name: visit.ultrasoundName, amount: visit.ultrasoundCharge, fixed: true }]
+      : []),
     { name: "Visiting charge", amount: visit.visitingCharge, fixed: false },
     ...visit.fees.map((fee) => ({ name: fee.feeName, amount: fee.amount, fixed: false })),
   ];

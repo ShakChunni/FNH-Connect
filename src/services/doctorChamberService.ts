@@ -186,8 +186,11 @@ function roundCurrency(value: number): number {
 }
 
 function getBillingAmounts(input: DoctorChamberVisitSchema) {
+  const ultrasoundCharge = input.includeUltrasound
+    ? DOCTOR_CHAMBER_CONFIG.ultrasoundCharge
+    : 0;
   const subtotal = roundCurrency(
-    DOCTOR_CHAMBER_CONFIG.ultrasoundCharge +
+    ultrasoundCharge +
       input.visitingCharge +
       input.fees.reduce((sum, fee) => sum + fee.amount, 0),
   );
@@ -199,6 +202,7 @@ function getBillingAmounts(input: DoctorChamberVisitSchema) {
   const discountAmount = roundCurrency(Math.min(rawDiscountAmount, subtotal));
 
   return {
+    ultrasoundCharge,
     subtotal,
     discountType: input.discountValue === null ? null : input.discountType,
     discountValue: input.discountValue,
@@ -216,10 +220,15 @@ function getChargeDescription(
   );
 
   const chargeLines = [
-    `${DOCTOR_CHAMBER_CONFIG.ultrasoundName}: BDT ${DOCTOR_CHAMBER_CONFIG.ultrasoundCharge}`,
     `Visiting charge: BDT ${input.visitingCharge.toFixed(2)}`,
     ...extraCharges,
   ];
+
+  if (billing.ultrasoundCharge > 0) {
+    chargeLines.unshift(
+      `${DOCTOR_CHAMBER_CONFIG.ultrasoundName}: BDT ${billing.ultrasoundCharge.toFixed(2)}`,
+    );
+  }
 
   if (billing.discountAmount > 0) {
     chargeLines.push(
@@ -512,7 +521,7 @@ export async function createDoctorChamberVisit(
         departmentId: department.id,
         doctorId: doctor.id,
         visitNumber,
-        ultrasoundCharge: DOCTOR_CHAMBER_CONFIG.ultrasoundCharge,
+        ultrasoundCharge: billing.ultrasoundCharge,
         visitingCharge: input.visitingCharge,
         subtotal: billing.subtotal,
         discountType: billing.discountType,
@@ -624,7 +633,7 @@ export async function updateDoctorChamberVisit(
       where: { id },
       data: {
         departmentId: department.id,
-        ultrasoundCharge: DOCTOR_CHAMBER_CONFIG.ultrasoundCharge,
+        ultrasoundCharge: billing.ultrasoundCharge,
         visitingCharge: input.visitingCharge,
         subtotal: billing.subtotal,
         discountType: billing.discountType,

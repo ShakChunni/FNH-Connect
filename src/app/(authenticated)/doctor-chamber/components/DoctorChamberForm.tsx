@@ -153,7 +153,7 @@ function SectionHeader({ section }: { section: ChamberSection }) {
     ? "Search for an existing patient or add a new patient record."
     : section === "doctor"
       ? "The consulting doctor is fixed for this private chamber."
-      : "Ultra Sono is fixed at BDT 800. Add visiting and other charges, then apply an optional discount.";
+      : "Ultra Sono is optional at BDT 800. Add visiting and other charges, then apply an optional discount.";
 
   return (
     <div className={`mb-4 rounded-lg border bg-gradient-to-r p-4 shadow-sm transition-colors duration-300 sm:mb-5 sm:rounded-xl sm:p-5 md:mb-6 md:p-6 ${config.wrapper}`}>
@@ -183,6 +183,7 @@ export default function DoctorChamberForm({
   const debouncedPatientSearch = useDebounce(patientSearch, 250);
   const { data: patientResults = [], isFetching: isSearching } = useDoctorChamberPatientSearch(debouncedPatientSearch);
   const [visitingChargeText, setVisitingChargeText] = useState("0");
+  const [includeUltrasound, setIncludeUltrasound] = useState(false);
   const [fees, setFees] = useState<FeeDraft[]>([]);
   const [discountType, setDiscountType] = useState<DoctorChamberDiscountType>("value");
   const [discountValueText, setDiscountValueText] = useState("");
@@ -200,6 +201,7 @@ export default function DoctorChamberForm({
     setPatient(getInitialPatient(editingVisit));
     setPatientSearch("");
     setIsPatientSearchOpen(false);
+    setIncludeUltrasound(editingVisit ? editingVisit.ultrasoundCharge > 0 : false);
     setVisitingChargeText(editingVisit ? String(editingVisit.visitingCharge) : "0");
     setFees(editingVisit ? editingVisit.fees.map((fee) => ({ id: fee.id, feeName: fee.feeName, amountText: String(fee.amount) })) : []);
     setDiscountType(editingVisit?.discountType ?? "value");
@@ -227,7 +229,7 @@ export default function DoctorChamberForm({
     const amount = Number(fee.amountText);
     return sum + (Number.isFinite(amount) ? amount : 0);
   }, 0);
-  const subtotal = DOCTOR_CHAMBER_CONFIG.ultrasoundCharge +
+  const subtotal = (includeUltrasound ? DOCTOR_CHAMBER_CONFIG.ultrasoundCharge : 0) +
     (Number.isFinite(numericVisitingCharge) ? numericVisitingCharge : 0) +
     numericExtraCharges;
   const numericDiscountValue = Number(discountValueText);
@@ -310,6 +312,7 @@ export default function DoctorChamberForm({
         ...patient,
         fullName: [patient.firstName.trim(), patient.lastName.trim()].filter(Boolean).join(" "),
       },
+      includeUltrasound,
       visitingCharge: numericVisitingCharge,
       fees: fees.map((fee) => ({ id: fee.id, feeName: fee.feeName.trim(), amount: Number(fee.amountText) })),
       discountType: discountValueText.trim() ? discountType : null,
@@ -434,6 +437,16 @@ export default function DoctorChamberForm({
                           autofilled={Boolean(patient.id)}
                         />
                       </div>
+                      <div>
+                        <label className={labelClassName}><Droplets className="mr-1 inline h-3.5 w-3.5 text-red-500" />Blood Group</label>
+                        <BloodGroupDropdown
+                          value={patient.bloodGroup}
+                          onSelect={(value) => updatePatient("bloodGroup", value)}
+                          options={["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"]}
+                          disabled={isBusy}
+                          inputClassName={filledInputClassName(patient.bloodGroup)}
+                        />
+                      </div>
                       <div className="md:col-span-2">
                         <label className={labelClassName}><Calendar className="mr-1 inline h-3.5 w-3.5 text-indigo-500" />Date of Birth</label>
                         <div className={isBusy ? "pointer-events-none opacity-60" : undefined}>
@@ -466,16 +479,6 @@ export default function DoctorChamberForm({
                             isAutofilled={Boolean(patient.id)}
                           />
                         </div>
-                      </div>
-                      <div>
-                        <label className={labelClassName}><Droplets className="mr-1 inline h-3.5 w-3.5 text-red-500" />Blood Group</label>
-                        <BloodGroupDropdown
-                          value={patient.bloodGroup}
-                          onSelect={(value) => updatePatient("bloodGroup", value)}
-                          options={["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"]}
-                          disabled={isBusy}
-                          inputClassName={filledInputClassName(patient.bloodGroup)}
-                        />
                       </div>
                     </div>
 
@@ -541,11 +544,47 @@ export default function DoctorChamberForm({
                   <div className="space-y-4 sm:space-y-5">
                     <div className="overflow-hidden rounded-xl border border-gray-200">
                       <div className="grid grid-cols-[1fr_auto] items-center gap-3 border-b border-gray-100 bg-gray-50 px-3 py-3 text-sm sm:grid-cols-[1fr_140px_90px]"><span className="font-semibold text-gray-700">Charge</span><span className="hidden font-semibold text-gray-700 sm:block">Amount (BDT)</span><span className="text-right font-semibold text-gray-700">Status</span></div>
-                      <div className="grid grid-cols-[1fr_auto] items-center gap-3 border-b border-gray-100 px-3 py-3 text-sm sm:grid-cols-[1fr_140px_90px]"><div><p className="font-semibold text-gray-800">{DOCTOR_CHAMBER_CONFIG.ultrasoundName}</p><p className="text-xs text-gray-500">{DOCTOR_CHAMBER_CONFIG.ultrasoundCode}</p></div><span className="font-semibold text-gray-800 sm:text-left">৳ {DOCTOR_CHAMBER_CONFIG.ultrasoundCharge.toLocaleString("en-BD")}</span><span className="flex items-center justify-end gap-1 text-xs font-bold text-emerald-600"><Check className="h-4 w-4" /> Fixed</span></div>
+                      <button
+                        type="button"
+                        role="checkbox"
+                        aria-checked={includeUltrasound}
+                        onClick={() => setIncludeUltrasound((current) => !current)}
+                        disabled={isBusy}
+                        className={`grid w-full cursor-pointer grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 border-b border-gray-100 px-3 py-3 text-left text-sm transition-colors duration-200 sm:grid-cols-[auto_1fr_140px_90px] ${includeUltrasound ? "bg-emerald-50/70" : "bg-white hover:bg-gray-50"} disabled:cursor-not-allowed disabled:opacity-60`}
+                      >
+                        <span className={`flex h-5 w-5 items-center justify-center rounded-md border-2 transition-all duration-200 ${includeUltrasound ? "border-emerald-600 bg-emerald-600 text-white" : "border-gray-300 bg-white text-transparent"}`}>
+                          <Check className="h-3.5 w-3.5" />
+                        </span>
+                        <span>
+                          <span className="block font-semibold text-gray-800">{DOCTOR_CHAMBER_CONFIG.ultrasoundName}</span>
+                          <span className="block text-xs text-gray-500">{DOCTOR_CHAMBER_CONFIG.ultrasoundCode} · optional</span>
+                        </span>
+                        <span className="font-semibold text-gray-800">৳ {DOCTOR_CHAMBER_CONFIG.ultrasoundCharge.toLocaleString("en-BD")}</span>
+                        <span className={`flex items-center justify-end gap-1 text-xs font-bold ${includeUltrasound ? "text-emerald-600" : "text-gray-400"}`}>
+                          {includeUltrasound ? <><Check className="h-4 w-4" /> Selected</> : "Not selected"}
+                        </span>
+                      </button>
                       <div className="grid grid-cols-[1fr_auto] items-center gap-3 border-b border-gray-100 px-3 py-3 sm:grid-cols-[1fr_140px_90px]"><div><p className="font-semibold text-gray-800">Visiting Charge<span className="text-red-500"> *</span></p><p className="text-xs text-gray-500">Manual input; enter 0 when waived.</p></div><NumberInput min="0" step="0.01" value={visitingChargeText} onChange={(event) => setVisitingChargeText(event.target.value)} className={`${inputClassName} w-32 sm:w-full`} disabled={isBusy} aria-label="Visiting charge in BDT" /><span className="hidden text-right text-xs font-bold text-indigo-600 sm:block">Manual</span></div>
-                      {fees.map((fee, index) => <div key={fee.id ?? `new-${index}`} className="grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-3 border-b border-gray-100 px-3 py-3 sm:grid-cols-[1fr_140px_90px_36px]"><input value={fee.feeName} onChange={(event) => updateFee(index, "feeName", event.target.value)} className={inputClassName} placeholder="Charge name" disabled={isBusy} aria-label="Additional charge name" /><NumberInput min="0" step="0.01" value={fee.amountText} onChange={(event) => updateFee(index, "amountText", event.target.value)} className={`${inputClassName} w-32 sm:w-full`} placeholder="0" disabled={isBusy} aria-label="Additional charge amount in BDT" /><span className="hidden text-right text-xs font-bold text-indigo-600 sm:block">Manual</span><button type="button" onClick={() => setFees((current) => current.filter((_, feeIndex) => feeIndex !== index))} className="cursor-pointer rounded-lg p-2 text-red-500 hover:bg-red-50" title="Remove charge" disabled={isBusy}><Trash2 className="h-4 w-4" /></button></div>)}
+                      <AnimatePresence initial={false} mode="popLayout">
+                        {fees.map((fee, index) => (
+                          <motion.div
+                            key={fee.id ?? `new-${index}`}
+                            layout
+                            initial={{ opacity: 0, height: 0, y: -12 }}
+                            animate={{ opacity: 1, height: "auto", y: 0 }}
+                            exit={{ opacity: 0, height: 0, y: -8, scale: 0.98 }}
+                            transition={{ duration: 0.24, ease: "easeOut" }}
+                            className="grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-3 overflow-hidden border-b border-gray-100 px-3 py-3 sm:grid-cols-[1fr_140px_90px_36px]"
+                          >
+                            <input value={fee.feeName} onChange={(event) => updateFee(index, "feeName", event.target.value)} className={inputClassName} placeholder="Charge name" disabled={isBusy} aria-label="Additional charge name" />
+                            <NumberInput min="0" step="0.01" value={fee.amountText} onChange={(event) => updateFee(index, "amountText", event.target.value)} className={`${inputClassName} w-32 sm:w-full`} placeholder="0" disabled={isBusy} aria-label="Additional charge amount in BDT" />
+                            <span className="hidden text-right text-xs font-bold text-indigo-600 sm:block">Manual</span>
+                            <motion.button type="button" whileHover={{ scale: 1.08 }} whileTap={{ scale: 0.92 }} onClick={() => setFees((current) => current.filter((_, feeIndex) => feeIndex !== index))} className="cursor-pointer rounded-lg p-2 text-red-500 transition-colors hover:bg-red-50" title="Remove charge" disabled={isBusy}><Trash2 className="h-4 w-4" /></motion.button>
+                          </motion.div>
+                        ))}
+                      </AnimatePresence>
                     </div>
-                    <button type="button" onClick={() => setFees((current) => [...current, { feeName: "", amountText: "0" }])} disabled={isBusy || fees.length >= 20} className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-dashed border-green-300 px-3 py-2 text-sm font-semibold text-green-700 hover:bg-green-50 disabled:cursor-not-allowed disabled:opacity-50"><CirclePlus className="h-4 w-4" />Add another charge</button>
+                    <motion.button type="button" whileHover={{ y: -1 }} whileTap={{ scale: 0.98 }} onClick={() => setFees((current) => [...current, { feeName: "", amountText: "0" }])} disabled={isBusy || fees.length >= 20} className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-dashed border-green-300 px-3 py-2 text-sm font-semibold text-green-700 transition-colors hover:bg-green-50 disabled:cursor-not-allowed disabled:opacity-50"><CirclePlus className="h-4 w-4" />Add another charge</motion.button>
                     <div className="rounded-2xl border border-green-200 bg-green-50/50 p-4">
                       <label className={labelClassName}>Discount from total charge</label>
                       <div className="flex flex-col gap-3 sm:flex-row">

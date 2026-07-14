@@ -8,10 +8,11 @@ import React, {
   useRef,
   useState,
 } from "react";
-import { AlertTriangle, MapPin, User } from "lucide-react";
-import DistrictDropdown from "./DistrictDropdown";
+import { Check, MapPin, User, X } from "lucide-react";
+import { DropdownPortal } from "@/components/ui/DropdownPortal";
 import {
   formatBangladeshAddress,
+  getBangladeshDistrictSuggestions,
   parseBangladeshAddress,
   type BangladeshDistrict,
 } from "@/lib/bangladeshAddress";
@@ -23,18 +24,42 @@ interface PatientAddressFieldsProps {
   disabled?: boolean;
 }
 
+function getLastAddressSegment(address: string): string {
+  const segments = address.split(",").map((segment) => segment.trim());
+  return segments[segments.length - 1] ?? "";
+}
+
+function removeLastAddressSegment(address: string): string {
+  const segments = address
+    .split(",")
+    .map((segment) => segment.trim())
+    .filter(Boolean);
+
+  return segments.length > 1 ? segments.slice(0, -1).join(", ") : "";
+}
+
 const PatientAddressFields: React.FC<PatientAddressFieldsProps> = ({
   value,
   onChange,
   isAutofilled = false,
   disabled = false,
 }) => {
-  const mainAddressId = useId();
-  const otherAddressId = useId();
+  const addressId = useId();
+  const suggestionsId = `${addressId}-suggestions`;
   const parsed = useMemo(() => parseBangladeshAddress(value), [value]);
-  const { addressDetails, district, isLegacy } = parsed;
-  const [detailsDraft, setDetailsDraft] = useState(addressDetails);
+  const [detailsDraft, setDetailsDraft] = useState(parsed.addressDetails);
+  const [selectedDistrict, setSelectedDistrict] = useState<
+    BangladeshDistrict | ""
+  >(parsed.district);
+  const [isSuggestionOpen, setIsSuggestionOpen] = useState(false);
+  const addressInputRef = useRef<HTMLTextAreaElement>(null);
   const lastEmittedValueRef = useRef<string | null>(null);
+
+  const districtQuery = getLastAddressSegment(detailsDraft);
+  const suggestions = useMemo(
+    () => getBangladeshDistrictSuggestions(districtQuery),
+    [districtQuery],
+  );
 
   useEffect(() => {
     if (value === lastEmittedValueRef.current) {
@@ -42,133 +67,185 @@ const PatientAddressFields: React.FC<PatientAddressFieldsProps> = ({
       return;
     }
 
-    setDetailsDraft(addressDetails);
-  }, [addressDetails, value]);
+    setDetailsDraft(parsed.addressDetails || value.trim());
+    setSelectedDistrict(parsed.district);
+    setIsSuggestionOpen(false);
+  }, [parsed.addressDetails, parsed.district, value]);
 
-  const canonicalPreview = useMemo(
-    () => formatBangladeshAddress(detailsDraft, district),
-    [detailsDraft, district],
-  );
-  const showLegacyWarning = isLegacy && isAutofilled;
-
-  const handleDistrictChange = useCallback(
-    (next: BangladeshDistrict) => {
-      const nextAddress = formatBangladeshAddress(detailsDraft, next);
-      setDetailsDraft(parseBangladeshAddress(nextAddress).addressDetails);
-      lastEmittedValueRef.current = nextAddress;
-      onChange(nextAddress);
-    },
-    [detailsDraft, onChange],
-  );
-
-  const handleDetailsChange = useCallback(
-    (event: React.ChangeEvent<HTMLInputElement>) => {
-      const nextDetails = event.target.value;
+  const emitAddress = useCallback(
+    (nextDetails: string, district: BangladeshDistrict | "") => {
       const nextAddress = district
-        ? `${nextDetails}, ${district}`
+        ? formatBangladeshAddress(nextDetails, district)
         : nextDetails;
 
-      setDetailsDraft(nextDetails);
       lastEmittedValueRef.current = nextAddress;
       onChange(nextAddress);
     },
-    [district, onChange],
+    [onChange],
   );
+
+  const handleAddressChange = useCallback(
+    (event: React.ChangeEvent<HTMLTextAreaElement>) => {
+      const nextDetails = event.target.value;
+      setDetailsDraft(nextDetails);
+
+      if (selectedDistrict) {
+        setIsSuggestionOpen(false);
+        emitAddress(nextDetails, selectedDistrict);
+        return;
+      }
+
+      setIsSuggestionOpen(getLastAddressSegment(nextDetails).length >= 2);
+      emitAddress(nextDetails, "");
+    },
+    [emitAddress, selectedDistrict],
+  );
+
+  const handleDistrictSelect = useCallback(
+    (district: BangladeshDistrict) => {
+      const nextDetails = removeLastAddressSegment(detailsDraft);
+      setDetailsDraft(nextDetails);
+      setSelectedDistrict(district);
+      setIsSuggestionOpen(false);
+      emitAddress(nextDetails, district);
+    },
+    [detailsDraft, emitAddress],
+  );
+
+  const clearDistrictSelection = useCallback(() => {
+    const nextDetails = detailsDraft.trim();
+    setSelectedDistrict("");
+    setIsSuggestionOpen(getLastAddressSegment(nextDetails).length >= 2);
+    emitAddress(nextDetails, "");
+    window.requestAnimationFrame(() => addressInputRef.current?.focus());
+  }, [detailsDraft, emitAddress]);
+
+  const showSuggestions =
+    isSuggestionOpen && !selectedDistrict && suggestions.length > 0;
 
   return (
     <section
       aria-label="Patient address"
       className="rounded-xl border-2 border-indigo-100 bg-indigo-50/40 p-3 sm:p-4"
     >
-      <div className="flex flex-wrap items-center justify-between gap-2 mb-2 sm:mb-3">
+      <div className="mb-2 flex flex-wrap items-center justify-between gap-2 sm:mb-3">
         <div className="flex items-center gap-2">
           <span className="inline-flex h-6 w-6 items-center justify-center rounded-md bg-indigo-100 text-indigo-600">
-            <MapPin className="w-3.5 h-3.5" />
+            <MapPin className="h-3.5 w-3.5" />
           </span>
-          <span className="text-xs sm:text-sm font-semibold text-indigo-800">
+          <span className="text-xs font-semibold text-indigo-800 sm:text-sm">
             Patient Address
           </span>
         </div>
         {isAutofilled && value ? (
-          <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 text-xs font-semibold border border-blue-200 shadow-sm">
-            <User className="w-3 h-3 mr-1 text-blue-500" /> Auto-filled
+          <span className="hidden items-center rounded-full border border-blue-200 bg-blue-100 px-2 py-0.5 text-xs font-semibold text-blue-700 shadow-sm sm:inline-flex">
+            <User className="mr-1 h-3 w-3 text-blue-500" /> Auto-filled
           </span>
         ) : null}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-[minmax(220px,0.8fr)_minmax(0,1.6fr)] gap-4">
-        <div>
-          <label
-            htmlFor={mainAddressId}
-            className="block text-gray-700 text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2"
-          >
-            Main Address (District)
-            <span className="text-red-500">*</span>
-          </label>
-          <DistrictDropdown
-            id={mainAddressId}
-            value={district}
-            onSelect={handleDistrictChange}
-            disabled={disabled}
-            isAutofilled={isAutofilled}
-          />
-          {showLegacyWarning && !district ? (
-            <p className="mt-1.5 text-[11px] sm:text-xs text-amber-700 font-medium">
-              Select a district to standardize this address before saving.
-            </p>
-          ) : null}
-        </div>
+      <div className="relative">
+        <label
+          htmlFor={addressId}
+          className="mb-1.5 block text-xs font-semibold text-gray-700 sm:mb-2 sm:text-sm"
+        >
+          Address
+          <span className="text-red-500">*</span>
+        </label>
+        <textarea
+          id={addressId}
+          ref={addressInputRef}
+          value={detailsDraft}
+          onChange={handleAddressChange}
+          onFocus={() => {
+            if (!selectedDistrict && districtQuery.length >= 2) {
+              setIsSuggestionOpen(true);
+            }
+          }}
+          onKeyDown={(event) => {
+            if (event.key === "Escape") setIsSuggestionOpen(false);
+          }}
+          disabled={disabled}
+          rows={2}
+          placeholder="House/road, village, union, upazila, and zilla"
+          className={`min-h-24 w-full resize-y rounded-lg border-2 px-3 py-2.5 text-xs font-normal leading-6 text-gray-700 outline-none transition-all duration-300 placeholder:font-light placeholder:text-gray-400 focus:border-blue-900 focus:ring-2 focus:ring-blue-950 hover:shadow-md sm:px-4 sm:text-sm ${
+            disabled
+              ? "cursor-not-allowed border-gray-300 bg-gray-200"
+              : selectedDistrict
+                ? "border-green-300 bg-white shadow-sm"
+                : detailsDraft.trim()
+                  ? "border-green-700 bg-white shadow-sm"
+                  : "border-gray-300 bg-white shadow-sm"
+          }`}
+          aria-autocomplete="list"
+          aria-controls={suggestionsId}
+        />
 
-        <div>
-          <label
-            htmlFor={otherAddressId}
-            className="block text-gray-700 text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2"
-          >
-            Other Address
-          </label>
-          <input
-            id={otherAddressId}
-            type="text"
-            value={detailsDraft}
-            onChange={handleDetailsChange}
-            disabled={disabled}
-            placeholder="Village, union, upazila, road or house (optional)"
-            className="text-gray-700 font-normal rounded-lg h-12 md:h-14 py-2 px-3 sm:px-4 w-full focus:border-blue-900 focus:ring-2 focus:ring-blue-950 outline-none shadow-sm hover:shadow-md transition-all duration-300 placeholder:text-gray-400 placeholder:font-light text-xs sm:text-sm bg-white border-2 border-gray-300 disabled:bg-gray-200 disabled:border-gray-300 disabled:cursor-not-allowed"
-          />
-          <p className="mt-1.5 text-[11px] sm:text-xs text-gray-500 font-medium">
-            Village, union, upazila, road or house (optional)
-          </p>
-        </div>
-
-        {district ? (
-          <p className="lg:col-span-2 text-[11px] sm:text-xs text-indigo-700 font-semibold bg-white border border-indigo-100 rounded-lg px-3 py-2">
-            Saved as: {canonicalPreview}
-          </p>
-        ) : null}
-
-        {showLegacyWarning && district ? (
-          <div
-            role="status"
-            className="lg:col-span-2 flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 text-amber-800 text-[11px] sm:text-xs px-3 py-2"
-          >
-            <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
-            <p>
-              Legacy address: a recognized alias was upgraded to{" "}
-              <span className="font-semibold">{district}</span>. Save to write
-              the canonical value.
-            </p>
+        <DropdownPortal
+          isOpen={showSuggestions}
+          onClose={() => setIsSuggestionOpen(false)}
+          buttonRef={addressInputRef}
+          className="max-h-64 overflow-y-auto p-1"
+        >
+          <div id={suggestionsId} role="listbox" aria-label="Zilla suggestions">
+            <div className="px-3 pb-1.5 pt-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-gray-400">
+              Select zilla
+            </div>
+            {suggestions.map((district) => (
+              <button
+                key={district}
+                type="button"
+                role="option"
+                aria-selected={false}
+                onMouseDown={(event) => event.preventDefault()}
+                onClick={() => handleDistrictSelect(district)}
+                className="flex w-full cursor-pointer items-center justify-between rounded-lg px-3 py-2.5 text-left text-xs text-gray-700 transition-colors hover:bg-indigo-50 sm:text-sm"
+              >
+                <span>{district}</span>
+                <span className="text-[10px] font-semibold uppercase tracking-wide text-indigo-500">
+                  Use this zilla
+                </span>
+              </button>
+            ))}
           </div>
-        ) : null}
+        </DropdownPortal>
 
-        {showLegacyWarning && !district ? (
+        <div className="mt-2 flex flex-wrap items-center gap-2 text-[11px] font-medium sm:text-xs">
+          {selectedDistrict ? (
+            <div className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-gray-100 px-2.5 py-1.5 text-gray-600 shadow-sm">
+              <span className="inline-flex items-center gap-1 font-semibold text-gray-700">
+                <Check className="h-3.5 w-3.5 text-green-600" />
+                {selectedDistrict}
+              </span>
+              <span className="text-gray-400">Zilla selected</span>
+              <button
+                type="button"
+                onClick={clearDistrictSelection}
+                disabled={disabled}
+                className="rounded-md p-0.5 text-gray-400 transition-colors hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-50"
+                aria-label="Remove selected zilla"
+                title="Remove zilla and edit it manually"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          ) : (
+            <span className="text-gray-500">
+              Type the complete address. Suggestions appear when the last part
+              matches a zilla.
+            </span>
+          )}
+        </div>
+
+        {parsed.isLegacy && isAutofilled ? (
           <div
             role="status"
-            className="lg:col-span-2 flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 text-amber-800 text-[11px] sm:text-xs px-3 py-2"
+            className="mt-2 flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] text-amber-800 sm:text-xs"
           >
-            <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
+            <MapPin className="mt-0.5 h-4 w-4 shrink-0" />
             <p>
-              Legacy address: select a district to standardize this address
-              before saving.
+              This saved address uses an older district spelling. Choose a
+              suggestion if you want to standardize it.
             </p>
           </div>
         ) : null}

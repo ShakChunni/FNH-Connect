@@ -13,6 +13,7 @@ import {
   BANGLADESH_DISTRICTS,
   canonicalizeBangladeshAddress,
   formatBangladeshAddress,
+  getBangladeshDistrictSuggestions,
   hasRequiredBangladeshDistrict,
   isBangladeshDistrict,
   parseBangladeshAddress,
@@ -257,6 +258,20 @@ check(
 check(
   "Address containing a district name only in details is invalid",
   !hasRequiredBangladeshDistrict("Tangail Road, Mystery"),
+);
+
+group("district autocomplete");
+
+check(
+  "Autocomplete waits for two characters",
+  getBangladeshDistrictSuggestions("d").length === 0 &&
+    getBangladeshDistrictSuggestions("dh").includes("Dhaka"),
+);
+
+check(
+  "Autocomplete recognises legacy spellings and returns canonical names",
+  getBangladeshDistrictSuggestions("bogra").includes("Bogura") &&
+  getBangladeshDistrictSuggestions("coxs bazar").includes("Cox's Bazar"),
 );
 
 group("canonicalizeBangladeshAddress");
