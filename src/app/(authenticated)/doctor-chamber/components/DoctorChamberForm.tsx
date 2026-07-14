@@ -39,6 +39,7 @@ import { DropdownPortal } from "@/components/ui/DropdownPortal";
 import { useDebounce } from "@/hooks/useDebounce";
 import { useNotification } from "@/hooks/useNotification";
 import { DOCTOR_CHAMBER_CONFIG } from "@/lib/doctorChamber";
+import { hasRequiredBangladeshDistrict } from "@/lib/bangladeshAddress";
 import {
   useCreateDoctorChamberVisit,
   useDoctorChamberPatientSearch,
@@ -281,8 +282,8 @@ export default function DoctorChamberForm({
       scrollToSection("patient");
       return;
     }
-    if (!patient.address.trim()) {
-      setFormError("Patient address is required.");
+    if (!hasRequiredBangladeshDistrict(patient.address)) {
+      setFormError("Patient district is required.");
       scrollToSection("patient");
       return;
     }

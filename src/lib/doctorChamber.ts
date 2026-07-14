@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { parseDateOfBirth } from "@/lib/dateOfBirth";
+import { hasRequiredBangladeshDistrict } from "@/lib/bangladeshAddress";
 
 export const DOCTOR_CHAMBER_CONFIG = {
   doctorDisplayName: "Prof. Dr. Sufia Khatun",
@@ -117,7 +118,12 @@ const patientInputSchema = z.object({
   fullName: z.string().trim().min(1, "Patient full name is required").max(205),
   gender: z.string().trim().min(1, "Patient gender is required").max(30),
   dateOfBirth: dateOfBirthSchema,
-  address: z.string().trim().min(1, "Patient address is required").max(1000),
+  address: z
+    .string()
+    .trim()
+    .min(1, "Patient district is required")
+    .max(1000)
+    .refine(hasRequiredBangladeshDistrict, "Select a valid Bangladesh district"),
   phoneNumber: z.string().trim().max(30),
   email: z.string().trim().email("Invalid email").or(z.literal("")),
   bloodGroup: z.string().trim().max(10),

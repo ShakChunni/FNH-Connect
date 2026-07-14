@@ -329,9 +329,8 @@ const freeformSchemaResult = patientAddressSchema.safeParse(
   "Village, Upazila only",
 );
 check(
-  "Server schema accepts a non-empty free-form address without a final district",
-  freeformSchemaResult.success &&
-    freeformSchemaResult.data === "Village, Upazila only",
+  "Server schema rejects a non-empty address without a final district",
+  !freeformSchemaResult.success,
 );
 
 check(
