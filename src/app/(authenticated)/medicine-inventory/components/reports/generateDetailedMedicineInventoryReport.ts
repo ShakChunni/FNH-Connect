@@ -19,11 +19,12 @@ import {
   safeText,
   checkNewPage,
 } from "./reportHelpers";
+import { getGroupedStockRows } from "./stockReportHelpers";
 
 /**
  * Generate Detailed Medicine Inventory Report PDF
  */
-export const generateDetailedMedicineInventoryReport = async (
+export const buildDetailedMedicineInventoryReportDocument = async (
   input: MedicineReportInput,
 ) => {
   const doc = new jsPDF();
@@ -106,21 +107,35 @@ export const generateDetailedMedicineInventoryReport = async (
     currentY += 6;
 
     if (input.report.availableMedicines.length > 0) {
-      const medicineRows = input.report.availableMedicines.map((medicine, index) => [
-        (index + 1).toString(),
-        safeText(medicine.brandName || medicine.genericName),
-        safeText(medicine.genericName),
-        safeText(medicine.group?.name || "Unknown Group"),
-        safeText(medicine.strength || "—"),
-        safeText(medicine.dosageForm || "—"),
-        formatNumber(medicine.currentStock),
-        formatCurrency(medicine.defaultSalePrice),
-      ]);
+      const groupedRows = getGroupedStockRows(
+        input.report.availableMedicines,
+      );
+      const groupRowIndexes = new Set<number>();
+      const totalRowIndex = groupedRows.length - 1;
+      const medicineRows = groupedRows.map((row, index) => {
+        if (row.kind === "group") {
+          groupRowIndexes.add(index);
+        }
+
+        return [
+          row.groupName,
+          row.medicineName,
+          formatNumber(row.purchaseQuantity),
+          formatNumber(row.salesQuantity),
+          formatNumber(row.stockInHand),
+        ];
+      });
 
       autoTable(doc, {
         startY: currentY,
         head: [
-          ["#", "Medicine", "Generic", "Group", "Strength", "Form", "Stock", "Price"],
+          [
+            "Medicine Group",
+            "Medicines",
+            "Purchase",
+            "Sales",
+            "Stock in Hand",
+          ],
         ],
         body: medicineRows,
         theme: "plain",
@@ -138,17 +153,25 @@ export const generateDetailedMedicineInventoryReport = async (
           overflow: "linebreak",
         },
         columnStyles: {
-          0: { cellWidth: 8, halign: "center" },
-          1: { cellWidth: 34, fontStyle: "bold" },
-          2: { cellWidth: 30 },
-          3: { cellWidth: 25 },
-          4: { cellWidth: 20 },
-          5: { cellWidth: 18 },
-          6: { cellWidth: 15, halign: "center", fontStyle: "bold" },
-          7: { cellWidth: 30, halign: "right" },
+          0: { cellWidth: 42, fontStyle: "bold" },
+          1: { cellWidth: "auto" },
+          2: { cellWidth: 28, halign: "center" },
+          3: { cellWidth: 28, halign: "center" },
+          4: { cellWidth: 34, halign: "center", fontStyle: "bold" },
         },
         alternateRowStyles: {
           fillColor: [248, 250, 252],
+        },
+        didParseCell: (cellData) => {
+          if (groupRowIndexes.has(cellData.row.index)) {
+            cellData.cell.styles.fontStyle = "bold";
+            cellData.cell.styles.fillColor = [219, 234, 254];
+          }
+
+          if (cellData.row.index === totalRowIndex) {
+            cellData.cell.styles.fontStyle = "bold";
+            cellData.cell.styles.fillColor = [241, 245, 249];
+          }
         },
         margin: { left: margin, right: margin },
       });
@@ -178,66 +201,78 @@ export const generateDetailedMedicineInventoryReport = async (
     currentY += 6;
 
     if (input.report.lowStockMedicines.length > 0) {
-      const lowStockGroups = getLowStockGroups(input.report.lowStockMedicines);
+      const groupedRows = getGroupedStockRows(
+        input.report.lowStockMedicines,
+        true,
+      );
+      const groupRowIndexes = new Set<number>();
+      const totalRowIndex = groupedRows.length - 1;
+      const lowStockRows = groupedRows.map((row, index) => {
+        if (row.kind === "group") {
+          groupRowIndexes.add(index);
+        }
 
-      for (const group of lowStockGroups) {
-        currentY = checkNewPage(doc, currentY, 45);
+        return [
+          row.groupName,
+          row.medicineName,
+          formatNumber(row.purchaseQuantity),
+          formatNumber(row.salesQuantity),
+          formatNumber(row.stockInHand),
+          row.threshold === null ? "—" : formatNumber(row.threshold),
+        ];
+      });
 
-        doc.setFont("helvetica", "bold");
-        doc.setFontSize(9);
-        doc.setTextColor(COLORS.primary);
-        doc.text(
-          `${group.groupName} - ${formatNumber(group.medicines.length)} medicine${group.medicines.length !== 1 ? "s" : ""}`,
-          margin,
-          currentY,
-        );
-        currentY += 5;
+      autoTable(doc, {
+        startY: currentY,
+        head: [[
+          "Medicine Group",
+          "Medicines",
+          "Purchase",
+          "Sales",
+          "Stock in Hand",
+          "Threshold",
+        ]],
+        body: lowStockRows,
+        theme: "plain",
+        headStyles: {
+          fillColor: COLORS.warning,
+          textColor: [255, 255, 255],
+          fontStyle: "bold",
+          fontSize: 7,
+          cellPadding: 2,
+        },
+        bodyStyles: {
+          fontSize: 7,
+          cellPadding: 2,
+          textColor: COLORS.text,
+          overflow: "linebreak",
+        },
+        columnStyles: {
+          0: { cellWidth: 38, fontStyle: "bold" },
+          1: { cellWidth: "auto" },
+          2: { cellWidth: 25, halign: "center" },
+          3: { cellWidth: 25, halign: "center" },
+          4: { cellWidth: 30, halign: "center", fontStyle: "bold" },
+          5: { cellWidth: 25, halign: "center" },
+        },
+        alternateRowStyles: {
+          fillColor: [254, 252, 232],
+        },
+        didParseCell: (cellData) => {
+          if (groupRowIndexes.has(cellData.row.index)) {
+            cellData.cell.styles.fontStyle = "bold";
+            cellData.cell.styles.fillColor = [254, 243, 199];
+          }
 
-        const lowStockRows = group.medicines.map((medicine) => [
-          safeText(medicine.brandName || medicine.genericName),
-          safeText(medicine.genericName),
-          safeText(medicine.strength || "—"),
-          formatNumber(medicine.currentStock),
-          formatNumber(medicine.lowStockThreshold),
-          formatCurrency(medicine.defaultSalePrice),
-        ]);
+          if (cellData.row.index === totalRowIndex) {
+            cellData.cell.styles.fontStyle = "bold";
+            cellData.cell.styles.fillColor = [254, 249, 195];
+          }
+        },
+        margin: { left: margin, right: margin },
+      });
 
-        autoTable(doc, {
-          startY: currentY,
-          head: [
-            ["Medicine", "Generic", "Strength", "Current Stock", "Threshold", "Price"],
-          ],
-          body: lowStockRows,
-          theme: "plain",
-          headStyles: {
-            fillColor: COLORS.warning,
-            textColor: [255, 255, 255],
-            fontStyle: "bold",
-            fontSize: 7,
-            cellPadding: 2,
-          },
-          bodyStyles: {
-            fontSize: 7,
-            cellPadding: 2,
-            textColor: COLORS.text,
-            overflow: "linebreak",
-          },
-          columnStyles: {
-            0: { cellWidth: 42, fontStyle: "bold" },
-            1: { cellWidth: 38 },
-            2: { cellWidth: 25 },
-            3: { cellWidth: 25, halign: "center", fontStyle: "bold" },
-            4: { cellWidth: 22, halign: "center" },
-            5: { cellWidth: 28, halign: "right" },
-          },
-          alternateRowStyles: {
-            fillColor: [254, 252, 232],
-          },
-          margin: { left: margin, right: margin },
-        });
-
-        currentY = (doc as JsPDFWithAutoTable).lastAutoTable.finalY + 8;
-      }
+      currentY = (doc as JsPDFWithAutoTable).lastAutoTable.finalY + 8;
     } else {
       doc.setFont("helvetica", "italic");
       doc.setFontSize(9);
@@ -413,7 +448,13 @@ export const generateDetailedMedicineInventoryReport = async (
   // === FOOTER ===
   drawFooter(doc, input.generatedBy);
 
-  // Output
+  return doc;
+};
+
+export const generateDetailedMedicineInventoryReport = async (
+  input: MedicineReportInput,
+) => {
+  const doc = await buildDetailedMedicineInventoryReportDocument(input);
   doc.autoPrint();
   const pdfBlob = doc.output("blob");
   const pdfUrl = URL.createObjectURL(pdfBlob);

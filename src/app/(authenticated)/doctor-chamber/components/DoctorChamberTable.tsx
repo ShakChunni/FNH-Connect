@@ -1,6 +1,7 @@
 "use client";
 
-import { Edit2, FileText, Printer } from "lucide-react";
+import { Edit2, Eye, FileText, Printer } from "lucide-react";
+import { useHorizontalDragScroll } from "@/hooks/useHorizontalDragScroll";
 import { useNotification } from "@/hooks/useNotification";
 import type { DoctorChamberVisitRecord } from "../types";
 import {
@@ -17,11 +18,22 @@ interface DoctorChamberTableProps {
   onView: (visit: DoctorChamberVisitRecord) => void;
 }
 
-const money = (value: number) =>
-  `BDT ${value.toLocaleString("en-BD", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })}`;
+const headings = [
+  "#",
+  "Visit No.",
+  "Patient",
+  "Phone",
+  "Consulting Doctor",
+  "Visit Date",
+  "Actions",
+];
+
+function formatVisitDate(value: string): string {
+  return new Date(value).toLocaleString("en-BD", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  });
+}
 
 export default function DoctorChamberTable({
   visits,
@@ -32,43 +44,68 @@ export default function DoctorChamberTable({
   onView,
 }: DoctorChamberTableProps) {
   const { showNotification } = useNotification();
-
-  if (isLoading) {
-    return <div className="space-y-3 p-5">{Array.from({ length: 7 }).map((_, index) => <div key={index} className="h-14 animate-pulse rounded-xl bg-slate-100" />)}</div>;
-  }
-
-  if (visits.length === 0) {
-    return <div className="flex flex-col items-center justify-center px-6 py-16 text-center"><FileText className="h-14 w-14 text-slate-300" /><h3 className="mt-4 text-lg font-bold text-slate-700">No chamber visits found</h3><p className="mt-1 text-sm text-slate-500">Create a new chamber visit or clear the active filters.</p></div>;
-  }
+  const dragScroll = useHorizontalDragScroll<HTMLDivElement>();
 
   const print = async (kind: "form" | "receipt", visit: DoctorChamberVisitRecord) => {
-    if (kind === "form") {
-      await generateDoctorChamberForm(visit, printedBy);
-      showNotification("Chamber form generated.", "success");
-    } else {
-      await generateDoctorChamberReceipt(visit, printedBy);
-      showNotification("Chamber receipt generated.", "success");
+    try {
+      if (kind === "form") await generateDoctorChamberForm(visit, printedBy);
+      else await generateDoctorChamberReceipt(visit, printedBy);
+      showNotification(kind === "form" ? "Chamber form generated." : "Receipt generated.", "success");
+    } catch (error) {
+      console.error("Doctor chamber print failed:", error);
+      showNotification("Unable to generate the document.", "error");
     }
   };
 
+  const tableContainerProps = {
+    ref: dragScroll.ref,
+    onMouseDown: dragScroll.onMouseDown,
+    onMouseUp: dragScroll.onMouseUp,
+    onMouseMove: dragScroll.onMouseMove,
+    onMouseLeave: dragScroll.onMouseLeave,
+  };
+
+  if (isLoading) {
+    return (
+      <div className="w-full overflow-x-auto overflow-y-auto" style={{ maxHeight: "600px" }} {...tableContainerProps}>
+        <table className="min-w-full divide-y divide-gray-200">
+          <thead className="sticky top-0 z-20 bg-fnh-navy"><tr>{headings.map((heading) => <th key={heading} className="px-2 py-3 text-left text-[10px] font-semibold uppercase tracking-wider text-white sm:px-3 md:px-4">{heading}</th>)}</tr></thead>
+          <tbody className="divide-y divide-gray-100 bg-white">{Array.from({ length: 15 }).map((_, index) => <tr key={index}>{headings.map((heading) => <td key={heading} className="px-2 py-4 sm:px-3 md:px-4"><div className="h-4 animate-pulse rounded bg-gray-100" /></td>)}</tr>)}</tbody>
+        </table>
+      </div>
+    );
+  }
+
+  if (visits.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12 text-gray-500 sm:py-16">
+        <FileText className="mb-3 h-12 w-12 text-gray-300 sm:mb-4 sm:h-16 sm:w-16" />
+        <p className="text-base font-medium sm:text-lg">No chamber patients found</p>
+        <p className="mt-1 text-xs sm:text-sm">Click &quot;New Patient&quot; to add a chamber record.</p>
+      </div>
+    );
+  }
+
   return (
-    <div className="overflow-x-auto">
-      <table className="min-w-[980px] w-full divide-y divide-slate-200">
-        <thead className="bg-fnh-navy"><tr>{["#", "Visit no.", "Patient", "Phone", "Consulting doctor", "Total", "Visit date", "Actions"].map((heading) => <th key={heading} className="px-3 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-white">{heading}</th>)}</tr></thead>
-        <tbody className="divide-y divide-slate-100 bg-white">
-          {visits.map((visit, index) => <tr key={visit.id} className="group hover:bg-slate-50">
-            <td className="px-3 py-3 text-sm font-semibold text-slate-500">{startIndex + index + 1}</td>
-            <td className="px-3 py-3"><button type="button" onClick={() => onView(visit)} className="font-mono text-sm font-semibold text-indigo-700 hover:underline">{visit.visitNumber}</button></td>
-            <td className="px-3 py-3"><button type="button" onClick={() => onView(visit)} className="text-left"><span className="block text-sm font-semibold text-slate-800 hover:text-indigo-700">{visit.patientFullName}</span><span className="block text-xs text-slate-500">{visit.patientGender || "Gender not recorded"}</span></button></td>
-            <td className="px-3 py-3 text-sm text-slate-600">{visit.patientPhoneNumber || "N/A"}</td>
-            <td className="px-3 py-3 text-sm text-slate-700">{visit.doctorName}</td>
-            <td className="px-3 py-3 text-sm font-bold text-emerald-700">{money(visit.totalAmount)}</td>
-            <td className="px-3 py-3 text-sm text-slate-600">{new Date(visit.visitDate).toLocaleString("en-BD")}</td>
-            <td className="px-3 py-3"><div className="flex items-center gap-1.5"><button type="button" onClick={() => onView(visit)} className="rounded-lg bg-slate-100 p-2 text-slate-700 hover:bg-slate-200" title="View chamber visit"><FileText className="h-4 w-4" /></button><button type="button" onClick={() => onEdit(visit)} className="rounded-lg bg-indigo-100 p-2 text-indigo-700 hover:bg-indigo-200" title="Edit chamber visit"><Edit2 className="h-4 w-4" /></button><button type="button" onClick={() => void print("form", visit)} className="rounded-lg bg-purple-100 p-2 text-purple-700 hover:bg-purple-200" title="Print chamber form"><FileText className="h-4 w-4" /></button><button type="button" onClick={() => void print("receipt", visit)} className="rounded-lg bg-emerald-100 p-2 text-emerald-700 hover:bg-emerald-200" title="Print receipt"><Printer className="h-4 w-4" /></button></div></td>
-          </tr>)}
+    <div className="w-full overflow-x-auto overflow-y-auto" style={{ maxHeight: "600px" }} {...tableContainerProps}>
+      <table className="min-w-[900px] divide-y divide-gray-200">
+        <thead className="sticky top-0 z-20 bg-fnh-navy">
+          <tr>{headings.map((heading) => <th key={heading} className="px-2 py-2 text-left text-[10px] font-semibold uppercase tracking-wider text-white sm:px-3 sm:py-3 md:px-4 md:py-4">{heading}</th>)}</tr>
+        </thead>
+        <tbody className="divide-y divide-gray-200 bg-white">
+          {visits.map((visit, index) => (
+            <tr key={visit.id} className="group transition-colors hover:bg-gray-50">
+              <td className="whitespace-nowrap px-2 py-2 text-[11px] font-semibold text-fnh-navy sm:px-3 sm:py-3 md:px-4 md:py-4">{startIndex + index + 1}</td>
+              <td className="whitespace-nowrap px-2 py-2 text-[11px] sm:px-3 sm:py-3 md:px-4 md:py-4"><button type="button" onClick={() => onView(visit)} className="cursor-pointer font-mono text-fnh-navy hover:text-fnh-blue hover:underline">{visit.visitNumber}</button></td>
+              <td className="px-2 py-2 text-[11px] sm:px-3 sm:py-3 md:px-4 md:py-4"><button type="button" onClick={() => onView(visit)} className="cursor-pointer text-left"><span className="block font-medium text-gray-900 transition-colors hover:text-fnh-blue">{visit.patientFullName}</span><span className="mt-0.5 block text-[10px] leading-none text-gray-500">{visit.patientGender || "Gender not recorded"}</span></button></td>
+              <td className="whitespace-nowrap px-2 py-2 text-[11px] text-gray-700 sm:px-3 sm:py-3 md:px-4 md:py-4">{visit.patientPhoneNumber || "N/A"}</td>
+              <td className="whitespace-nowrap px-2 py-2 text-[11px] text-gray-700 sm:px-3 sm:py-3 md:px-4 md:py-4">{visit.doctorName}</td>
+              <td className="whitespace-nowrap px-2 py-2 text-[11px] text-gray-700 sm:px-3 sm:py-3 md:px-4 md:py-4">{formatVisitDate(visit.visitDate)}</td>
+              <td className="whitespace-nowrap px-2 py-2 sm:px-3 sm:py-3 md:px-4 md:py-4"><div className="flex items-center gap-1.5"><button type="button" onClick={() => onView(visit)} className="cursor-pointer rounded-lg bg-gray-100 p-1.5 text-gray-700 shadow-sm transition-all hover:bg-gray-200 hover:shadow-md" title="View chamber patient"><Eye size={16} /></button><button type="button" onClick={() => onEdit(visit)} className="cursor-pointer rounded-lg bg-fnh-navy p-1.5 text-white shadow-sm transition-all hover:bg-fnh-navy-dark hover:shadow-md" title="Edit chamber patient"><Edit2 size={16} /></button><button type="button" onClick={() => void print("form", visit)} className="cursor-pointer rounded-lg bg-purple-100 p-1.5 text-purple-700 shadow-sm transition-all hover:bg-purple-200 hover:shadow-md" title="Print chamber form"><FileText size={16} /></button><button type="button" onClick={() => void print("receipt", visit)} className="cursor-pointer rounded-lg bg-green-100 p-1.5 text-green-700 shadow-sm transition-all hover:bg-green-200 hover:shadow-md" title="Print receipt"><Printer size={16} /></button></div></td>
+            </tr>
+          ))}
         </tbody>
       </table>
     </div>
   );
 }
-
