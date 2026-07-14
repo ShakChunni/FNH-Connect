@@ -50,6 +50,8 @@ export async function generateDoctorChamberReport(
   const totalUltrasound = data.reduce((sum, visit) => sum + visit.ultrasoundCharge, 0);
   const totalVisiting = data.reduce((sum, visit) => sum + visit.visitingCharge, 0);
   const totalAmount = data.reduce((sum, visit) => sum + visit.totalAmount, 0);
+  const totalSubtotal = data.reduce((sum, visit) => sum + visit.subtotal, 0);
+  const totalDiscount = data.reduce((sum, visit) => sum + visit.discountAmount, 0);
   const totalExtra = data.reduce(
     (sum, visit) => sum + visit.fees.reduce((feeSum, fee) => feeSum + fee.amount, 0),
     0,
@@ -58,11 +60,11 @@ export async function generateDoctorChamberReport(
   autoTable(doc, {
     startY: y,
     body: [
-      ["Visits", String(data.length), "Ultra Sono", money(totalUltrasound), "Visiting", money(totalVisiting), "Extra charges", money(totalExtra), "Total", money(totalAmount)],
+      ["Visits", String(data.length), "Ultra Sono", money(totalUltrasound), "Visiting", money(totalVisiting), "Extra charges", money(totalExtra), "Subtotal", money(totalSubtotal), "Discount", money(totalDiscount), "Total", money(totalAmount)],
     ],
     theme: "grid",
     styles: { font: "helvetica", fontSize: 9, textColor: "#111827", cellPadding: 4 },
-    columnStyles: { 0: { fontStyle: "bold" }, 2: { fontStyle: "bold" }, 4: { fontStyle: "bold" }, 6: { fontStyle: "bold" }, 8: { fontStyle: "bold" } },
+    columnStyles: { 0: { fontStyle: "bold" }, 2: { fontStyle: "bold" }, 4: { fontStyle: "bold" }, 6: { fontStyle: "bold" }, 8: { fontStyle: "bold" }, 10: { fontStyle: "bold" }, 12: { fontStyle: "bold" } },
   });
   y = ((doc as jsPDF & { lastAutoTable?: { finalY: number } }).lastAutoTable?.finalY ?? y) + 10;
 
@@ -73,24 +75,26 @@ export async function generateDoctorChamberReport(
   } else if (type === "summary") {
     autoTable(doc, {
       startY: y,
-      head: [["No.", "Visit No.", "Date", "Patient", "Doctor", "Total"]],
+      head: [["No.", "Visit No.", "Date", "Patient", "Doctor", "Subtotal", "Discount", "Total"]],
       body: data.map((visit, index) => [
         index + 1,
         visit.visitNumber,
         new Date(visit.visitDate).toLocaleDateString("en-BD"),
         visit.patientFullName,
         visit.doctorName,
+        money(visit.subtotal),
+        money(visit.discountAmount),
         money(visit.totalAmount),
       ]),
       theme: "grid",
       styles: { font: "helvetica", fontSize: 8, textColor: "#111827" },
       headStyles: { fillColor: "#020617", textColor: "#ffffff" },
-      columnStyles: { 0: { cellWidth: 12 }, 5: { halign: "right" } },
+      columnStyles: { 0: { cellWidth: 12 }, 5: { halign: "right" }, 6: { halign: "right" }, 7: { halign: "right" } },
     });
   } else {
     autoTable(doc, {
       startY: y,
-      head: [["No.", "Visit No.", "Date", "Patient", "Phone", "Ultra Sono", "Visiting", "Extra", "Total"]],
+      head: [["No.", "Visit No.", "Date", "Patient", "Phone", "Ultra Sono", "Visiting", "Extra", "Subtotal", "Discount", "Total"]],
       body: data.map((visit, index) => [
         index + 1,
         visit.visitNumber,
@@ -100,15 +104,16 @@ export async function generateDoctorChamberReport(
         money(visit.ultrasoundCharge),
         money(visit.visitingCharge),
         money(visit.fees.reduce((sum, fee) => sum + fee.amount, 0)),
+        money(visit.subtotal),
+        money(visit.discountAmount),
         money(visit.totalAmount),
       ]),
       theme: "grid",
-      styles: { font: "helvetica", fontSize: 7.5, textColor: "#111827" },
+      styles: { font: "helvetica", fontSize: 7, textColor: "#111827" },
       headStyles: { fillColor: "#020617", textColor: "#ffffff" },
-      columnStyles: { 0: { cellWidth: 10 }, 5: { halign: "right" }, 6: { halign: "right" }, 7: { halign: "right" }, 8: { halign: "right" } },
+      columnStyles: { 0: { cellWidth: 9 }, 5: { halign: "right" }, 6: { halign: "right" }, 7: { halign: "right" }, 8: { halign: "right" }, 9: { halign: "right" }, 10: { halign: "right" } },
     });
   }
 
   doc.save(`dr-sufia-khatun-chamber-${type}-report.pdf`);
 }
-

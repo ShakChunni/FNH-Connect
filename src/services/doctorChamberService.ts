@@ -27,6 +27,10 @@ const chamberVisitSelect = Prisma.validator<Prisma.DoctorChamberVisitSelect>()({
   patientId: true,
   ultrasoundCharge: true,
   visitingCharge: true,
+  subtotal: true,
+  discountType: true,
+  discountValue: true,
+  discountAmount: true,
   totalAmount: true,
   notes: true,
   createdAt: true,
@@ -177,24 +181,53 @@ function getFullName(firstName: string, lastName: string): string {
   return [firstName.trim(), lastName.trim()].filter(Boolean).join(" ");
 }
 
-function getTotalAmount(input: DoctorChamberVisitSchema): number {
-  return (
-    DOCTOR_CHAMBER_CONFIG.ultrasoundCharge +
-    input.visitingCharge +
-    input.fees.reduce((sum, fee) => sum + fee.amount, 0)
-  );
+function roundCurrency(value: number): number {
+  return Math.round((value + Number.EPSILON) * 100) / 100;
 }
 
-function getChargeDescription(input: DoctorChamberVisitSchema): string {
+function getBillingAmounts(input: DoctorChamberVisitSchema) {
+  const subtotal = roundCurrency(
+    DOCTOR_CHAMBER_CONFIG.ultrasoundCharge +
+      input.visitingCharge +
+      input.fees.reduce((sum, fee) => sum + fee.amount, 0),
+  );
+  const discountValue = input.discountValue ?? 0;
+  const rawDiscountAmount =
+    input.discountType === "percentage"
+      ? (subtotal * discountValue) / 100
+      : discountValue;
+  const discountAmount = roundCurrency(Math.min(rawDiscountAmount, subtotal));
+
+  return {
+    subtotal,
+    discountType: input.discountValue === null ? null : input.discountType,
+    discountValue: input.discountValue,
+    discountAmount,
+    totalAmount: roundCurrency(subtotal - discountAmount),
+  };
+}
+
+function getChargeDescription(
+  input: DoctorChamberVisitSchema,
+  billing: ReturnType<typeof getBillingAmounts>,
+): string {
   const extraCharges = input.fees.map(
     (fee) => `${fee.feeName.trim()}: BDT ${fee.amount.toFixed(2)}`,
   );
 
-  return [
+  const chargeLines = [
     `${DOCTOR_CHAMBER_CONFIG.ultrasoundName}: BDT ${DOCTOR_CHAMBER_CONFIG.ultrasoundCharge}`,
     `Visiting charge: BDT ${input.visitingCharge.toFixed(2)}`,
     ...extraCharges,
-  ].join("; ");
+  ];
+
+  if (billing.discountAmount > 0) {
+    chargeLines.push(
+      `Discount: BDT ${billing.discountAmount.toFixed(2)}`,
+    );
+  }
+
+  return chargeLines.join("; ");
 }
 
 async function upsertPatient(
@@ -297,6 +330,14 @@ function serializeVisit(
     ultrasoundName: DOCTOR_CHAMBER_CONFIG.ultrasoundName,
     ultrasoundCharge: toNumber(visit.ultrasoundCharge),
     visitingCharge: toNumber(visit.visitingCharge),
+    subtotal: toNumber(visit.subtotal),
+    discountType:
+      visit.discountType === "percentage" || visit.discountType === "value"
+        ? visit.discountType
+        : null,
+    discountValue:
+      visit.discountValue === null ? null : toNumber(visit.discountValue),
+    discountAmount: toNumber(visit.discountAmount),
     fees: visit.fees.map((fee) => ({
       id: fee.id,
       feeName: fee.feeName,
@@ -463,7 +504,7 @@ export async function createDoctorChamberVisit(
     const department = await getOrCreateDepartment(tx);
     const patient = await upsertPatient(tx, input.patient, staffId);
     const visitNumber = await getNextVisitNumber(tx);
-    const totalAmount = getTotalAmount(input);
+    const billing = getBillingAmounts(input);
 
     const visit = await tx.doctorChamberVisit.create({
       data: {
@@ -473,7 +514,11 @@ export async function createDoctorChamberVisit(
         visitNumber,
         ultrasoundCharge: DOCTOR_CHAMBER_CONFIG.ultrasoundCharge,
         visitingCharge: input.visitingCharge,
-        totalAmount,
+        subtotal: billing.subtotal,
+        discountType: billing.discountType,
+        discountValue: billing.discountValue,
+        discountAmount: billing.discountAmount,
+        totalAmount: billing.totalAmount,
         notes: input.notes.trim() || null,
         createdBy: staffId,
         lastModifiedBy: staffId,
@@ -493,8 +538,8 @@ export async function createDoctorChamberVisit(
     await tx.patientAccount.update({
       where: { id: patientAccount.id },
       data: {
-        totalCharges: { increment: totalAmount },
-        totalDue: { increment: totalAmount },
+        totalCharges: { increment: billing.totalAmount },
+        totalDue: { increment: billing.totalAmount },
       },
     });
 
@@ -504,10 +549,10 @@ export async function createDoctorChamberVisit(
         serviceType: "DOCTOR_CHAMBER_VISIT",
         serviceName: `Dr Sufia Khatun Chamber - ${visitNumber}`,
         departmentId: department.id,
-        originalAmount: totalAmount,
-        discountAmount: 0,
-        finalAmount: totalAmount,
-        description: getChargeDescription(input),
+        originalAmount: billing.subtotal,
+        discountAmount: billing.discountAmount,
+        finalAmount: billing.totalAmount,
+        description: getChargeDescription(input, billing),
         doctorChamberVisitId: visit.id,
         createdBy: staffId,
       },
@@ -517,7 +562,7 @@ export async function createDoctorChamberVisit(
       data: {
         userId,
         action: "CREATE",
-        description: `Created Dr Sufia Khatun chamber visit ${visitNumber} for ${patient.fullName}. Total: BDT ${totalAmount.toFixed(2)}`,
+        description: `Created Dr Sufia Khatun chamber visit ${visitNumber} for ${patient.fullName}. Total: BDT ${billing.totalAmount.toFixed(2)}`,
         entityType: "DoctorChamberVisit",
         entityId: visit.id,
         sessionId: activityLogContext?.sessionId,
@@ -572,8 +617,8 @@ export async function updateDoctorChamberVisit(
 
     const department = await getOrCreateDepartment(tx);
     await upsertPatient(tx, input.patient, staffId, existing.patientId);
-    const totalAmount = getTotalAmount(input);
-    const totalDifference = totalAmount - Number(existing.totalAmount);
+    const billing = getBillingAmounts(input);
+    const totalDifference = billing.totalAmount - Number(existing.totalAmount);
 
     const updatedVisit = await tx.doctorChamberVisit.update({
       where: { id },
@@ -581,7 +626,11 @@ export async function updateDoctorChamberVisit(
         departmentId: department.id,
         ultrasoundCharge: DOCTOR_CHAMBER_CONFIG.ultrasoundCharge,
         visitingCharge: input.visitingCharge,
-        totalAmount,
+        subtotal: billing.subtotal,
+        discountType: billing.discountType,
+        discountValue: billing.discountValue,
+        discountAmount: billing.discountAmount,
+        totalAmount: billing.totalAmount,
         notes: input.notes.trim() || null,
         lastModifiedBy: staffId,
         fees: {
@@ -612,9 +661,10 @@ export async function updateDoctorChamberVisit(
       where: { doctorChamberVisitId: id },
       data: {
         departmentId: department.id,
-        originalAmount: totalAmount,
-        finalAmount: totalAmount,
-        description: getChargeDescription(input),
+        originalAmount: billing.subtotal,
+        discountAmount: billing.discountAmount,
+        finalAmount: billing.totalAmount,
+        description: getChargeDescription(input, billing),
       },
     });
 
@@ -631,10 +681,10 @@ export async function updateDoctorChamberVisit(
           serviceType: "DOCTOR_CHAMBER_VISIT",
           serviceName: `Dr Sufia Khatun Chamber - ${existing.visitNumber}`,
           departmentId: department.id,
-          originalAmount: totalAmount,
-          discountAmount: 0,
-          finalAmount: totalAmount,
-          description: getChargeDescription(input),
+          originalAmount: billing.subtotal,
+          discountAmount: billing.discountAmount,
+          finalAmount: billing.totalAmount,
+          description: getChargeDescription(input, billing),
           doctorChamberVisitId: id,
           createdBy: staffId,
         },
@@ -645,7 +695,7 @@ export async function updateDoctorChamberVisit(
       data: {
         userId,
         action: "UPDATE",
-        description: `Updated Dr Sufia Khatun chamber visit ${existing.visitNumber}. Total: BDT ${totalAmount.toFixed(2)}`,
+        description: `Updated Dr Sufia Khatun chamber visit ${existing.visitNumber}. Total: BDT ${billing.totalAmount.toFixed(2)}`,
         entityType: "DoctorChamberVisit",
         entityId: updatedVisit.id,
         sessionId: activityLogContext?.sessionId,
@@ -665,4 +715,3 @@ export async function updateDoctorChamberVisit(
     };
   });
 }
-
