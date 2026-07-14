@@ -8,6 +8,7 @@ import {
   Building2,
   Wallet,
   Pill,
+  Stethoscope,
 } from "lucide-react";
 import { NavigationItem } from "./types";
 import {
@@ -24,6 +25,7 @@ const RECEPTIONIST_SIDEBAR_ROUTES = [
   "/dashboard",
   "/general-admission",
   "/pathology",
+  "/doctor-chamber",
   "/patient-records",
 ];
 
@@ -54,6 +56,11 @@ export const navigationItems: NavigationItem[] = [
     label: "Pathology",
     href: "/pathology",
     icon: Microscope,
+  },
+  {
+    label: "Dr Sufia Khatun Chamber",
+    href: "/doctor-chamber",
+    icon: Stethoscope,
   },
   {
     label: "Medicine Inventory",

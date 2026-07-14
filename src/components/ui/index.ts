@@ -4,6 +4,8 @@
  */
 
 export { DropdownPortal } from "./DropdownPortal";
+export { Button, buttonVariants } from "./button";
+export { ModalShell } from "./ModalShell";
 export { ModalFooter } from "./ModalFooter";
 export { ModalHeader } from "./ModalHeader";
 export { PageHeader } from "./PageHeader";

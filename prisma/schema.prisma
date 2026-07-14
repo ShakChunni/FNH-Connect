@@ -41,6 +41,7 @@ model Patient {
   // Relations
   admissions             Admission[]
   pathologyTests         PathologyTest[]
+  doctorChamberVisits    DoctorChamberVisit[]
   legacyInfertilityTests InfertilityTest[]          @relation("LegacyInfertilityTestPatient")
   account                PatientAccount? // Central account for all charges/payments
   infertilityRecords     InfertilityPatient[] // Infertility department records
@@ -63,6 +64,7 @@ model Department {
   staffAssignments StaffDepartment[]
   admissions       Admission[]
   pathologyTests   PathologyTest[]
+  doctorChamberVisits DoctorChamberVisit[]
   serviceCharges   ServiceCharge[] // New relation
 }
 
@@ -86,6 +88,7 @@ model Staff {
   collectedPayments     Payment[]
   pathologyOrderedBy    PathologyTest[]   @relation("OrderedBy")
   pathologyDoneBy       PathologyTest[]   @relation("DoneBy")
+  doctorChamberVisits   DoctorChamberVisit[] @relation("DoctorChamberDoctor")
   shifts                Shift[] // New relation for cash management
 
   // Infertility relations
@@ -285,6 +288,54 @@ model PathologyTest {
   @@index([migratedToInfertility])
 }
 
+// Dr Sufia Khatun private chamber
+model DoctorChamberVisit {
+  id           Int      @id @default(autoincrement())
+  patientId    Int
+  departmentId Int
+  doctorId     Int
+  visitNumber  String   @unique
+  visitDate    DateTime @default(now())
+
+  // The chamber always includes the fixed Ultra Sono charge. The server
+  // resets this value to the configured amount on every create/update.
+  ultrasoundCharge Decimal @default(800)
+  visitingCharge   Decimal @default(0)
+  totalAmount      Decimal @default(0)
+  notes            String?
+
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  createdBy      Int
+  lastModifiedBy Int
+
+  patient        Patient            @relation(fields: [patientId], references: [id])
+  department     Department         @relation(fields: [departmentId], references: [id])
+  doctor         Staff              @relation("DoctorChamberDoctor", fields: [doctorId], references: [id])
+  fees           DoctorChamberFee[]
+  serviceCharges ServiceCharge[]
+
+  @@index([patientId])
+  @@index([departmentId])
+  @@index([doctorId])
+  @@index([visitDate])
+}
+
+model DoctorChamberFee {
+  id             Int      @id @default(autoincrement())
+  chamberVisitId Int
+  feeName        String
+  amount         Decimal
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  createdBy      Int
+  lastModifiedBy Int?
+
+  chamberVisit DoctorChamberVisit @relation(fields: [chamberVisitId], references: [id], onDelete: Cascade)
+
+  @@index([chamberVisitId])
+}
+
 // Enhanced Payment & Cash Management System
 
 // Staff Shift Management
@@ -371,8 +422,9 @@ model ServiceCharge {
   description String?
 
   // Links to specific services if needed
-  admissionId     Int?
-  pathologyTestId Int?
+  admissionId          Int?
+  pathologyTestId      Int?
+  doctorChamberVisitId Int?
 
   // Tracking
   createdAt DateTime @default(now())
@@ -384,12 +436,14 @@ model ServiceCharge {
   department         Department          @relation(fields: [departmentId], references: [id])
   admission          Admission?          @relation(fields: [admissionId], references: [id])
   pathologyTest      PathologyTest?      @relation(fields: [pathologyTestId], references: [id])
+  doctorChamberVisit DoctorChamberVisit? @relation(fields: [doctorChamberVisitId], references: [id])
   paymentAllocations PaymentAllocation[]
 
   @@index([patientAccountId])
   @@index([departmentId])
   @@index([serviceType])
   @@index([serviceDate])
+  @@index([doctorChamberVisitId])
 }
 
 // Enhanced Payment Model

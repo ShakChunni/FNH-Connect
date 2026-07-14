@@ -4,7 +4,7 @@
  * System Roles (User.role) - These are stored in the database:
  * - system-admin: Full system access, can manage everything
  * - admin: Administrative access, cannot manage users
- * - receptionist: Limited access - dashboard, general-admission, pathology only
+ * - receptionist: Limited access - dashboard, general-admission, pathology, and Dr Sufia Khatun chamber
  * - medicine-pharmacist: Limited access - dashboard and medicine-inventory only
  * - staff: Regular staff access, limited to their department/patient data
  *
@@ -43,6 +43,7 @@ export const BASE_RECEPTIONIST_ALLOWED_ROUTES = [
   "/dashboard",
   "/general-admission",
   "/pathology",
+  "/doctor-chamber",
   "/patient-records",
   "/profile",
   "/api/dashboard",
@@ -56,6 +57,7 @@ export const BASE_RECEPTIONIST_ALLOWED_ROUTES = [
   "/api/patients", // Patient data
   "/api/admissions",
   "/api/pathology-patients",
+  "/api/doctor-chamber",
   "/api/departments",
   "/api/shifts",
   "/login",
