@@ -98,11 +98,23 @@ function drawPatientDetails(doc: jsPDF, data: DoctorChamberVisitRecord, startY: 
 }
 
 function getChargeRows(data: DoctorChamberVisitRecord): Array<[string, string]> {
-  return [
+  const rows: Array<[string, string]> = [
     [data.ultrasoundName, money(data.ultrasoundCharge)],
     ["Visiting charge", money(data.visitingCharge)],
     ...data.fees.map((fee) => [fee.feeName, money(fee.amount)] as [string, string]),
+    ["Subtotal", money(data.subtotal)],
   ];
+
+  if (data.discountAmount > 0) {
+    rows.push([
+      data.discountType === "percentage" && data.discountValue !== null
+        ? `Discount (${data.discountValue}%)`
+        : "Discount",
+      `- ${money(data.discountAmount)}`,
+    ]);
+  }
+
+  return rows;
 }
 
 export async function generateDoctorChamberForm(
@@ -185,7 +197,7 @@ export async function generateDoctorChamberReceipt(
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
   doc.setTextColor(COLORS.muted);
-  doc.text("Fixed Ultra Sono charge: BDT 800.00", margin, tableY + 12);
+  doc.text(`Fixed Ultra Sono charge: ${money(data.ultrasoundCharge)}`, margin, tableY + 12);
   doc.text(`Printed by: ${printedBy}`, margin, 270);
   doc.text(`Generated: ${new Date().toLocaleString("en-BD")}`, margin, 276);
   doc.setFont("helvetica", "bold");
@@ -193,4 +205,3 @@ export async function generateDoctorChamberReceipt(
   doc.text("Thank you.", margin, 286);
   doc.save(`${data.visitNumber}-receipt.pdf`);
 }
-

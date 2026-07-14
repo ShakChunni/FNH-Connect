@@ -54,7 +54,9 @@ export default function DoctorChamberOverview({
         <div className="mt-5 overflow-hidden rounded-2xl border border-slate-200">
           <div className="grid grid-cols-[1fr_auto] bg-slate-900 px-4 py-3 text-xs font-bold uppercase tracking-wide text-white"><span>Charge</span><span>Amount</span></div>
           {charges.map((charge, index) => <div key={`${charge.name}-${index}`} className="grid grid-cols-[1fr_auto] border-b border-slate-100 px-4 py-3 text-sm last:border-b-0"><span className="text-slate-700">{charge.name}{charge.fixed && <span className="ml-2 rounded bg-emerald-100 px-1.5 py-0.5 text-[10px] font-bold text-emerald-700">FIXED</span>}</span><span className="font-semibold text-slate-900">{money(charge.amount)}</span></div>)}
-          <div className="grid grid-cols-[1fr_auto] bg-slate-50 px-4 py-4 text-base font-bold text-slate-900"><span>Total</span><span>{money(visit.totalAmount)}</span></div>
+          <div className="grid grid-cols-[1fr_auto] border-t border-slate-100 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700"><span>Subtotal</span><span>{money(visit.subtotal)}</span></div>
+          {visit.discountAmount > 0 && <div className="grid grid-cols-[1fr_auto] border-t border-slate-100 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700"><span>Discount{visit.discountType === "percentage" && visit.discountValue !== null ? ` (${visit.discountValue}%)` : ""}</span><span>− {money(visit.discountAmount)}</span></div>}
+          <div className="grid grid-cols-[1fr_auto] bg-slate-50 px-4 py-4 text-base font-bold text-slate-900"><span>Grand Total</span><span>{money(visit.totalAmount)}</span></div>
         </div>
 
         <div className="mt-4 rounded-xl bg-slate-50 p-3 text-sm text-slate-700"><span className="font-bold">Notes:</span> {visit.notes || "No remarks recorded."}</div>
@@ -67,4 +69,3 @@ export default function DoctorChamberOverview({
     </ModalShell>
   );
 }
-

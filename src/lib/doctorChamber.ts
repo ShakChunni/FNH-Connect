@@ -18,6 +18,8 @@ export interface DoctorChamberFeeInput {
   amount: number;
 }
 
+export type DoctorChamberDiscountType = "percentage" | "value";
+
 export interface DoctorChamberPatientInput {
   id: number | null;
   firstName: string;
@@ -40,6 +42,8 @@ export interface DoctorChamberVisitInput {
   patient: DoctorChamberPatientInput;
   visitingCharge: number;
   fees: DoctorChamberFeeInput[];
+  discountType: DoctorChamberDiscountType | null;
+  discountValue: number | null;
   notes: string;
 }
 
@@ -75,6 +79,10 @@ export interface DoctorChamberVisitRecord {
   ultrasoundName: string;
   ultrasoundCharge: number;
   visitingCharge: number;
+  subtotal: number;
+  discountType: DoctorChamberDiscountType | null;
+  discountValue: number | null;
+  discountAmount: number;
   fees: DoctorChamberFeeRecord[];
   totalAmount: number;
   notes: string | null;
@@ -125,6 +133,14 @@ const feeInputSchema = z.object({
   amount: z.number().finite().min(0, "Charge amount cannot be negative").max(100000000),
 });
 
+const discountTypeSchema = z.enum(["percentage", "value"]).nullable().default("value");
+const discountValueSchema = z
+  .number()
+  .finite()
+  .min(0, "Discount cannot be negative")
+  .nullable()
+  .default(null);
+
 export const doctorChamberVisitSchema = z.object({
   patient: patientInputSchema,
   visitingCharge: z
@@ -133,7 +149,20 @@ export const doctorChamberVisitSchema = z.object({
     .min(0, "Visiting charge cannot be negative")
     .max(100000000),
   fees: z.array(feeInputSchema).max(20, "You can add up to 20 extra charges"),
+  discountType: discountTypeSchema,
+  discountValue: discountValueSchema,
   notes: z.string().trim().max(2000),
+}).superRefine((value, context) => {
+  if (value.discountType === "percentage" && value.discountValue !== null && value.discountValue > 100) {
+    context.addIssue({
+      code: z.ZodIssueCode.too_big,
+      origin: "number",
+      maximum: 100,
+      inclusive: true,
+      path: ["discountValue"],
+      message: "Percentage discount cannot exceed 100%",
+    });
+  }
 });
 
 export const doctorChamberQuerySchema = z
@@ -158,4 +187,3 @@ export const doctorChamberQuerySchema = z
 
 export type DoctorChamberVisitSchema = z.infer<typeof doctorChamberVisitSchema>;
 export type DoctorChamberQuerySchema = z.infer<typeof doctorChamberQuerySchema>;
-

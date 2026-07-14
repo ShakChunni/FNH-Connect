@@ -301,6 +301,10 @@ model DoctorChamberVisit {
   // resets this value to the configured amount on every create/update.
   ultrasoundCharge Decimal @default(800)
   visitingCharge   Decimal @default(0)
+  subtotal         Decimal @default(0)
+  discountType     String?
+  discountValue    Decimal?
+  discountAmount   Decimal @default(0)
   totalAmount      Decimal @default(0)
   notes            String?
 

@@ -1,5 +1,6 @@
 import type {
   DoctorChamberFeeInput,
+  DoctorChamberDiscountType,
   DoctorChamberPatientInput,
   DoctorChamberVisitInput,
   DoctorChamberVisitRecord,
@@ -7,6 +8,7 @@ import type {
 
 export type {
   DoctorChamberFeeInput,
+  DoctorChamberDiscountType,
   DoctorChamberPatientInput,
   DoctorChamberVisitInput,
   DoctorChamberVisitRecord,
@@ -95,5 +97,7 @@ export const EMPTY_VISIT: DoctorChamberVisitInput = {
   patient: EMPTY_PATIENT,
   visitingCharge: 0,
   fees: [],
+  discountType: "value",
+  discountValue: null,
   notes: "",
 };
