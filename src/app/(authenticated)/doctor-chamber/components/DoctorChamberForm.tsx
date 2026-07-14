@@ -565,16 +565,15 @@ export default function DoctorChamberForm({
                         </span>
                       </button>
                       <div className="grid grid-cols-[1fr_auto] items-center gap-3 border-b border-gray-100 px-3 py-3 sm:grid-cols-[1fr_140px_90px]"><div><p className="font-semibold text-gray-800">Visiting Charge<span className="text-red-500"> *</span></p><p className="text-xs text-gray-500">Manual input; enter 0 when waived.</p></div><NumberInput min="0" step="0.01" value={visitingChargeText} onChange={(event) => setVisitingChargeText(event.target.value)} className={`${inputClassName} w-32 sm:w-full`} disabled={isBusy} aria-label="Visiting charge in BDT" /><span className="hidden text-right text-xs font-bold text-indigo-600 sm:block">Manual</span></div>
-                      <AnimatePresence initial={false} mode="popLayout">
+                      <AnimatePresence initial={false}>
                         {fees.map((fee, index) => (
                           <motion.div
                             key={fee.id ?? `new-${index}`}
-                            layout
-                            initial={{ opacity: 0, height: 0, y: -12 }}
-                            animate={{ opacity: 1, height: "auto", y: 0 }}
-                            exit={{ opacity: 0, height: 0, y: -8, scale: 0.98 }}
-                            transition={{ duration: 0.24, ease: "easeOut" }}
-                            className="grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-3 overflow-hidden border-b border-gray-100 px-3 py-3 sm:grid-cols-[1fr_140px_90px_36px]"
+                            initial={{ opacity: 0, scale: 0.99 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.99 }}
+                            transition={{ duration: 0.16, ease: "easeOut" }}
+                            className="grid origin-top grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-3 border-b border-gray-100 px-3 py-3 sm:grid-cols-[1fr_140px_90px_36px]"
                           >
                             <input value={fee.feeName} onChange={(event) => updateFee(index, "feeName", event.target.value)} className={inputClassName} placeholder="Charge name" disabled={isBusy} aria-label="Additional charge name" />
                             <NumberInput min="0" step="0.01" value={fee.amountText} onChange={(event) => updateFee(index, "amountText", event.target.value)} className={`${inputClassName} w-32 sm:w-full`} placeholder="0" disabled={isBusy} aria-label="Additional charge amount in BDT" />
