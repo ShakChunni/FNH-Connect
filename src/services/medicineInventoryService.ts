@@ -469,6 +469,8 @@ export interface MedicineInventoryReport {
     defaultSalePrice: number;
     currentStock: number;
     lowStockThreshold: number;
+    purchaseQuantity: number;
+    salesQuantity: number;
     group: { id: number; name: string };
   }>;
   lowStockMedicines: Array<{
@@ -480,6 +482,8 @@ export interface MedicineInventoryReport {
     defaultSalePrice: number;
     currentStock: number;
     lowStockThreshold: number;
+    purchaseQuantity: number;
+    salesQuantity: number;
     group: { id: number; name: string };
   }>;
   purchases: Array<{
@@ -713,14 +717,49 @@ export async function getMedicineInventoryReport(
     }),
   ]);
 
-  const normalizedMedicines = availableMedicines.map((medicine) => ({
+  const normalizedPurchases = purchases.map((purchase) => ({
+    ...purchase,
+    unitPrice: Number(purchase.unitPrice),
+    totalAmount: Number(purchase.totalAmount),
+  }));
+
+  const normalizedSales = sales.map((sale) => ({
+    ...sale,
+    unitPrice: Number(sale.unitPrice),
+    totalAmount: Number(sale.totalAmount),
+  }));
+
+  const purchaseQuantityByMedicineId = new Map<number, number>();
+  normalizedPurchases.forEach((purchase) => {
+    purchaseQuantityByMedicineId.set(
+      purchase.medicine.id,
+      (purchaseQuantityByMedicineId.get(purchase.medicine.id) ?? 0) +
+        purchase.quantity,
+    );
+  });
+
+  const salesQuantityByMedicineId = new Map<number, number>();
+  normalizedSales.forEach((sale) => {
+    salesQuantityByMedicineId.set(
+      sale.medicine.id,
+      (salesQuantityByMedicineId.get(sale.medicine.id) ?? 0) + sale.quantity,
+    );
+  });
+
+  const addMovementQuantities = <T extends { id: number }>(medicine: T) => ({
     ...medicine,
+    purchaseQuantity: purchaseQuantityByMedicineId.get(medicine.id) ?? 0,
+    salesQuantity: salesQuantityByMedicineId.get(medicine.id) ?? 0,
+  });
+
+  const normalizedMedicines = availableMedicines.map((medicine) => ({
+    ...addMovementQuantities(medicine),
     defaultSalePrice: Number(medicine.defaultSalePrice),
   }));
 
   const lowStockMedicines = lowStockMedicineRows
     .map((medicine) => ({
-      ...medicine,
+      ...addMovementQuantities(medicine),
       defaultSalePrice: Number(medicine.defaultSalePrice),
     }))
     .filter(
@@ -741,18 +780,6 @@ export async function getMedicineInventoryReport(
   `;
 
   const totalStockValue = Number(stockValue[0]?.total || 0);
-
-  const normalizedPurchases = purchases.map((purchase) => ({
-    ...purchase,
-    unitPrice: Number(purchase.unitPrice),
-    totalAmount: Number(purchase.totalAmount),
-  }));
-
-  const normalizedSales = sales.map((sale) => ({
-    ...sale,
-    unitPrice: Number(sale.unitPrice),
-    totalAmount: Number(sale.totalAmount),
-  }));
 
   return {
     stats: {

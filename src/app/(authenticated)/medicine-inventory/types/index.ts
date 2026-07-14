@@ -294,6 +294,8 @@ export interface ReportMedicine {
   defaultSalePrice: number;
   currentStock: number;
   lowStockThreshold: number;
+  purchaseQuantity: number;
+  salesQuantity: number;
   group: {
     id: number;
     name: string;

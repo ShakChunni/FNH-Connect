@@ -11,6 +11,7 @@ import {
   type MedicineReportInput,
   type MedicineReportTarget,
 } from "./types";
+import { getGroupedStockRows } from "./stockReportHelpers";
 
 const EXCEL_MIME_TYPE =
   "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
@@ -20,13 +21,6 @@ const GROUP_COLOR = "FFDBEAFE";
 const BORDER_COLOR = "FFD1D5DB";
 
 type ExcelCellValue = string | number | Date;
-
-interface MedicineGroupSummary {
-  name: string;
-  medicineCount: number;
-  totalStock: number;
-  lowStockCount: number;
-}
 
 const safeText = (value: string | null | undefined, fallback = "N/A") => {
   if (!value || value.trim().length === 0) {
@@ -190,39 +184,94 @@ const formatDataRows = (
   }
 };
 
-const sortMedicines = (medicines: ReportMedicine[]) =>
-  [...medicines].sort((left, right) => {
-    const groupComparison = left.group.name.localeCompare(right.group.name);
-    if (groupComparison !== 0) {
-      return groupComparison;
-    }
+const addGroupedStockTable = (
+  worksheet: ExcelJS.Worksheet,
+  title: string,
+  medicines: ReportMedicine[],
+  includeThreshold: boolean,
+  showSectionTitle = true,
+) => {
+  const headers = [
+    "Medicine Group",
+    "Medicines",
+    "Purchase",
+    "Sales",
+    "Stock in Hand",
+    ...(includeThreshold ? ["Threshold"] : []),
+  ];
+  const widths = includeThreshold
+    ? [28, 34, 16, 16, 20, 16]
+    : [30, 36, 16, 16, 20];
+  const lastColumn = columnLetter(headers.length);
 
-    return displayMedicineName(left).localeCompare(displayMedicineName(right));
+  if (showSectionTitle) {
+    const titleRow = worksheet.addRow([]).number;
+    worksheet.mergeCells(`A${titleRow}:${lastColumn}${titleRow}`);
+    worksheet.getCell(`A${titleRow}`).value = title;
+    worksheet.getCell(`A${titleRow}`).font = {
+      bold: true,
+      color: { argb: TITLE_COLOR },
+    };
+    worksheet.getCell(`A${titleRow}`).fill = {
+      type: "pattern",
+      pattern: "solid",
+      fgColor: { argb: GROUP_COLOR },
+    };
+  }
+
+  const headerRow = addHeader(worksheet, headers, widths);
+  const groupedRows = getGroupedStockRows(medicines, includeThreshold);
+  const groupRows: number[] = [];
+  let totalRow = 0;
+
+  if (groupedRows.length === 1 && groupedRows[0]?.kind === "total") {
+    const emptyRow = worksheet.addRow(["No medicines found for this report."]);
+    worksheet.mergeCells(`A${emptyRow.number}:${lastColumn}${emptyRow.number}`);
+  } else {
+    groupedRows.forEach((row) => {
+      const values: ExcelCellValue[] = [
+        row.groupName,
+        row.medicineName,
+        row.purchaseQuantity,
+        row.salesQuantity,
+        row.stockInHand,
+      ];
+      if (includeThreshold) {
+        values.push(row.threshold ?? "—");
+      }
+
+      const addedRow = worksheet.addRow(values);
+      if (row.kind === "group") groupRows.push(addedRow.number);
+      if (row.kind === "total") totalRow = addedRow.number;
+    });
+  }
+
+  formatDataRows(
+    worksheet,
+    headerRow + 1,
+    includeThreshold ? [3, 4, 5, 6] : [3, 4, 5],
+    [],
+  );
+
+  groupRows.forEach((rowNumber) => {
+    const row = worksheet.getRow(rowNumber);
+    row.font = { bold: true, color: { argb: TITLE_COLOR } };
+    row.fill = {
+      type: "pattern",
+      pattern: "solid",
+      fgColor: { argb: GROUP_COLOR },
+    };
   });
 
-const buildGroupSummaries = (medicines: ReportMedicine[]): MedicineGroupSummary[] => {
-  const groups = new Map<string, MedicineGroupSummary>();
-
-  medicines.forEach((medicine) => {
-    const name = safeText(medicine.group.name, "Unknown Group");
-    const existing = groups.get(name);
-    const summary =
-      existing ?? {
-        name,
-        medicineCount: 0,
-        totalStock: 0,
-        lowStockCount: 0,
-      };
-
-    summary.medicineCount += 1;
-    summary.totalStock += medicine.currentStock;
-    if (medicine.currentStock <= medicine.lowStockThreshold) {
-      summary.lowStockCount += 1;
-    }
-    groups.set(name, summary);
-  });
-
-  return [...groups.values()].sort((left, right) => left.name.localeCompare(right.name));
+  if (totalRow > 0) {
+    const row = worksheet.getRow(totalRow);
+    row.font = { bold: true, color: { argb: TITLE_COLOR } };
+    row.fill = {
+      type: "pattern",
+      pattern: "solid",
+      fgColor: { argb: "FFF1F5F9" },
+    };
+  }
 };
 
 const addSummarySheet = (
@@ -234,9 +283,9 @@ const addSummarySheet = (
   styleTitle(
     worksheet,
     `${MEDICINE_REPORT_TARGET_LABELS[input.target]} Excel Report`,
-    4,
+    6,
   );
-  addMetadata(worksheet, input.periodLabel, input.generatedBy, 4);
+  addMetadata(worksheet, input.periodLabel, input.generatedBy, 6);
 
   const summaryHeaderRow = addHeader(
     worksheet,
@@ -259,106 +308,40 @@ const addSummarySheet = (
   worksheet.getCell(`C${summaryHeaderRow + 5}`).numFmt = "#,##0.00";
   formatDataRows(worksheet, summaryHeaderRow + 1, [2, 3], []);
 
-  const groupHeaderRow = worksheet.addRow([]).number + 1;
-  worksheet.mergeCells(`A${groupHeaderRow}:D${groupHeaderRow}`);
-  worksheet.getCell(`A${groupHeaderRow}`).value = "Available Stock by Medicine Group";
-  worksheet.getCell(`A${groupHeaderRow}`).font = {
-    bold: true,
-    color: { argb: TITLE_COLOR },
-  };
-  worksheet.getCell(`A${groupHeaderRow}`).fill = {
-    type: "pattern",
-    pattern: "solid",
-    fgColor: { argb: GROUP_COLOR },
-  };
+  if (input.target === "available" || input.target === "combined") {
+    addGroupedStockTable(
+      worksheet,
+      "Available Stock by Medicine Group",
+      input.report.availableMedicines,
+      false,
+    );
+  }
 
-  const groupTableHeaderRow = addHeader(
-    worksheet,
-    ["Medicine Group", "Medicines", "Units in Stock", "Low Stock"],
-    [30, 18, 20, 18],
-  );
-  buildGroupSummaries(input.report.availableMedicines).forEach((group) => {
-    worksheet.addRow([group.name, group.medicineCount, group.totalStock, group.lowStockCount]);
-  });
-  formatDataRows(worksheet, groupTableHeaderRow + 1, [2, 3, 4], []);
+  if (input.target === "lowStock" || input.target === "combined") {
+    addGroupedStockTable(
+      worksheet,
+      "Low Stock by Medicine Group",
+      input.report.lowStockMedicines,
+      true,
+    );
+  }
 };
 
-const addMedicineSheet = (
+const addGroupedStockSheet = (
   workbook: ExcelJS.Workbook,
   name: string,
   title: string,
   medicines: ReportMedicine[],
   periodLabel: string,
   generatedBy: string,
+  includeThreshold: boolean,
 ) => {
   const worksheet = workbook.addWorksheet(name);
   applyWorksheetDefaults(worksheet);
-  styleTitle(worksheet, title, 9);
-  addMetadata(worksheet, periodLabel, generatedBy, 9);
-
-  const headerRow = addHeader(
-    worksheet,
-    [
-      "Medicine Group",
-      "Medicine",
-      "Generic Name",
-      "Strength",
-      "Dosage Form",
-      "Current Stock",
-      "Low-Stock Threshold",
-      "Default Sale Price (BDT)",
-      "Status",
-    ],
-    [22, 28, 28, 16, 16, 16, 20, 24, 16],
-  );
-
-  const sortedMedicines = sortMedicines(medicines);
-  let previousGroup = "";
-  const groupHeaderRows: number[] = [];
-  sortedMedicines.forEach((medicine) => {
-    const groupName = safeText(medicine.group.name, "Unknown Group");
-    if (groupName !== previousGroup) {
-      const groupRow = worksheet.addRow([]).number;
-      groupHeaderRows.push(groupRow);
-      worksheet.mergeCells(`A${groupRow}:I${groupRow}`);
-      worksheet.getCell(`A${groupRow}`).value = groupName;
-      worksheet.getCell(`A${groupRow}`).font = { bold: true, color: { argb: TITLE_COLOR } };
-      worksheet.getCell(`A${groupRow}`).fill = {
-        type: "pattern",
-        pattern: "solid",
-        fgColor: { argb: GROUP_COLOR },
-      };
-      previousGroup = groupName;
-    }
-
-    worksheet.addRow([
-      groupName,
-      displayMedicineName(medicine),
-      safeText(medicine.genericName),
-      safeText(medicine.strength),
-      safeText(medicine.dosageForm),
-      medicine.currentStock,
-      medicine.lowStockThreshold,
-      medicine.defaultSalePrice,
-      medicine.currentStock <= medicine.lowStockThreshold ? "Low Stock" : "In Stock",
-    ]);
-  });
-
-  if (sortedMedicines.length === 0) {
-    const emptyRow = worksheet.addRow(["No medicines found for this report."]);
-    worksheet.mergeCells(`A${emptyRow.number}:I${emptyRow.number}`);
-  }
-
-  formatDataRows(worksheet, headerRow + 1, [6, 7, 8], []);
-  groupHeaderRows.forEach((rowNumber) => {
-    const cell = worksheet.getCell(`A${rowNumber}`);
-    cell.font = { bold: true, color: { argb: TITLE_COLOR } };
-    cell.fill = {
-      type: "pattern",
-      pattern: "solid",
-      fgColor: { argb: GROUP_COLOR },
-    };
-  });
+  const columnCount = includeThreshold ? 6 : 5;
+  styleTitle(worksheet, title, columnCount);
+  addMetadata(worksheet, periodLabel, generatedBy, columnCount);
+  addGroupedStockTable(worksheet, title, medicines, includeThreshold, false);
 };
 
 const addPurchaseSheet = (
@@ -508,24 +491,26 @@ export const buildMedicineInventoryWorkbook = (
   addSummarySheet(workbook, input);
 
   if (input.target === "available" || input.target === "combined") {
-    addMedicineSheet(
+    addGroupedStockSheet(
       workbook,
-      "Medicine List",
-      "Medicine List by Group",
+      "Available Stock",
+      "Available Stock Excel Report",
       input.report.availableMedicines,
       input.periodLabel,
       input.generatedBy,
+      false,
     );
   }
 
   if (input.target === "lowStock" || input.target === "combined") {
-    addMedicineSheet(
+    addGroupedStockSheet(
       workbook,
       "Low Stock",
       "Low-Stock Medicines by Group",
       input.report.lowStockMedicines,
       input.periodLabel,
       input.generatedBy,
+      true,
     );
   }
 

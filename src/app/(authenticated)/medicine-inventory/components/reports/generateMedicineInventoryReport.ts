@@ -19,11 +19,12 @@ import {
   safeText,
   checkNewPage,
 } from "./reportHelpers";
+import { getGroupedStockRows } from "./stockReportHelpers";
 
 /**
  * Generate Medicine Inventory Summary Report PDF
  */
-export const generateMedicineInventoryReport = async (
+export const buildMedicineInventoryReportDocument = async (
   input: MedicineReportInput,
 ) => {
   const doc = new jsPDF();
@@ -101,33 +102,35 @@ export const generateMedicineInventoryReport = async (
     doc.text("Available Stock Summary", margin, currentY);
     currentY += 6;
 
-    const groupSummary = getGroupSummary(input.report.availableMedicines);
+    if (input.report.availableMedicines.length > 0) {
+      const groupedRows = getGroupedStockRows(
+        input.report.availableMedicines,
+      );
+      const groupRowIndexes = new Set<number>();
+      const totalRowIndex = groupedRows.length - 1;
+      const groupRows = groupedRows.map((row, index) => {
+        if (row.kind === "group") {
+          groupRowIndexes.add(index);
+        }
 
-    if (groupSummary.length > 0) {
-      const groupRows = groupSummary.map((group, index) => [
-        (index + 1).toString(),
-        group.groupName,
-        formatNumber(group.medicineCount),
-        formatNumber(group.totalStock),
-        formatCurrency(group.stockValue),
-      ]);
-
-      groupRows.push([
-        "",
-        "TOTAL",
-        formatNumber(input.report.availableMedicines.length),
-        formatNumber(
-          input.report.availableMedicines.reduce(
-            (sum, medicine) => sum + medicine.currentStock,
-            0,
-          ),
-        ),
-        formatCurrency(stats.totalStockValue),
-      ]);
+        return [
+          row.groupName,
+          row.medicineName,
+          formatNumber(row.purchaseQuantity),
+          formatNumber(row.salesQuantity),
+          formatNumber(row.stockInHand),
+        ];
+      });
 
       autoTable(doc, {
         startY: currentY,
-        head: [["#", "Group", "Medicines", "Total Stock", "Stock Value"]],
+        head: [[
+          "Medicine Group",
+          "Medicines",
+          "Purchase",
+          "Sales",
+          "Stock in Hand",
+        ]],
         body: groupRows,
         theme: "plain",
         headStyles: {
@@ -143,17 +146,22 @@ export const generateMedicineInventoryReport = async (
           textColor: COLORS.text,
         },
         columnStyles: {
-          0: { cellWidth: 12, halign: "center" },
-          1: { cellWidth: "auto", fontStyle: "bold" },
+          0: { cellWidth: 42, fontStyle: "bold" },
+          1: { cellWidth: "auto" },
           2: { cellWidth: 28, halign: "center" },
           3: { cellWidth: 28, halign: "center" },
-          4: { cellWidth: 40, halign: "right", fontStyle: "bold" },
+          4: { cellWidth: 34, halign: "center", fontStyle: "bold" },
         },
         alternateRowStyles: {
           fillColor: [248, 250, 252],
         },
         didParseCell: (cellData) => {
-          if (cellData.row.index === groupRows.length - 1) {
+          if (groupRowIndexes.has(cellData.row.index)) {
+            cellData.cell.styles.fontStyle = "bold";
+            cellData.cell.styles.fillColor = [219, 234, 254];
+          }
+
+          if (cellData.row.index === totalRowIndex) {
             cellData.cell.styles.fontStyle = "bold";
             cellData.cell.styles.fillColor = [241, 245, 249];
           }
@@ -186,21 +194,38 @@ export const generateMedicineInventoryReport = async (
     currentY += 6;
 
     if (input.report.lowStockMedicines.length > 0) {
-      const lowStockRows = getLowStockSummary(
+      const groupedLowStockRows = getGroupedStockRows(
         input.report.lowStockMedicines,
-      ).map((item, index) => [
-        (index + 1).toString(),
-        item.groupName,
-        item.genericName,
-        formatNumber(item.medicineCount),
-        formatNumber(item.totalCurrentStock),
-        formatNumber(item.lowestThreshold),
-      ]);
+        true,
+      );
+      const groupRowIndexes = new Set<number>();
+      const totalRowIndex = groupedLowStockRows.length - 1;
+      const lowStockRows = groupedLowStockRows.map((row, index) => {
+        if (row.kind === "group") {
+          groupRowIndexes.add(index);
+        }
+
+        return [
+          row.groupName,
+          row.medicineName,
+          formatNumber(row.purchaseQuantity),
+          formatNumber(row.salesQuantity),
+          formatNumber(row.stockInHand),
+          row.threshold === null ? "—" : formatNumber(row.threshold),
+        ];
+      });
 
       autoTable(doc, {
         startY: currentY,
         head: [
-          ["#", "Group", "Generic", "Medicines", "Current Stock", "Lowest Threshold"],
+          [
+            "Medicine Group",
+            "Medicines",
+            "Purchase",
+            "Sales",
+            "Stock in Hand",
+            "Threshold",
+          ],
         ],
         body: lowStockRows,
         theme: "plain",
@@ -217,15 +242,26 @@ export const generateMedicineInventoryReport = async (
           textColor: COLORS.text,
         },
         columnStyles: {
-          0: { cellWidth: 10, halign: "center" },
-          1: { cellWidth: 42, fontStyle: "bold" },
-          2: { cellWidth: "auto" },
+          0: { cellWidth: 38, fontStyle: "bold" },
+          1: { cellWidth: "auto" },
+          2: { cellWidth: 25, halign: "center" },
           3: { cellWidth: 25, halign: "center" },
           4: { cellWidth: 30, halign: "center", fontStyle: "bold" },
           5: { cellWidth: 25, halign: "center" },
         },
         alternateRowStyles: {
           fillColor: [254, 252, 232],
+        },
+        didParseCell: (cellData) => {
+          if (groupRowIndexes.has(cellData.row.index)) {
+            cellData.cell.styles.fontStyle = "bold";
+            cellData.cell.styles.fillColor = [254, 243, 199];
+          }
+
+          if (cellData.row.index === totalRowIndex) {
+            cellData.cell.styles.fontStyle = "bold";
+            cellData.cell.styles.fillColor = [254, 249, 195];
+          }
         },
         margin: { left: margin, right: margin },
       });
@@ -410,7 +446,13 @@ export const generateMedicineInventoryReport = async (
   // === FOOTER ===
   drawFooter(doc, input.generatedBy);
 
-  // Output
+  return doc;
+};
+
+export const generateMedicineInventoryReport = async (
+  input: MedicineReportInput,
+) => {
+  const doc = await buildMedicineInventoryReportDocument(input);
   doc.autoPrint();
   const pdfBlob = doc.output("blob");
   const pdfUrl = URL.createObjectURL(pdfBlob);
@@ -494,88 +536,6 @@ function shouldRender(
   sectionTarget: Exclude<MedicineReportTarget, "combined">,
 ): boolean {
   return selectedTarget === "combined" || selectedTarget === sectionTarget;
-}
-
-interface GroupSummaryItem {
-  groupName: string;
-  medicineCount: number;
-  totalStock: number;
-  stockValue: number;
-}
-
-interface LowStockSummaryItem {
-  groupName: string;
-  genericName: string;
-  medicineCount: number;
-  totalCurrentStock: number;
-  lowestThreshold: number;
-}
-
-function getGroupSummary(
-  medicines: MedicineReportInput["report"]["availableMedicines"],
-): GroupSummaryItem[] {
-  const groups = new Map<string, GroupSummaryItem>();
-
-  for (const medicine of medicines) {
-    const groupName = medicine.group?.name || "Unknown Group";
-    const existing = groups.get(groupName);
-
-    if (existing) {
-      existing.medicineCount += 1;
-      existing.totalStock += medicine.currentStock;
-      existing.stockValue += medicine.currentStock * medicine.defaultSalePrice;
-    } else {
-      groups.set(groupName, {
-        groupName,
-        medicineCount: 1,
-        totalStock: medicine.currentStock,
-        stockValue: medicine.currentStock * medicine.defaultSalePrice,
-      });
-    }
-  }
-
-  return Array.from(groups.values()).sort((a, b) =>
-    a.groupName.localeCompare(b.groupName),
-  );
-}
-
-function getLowStockSummary(
-  medicines: MedicineReportInput["report"]["lowStockMedicines"],
-): LowStockSummaryItem[] {
-  const groups = new Map<string, LowStockSummaryItem>();
-
-  for (const medicine of medicines) {
-    const groupName = medicine.group?.name || "Unknown Group";
-    const genericName = safeText(medicine.genericName, "Unknown Generic");
-    const key = `${groupName.toLowerCase()}-${genericName.toLowerCase()}`;
-    const existing = groups.get(key);
-
-    if (existing) {
-      existing.medicineCount += 1;
-      existing.totalCurrentStock += medicine.currentStock;
-      existing.lowestThreshold = Math.min(
-        existing.lowestThreshold,
-        medicine.lowStockThreshold,
-      );
-    } else {
-      groups.set(key, {
-        groupName,
-        genericName,
-        medicineCount: 1,
-        totalCurrentStock: medicine.currentStock,
-        lowestThreshold: medicine.lowStockThreshold,
-      });
-    }
-  }
-
-  return Array.from(groups.values()).sort((a, b) => {
-    const groupCompare = a.groupName.localeCompare(b.groupName);
-    if (groupCompare !== 0) {
-      return groupCompare;
-    }
-
-    return a.genericName.localeCompare(b.genericName);
-  });
 }
 
 interface PurchaseSummaryItem {
