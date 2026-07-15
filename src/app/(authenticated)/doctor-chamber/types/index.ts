@@ -2,6 +2,9 @@ import type {
   DoctorChamberFeeInput,
   DoctorChamberDiscountType,
   DoctorChamberPatientInput,
+  DoctorChamberTestCode,
+  DoctorChamberTestDefinition,
+  DoctorChamberTestRecord,
   DoctorChamberVisitInput,
   DoctorChamberVisitRecord,
 } from "@/lib/doctorChamber";
@@ -10,6 +13,9 @@ export type {
   DoctorChamberFeeInput,
   DoctorChamberDiscountType,
   DoctorChamberPatientInput,
+  DoctorChamberTestCode,
+  DoctorChamberTestDefinition,
+  DoctorChamberTestRecord,
   DoctorChamberVisitInput,
   DoctorChamberVisitRecord,
 };
@@ -23,6 +29,7 @@ export interface DoctorChamberPatientSearchResult
 
 export interface DoctorChamberSummary {
   visits: number;
+  totalTestCharges: number;
   totalUltrasoundCharges: number;
   totalVisitingCharges: number;
   totalAmount: number;
@@ -33,6 +40,8 @@ export interface DoctorChamberDoctorConfig {
   doctorName: string;
   specialization: string | null;
   departmentName: string;
+  visitingCharge: number;
+  tests: DoctorChamberTestDefinition[];
   ultrasoundCode: string;
   ultrasoundName: string;
   ultrasoundCharge: number;
@@ -95,8 +104,9 @@ export const EMPTY_PATIENT: DoctorChamberPatientInput = {
 
 export const EMPTY_VISIT: DoctorChamberVisitInput = {
   patient: EMPTY_PATIENT,
+  selectedTests: [],
   includeUltrasound: false,
-  visitingCharge: 0,
+  visitingCharge: 800,
   fees: [],
   discountType: "value",
   discountValue: null,

@@ -38,7 +38,10 @@ import { ModalHeader } from "@/components/ui/ModalHeader";
 import { DropdownPortal } from "@/components/ui/DropdownPortal";
 import { useDebounce } from "@/hooks/useDebounce";
 import { useNotification } from "@/hooks/useNotification";
-import { DOCTOR_CHAMBER_CONFIG } from "@/lib/doctorChamber";
+import {
+  DOCTOR_CHAMBER_CONFIG,
+  DOCTOR_CHAMBER_TESTS,
+} from "@/lib/doctorChamber";
 import { hasRequiredBangladeshDistrict } from "@/lib/bangladeshAddress";
 import {
   useCreateDoctorChamberVisit,
@@ -50,6 +53,7 @@ import type {
   DoctorChamberDiscountType,
   DoctorChamberPatientInput,
   DoctorChamberPatientSearchResult,
+  DoctorChamberTestCode,
   DoctorChamberVisitRecord,
 } from "../types";
 import { EMPTY_PATIENT } from "../types";
@@ -154,7 +158,7 @@ function SectionHeader({ section }: { section: ChamberSection }) {
     ? "Search for an existing patient or add a new patient record."
     : section === "doctor"
       ? "The consulting doctor is fixed for this private chamber."
-      : "Ultra Sono is optional at BDT 800. Add visiting and other charges, then apply an optional discount.";
+      : "Select one or more investigations. The chamber visit charge is fixed at BDT 800.";
 
   return (
     <div className={`mb-4 rounded-lg border bg-gradient-to-r p-4 shadow-sm transition-colors duration-300 sm:mb-5 sm:rounded-xl sm:p-5 md:mb-6 md:p-6 ${config.wrapper}`}>
@@ -183,8 +187,8 @@ export default function DoctorChamberForm({
   const patientSearchInputRef = useRef<HTMLInputElement>(null);
   const debouncedPatientSearch = useDebounce(patientSearch, 250);
   const { data: patientResults = [], isFetching: isSearching } = useDoctorChamberPatientSearch(debouncedPatientSearch);
-  const [visitingChargeText, setVisitingChargeText] = useState("0");
-  const [includeUltrasound, setIncludeUltrasound] = useState(false);
+  const [selectedTests, setSelectedTests] = useState<DoctorChamberTestCode[]>([]);
+  const [legacyIncludeUltrasound, setLegacyIncludeUltrasound] = useState(false);
   const [fees, setFees] = useState<FeeDraft[]>([]);
   const [discountType, setDiscountType] = useState<DoctorChamberDiscountType>("value");
   const [discountValueText, setDiscountValueText] = useState("");
@@ -202,8 +206,10 @@ export default function DoctorChamberForm({
     setPatient(getInitialPatient(editingVisit));
     setPatientSearch("");
     setIsPatientSearchOpen(false);
-    setIncludeUltrasound(editingVisit ? editingVisit.ultrasoundCharge > 0 : false);
-    setVisitingChargeText(editingVisit ? String(editingVisit.visitingCharge) : "0");
+    setSelectedTests(editingVisit?.tests.map((test) => test.code) ?? []);
+    setLegacyIncludeUltrasound(
+      Boolean(editingVisit && editingVisit.ultrasoundCharge > 0 && editingVisit.tests.length === 0),
+    );
     setFees(editingVisit ? editingVisit.fees.map((fee) => ({ id: fee.id, feeName: fee.feeName, amountText: String(fee.amount) })) : []);
     setDiscountType(editingVisit?.discountType ?? "value");
     setDiscountValueText(editingVisit?.discountValue === null || editingVisit?.discountValue === undefined ? "" : String(editingVisit.discountValue));
@@ -225,12 +231,17 @@ export default function DoctorChamberForm({
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [isBusy, isOpen, onClose]);
 
-  const numericVisitingCharge = Number(visitingChargeText);
+  const numericVisitingCharge = DOCTOR_CHAMBER_CONFIG.visitingCharge;
   const numericExtraCharges = fees.reduce((sum, fee) => {
     const amount = Number(fee.amountText);
     return sum + (Number.isFinite(amount) ? amount : 0);
   }, 0);
-  const subtotal = (includeUltrasound ? DOCTOR_CHAMBER_CONFIG.ultrasoundCharge : 0) +
+  const selectedTestTotal = selectedTests.reduce((sum, code) => {
+    const test = DOCTOR_CHAMBER_TESTS.find((candidate) => candidate.code === code);
+    return sum + (test?.amount ?? 0);
+  }, 0);
+  const subtotal = selectedTestTotal +
+    (legacyIncludeUltrasound ? DOCTOR_CHAMBER_CONFIG.ultrasoundCharge : 0) +
     (Number.isFinite(numericVisitingCharge) ? numericVisitingCharge : 0) +
     numericExtraCharges;
   const numericDiscountValue = Number(discountValueText);
@@ -270,6 +281,15 @@ export default function DoctorChamberForm({
     setFees((current) => current.map((fee, feeIndex) => feeIndex === index ? { ...fee, [field]: value } : fee));
   };
 
+  const toggleTest = (code: DoctorChamberTestCode) => {
+    setLegacyIncludeUltrasound(false);
+    setSelectedTests((current) =>
+      current.includes(code)
+        ? current.filter((selectedCode) => selectedCode !== code)
+        : [...current, code],
+    );
+  };
+
   const handleSubmit = async () => {
     setFormError(null);
     if (!patient.firstName.trim()) {
@@ -285,11 +305,6 @@ export default function DoctorChamberForm({
     if (!hasRequiredBangladeshDistrict(patient.address)) {
       setFormError("Patient district is required.");
       scrollToSection("patient");
-      return;
-    }
-    if (!visitingChargeText.trim() || !Number.isFinite(numericVisitingCharge) || numericVisitingCharge < 0) {
-      setFormError("Visiting charge is required. Enter 0 if there is no charge.");
-      scrollToSection("billing");
       return;
     }
     if (fees.some((fee) => !fee.feeName.trim())) {
@@ -318,7 +333,8 @@ export default function DoctorChamberForm({
         ...patient,
         fullName: [patient.firstName.trim(), patient.lastName.trim()].filter(Boolean).join(" "),
       },
-      includeUltrasound,
+      selectedTests,
+      includeUltrasound: legacyIncludeUltrasound,
       visitingCharge: numericVisitingCharge,
       fees: fees.map((fee) => ({ id: fee.id, feeName: fee.feeName.trim(), amount: Number(fee.amountText) })),
       discountType: discountValueText.trim() ? discountType : null,
@@ -548,29 +564,54 @@ export default function DoctorChamberForm({
                 <section id="doctor-chamber-billing" className="scroll-mt-4">
                   <SectionHeader section="billing" />
                   <div className="space-y-4 sm:space-y-5">
+                    <div className="rounded-2xl border border-indigo-100 bg-indigo-50/40 p-3 sm:p-4">
+                      <div className="mb-3 flex flex-wrap items-end justify-between gap-2">
+                        <div>
+                          <p className="text-sm font-bold text-indigo-950 sm:text-base">Tests / Investigations</p>
+                          <p className="mt-1 text-xs font-medium text-indigo-700">Select every investigation the patient will receive.</p>
+                        </div>
+                        <span className="rounded-full bg-white px-2.5 py-1 text-[11px] font-bold text-indigo-700 shadow-sm">{selectedTests.length} selected</span>
+                      </div>
+                      <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
+                        {DOCTOR_CHAMBER_TESTS.map((test) => {
+                          const isSelected = selectedTests.includes(test.code);
+                          return (
+                            <button
+                              key={test.code}
+                              type="button"
+                              role="checkbox"
+                              aria-checked={isSelected}
+                              onClick={() => toggleTest(test.code)}
+                              disabled={isBusy}
+                              className={`flex min-h-[74px] cursor-pointer items-center gap-3 rounded-xl border-2 px-3 py-3 text-left transition-colors duration-150 disabled:cursor-not-allowed disabled:opacity-60 ${isSelected ? "border-indigo-500 bg-white shadow-md" : "border-white bg-white/70 hover:border-indigo-200 hover:bg-white"}`}
+                            >
+                              <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md border-2 ${isSelected ? "border-indigo-600 bg-indigo-600 text-white" : "border-gray-300 bg-white text-transparent"}`}>
+                                <Check className="h-3.5 w-3.5" />
+                              </span>
+                              <span className="min-w-0 flex-1">
+                                <span className="block text-xs font-bold leading-5 text-gray-800 sm:text-sm">{test.name}</span>
+                                <span className="mt-0.5 block text-[10px] font-semibold uppercase tracking-wide text-gray-500">{test.code}</span>
+                              </span>
+                              <span className="shrink-0 text-right text-xs font-bold text-indigo-700 sm:text-sm">৳ {test.amount.toLocaleString("en-BD")}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                      {legacyIncludeUltrasound ? (
+                        <div className="mt-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                          This older visit contains the legacy “{DOCTOR_CHAMBER_CONFIG.ultrasoundName}” charge. Selecting a current test will replace that legacy option.
+                        </div>
+                      ) : null}
+                    </div>
+
+                    <div className="grid grid-cols-[1fr_auto] items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-3 sm:grid-cols-[1fr_140px_90px]">
+                      <div><p className="font-semibold text-gray-800">Chamber Visit Charge</p><p className="text-xs text-gray-600">Fixed consultation / visit charge.</p></div>
+                      <span className="text-right text-sm font-bold text-gray-900 sm:text-left">৳ {DOCTOR_CHAMBER_CONFIG.visitingCharge.toLocaleString("en-BD")}</span>
+                      <span className="hidden text-right text-xs font-bold text-emerald-700 sm:block">FIXED</span>
+                    </div>
+
                     <div className="overflow-hidden rounded-xl border border-gray-200">
-                      <div className="grid grid-cols-[1fr_auto] items-center gap-3 border-b border-gray-100 bg-gray-50 px-3 py-3 text-sm sm:grid-cols-[1fr_140px_90px]"><span className="font-semibold text-gray-700">Charge</span><span className="hidden font-semibold text-gray-700 sm:block">Amount (BDT)</span><span className="text-right font-semibold text-gray-700">Status</span></div>
-                      <button
-                        type="button"
-                        role="checkbox"
-                        aria-checked={includeUltrasound}
-                        onClick={() => setIncludeUltrasound((current) => !current)}
-                        disabled={isBusy}
-                        className={`grid w-full cursor-pointer grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 border-b border-gray-100 px-3 py-3 text-left text-sm transition-colors duration-200 sm:grid-cols-[auto_1fr_140px_90px] ${includeUltrasound ? "bg-emerald-50/70" : "bg-white hover:bg-gray-50"} disabled:cursor-not-allowed disabled:opacity-60`}
-                      >
-                        <span className={`flex h-5 w-5 items-center justify-center rounded-md border-2 transition-all duration-200 ${includeUltrasound ? "border-emerald-600 bg-emerald-600 text-white" : "border-gray-300 bg-white text-transparent"}`}>
-                          <Check className="h-3.5 w-3.5" />
-                        </span>
-                        <span>
-                          <span className="block font-semibold text-gray-800">{DOCTOR_CHAMBER_CONFIG.ultrasoundName}</span>
-                          <span className="block text-xs text-gray-500">{DOCTOR_CHAMBER_CONFIG.ultrasoundCode} · optional</span>
-                        </span>
-                        <span className="font-semibold text-gray-800">৳ {DOCTOR_CHAMBER_CONFIG.ultrasoundCharge.toLocaleString("en-BD")}</span>
-                        <span className={`flex items-center justify-end gap-1 text-xs font-bold ${includeUltrasound ? "text-emerald-600" : "text-gray-400"}`}>
-                          {includeUltrasound ? <><Check className="h-4 w-4" /> Selected</> : "Not selected"}
-                        </span>
-                      </button>
-                      <div className="grid grid-cols-[1fr_auto] items-center gap-3 border-b border-gray-100 px-3 py-3 sm:grid-cols-[1fr_140px_90px]"><div><p className="font-semibold text-gray-800">Visiting Charge<span className="text-red-500"> *</span></p><p className="text-xs text-gray-500">Manual input; enter 0 when waived.</p></div><NumberInput min="0" step="0.01" value={visitingChargeText} onChange={(event) => setVisitingChargeText(event.target.value)} className={`${inputClassName} w-32 sm:w-full`} disabled={isBusy} aria-label="Visiting charge in BDT" /><span className="hidden text-right text-xs font-bold text-indigo-600 sm:block">Manual</span></div>
+                      <div className="grid grid-cols-[1fr_auto] items-center gap-3 border-b border-gray-100 bg-gray-50 px-3 py-3 text-sm sm:grid-cols-[1fr_140px_90px]"><span className="font-semibold text-gray-700">Additional charges</span><span className="hidden font-semibold text-gray-700 sm:block">Amount (BDT)</span><span className="text-right font-semibold text-gray-700">Status</span></div>
                       <AnimatePresence initial={false}>
                         {fees.map((fee, index) => (
                           <motion.div
@@ -614,7 +655,7 @@ export default function DoctorChamberForm({
                         <span className="text-gray-500">Discount is capped at the subtotal.</span>
                       </div>
                     </div>
-                    <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_260px]"><label><span className={labelClassName}><FileText className="mr-1 inline h-3.5 w-3.5 text-green-600" />Notes / Report Remarks</span><textarea className={`${inputClassName} min-h-24 resize-y`} value={notes} onChange={(event) => setNotes(event.target.value)} disabled={isBusy} placeholder="Optional notes for the printed chamber form" /></label><div className="rounded-2xl bg-green-900 p-4 text-white"><p className="text-xs font-bold uppercase tracking-wider text-green-200">Subtotal</p><p className="mt-1 text-lg font-semibold text-green-100">৳ {subtotal.toLocaleString("en-BD", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p><p className="mt-2 text-xs text-green-200">Discount: − ৳ {calculatedDiscountAmount.toLocaleString("en-BD", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p><p className="mt-2 border-t border-green-700 pt-2 text-xs font-bold uppercase tracking-wider text-green-200">Grand Total</p><p className="mt-1 text-2xl font-bold">৳ {estimatedTotal.toLocaleString("en-BD", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p><p className="mt-2 text-xs text-green-200">Fixed Ultra Sono + visiting charge + additional charges − discount</p></div></div>
+                    <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_260px]"><label><span className={labelClassName}><FileText className="mr-1 inline h-3.5 w-3.5 text-green-600" />Notes / Report Remarks</span><textarea className={`${inputClassName} min-h-24 resize-y`} value={notes} onChange={(event) => setNotes(event.target.value)} disabled={isBusy} placeholder="Optional notes for the printed chamber form" /></label><div className="rounded-2xl bg-green-900 p-4 text-white"><p className="text-xs font-bold uppercase tracking-wider text-green-200">Subtotal</p><p className="mt-1 text-lg font-semibold text-green-100">৳ {subtotal.toLocaleString("en-BD", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p><p className="mt-2 text-xs text-green-200">Discount: − ৳ {calculatedDiscountAmount.toLocaleString("en-BD", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p><p className="mt-2 border-t border-green-700 pt-2 text-xs font-bold uppercase tracking-wider text-green-200">Grand Total</p><p className="mt-1 text-2xl font-bold">৳ {estimatedTotal.toLocaleString("en-BD", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p><p className="mt-2 text-xs text-green-200">Selected tests + fixed visit + additional charges − discount</p></div></div>
                   </div>
                 </section>
 
@@ -626,7 +667,7 @@ export default function DoctorChamberForm({
               onCancel={onClose}
               onSubmit={handleSubmit}
               isSubmitting={isSubmitting}
-              isDisabled={!patient.firstName.trim() || !patient.gender.trim() || !visitingChargeText.trim()}
+              isDisabled={!patient.firstName.trim() || !patient.gender.trim()}
               cancelText="Cancel"
               submitText={isEditing ? "Update Chamber Visit" : "Save Chamber Visit"}
               loadingText="Saving..."

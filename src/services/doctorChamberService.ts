@@ -2,7 +2,11 @@ import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import {
   DOCTOR_CHAMBER_CONFIG,
+  DOCTOR_CHAMBER_TESTS,
+  getDoctorChamberTest,
+  isDoctorChamberTestCode,
   type DoctorChamberQuerySchema,
+  type DoctorChamberTestCode,
   type DoctorChamberVisitSchema,
   type DoctorChamberVisitRecord,
 } from "@/lib/doctorChamber";
@@ -71,6 +75,8 @@ const chamberVisitSelect = Prisma.validator<Prisma.DoctorChamberVisitSelect>()({
       id: true,
       feeName: true,
       amount: true,
+      feeType: true,
+      testCode: true,
     },
     orderBy: {
       id: "asc",
@@ -185,13 +191,20 @@ function roundCurrency(value: number): number {
   return Math.round((value + Number.EPSILON) * 100) / 100;
 }
 
+function getSelectedTestDefinitions(input: DoctorChamberVisitSchema) {
+  return input.selectedTests.map((code) => getDoctorChamberTest(code));
+}
+
 function getBillingAmounts(input: DoctorChamberVisitSchema) {
-  const ultrasoundCharge = input.includeUltrasound
+  const selectedTests = getSelectedTestDefinitions(input);
+  const legacyUltrasoundCharge = input.includeUltrasound && selectedTests.length === 0
     ? DOCTOR_CHAMBER_CONFIG.ultrasoundCharge
     : 0;
+  const visitingCharge = DOCTOR_CHAMBER_CONFIG.visitingCharge;
   const subtotal = roundCurrency(
-    ultrasoundCharge +
-      input.visitingCharge +
+    selectedTests.reduce((sum, test) => sum + test.amount, 0) +
+      legacyUltrasoundCharge +
+      visitingCharge +
       input.fees.reduce((sum, fee) => sum + fee.amount, 0),
   );
   const discountValue = input.discountValue ?? 0;
@@ -202,7 +215,9 @@ function getBillingAmounts(input: DoctorChamberVisitSchema) {
   const discountAmount = roundCurrency(Math.min(rawDiscountAmount, subtotal));
 
   return {
-    ultrasoundCharge,
+    selectedTests,
+    legacyUltrasoundCharge,
+    visitingCharge,
     subtotal,
     discountType: input.discountValue === null ? null : input.discountType,
     discountValue: input.discountValue,
@@ -220,13 +235,16 @@ function getChargeDescription(
   );
 
   const chargeLines = [
-    `Visiting charge: BDT ${input.visitingCharge.toFixed(2)}`,
+    ...billing.selectedTests.map(
+      (test) => `${test.name}: BDT ${test.amount.toFixed(2)}`,
+    ),
+    `Visit charge: BDT ${billing.visitingCharge.toFixed(2)}`,
     ...extraCharges,
   ];
 
-  if (billing.ultrasoundCharge > 0) {
+  if (billing.legacyUltrasoundCharge > 0) {
     chargeLines.unshift(
-      `${DOCTOR_CHAMBER_CONFIG.ultrasoundName}: BDT ${billing.ultrasoundCharge.toFixed(2)}`,
+      `${DOCTOR_CHAMBER_CONFIG.ultrasoundName}: BDT ${billing.legacyUltrasoundCharge.toFixed(2)}`,
     );
   }
 
@@ -237,6 +255,31 @@ function getChargeDescription(
   }
 
   return chargeLines.join("; ");
+}
+
+function getPersistedFees(
+  input: DoctorChamberVisitSchema,
+  billing: ReturnType<typeof getBillingAmounts>,
+  staffId: number,
+) {
+  return [
+    ...billing.selectedTests.map((test) => ({
+      feeName: test.name,
+      amount: test.amount,
+      feeType: "TEST",
+      testCode: test.code,
+      createdBy: staffId,
+      lastModifiedBy: staffId,
+    })),
+    ...input.fees.map((fee) => ({
+      feeName: fee.feeName.trim(),
+      amount: fee.amount,
+      feeType: "EXTRA",
+      testCode: null,
+      createdBy: staffId,
+      lastModifiedBy: staffId,
+    })),
+  ];
 }
 
 async function upsertPatient(
@@ -335,6 +378,14 @@ function serializeVisit(
     guardianPhone: visit.patient.guardianPhone,
     guardianAddress: visit.patient.guardianAddress,
     guardianEmail: visit.patient.guardianEmail,
+    tests: visit.fees
+      .filter((fee) => fee.feeType === "TEST" && isDoctorChamberTestCode(fee.testCode))
+      .map((fee) => ({
+        id: fee.id,
+        code: fee.testCode as DoctorChamberTestCode,
+        name: fee.feeName,
+        amount: toNumber(fee.amount),
+      })),
     ultrasoundCode: DOCTOR_CHAMBER_CONFIG.ultrasoundCode,
     ultrasoundName: DOCTOR_CHAMBER_CONFIG.ultrasoundName,
     ultrasoundCharge: toNumber(visit.ultrasoundCharge),
@@ -347,11 +398,13 @@ function serializeVisit(
     discountValue:
       visit.discountValue === null ? null : toNumber(visit.discountValue),
     discountAmount: toNumber(visit.discountAmount),
-    fees: visit.fees.map((fee) => ({
-      id: fee.id,
-      feeName: fee.feeName,
-      amount: toNumber(fee.amount),
-    })),
+    fees: visit.fees
+      .filter((fee) => fee.feeType !== "TEST")
+      .map((fee) => ({
+        id: fee.id,
+        feeName: fee.feeName,
+        amount: toNumber(fee.amount),
+      })),
     totalAmount: toNumber(visit.totalAmount),
     notes: visit.notes,
     createdAt: visit.createdAt.toISOString(),
@@ -428,6 +481,8 @@ export async function getDoctorChamberConfig() {
     doctorName: doctor.fullName,
     specialization: doctor.specialization,
     departmentName: DOCTOR_CHAMBER_CONFIG.departmentName,
+    visitingCharge: DOCTOR_CHAMBER_CONFIG.visitingCharge,
+    tests: [...DOCTOR_CHAMBER_TESTS],
     ultrasoundCode: DOCTOR_CHAMBER_CONFIG.ultrasoundCode,
     ultrasoundName: DOCTOR_CHAMBER_CONFIG.ultrasoundName,
     ultrasoundCharge: DOCTOR_CHAMBER_CONFIG.ultrasoundCharge,
@@ -466,6 +521,12 @@ export async function getDoctorChamberVisits(
     totalPages: fetchAll ? 1 : Math.ceil(total / limit),
     summary: {
       visits: total,
+      totalTestCharges: data.reduce(
+        (sum, visit) =>
+          sum +
+          visit.tests.reduce((testSum, test) => testSum + test.amount, 0),
+        0,
+      ),
       totalUltrasoundCharges: data.reduce(
         (sum, visit) => sum + visit.ultrasoundCharge,
         0,
@@ -521,8 +582,8 @@ export async function createDoctorChamberVisit(
         departmentId: department.id,
         doctorId: doctor.id,
         visitNumber,
-        ultrasoundCharge: billing.ultrasoundCharge,
-        visitingCharge: input.visitingCharge,
+        ultrasoundCharge: billing.legacyUltrasoundCharge,
+        visitingCharge: billing.visitingCharge,
         subtotal: billing.subtotal,
         discountType: billing.discountType,
         discountValue: billing.discountValue,
@@ -532,12 +593,7 @@ export async function createDoctorChamberVisit(
         createdBy: staffId,
         lastModifiedBy: staffId,
         fees: {
-          create: input.fees.map((fee) => ({
-            feeName: fee.feeName.trim(),
-            amount: fee.amount,
-            createdBy: staffId,
-            lastModifiedBy: staffId,
-          })),
+          create: getPersistedFees(input, billing, staffId),
         },
       },
       select: { id: true },
@@ -633,8 +689,8 @@ export async function updateDoctorChamberVisit(
       where: { id },
       data: {
         departmentId: department.id,
-        ultrasoundCharge: billing.ultrasoundCharge,
-        visitingCharge: input.visitingCharge,
+        ultrasoundCharge: billing.legacyUltrasoundCharge,
+        visitingCharge: billing.visitingCharge,
         subtotal: billing.subtotal,
         discountType: billing.discountType,
         discountValue: billing.discountValue,
@@ -644,12 +700,7 @@ export async function updateDoctorChamberVisit(
         lastModifiedBy: staffId,
         fees: {
           deleteMany: {},
-          create: input.fees.map((fee) => ({
-            feeName: fee.feeName.trim(),
-            amount: fee.amount,
-            createdBy: staffId,
-            lastModifiedBy: staffId,
-          })),
+          create: getPersistedFees(input, billing, staffId),
         },
       },
       select: { id: true },

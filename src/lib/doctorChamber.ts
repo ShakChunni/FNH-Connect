@@ -8,10 +8,116 @@ export const DOCTOR_CHAMBER_CONFIG = {
   doctorSearchLastName: "Khatun",
   departmentName: "Dr Sufia Khatun Chamber",
   visitNumberPrefix: "CHAMBER",
+  visitingCharge: 800,
   ultrasoundCode: "USG-LOWER-ABDOMEN",
   ultrasoundName: "Ultra Sono (Lower Abdomen)",
   ultrasoundCharge: 800,
 } as const;
+
+export const DOCTOR_CHAMBER_TEST_CODES = [
+  "USG-PREGNANCY",
+  "USG-UTERUS-ADNEXA",
+  "USG-WHOLE-ABDOMEN",
+  "USG-KUB",
+  "USG-HBS",
+  "USG-BOTH-BREASTS",
+  "USG-RIGHT-LEFT-BREAST",
+  "USG-TVS",
+  "SIS",
+  "BIOPHYSICAL-PROFILE",
+] as const;
+
+export type DoctorChamberTestCode = (typeof DOCTOR_CHAMBER_TEST_CODES)[number];
+
+export interface DoctorChamberTestDefinition {
+  code: DoctorChamberTestCode;
+  name: string;
+  shortName: string;
+  amount: number;
+}
+
+export const DOCTOR_CHAMBER_TESTS: readonly DoctorChamberTestDefinition[] = [
+  {
+    code: "USG-PREGNANCY",
+    name: "Ultrasonography of Pregnancy",
+    shortName: "USG of Pregnancy",
+    amount: 800,
+  },
+  {
+    code: "USG-UTERUS-ADNEXA",
+    name: "Ultrasonography of Uterus and Adnexa",
+    shortName: "USG of Uterus & Adnexa",
+    amount: 800,
+  },
+  {
+    code: "USG-WHOLE-ABDOMEN",
+    name: "Ultrasonography of Whole Abdomen",
+    shortName: "USG of Whole Abdomen",
+    amount: 1290,
+  },
+  {
+    code: "USG-KUB",
+    name: "Ultrasonography of KUB Region",
+    shortName: "USG of KUB Region",
+    amount: 800,
+  },
+  {
+    code: "USG-HBS",
+    name: "Ultrasonography of Hepatobiliary System (HBS)",
+    shortName: "USG of HBS",
+    amount: 800,
+  },
+  {
+    code: "USG-BOTH-BREASTS",
+    name: "Ultrasonography of Both Breasts",
+    shortName: "USG of Both Breasts",
+    amount: 1600,
+  },
+  {
+    code: "USG-RIGHT-LEFT-BREAST",
+    name: "Ultrasonography of Right and Left Breast",
+    shortName: "USG of Right & Left Breast",
+    amount: 800,
+  },
+  {
+    code: "USG-TVS",
+    name: "Transvaginal Sonography (TVS)",
+    shortName: "USG of TVS",
+    amount: 2000,
+  },
+  {
+    code: "SIS",
+    name: "Saline Infusion Sonography (SIS)",
+    shortName: "SIS",
+    amount: 3000,
+  },
+  {
+    code: "BIOPHYSICAL-PROFILE",
+    name: "Fetal Biophysical Profile",
+    shortName: "Biophysical Profile",
+    amount: 2000,
+  },
+] as const;
+
+const DOCTOR_CHAMBER_TEST_LOOKUP = new Map(
+  DOCTOR_CHAMBER_TESTS.map((test) => [test.code, test]),
+);
+
+export function getDoctorChamberTest(
+  code: DoctorChamberTestCode,
+): DoctorChamberTestDefinition {
+  const test = DOCTOR_CHAMBER_TEST_LOOKUP.get(code);
+  if (!test) {
+    throw new Error(`Unknown Dr Sufia chamber test code: ${code}`);
+  }
+  return test;
+}
+
+export function isDoctorChamberTestCode(
+  value: string | null,
+): value is DoctorChamberTestCode {
+  return value !== null && DOCTOR_CHAMBER_TEST_CODES.some((code) => code === value);
+}
 
 export interface DoctorChamberFeeInput {
   id?: number;
@@ -41,6 +147,8 @@ export interface DoctorChamberPatientInput {
 
 export interface DoctorChamberVisitInput {
   patient: DoctorChamberPatientInput;
+  selectedTests: DoctorChamberTestCode[];
+  /** Retained only for backwards compatibility with legacy Ultra Sono records. */
   includeUltrasound: boolean;
   visitingCharge: number;
   fees: DoctorChamberFeeInput[];
@@ -52,6 +160,13 @@ export interface DoctorChamberVisitInput {
 export interface DoctorChamberFeeRecord {
   id: number;
   feeName: string;
+  amount: number;
+}
+
+export interface DoctorChamberTestRecord {
+  id: number;
+  code: DoctorChamberTestCode;
+  name: string;
   amount: number;
 }
 
@@ -77,6 +192,7 @@ export interface DoctorChamberVisitRecord {
   guardianPhone: string | null;
   guardianAddress: string | null;
   guardianEmail: string | null;
+  tests: DoctorChamberTestRecord[];
   ultrasoundCode: string;
   ultrasoundName: string;
   ultrasoundCharge: number;
@@ -140,6 +256,8 @@ const feeInputSchema = z.object({
   amount: z.number().finite().min(0, "Charge amount cannot be negative").max(100000000),
 });
 
+const chamberTestCodeSchema = z.enum(DOCTOR_CHAMBER_TEST_CODES);
+
 const discountTypeSchema = z.enum(["percentage", "value"]).nullable().default("value");
 const discountValueSchema = z
   .number()
@@ -150,17 +268,33 @@ const discountValueSchema = z
 
 export const doctorChamberVisitSchema = z.object({
   patient: patientInputSchema,
+  selectedTests: z
+    .array(chamberTestCodeSchema)
+    .max(
+      DOCTOR_CHAMBER_TEST_CODES.length,
+      "You can select up to 10 chamber tests",
+    )
+    .default([]),
   includeUltrasound: z.boolean().default(false),
   visitingCharge: z
     .number()
     .finite()
-    .min(0, "Visiting charge cannot be negative")
-    .max(100000000),
+    .refine(
+      (value) => value === DOCTOR_CHAMBER_CONFIG.visitingCharge,
+      `Visit charge is fixed at BDT ${DOCTOR_CHAMBER_CONFIG.visitingCharge}`,
+    ),
   fees: z.array(feeInputSchema).max(20, "You can add up to 20 extra charges"),
   discountType: discountTypeSchema,
   discountValue: discountValueSchema,
   notes: z.string().trim().max(2000),
 }).superRefine((value, context) => {
+  if (new Set(value.selectedTests).size !== value.selectedTests.length) {
+    context.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["selectedTests"],
+      message: "A chamber test cannot be selected more than once",
+    });
+  }
   if (value.discountType === "percentage" && value.discountValue !== null && value.discountValue > 100) {
     context.addIssue({
       code: z.ZodIssueCode.too_big,

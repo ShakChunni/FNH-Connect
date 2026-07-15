@@ -297,8 +297,8 @@ model DoctorChamberVisit {
   visitNumber  String   @unique
   visitDate    DateTime @default(now())
 
-  // The chamber always includes the fixed Ultra Sono charge. The server
-  // resets this value to the configured amount on every create/update.
+  // Legacy Ultra Sono field retained for existing chamber records. New
+  // selected investigations are stored in DoctorChamberFee with feeType TEST.
   ultrasoundCharge Decimal @default(800)
   visitingCharge   Decimal @default(0)
   subtotal         Decimal @default(0)
@@ -330,6 +330,8 @@ model DoctorChamberFee {
   chamberVisitId Int
   feeName        String
   amount         Decimal
+  feeType        String   @default("EXTRA")
+  testCode       String?
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
   createdBy      Int

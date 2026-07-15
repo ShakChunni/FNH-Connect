@@ -47,7 +47,13 @@ export async function generateDoctorChamberReport(
     type === "summary" ? "CHAMBER SUMMARY REPORT" : "DETAILED CHAMBER REPORT",
     period,
   );
-  const totalUltrasound = data.reduce((sum, visit) => sum + visit.ultrasoundCharge, 0);
+  const totalTestCharges = data.reduce(
+    (sum, visit) =>
+      sum +
+      visit.ultrasoundCharge +
+      visit.tests.reduce((testSum, test) => testSum + test.amount, 0),
+    0,
+  );
   const totalVisiting = data.reduce((sum, visit) => sum + visit.visitingCharge, 0);
   const totalAmount = data.reduce((sum, visit) => sum + visit.totalAmount, 0);
   const totalSubtotal = data.reduce((sum, visit) => sum + visit.subtotal, 0);
@@ -60,7 +66,7 @@ export async function generateDoctorChamberReport(
   autoTable(doc, {
     startY: y,
     body: [
-      ["Visits", String(data.length), "Ultra Sono", money(totalUltrasound), "Visiting", money(totalVisiting), "Extra charges", money(totalExtra), "Subtotal", money(totalSubtotal), "Discount", money(totalDiscount), "Total", money(totalAmount)],
+      ["Visits", String(data.length), "Selected tests", money(totalTestCharges), "Visit charge", money(totalVisiting), "Extra charges", money(totalExtra), "Subtotal", money(totalSubtotal), "Discount", money(totalDiscount), "Total", money(totalAmount)],
     ],
     theme: "grid",
     styles: { font: "helvetica", fontSize: 9, textColor: "#111827", cellPadding: 4 },
@@ -94,14 +100,22 @@ export async function generateDoctorChamberReport(
   } else {
     autoTable(doc, {
       startY: y,
-      head: [["No.", "Visit No.", "Date", "Patient", "Phone", "Ultra Sono", "Visiting", "Extra", "Subtotal", "Discount", "Total"]],
+      head: [["No.", "Visit No.", "Date", "Patient", "Phone", "Selected tests", "Test total", "Visit", "Extra", "Subtotal", "Discount", "Total"]],
       body: data.map((visit, index) => [
         index + 1,
         visit.visitNumber,
         new Date(visit.visitDate).toLocaleString("en-BD"),
         visit.patientFullName,
         visit.patientPhoneNumber || "N/A",
-        money(visit.ultrasoundCharge),
+        visit.tests.length > 0
+          ? visit.tests.map((test) => test.name).join("; ")
+          : visit.ultrasoundCharge > 0
+            ? visit.ultrasoundName
+            : "None",
+        money(
+          visit.ultrasoundCharge +
+            visit.tests.reduce((sum, test) => sum + test.amount, 0),
+        ),
         money(visit.visitingCharge),
         money(visit.fees.reduce((sum, fee) => sum + fee.amount, 0)),
         money(visit.subtotal),
@@ -111,7 +125,7 @@ export async function generateDoctorChamberReport(
       theme: "grid",
       styles: { font: "helvetica", fontSize: 7, textColor: "#111827" },
       headStyles: { fillColor: "#020617", textColor: "#ffffff" },
-      columnStyles: { 0: { cellWidth: 9 }, 5: { halign: "right" }, 6: { halign: "right" }, 7: { halign: "right" }, 8: { halign: "right" }, 9: { halign: "right" }, 10: { halign: "right" } },
+      columnStyles: { 0: { cellWidth: 9 }, 6: { halign: "right" }, 7: { halign: "right" }, 8: { halign: "right" }, 9: { halign: "right" }, 10: { halign: "right" }, 11: { halign: "right" } },
     });
   }
 
