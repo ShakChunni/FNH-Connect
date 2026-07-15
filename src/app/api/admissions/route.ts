@@ -61,6 +61,8 @@ export async function GET(request: NextRequest) {
       status: filters.status,
       departmentId: filters.departmentId,
       doctorId: filters.doctorId,
+      hasDue: filters.hasDue,
+      hasDiscount: filters.hasDiscount,
       page: filters.page,
       limit: filters.limit,
     });

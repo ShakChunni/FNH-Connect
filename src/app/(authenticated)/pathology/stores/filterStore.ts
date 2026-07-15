@@ -27,6 +27,9 @@ export interface FilterValues {
   endDate: Date | null;
   // Search
   search: string;
+  // Financial filters
+  hasDue: boolean | null;
+  hasDiscount: boolean | null;
   // Pagination
   page: number;
   limit: number;
@@ -63,6 +66,8 @@ interface FilterActions {
   setDateRange: (range: string) => void;
   setCustomDateRange: (start: Date | null, end: Date | null) => void;
   setSearch: (search: string) => void;
+  setHasDue: (hasDue: boolean | null) => void;
+  setHasDiscount: (hasDiscount: boolean | null) => void;
   setPage: (page: number) => void;
   setLimit: (limit: number) => void;
 
@@ -93,6 +98,8 @@ const initialFilterValues: FilterValues = {
   startDate: null,
   endDate: null,
   search: "",
+  hasDue: null,
+  hasDiscount: null,
   page: 1,
   limit: 15,
 };
@@ -204,6 +211,16 @@ export const usePathologyFilterStore = create<FilterStore>((set, get) => ({
       filters: { ...state.filters, search, page: 1 },
     })),
 
+  setHasDue: (hasDue) =>
+    set((state) => ({
+      filters: { ...state.filters, hasDue, page: 1 },
+    })),
+
+  setHasDiscount: (hasDiscount) =>
+    set((state) => ({
+      filters: { ...state.filters, hasDiscount, page: 1 },
+    })),
+
   setPage: (page) =>
     set((state) => ({
       filters: { ...state.filters, page },
@@ -229,6 +246,8 @@ export const usePathologyFilterStore = create<FilterStore>((set, get) => ({
     if (filters.testNames.length > 0) count++;
     if (filters.dateRange !== "all") count++;
     if (filters.search !== "") count++;
+    if (filters.hasDue !== null) count++;
+    if (filters.hasDiscount !== null) count++;
     return count;
   },
 
@@ -276,6 +295,8 @@ export const usePathologyFilterActions = () =>
       setDateRange: state.setDateRange,
       setCustomDateRange: state.setCustomDateRange,
       setSearch: state.setSearch,
+      setHasDue: state.setHasDue,
+      setHasDiscount: state.setHasDiscount,
       setPage: state.setPage,
       setLimit: state.setLimit,
       clearAllFilters: state.clearAllFilters,

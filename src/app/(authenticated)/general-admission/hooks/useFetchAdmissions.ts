@@ -56,6 +56,14 @@ export function useFetchAdmissions(filters: AdmissionFilters = {}) {
         params.append("endDate", filters.endDate);
       }
 
+      if (filters.hasDue !== undefined) {
+        params.append("hasDue", filters.hasDue.toString());
+      }
+
+      if (filters.hasDiscount !== undefined) {
+        params.append("hasDiscount", filters.hasDiscount.toString());
+      }
+
       if (filters.page) {
         params.append("page", filters.page.toString());
       }

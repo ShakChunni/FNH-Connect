@@ -3,7 +3,8 @@
 import React, { useEffect, useCallback } from "react";
 import { ClientPortal } from "@/components/ui/ClientPortal";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, RotateCcw, SlidersHorizontal } from "lucide-react";
+import { CircleDollarSign, Percent, X, RotateCcw, SlidersHorizontal } from "lucide-react";
+import { FinancialFilterSelect } from "@/components/ui";
 import { usePathologyFilterStore } from "../../stores/filterStore";
 import {
   DoctorFilter,
@@ -24,11 +25,26 @@ export const Filters: React.FC = () => {
   const clearAllFilters = usePathologyFilterStore(
     (state) => state.clearAllFilters
   );
-  const getActiveFilterCount = usePathologyFilterStore(
-    (state) => state.getActiveFilterCount
+  const filters = usePathologyFilterStore((state) => state.filters);
+  const hasDue = usePathologyFilterStore((state) => state.filters.hasDue);
+  const hasDiscount = usePathologyFilterStore(
+    (state) => state.filters.hasDiscount,
+  );
+  const setHasDue = usePathologyFilterStore((state) => state.setHasDue);
+  const setHasDiscount = usePathologyFilterStore(
+    (state) => state.setHasDiscount,
   );
 
-  const activeCount = getActiveFilterCount();
+  const activeCount = [
+    filters.orderedById !== null,
+    filters.doneById !== null,
+    filters.status !== "All",
+    filters.testNames.length > 0,
+    filters.dateRange !== "all",
+    filters.search !== "",
+    filters.hasDue !== null,
+    filters.hasDiscount !== null,
+  ].filter(Boolean).length;
 
   // Close on Escape key
   useEffect(() => {
@@ -142,6 +158,22 @@ export const Filters: React.FC = () => {
 
               {/* Date Range Filter */}
               <DateRangeFilter />
+
+              <FinancialFilterSelect
+                label="Due"
+                icon={CircleDollarSign}
+                value={hasDue}
+                onChange={setHasDue}
+                activeLabel="Patients with due"
+              />
+
+              <FinancialFilterSelect
+                label="Discount"
+                icon={Percent}
+                value={hasDiscount}
+                onChange={setHasDiscount}
+                activeLabel="Patients with discount"
+              />
 
               {/* Test Filter */}
               <TestFilter />

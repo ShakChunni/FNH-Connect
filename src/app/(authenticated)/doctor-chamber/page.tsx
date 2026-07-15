@@ -280,6 +280,7 @@ export default function DoctorChamberPage() {
         <DoctorChamberForm
           isOpen={isFormOpen}
           editingVisit={editingVisit}
+          printedBy={user?.fullName || "Staff"}
           onClose={() => {
             if (!isGeneratingReport) {
               setIsFormOpen(false);

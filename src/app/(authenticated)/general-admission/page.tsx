@@ -85,6 +85,8 @@ const GeneralAdmissionPage = React.memo(() => {
         departmentId: filterValues.departmentId ?? undefined,
         doctorId: filterValues.doctorId ?? undefined,
         status: filterValues.status !== "All" ? filterValues.status : undefined,
+        hasDue: filterValues.hasDue ?? undefined,
+        hasDiscount: filterValues.hasDiscount ?? undefined,
         ...dateRangeParams,
       };
     },

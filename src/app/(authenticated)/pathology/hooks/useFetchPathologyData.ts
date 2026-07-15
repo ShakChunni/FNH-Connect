@@ -68,6 +68,14 @@ export function useFetchPathologyData(filters: PathologyFilters = {}) {
         params.append("doneById", filters.doneById.toString());
       }
 
+      if (filters.hasDue !== undefined) {
+        params.append("hasDue", filters.hasDue.toString());
+      }
+
+      if (filters.hasDiscount !== undefined) {
+        params.append("hasDiscount", filters.hasDiscount.toString());
+      }
+
       // Pagination
       if (filters.page) {
         params.append("page", filters.page.toString());

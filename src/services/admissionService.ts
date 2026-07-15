@@ -39,6 +39,8 @@ export interface AdmissionFilters {
   status?: string;
   departmentId?: number;
   doctorId?: number;
+  hasDue?: boolean;
+  hasDiscount?: boolean;
   page?: number;
   limit?: number;
 }
@@ -377,6 +379,14 @@ export async function getAdmissions(filters: AdmissionFilters) {
   }
   if (filters.doctorId) {
     where.doctorId = filters.doctorId;
+  }
+
+  if (filters.hasDue !== undefined) {
+    where.dueAmount = filters.hasDue ? { gt: 0 } : { lte: 0 };
+  }
+
+  if (filters.hasDiscount !== undefined) {
+    where.discountAmount = filters.hasDiscount ? { gt: 0 } : { lte: 0 };
   }
 
   const [admissions, total] = await Promise.all([
