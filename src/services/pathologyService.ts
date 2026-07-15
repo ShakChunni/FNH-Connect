@@ -33,6 +33,8 @@ export interface PathologyFilters {
   testNames?: string[]; // Multi-select test names
   orderedById?: number; // Filter by ordering doctor
   doneById?: number; // Filter by performing staff
+  hasDue?: boolean;
+  hasDiscount?: boolean;
   page?: number;
   limit?: number;
 }
@@ -182,6 +184,14 @@ export async function getPathologyPatients(filters: PathologyFilters) {
 
   if (filters.doneById) {
     where.doneById = filters.doneById;
+  }
+
+  if (filters.hasDue !== undefined) {
+    where.dueAmount = filters.hasDue ? { gt: 0 } : { lte: 0 };
+  }
+
+  if (filters.hasDiscount !== undefined) {
+    where.discountAmount = filters.hasDiscount ? { gt: 0 } : { lte: 0 };
   }
 
   // Pagination defaults

@@ -36,6 +36,8 @@ export async function GET(request: NextRequest) {
       testNames: searchParams.get("testNames") || undefined,
       orderedById: searchParams.get("orderedById") || undefined,
       doneById: searchParams.get("doneById") || undefined,
+      hasDue: searchParams.get("hasDue") || undefined,
+      hasDiscount: searchParams.get("hasDiscount") || undefined,
       page: searchParams.get("page") || "1",
       limit: searchParams.get("limit") || "15",
     });

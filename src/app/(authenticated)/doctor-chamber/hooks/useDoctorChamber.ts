@@ -6,6 +6,7 @@ import type {
   DoctorChamberListResponse,
   DoctorChamberMutationResponse,
   DoctorChamberPatientSearchResponse,
+  DoctorChamberVisitResponse,
 } from "../types";
 
 export interface DoctorChamberListFilters {
@@ -67,6 +68,16 @@ export function useDoctorChamberPatientSearch(search: string) {
   });
 }
 
+export async function fetchDoctorChamberVisit(id: number) {
+  const response = await api.get<DoctorChamberVisitResponse>(
+    `/doctor-chamber/${id}`,
+  );
+  if (!response.data.success) {
+    throw new Error(response.data.error || "Failed to load saved chamber visit");
+  }
+  return response.data.data;
+}
+
 export function useCreateDoctorChamberVisit() {
   const queryClient = useQueryClient();
   return useMutation({
@@ -117,4 +128,3 @@ export async function fetchDoctorChamberReport(
   }
   return response.data;
 }
-

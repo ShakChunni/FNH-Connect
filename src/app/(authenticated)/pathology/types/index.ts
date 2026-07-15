@@ -207,6 +207,8 @@ export interface PathologyFilters {
   orderedById?: number; // New: filter by ordering doctor
   doneById?: number; // New: filter by performing staff
   testNames?: string[]; // Filter by specific test names
+  hasDue?: boolean;
+  hasDiscount?: boolean;
   page?: number;
   limit?: number;
 }

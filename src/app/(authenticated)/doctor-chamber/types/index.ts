@@ -75,6 +75,12 @@ export interface DoctorChamberPatientSearchResponse {
   error?: string;
 }
 
+export interface DoctorChamberVisitResponse {
+  success: boolean;
+  data: DoctorChamberVisitRecord;
+  error?: string;
+}
+
 export interface DoctorChamberMutationResponse {
   success: boolean;
   data?: {

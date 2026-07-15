@@ -3,7 +3,14 @@
 import React, { useEffect, useCallback } from "react";
 import { ClientPortal } from "@/components/ui/ClientPortal";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, RotateCcw, SlidersHorizontal } from "lucide-react";
+import {
+  CircleDollarSign,
+  Percent,
+  X,
+  RotateCcw,
+  SlidersHorizontal,
+} from "lucide-react";
+import { FinancialFilterSelect } from "@/components/ui";
 import { useFilterStore } from "../../stores/filterStore";
 import {
   DepartmentFilter,
@@ -21,11 +28,21 @@ export const Filters: React.FC = () => {
   const isOpen = useFilterStore((state) => state.panel.isOpen);
   const closeFilterPanel = useFilterStore((state) => state.closeFilterPanel);
   const clearAllFilters = useFilterStore((state) => state.clearAllFilters);
-  const getActiveFilterCount = useFilterStore(
-    (state) => state.getActiveFilterCount
-  );
+  const filters = useFilterStore((state) => state.filters);
+  const hasDue = useFilterStore((state) => state.filters.hasDue);
+  const hasDiscount = useFilterStore((state) => state.filters.hasDiscount);
+  const setHasDue = useFilterStore((state) => state.setHasDue);
+  const setHasDiscount = useFilterStore((state) => state.setHasDiscount);
 
-  const activeCount = getActiveFilterCount();
+  const activeCount = [
+    filters.departmentId !== null,
+    filters.doctorId !== null,
+    filters.status !== "All",
+    filters.dateRange !== "all",
+    filters.search !== "",
+    filters.hasDue !== null,
+    filters.hasDiscount !== null,
+  ].filter(Boolean).length;
 
   // Close on Escape key
   useEffect(() => {
@@ -142,6 +159,22 @@ export const Filters: React.FC = () => {
 
               {/* Date Range Filter */}
               <DateRangeFilter />
+
+              <FinancialFilterSelect
+                label="Due"
+                icon={CircleDollarSign}
+                value={hasDue}
+                onChange={setHasDue}
+                activeLabel="Patients with due"
+              />
+
+              <FinancialFilterSelect
+                label="Discount"
+                icon={Percent}
+                value={hasDiscount}
+                onChange={setHasDiscount}
+                activeLabel="Patients with discount"
+              />
             </div>
 
             {/* Footer */}

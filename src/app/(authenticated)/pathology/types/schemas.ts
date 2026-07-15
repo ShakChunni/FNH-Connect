@@ -156,6 +156,22 @@ export const pathologyFiltersSchema = z.object({
     .string()
     .optional()
     .transform((val) => (val ? parseInt(val, 10) : undefined)),
+  hasDue: z
+    .string()
+    .optional()
+    .transform((val) => {
+      if (val === "true") return true;
+      if (val === "false") return false;
+      return undefined;
+    }),
+  hasDiscount: z
+    .string()
+    .optional()
+    .transform((val) => {
+      if (val === "true") return true;
+      if (val === "false") return false;
+      return undefined;
+    }),
   page: z.string().default("1").transform(Number),
   limit: z.string().default("15").transform(Number),
 });

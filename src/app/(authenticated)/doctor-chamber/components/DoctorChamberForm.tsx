@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   Activity,
@@ -44,10 +44,15 @@ import {
 } from "@/lib/doctorChamber";
 import { hasRequiredBangladeshDistrict } from "@/lib/bangladeshAddress";
 import {
+  fetchDoctorChamberVisit,
   useCreateDoctorChamberVisit,
   useDoctorChamberPatientSearch,
   useUpdateDoctorChamberVisit,
 } from "../hooks/useDoctorChamber";
+import {
+  generateDoctorChamberForm,
+  generateDoctorChamberReceipt,
+} from "../utils/generateReceipt";
 import type {
   DoctorChamberInput,
   DoctorChamberDiscountType,
@@ -68,10 +73,13 @@ interface DoctorChamberFormProps {
   isOpen: boolean;
   onClose: () => void;
   onSaved: () => void;
+  printedBy?: string;
   editingVisit?: DoctorChamberVisitRecord | null;
 }
 
 type ChamberSection = "patient" | "doctor" | "billing";
+
+const CHAMBER_SECTION_IDS: ChamberSection[] = ["patient", "doctor", "billing"];
 
 const inputClassName =
   "w-full rounded-lg border-2 border-gray-300 bg-white px-4 py-2 text-xs font-normal text-gray-700 shadow-sm outline-none transition-all duration-300 placeholder:font-light placeholder:text-gray-400 focus:border-blue-900 focus:ring-2 focus:ring-blue-950 hover:shadow-md sm:text-sm md:h-14";
@@ -177,10 +185,12 @@ export default function DoctorChamberForm({
   isOpen,
   onClose,
   onSaved,
+  printedBy = "Staff",
   editingVisit = null,
 }: DoctorChamberFormProps) {
   const isEditing = Boolean(editingVisit);
   const [activeSection, setActiveSection] = useState<ChamberSection>("patient");
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [patient, setPatient] = useState<DoctorChamberPatientInput>(() => getInitialPatient(editingVisit));
   const [patientSearch, setPatientSearch] = useState("");
   const [isPatientSearchOpen, setIsPatientSearchOpen] = useState(false);
@@ -222,6 +232,54 @@ export default function DoctorChamberForm({
     else preserveUnlockBodyScroll();
     return () => preserveUnlockBodyScroll();
   }, [isOpen]);
+
+  const updateActiveSection = useCallback(() => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+
+    const containerTop = container.getBoundingClientRect().top;
+    const activationLine = containerTop + 48;
+    let nextSection: ChamberSection = "patient";
+    let closestSectionTop = Number.NEGATIVE_INFINITY;
+
+    CHAMBER_SECTION_IDS.forEach((section) => {
+      const element = document.getElementById(`doctor-chamber-${section}`);
+      if (!element) return;
+
+      const sectionTop = element.getBoundingClientRect().top;
+      if (sectionTop <= activationLine && sectionTop > closestSectionTop) {
+        closestSectionTop = sectionTop;
+        nextSection = section;
+      }
+    });
+
+    if (container.scrollTop + container.clientHeight >= container.scrollHeight - 8) {
+      nextSection = "billing";
+    }
+
+    setActiveSection((current) => (current === nextSection ? current : nextSection));
+  }, []);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const container = scrollContainerRef.current;
+    if (!container) return;
+
+    let animationFrame = 0;
+    const handleScroll = () => {
+      window.cancelAnimationFrame(animationFrame);
+      animationFrame = window.requestAnimationFrame(updateActiveSection);
+    };
+
+    container.addEventListener("scroll", handleScroll, { passive: true });
+    animationFrame = window.requestAnimationFrame(updateActiveSection);
+
+    return () => {
+      container.removeEventListener("scroll", handleScroll);
+      window.cancelAnimationFrame(animationFrame);
+    };
+  }, [isOpen, updateActiveSection]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -274,7 +332,17 @@ export default function DoctorChamberForm({
 
   const scrollToSection = (section: ChamberSection) => {
     setActiveSection(section);
-    document.getElementById(`doctor-chamber-${section}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
+
+    const container = scrollContainerRef.current;
+    const element = document.getElementById(`doctor-chamber-${section}`);
+    if (!container || !element) return;
+
+    const containerRect = container.getBoundingClientRect();
+    const elementRect = element.getBoundingClientRect();
+    container.scrollTo({
+      top: Math.max(0, container.scrollTop + elementRect.top - containerRect.top - 12),
+      behavior: "smooth",
+    });
   };
 
   const updateFee = (index: number, field: keyof FeeDraft, value: string) => {
@@ -343,10 +411,43 @@ export default function DoctorChamberForm({
     };
 
     try {
-      if (editingVisit) await updateMutation.mutateAsync({ id: editingVisit.id, input });
-      else await createMutation.mutateAsync(input);
+      const mutationResult = editingVisit
+        ? await updateMutation.mutateAsync({ id: editingVisit.id, input })
+        : await createMutation.mutateAsync(input);
+      let formGenerated = true;
+      let receiptGenerated = !editingVisit;
+      let savedVisit: DoctorChamberVisitRecord | null = null;
 
-      showNotification(isEditing ? "Doctor chamber visit updated successfully." : "Doctor chamber visit created successfully.", "success");
+      try {
+        savedVisit = await fetchDoctorChamberVisit(mutationResult.id);
+        await generateDoctorChamberForm(savedVisit, printedBy);
+      } catch (printError) {
+        console.error("Saved chamber visit form generation failed:", printError);
+        formGenerated = false;
+      }
+
+      if (editingVisit && formGenerated && savedVisit) {
+        try {
+          await generateDoctorChamberReceipt(savedVisit, printedBy);
+          receiptGenerated = true;
+        } catch (receiptError) {
+          console.error("Saved chamber visit receipt generation failed:", receiptError);
+          receiptGenerated = false;
+        }
+      }
+
+      showNotification(
+        !formGenerated
+          ? isEditing
+            ? "Doctor chamber visit updated, but its form could not be generated."
+            : "Doctor chamber visit saved, but its form could not be generated."
+          : isEditing && !receiptGenerated
+            ? "Doctor chamber visit updated and form generated, but receipt could not be generated."
+            : isEditing
+              ? "Doctor chamber visit updated; form and receipt generated."
+              : "Doctor chamber visit saved and form generated.",
+        formGenerated && receiptGenerated ? "success" : "error",
+      );
       onSaved();
     } catch (error) {
       setFormError(error instanceof Error ? error.message : "Unable to save chamber visit.");
@@ -414,7 +515,7 @@ export default function DoctorChamberForm({
               </div>
             </ModalHeader>
 
-            <div className="flex-1 overflow-y-auto p-3 sm:p-4 md:p-6">
+            <div ref={scrollContainerRef} className="flex-1 overflow-y-auto p-3 sm:p-4 md:p-6">
               <div className="space-y-6 sm:space-y-8 md:space-y-10">
                 <section id="doctor-chamber-patient" className="scroll-mt-4">
                   <SectionHeader section="patient" />

@@ -59,6 +59,8 @@ const PathologyManagement = React.memo(() => {
         // Test name filters (multi-select)
         testNames:
           filterValues.testNames.length > 0 ? filterValues.testNames : undefined,
+        hasDue: filterValues.hasDue ?? undefined,
+        hasDiscount: filterValues.hasDiscount ?? undefined,
         // Pagination
         page: filterValues.page,
         limit: filterValues.limit,

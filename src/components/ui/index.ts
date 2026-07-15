@@ -4,6 +4,7 @@
  */
 
 export { DropdownPortal } from "./DropdownPortal";
+export { FinancialFilterSelect } from "./FinancialFilterSelect";
 export { Button, buttonVariants } from "./button";
 export { ModalShell } from "./ModalShell";
 export { ModalFooter } from "./ModalFooter";
