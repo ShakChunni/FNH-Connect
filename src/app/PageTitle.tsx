@@ -7,6 +7,7 @@ const titleMap: { [key: string]: string } = {
   "/dashboard": "Dashboard",
   "/patient-records": "Patient Records",
   "/general-admission": "General Admission",
+  "/doctor-chamber": "Dr Sufia Khatun Chamber",
   "/infertility": "HSI Center",
   "/infertility/patient-records": "Patient Records",
   "/pathology": "Pathology",

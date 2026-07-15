@@ -100,11 +100,17 @@ function drawPatientDetails(doc: jsPDF, data: DoctorChamberVisitRecord, startY: 
 function getChargeRows(data: DoctorChamberVisitRecord): Array<[string, string]> {
   const rows: Array<[string, string]> = [];
 
+  rows.push(
+    ...data.tests.map(
+      (test) => [test.name, money(test.amount)] as [string, string],
+    ),
+  );
+
   if (data.ultrasoundCharge > 0) {
     rows.push([data.ultrasoundName, money(data.ultrasoundCharge)]);
   }
 
-  rows.push(["Visiting charge", money(data.visitingCharge)]);
+  rows.push(["Chamber visit charge", money(data.visitingCharge)]);
   rows.push(
     ...data.fees.map(
       (fee) => [fee.feeName, money(fee.amount)] as [string, string],
@@ -204,9 +210,7 @@ export async function generateDoctorChamberReceipt(
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
   doc.setTextColor(COLORS.muted);
-  if (data.ultrasoundCharge > 0) {
-    doc.text(`Fixed Ultra Sono charge: ${money(data.ultrasoundCharge)}`, margin, tableY + 12);
-  }
+  doc.text(`Fixed chamber visit charge: ${money(data.visitingCharge)}`, margin, tableY + 12);
   doc.text(`Printed by: ${printedBy}`, margin, 270);
   doc.text(`Generated: ${new Date().toLocaleString("en-BD")}`, margin, 276);
   doc.setFont("helvetica", "bold");

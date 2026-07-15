@@ -52,6 +52,13 @@ export async function generateMetadata(): Promise<Metadata> {
         robots: baseRobots,
       };
 
+    case "/doctor-chamber":
+      return {
+        title: "Dr Sufia Khatun Chamber | FNH Connect",
+        description: "Private chamber visits and patient records for Dr Sufia Khatun",
+        robots: baseRobots,
+      };
+
     case "/profile":
       return {
         title: "Profile | FNH Connect",
