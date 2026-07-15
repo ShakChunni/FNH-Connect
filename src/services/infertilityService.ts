@@ -493,6 +493,10 @@ export async function createInfertilityPatient(
         status: medicalData.status,
         notes: medicalData.notes,
         createdBy: staffId,
+        // A newly created case was also last touched by the creating staff
+        // member. Keeping this populated makes the "last edited by" display
+        // consistent with Pathology and General Admission.
+        lastModifiedBy: staffId,
       },
     });
 
@@ -1746,6 +1750,13 @@ export async function updateInfertilityTest(
         timestamp: new Date(),
         sessionId: activityLogContext?.sessionId,
         ipAddress: activityLogContext?.deviceInfo?.ipAddress,
+        deviceFingerprint: activityLogContext?.deviceInfo?.deviceFingerprint,
+        readableFingerprint:
+          activityLogContext?.deviceInfo?.readableFingerprint,
+        deviceType: activityLogContext?.deviceInfo?.deviceType,
+        browserName: activityLogContext?.deviceInfo?.browserName,
+        browserVersion: activityLogContext?.deviceInfo?.browserVersion,
+        osType: activityLogContext?.deviceInfo?.osType,
       },
     });
 
