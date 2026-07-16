@@ -292,10 +292,8 @@ The application depends on the following environment variables (see .env):
 4. Apply migrations
 	- npx prisma migrate dev
 
-5. Seed or repair data (optional)
-	- npm run db:seed
+5. Run an approved data repair only when required
 	- npm run db:fix-payments
-	- npm run db:fix-cash-tracking
 
 ---
 
@@ -307,13 +305,10 @@ Scripts are defined in [package.json](package.json). Key scripts:
 - build / build:clean / build:production — production build pipelines
 - db:generate — Prisma client generation
 - db:push — push schema without migration (dev)
-- db:seed — seed baseline data
 - db:studio — Prisma Studio
 - db:fix-payments — fix payment allocations
-- db:fix-cash-tracking — repair cash tracking data
-- db:cleanup-test — cleanup test data
 
-Data utilities in [scripts](scripts) include user setup, data fixes, and migration helpers.
+Data utilities in [scripts](scripts) are limited to reviewed address, payment-allocation, and infertility-case maintenance tasks. They do not contain user credentials or account-seeding logic.
 
 ---
 
