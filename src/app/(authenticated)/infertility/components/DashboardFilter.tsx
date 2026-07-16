@@ -1,7 +1,6 @@
 import React, {
   useState,
   useEffect,
-  useMemo,
   useRef,
   useCallback,
 } from "react";
@@ -29,7 +28,7 @@ const DashboardFilter: React.FC<DashboardFilterProps> = ({
     setValue(defaultValue);
   }, [defaultValue]);
 
-  const values = useMemo(() => ["All", "REDACTED", "REDACTED"], []);
+  const values = ["All"];
 
   useEffect(() => {
     if (buttonRef.current && spanRef.current && iconRef.current) {
