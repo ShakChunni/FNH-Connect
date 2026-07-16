@@ -8,6 +8,7 @@ import MainContent from "./MainContent";
 import { metadata } from "./metadata";
 import PageTitle from "./PageTitle";
 import Maintenance from "./Maintenance"; // <-- Import the new component
+import { Toaster } from "sonner";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -68,6 +69,7 @@ export default function RootLayout({
               <AuthProvider>
                 <NotificationProvider>
                   <MainContent>{children}</MainContent>
+                  <Toaster position="bottom-right" richColors closeButton />
                 </NotificationProvider>
               </AuthProvider>
             </QueryClientProvider>

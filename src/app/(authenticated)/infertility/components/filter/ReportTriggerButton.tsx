@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef, useState, useCallback } from "react";
+import React, { useRef, useState, useCallback, useMemo } from "react";
 import { FileText, BarChart3, FileSpreadsheet, Loader2 } from "lucide-react";
 import { DropdownPortal } from "@/components/ui/DropdownPortal";
 import { toast } from "sonner";
@@ -9,6 +9,8 @@ import { generateInfertilityReport } from "../../utils/generateReport";
 import { generateInfertilitySummaryReport } from "../../utils/generateSummaryReport";
 import { normalizePatientData } from "@/components/form-sections/utils/dataUtils";
 import { useAuth } from "@/app/AuthContext";
+import { useFilterValues } from "../../stores";
+import { buildBDTQueryDateRange } from "@/lib/timezone";
 
 interface ReportTriggerButtonProps {
   disabled?: boolean;
@@ -31,59 +33,108 @@ export const ReportTriggerButton: React.FC<ReportTriggerButtonProps> = ({
   const [reportType, setReportType] = useState<"summary" | "detailed" | null>(
     null
   );
+  const patientFilterValues = useFilterValues();
+
+  const patientReportFilters = useMemo(
+    () => ({
+      search:
+        patientFilterValues.search.length >= 2
+          ? patientFilterValues.search
+          : undefined,
+      ...buildBDTQueryDateRange(
+        patientFilterValues.startDate,
+        patientFilterValues.endDate
+      ),
+    }),
+    [patientFilterValues]
+  );
 
   // Fetch all data when needed for report
-  const { data: reportData, isLoading: isLoadingData } =
-    useFetchInfertilityReportData({
-      enabled: shouldFetch,
-    });
+  const {
+    data: reportData,
+    isLoading: isLoadingData,
+    isError,
+  } = useFetchInfertilityReportData({
+    filters: patientReportFilters,
+    enabled: shouldFetch,
+  });
 
   // Generate report when data is loaded
   React.useEffect(() => {
-    if (shouldFetch && reportData && !isLoadingData) {
-      const normalizedData = normalizePatientData(reportData);
+    if (!shouldFetch) return;
 
-      if (reportType === "summary") {
-        try {
-          generateInfertilitySummaryReport(
-            normalizedData,
+    if (isError) {
+      toast.error("Failed to fetch patient data for report", {
+        id: "infertility-patient-report",
+      });
+      setIsGenerating(false);
+      setShouldFetch(false);
+      setReportType(null);
+      return;
+    }
+
+    if (!reportData || isLoadingData) return;
+
+    const normalizedData = normalizePatientData(reportData);
+
+    if (normalizedData.length === 0) {
+      toast.error("No data found for the selected filters", {
+        id: "infertility-patient-report",
+      });
+      setIsGenerating(false);
+      setShouldFetch(false);
+      setReportType(null);
+      return;
+    }
+
+    if (reportType === "summary") {
+      try {
+        generateInfertilitySummaryReport(
+          normalizedData,
+          user?.fullName || "Staff"
+        );
+        toast.success("Summary report generated successfully!", {
+          id: "infertility-patient-report",
+        });
+      } catch (error) {
+        toast.error("Failed to generate summary report", {
+          id: "infertility-patient-report",
+        });
+        console.error(error);
+      } finally {
+        setIsGenerating(false);
+        setShouldFetch(false);
+        setReportType(null);
+      }
+    } else if (reportType === "detailed") {
+      try {
+        if (normalizedData.length === 1) {
+          generateInfertilityReport(
+            normalizedData[0],
             user?.fullName || "Staff"
           );
-          toast.success("Summary report generated successfully!");
-        } catch (error) {
-          toast.error("Failed to generate summary report");
-          console.error(error);
-        } finally {
-          setIsGenerating(false);
-          setShouldFetch(false);
-          setReportType(null);
+        } else {
+          generateInfertilitySummaryReport(
+            normalizedData,
+            user?.fullName || "Staff",
+            true
+          );
         }
-      } else if (reportType === "detailed") {
-        try {
-          if (normalizedData.length === 1) {
-            generateInfertilityReport(
-              normalizedData[0],
-              user?.fullName || "Staff"
-            );
-          } else {
-            generateInfertilitySummaryReport(
-              normalizedData,
-              user?.fullName || "Staff",
-              true
-            );
-          }
-          toast.success("Detailed report generated successfully!");
-        } catch (error) {
-          toast.error("Failed to generate detailed report");
-          console.error(error);
-        } finally {
-          setIsGenerating(false);
-          setShouldFetch(false);
-          setReportType(null);
-        }
+        toast.success("Detailed report generated successfully!", {
+          id: "infertility-patient-report",
+        });
+      } catch (error) {
+        toast.error("Failed to generate detailed report", {
+          id: "infertility-patient-report",
+        });
+        console.error(error);
+      } finally {
+        setIsGenerating(false);
+        setShouldFetch(false);
+        setReportType(null);
       }
     }
-  }, [shouldFetch, reportData, isLoadingData, reportType, user?.fullName]);
+  }, [shouldFetch, reportData, isLoadingData, isError, reportType, user?.fullName]);
 
   const handleSummaryReport = useCallback(() => {
     if (recordCount === 0) {
@@ -91,6 +142,9 @@ export const ReportTriggerButton: React.FC<ReportTriggerButtonProps> = ({
       return;
     }
     setIsGenerating(true);
+    toast.loading("Fetching filtered patient data for report...", {
+      id: "infertility-patient-report",
+    });
     setReportType("summary");
     setShouldFetch(true);
     setIsOpen(false);
@@ -102,6 +156,9 @@ export const ReportTriggerButton: React.FC<ReportTriggerButtonProps> = ({
       return;
     }
     setIsGenerating(true);
+    toast.loading("Fetching filtered patient data for report...", {
+      id: "infertility-patient-report",
+    });
     setReportType("detailed");
     setShouldFetch(true);
     setIsOpen(false);

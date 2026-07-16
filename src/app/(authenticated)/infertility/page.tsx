@@ -276,7 +276,7 @@ const InfertilityManagement = React.memo(() => {
       </div>
 
       {/* Filter Panel (Slide-out) */}
-      <Filters />
+      {activeTab === "investigations" && <Filters />}
 
       {/* Floating Export Bar */}
       {activeTab === "investigations" && <ExportActionBar recordCount={totalRecords} />}

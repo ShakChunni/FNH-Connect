@@ -33,6 +33,8 @@ export async function GET(request: NextRequest) {
       testNames: searchParams.get("testNames") || undefined,
       orderedById: searchParams.get("orderedById") || undefined,
       doneById: searchParams.get("doneById") || undefined,
+      hasDue: searchParams.get("hasDue") || undefined,
+      hasDiscount: searchParams.get("hasDiscount") || undefined,
       // Override pagination to get all records
       page: "1",
       limit: MAX_REPORT_RECORDS.toString(),

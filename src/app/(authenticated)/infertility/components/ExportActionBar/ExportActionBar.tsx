@@ -5,7 +5,7 @@
 
 "use client";
 
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useMemo } from "react";
 import { FileText, Table2, Loader2, Download } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
@@ -14,6 +14,8 @@ import { generateInfertilityReport } from "../../utils/generateReport";
 import { generateInfertilitySummaryReport } from "../../utils/generateSummaryReport";
 import { normalizePatientData } from "@/components/form-sections/utils/dataUtils";
 import { useAuth } from "@/app/AuthContext";
+import { useFilterValues } from "../../stores/filterStore";
+import { buildBDTQueryDateRange } from "@/lib/timezone";
 
 interface ExportActionBarProps {
   recordCount?: number;
@@ -29,10 +31,26 @@ export const ExportActionBar: React.FC<ExportActionBarProps> = ({
   const [reportType, setReportType] = useState<"summary" | "detailed" | null>(
     null
   );
+  const patientFilterValues = useFilterValues();
+
+  const patientReportFilters = useMemo(
+    () => ({
+      search:
+        patientFilterValues.search.length >= 2
+          ? patientFilterValues.search
+          : undefined,
+      ...buildBDTQueryDateRange(
+        patientFilterValues.startDate,
+        patientFilterValues.endDate
+      ),
+    }),
+    [patientFilterValues]
+  );
 
   // Fetch all data when needed for report
   const { data: reportData, isLoading: isLoadingData } =
     useFetchInfertilityReportData({
+      filters: patientReportFilters,
       enabled: shouldFetch,
     });
 
