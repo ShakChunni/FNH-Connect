@@ -1027,9 +1027,11 @@ model MedicinePurchase {
   companyId     Int // Supplier
   medicineId    Int // Medicine purchased
 
-  quantity    Int // Units purchased
-  unitPrice   Decimal // Price per unit
-  totalAmount Decimal // quantity × unitPrice
+  quantity       Int // Units purchased
+  unitPrice      Decimal // Price per unit
+  vatTax         Decimal @default(0) // VAT + tax per unit
+  discountAmount Decimal @default(0) // Discount amount for this purchase line
+  totalAmount    Decimal // (quantity × (unitPrice + vatTax)) - discountAmount
 
   purchaseDate DateTime  @default(now())
   expiryDate   DateTime?

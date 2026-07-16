@@ -45,6 +45,10 @@ import { useUIStore } from "../../stores";
 import { CompanySearch, MedicineSearch } from "../shared";
 import type { MedicineCompany, Medicine } from "../../types";
 import { getMedicineDisplayName } from "../../utils/medicineDisplay";
+import {
+  calculateMedicinePurchaseGrossTotal,
+  calculateMedicinePurchaseLineTotal,
+} from "@/lib/medicinePurchaseCalculations";
 import CustomCalendar from "@/components/form-sections/Fields/CustomCalendar";
 import { DropdownPortal } from "@/components/ui/DropdownPortal";
 
@@ -135,8 +139,27 @@ const AddPurchaseModal: React.FC<AddPurchaseModalProps> = ({
       errors.push("Purchase price must be greater than 0");
     }
 
+    if (draftItem.vatTax < 0) {
+      errors.push("VAT + tax cannot be negative");
+    }
+
     if (draftItem.salePrice <= 0) {
       errors.push("Sale price must be greater than 0");
+    }
+
+    if (draftItem.discountAmount < 0) {
+      errors.push("Discount amount cannot be negative");
+    }
+
+    if (
+      draftItem.discountAmount >
+      calculateMedicinePurchaseGrossTotal({
+        quantity: draftItem.quantity,
+        unitPrice: draftItem.unitPrice,
+        vatTax: draftItem.vatTax,
+      })
+    ) {
+      errors.push("Discount cannot exceed the purchase amount including VAT + tax");
     }
 
     if (
@@ -182,8 +205,29 @@ const AddPurchaseModal: React.FC<AddPurchaseModalProps> = ({
         errors.push(`Line ${lineNumber}: purchase price must be greater than 0`);
       }
 
+      if (item.vatTax < 0) {
+        errors.push(`Line ${lineNumber}: VAT + tax cannot be negative`);
+      }
+
       if (item.salePrice <= 0) {
         errors.push(`Line ${lineNumber}: sale price must be greater than 0`);
+      }
+
+      if (item.discountAmount < 0) {
+        errors.push(`Line ${lineNumber}: discount amount cannot be negative`);
+      }
+
+      if (
+        item.discountAmount >
+        calculateMedicinePurchaseGrossTotal({
+          quantity: item.quantity,
+          unitPrice: item.unitPrice,
+          vatTax: item.vatTax,
+        })
+      ) {
+        errors.push(
+          `Line ${lineNumber}: discount cannot exceed the purchase amount including VAT + tax`,
+        );
       }
 
       if (item.expiryDate && item.expiryDate < formData.purchaseDate) {
@@ -242,7 +286,9 @@ const AddPurchaseModal: React.FC<AddPurchaseModalProps> = ({
         medicineId: item.medicineId,
         quantity: item.quantity,
         unitPrice: item.unitPrice,
+        vatTax: item.vatTax,
         salePrice: item.salePrice,
+        discountAmount: item.discountAmount,
         expiryDate: item.expiryDate ? item.expiryDate.toISOString() : undefined,
         batchNumber: item.batchNumber.trim() || undefined,
       };
@@ -516,8 +562,8 @@ const AddPurchaseModal: React.FC<AddPurchaseModalProps> = ({
                     </button>
                   </div>
 
-                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-                    <div className="lg:col-span-4">
+                  <div className="grid grid-cols-1 lg:grid-cols-8 gap-4">
+                    <div className="lg:col-span-2">
                       <label className="block text-xs font-semibold text-gray-700 mb-2">
                         Medicine Name <span className="text-red-500">*</span>
                       </label>
@@ -536,7 +582,7 @@ const AddPurchaseModal: React.FC<AddPurchaseModalProps> = ({
                       ) : null}
                     </div>
 
-                    <div className="lg:col-span-2">
+                    <div className="lg:col-span-1">
                       <label className="block text-xs font-semibold text-gray-700 mb-2">
                         Quantity <span className="text-red-500">*</span>
                       </label>
@@ -553,7 +599,7 @@ const AddPurchaseModal: React.FC<AddPurchaseModalProps> = ({
                       />
                     </div>
 
-                    <div className="lg:col-span-2">
+                    <div className="lg:col-span-1">
                       <label className="block text-xs font-semibold text-gray-700 mb-2">
                         Purchase Price <span className="text-red-500">*</span>
                       </label>
@@ -578,7 +624,32 @@ const AddPurchaseModal: React.FC<AddPurchaseModalProps> = ({
                       </div>
                     </div>
 
-                    <div className="lg:col-span-2">
+                    <div className="lg:col-span-1">
+                      <label className="block text-xs font-semibold text-gray-700 mb-2">
+                        VAT + Tax
+                      </label>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-bold text-gray-400">
+                          ৳
+                        </span>
+                        <NumberInput
+                          min="0"
+                          step="0.01"
+                          value={draftItem.vatTax || ""}
+                          onChange={(e) =>
+                            setDraftItem({
+                              vatTax: parsePositiveNumber(e.target.value),
+                            })
+                          }
+                          placeholder="VAT"
+                          className={`${getInputClass(
+                            draftItem.vatTax > 0,
+                          )} pl-10`}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="lg:col-span-1">
                       <label className="block text-xs font-semibold text-gray-700 mb-2">
                         Sale Price <span className="text-red-500">*</span>
                       </label>
@@ -607,20 +678,47 @@ const AddPurchaseModal: React.FC<AddPurchaseModalProps> = ({
                       </div>
                     </div>
 
-                    <div className="lg:col-span-2">
+                    <div className="lg:col-span-1">
+                      <label className="block text-xs font-semibold text-gray-700 mb-2">
+                        Discount Amount
+                      </label>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-bold text-gray-400">
+                          ৳
+                        </span>
+                        <NumberInput
+                          min="0"
+                          step="0.01"
+                          value={draftItem.discountAmount || ""}
+                          onChange={(e) =>
+                            setDraftItem({
+                              discountAmount: parsePositiveNumber(
+                                e.target.value,
+                              ),
+                            })
+                          }
+                          placeholder="Discount"
+                          className={`${getInputClass(
+                            draftItem.discountAmount > 0,
+                          )} pl-10`}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="lg:col-span-1">
                       <label className="block text-xs font-semibold text-gray-700 mb-2">
                         Line Total
                       </label>
                       <div className="h-12 md:h-14 px-3 py-2 bg-emerald-100 border-2 border-emerald-300 rounded-lg flex items-center justify-center">
                         <span className="text-sm font-bold text-emerald-800">
                           {formatCurrency(
-                            draftItem.quantity * draftItem.unitPrice,
+                            calculateMedicinePurchaseLineTotal(draftItem),
                           )}
                         </span>
                       </div>
                     </div>
 
-                    <div className="lg:col-span-4">
+                    <div className="lg:col-span-3">
                       <label className="block text-xs font-semibold text-gray-700 mb-2">
                         Batch Number
                       </label>
@@ -635,7 +733,7 @@ const AddPurchaseModal: React.FC<AddPurchaseModalProps> = ({
                       />
                     </div>
 
-                    <div className="lg:col-span-4">
+                    <div className="lg:col-span-3">
                       <label className="block text-xs font-semibold text-gray-700 mb-2">
                         Expiry Date
                       </label>
@@ -652,7 +750,7 @@ const AddPurchaseModal: React.FC<AddPurchaseModalProps> = ({
                       />
                     </div>
 
-                    <div className="lg:col-span-4 flex items-end">
+                    <div className="lg:col-span-2 flex items-end">
                       <button
                         type="button"
                         onClick={handleAddLineItem}
@@ -722,7 +820,13 @@ const AddPurchaseModal: React.FC<AddPurchaseModalProps> = ({
                                 Purchase
                               </th>
                               <th className="text-right px-4 py-3 text-[10px] font-black uppercase tracking-widest text-gray-500">
+                                VAT + Tax
+                              </th>
+                              <th className="text-right px-4 py-3 text-[10px] font-black uppercase tracking-widest text-gray-500">
                                 Sale
+                              </th>
+                              <th className="text-right px-4 py-3 text-[10px] font-black uppercase tracking-widest text-gray-500">
+                                Discount
                               </th>
                               <th className="text-left px-4 py-3 text-[10px] font-black uppercase tracking-widest text-gray-500">
                                 Batch
@@ -780,6 +884,21 @@ const AddPurchaseModal: React.FC<AddPurchaseModalProps> = ({
                                   <NumberInput
                                     min="0"
                                     step="0.01"
+                                    value={item.vatTax || ""}
+                                    onChange={(e) =>
+                                      updateItem(item.id, {
+                                        vatTax: parsePositiveNumber(
+                                          e.target.value,
+                                        ),
+                                      })
+                                    }
+                                    className="h-10 w-28 rounded-lg border-2 border-gray-200 px-3 text-right text-sm font-semibold outline-none focus:border-blue-900 focus:ring-2 focus:ring-blue-950"
+                                  />
+                                </td>
+                                <td className="px-4 py-3">
+                                  <NumberInput
+                                    min="0"
+                                    step="0.01"
                                     value={
                                       item.salePrice === 0
                                         ? ""
@@ -788,6 +907,21 @@ const AddPurchaseModal: React.FC<AddPurchaseModalProps> = ({
                                     onChange={(e) =>
                                       updateItem(item.id, {
                                         salePrice: parsePositiveNumber(
+                                          e.target.value,
+                                        ),
+                                      })
+                                    }
+                                    className="h-10 w-28 rounded-lg border-2 border-gray-200 px-3 text-right text-sm font-semibold outline-none focus:border-blue-900 focus:ring-2 focus:ring-blue-950"
+                                  />
+                                </td>
+                                <td className="px-4 py-3">
+                                  <NumberInput
+                                    min="0"
+                                    step="0.01"
+                                    value={item.discountAmount || ""}
+                                    onChange={(e) =>
+                                      updateItem(item.id, {
+                                        discountAmount: parsePositiveNumber(
                                           e.target.value,
                                         ),
                                       })
@@ -829,7 +963,7 @@ const AddPurchaseModal: React.FC<AddPurchaseModalProps> = ({
                                 </td>
                                 <td className="px-4 py-3 text-right text-sm font-bold text-emerald-700">
                                   {formatCurrency(
-                                    item.quantity * item.unitPrice,
+                                    calculateMedicinePurchaseLineTotal(item),
                                   )}
                                 </td>
                                 <td className="px-4 py-3 text-right">
@@ -908,6 +1042,24 @@ const AddPurchaseModal: React.FC<AddPurchaseModalProps> = ({
                               </div>
                               <div>
                                 <label className="block text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-1">
+                                  VAT + Tax
+                                </label>
+                                <NumberInput
+                                  min="0"
+                                  step="0.01"
+                                  value={item.vatTax || ""}
+                                  onChange={(e) =>
+                                    updateItem(item.id, {
+                                      vatTax: parsePositiveNumber(
+                                        e.target.value,
+                                      ),
+                                    })
+                                  }
+                                  className="h-11 w-full rounded-lg border-2 border-gray-200 px-3 text-sm font-semibold outline-none focus:border-blue-900 focus:ring-2 focus:ring-blue-950"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-1">
                                   Sale
                                 </label>
                                 <NumberInput
@@ -928,11 +1080,29 @@ const AddPurchaseModal: React.FC<AddPurchaseModalProps> = ({
                               </div>
                               <div>
                                 <label className="block text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-1">
+                                  Discount Amount
+                                </label>
+                                <NumberInput
+                                  min="0"
+                                  step="0.01"
+                                  value={item.discountAmount || ""}
+                                  onChange={(e) =>
+                                    updateItem(item.id, {
+                                      discountAmount: parsePositiveNumber(
+                                        e.target.value,
+                                      ),
+                                    })
+                                  }
+                                  className="h-11 w-full rounded-lg border-2 border-gray-200 px-3 text-sm font-semibold outline-none focus:border-blue-900 focus:ring-2 focus:ring-blue-950"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-1">
                                   Total
                                 </label>
                                 <div className="h-11 rounded-lg bg-emerald-50 px-3 flex items-center text-sm font-bold text-emerald-700">
                                   {formatCurrency(
-                                    item.quantity * item.unitPrice,
+                                    calculateMedicinePurchaseLineTotal(item),
                                   )}
                                 </div>
                               </div>

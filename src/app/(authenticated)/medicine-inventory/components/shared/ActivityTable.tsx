@@ -231,6 +231,11 @@ const ActivityTable: React.FC<ActivityTableProps> = ({
                             Inv: {record.invoiceNumber}
                           </p>
                         )}
+                        {record.vatTax !== null && record.vatTax !== undefined ? (
+                          <p className="text-xs text-gray-500">
+                            VAT + Tax: {formatCurrency(record.vatTax)} · Discount: {formatCurrency(record.discountAmount ?? 0)}
+                          </p>
+                        ) : null}
                       </div>
                     ) : (
                       <div>
@@ -323,6 +328,14 @@ const ActivityTable: React.FC<ActivityTableProps> = ({
                   {formatNumber(record.quantity)} ×{" "}
                   {formatCurrency(record.unitPrice)}
                 </span>
+                {record.vatTax !== null && record.vatTax !== undefined ? (
+                  <span>
+                    <span className="font-semibold text-gray-500">VAT + Tax:</span>{" "}
+                    {formatCurrency(record.vatTax)} ·{" "}
+                    <span className="font-semibold text-gray-500">Discount:</span>{" "}
+                    {formatCurrency(record.discountAmount ?? 0)}
+                  </span>
+                ) : null}
               </div>
             </div>
           ))}

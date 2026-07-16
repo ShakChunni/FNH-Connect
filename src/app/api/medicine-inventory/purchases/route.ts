@@ -26,9 +26,24 @@ const createPurchaseItemSchema = z.object({
   medicineId: z.number().int().positive("Medicine is required"),
   quantity: z.number().int().positive("Quantity must be positive"),
   unitPrice: z.number().positive("Purchase price must be positive"),
+  vatTax: z.number().min(0, "VAT + tax cannot be negative").default(0),
   salePrice: z.number().positive("Sale price must be positive"),
+  discountAmount: z
+    .number()
+    .min(0, "Discount amount cannot be negative")
+    .default(0),
   expiryDate: dateStringSchema.optional(),
   batchNumber: z.string().trim().max(100).optional(),
+}).superRefine((item, ctx) => {
+  const grossTotal = (item.unitPrice + item.vatTax) * item.quantity;
+
+  if (item.discountAmount > grossTotal) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["discountAmount"],
+      message: "Discount cannot exceed the purchase amount including VAT + tax",
+    });
+  }
 });
 
 const createPurchaseSchema = z.object({
@@ -157,7 +172,9 @@ export async function POST(request: NextRequest) {
           medicineId: item.medicineId,
           quantity: item.quantity,
           unitPrice: item.unitPrice,
+          vatTax: item.vatTax,
           salePrice: item.salePrice,
+          discountAmount: item.discountAmount,
           expiryDate: item.expiryDate ? new Date(item.expiryDate) : undefined,
           batchNumber: item.batchNumber || undefined,
         })),
@@ -189,6 +206,9 @@ export async function POST(request: NextRequest) {
         "already exists",
         "cannot be in the future",
         "Expiry date cannot be earlier than purchase date",
+        "VAT + tax cannot be negative",
+        "Discount amount cannot be negative",
+        "Discount cannot exceed the purchase amount including VAT + tax",
         "At least one medicine is required",
       ];
       if (knownErrors.some((msg) => error.message.includes(msg))) {

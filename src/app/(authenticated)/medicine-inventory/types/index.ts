@@ -110,6 +110,8 @@ export interface MedicinePurchase {
   invoiceNumber: string;
   quantity: number;
   unitPrice: number;
+  vatTax: number;
+  discountAmount: number;
   totalAmount: number;
   purchaseDate: string;
   expiryDate?: string | null;
@@ -135,9 +137,24 @@ export const createPurchaseItemSchema = z.object({
   medicineId: z.number().int().positive("Medicine is required"),
   quantity: z.number().int().positive("Quantity must be positive"),
   unitPrice: z.number().positive("Purchase price must be positive"),
+  vatTax: z.number().min(0, "VAT + tax cannot be negative").default(0),
   salePrice: z.number().positive("Sale price must be positive"),
+  discountAmount: z
+    .number()
+    .min(0, "Discount amount cannot be negative")
+    .default(0),
   expiryDate: z.string().optional(),
   batchNumber: z.string().max(100).optional(),
+}).superRefine((item, ctx) => {
+  const grossTotal = (item.unitPrice + item.vatTax) * item.quantity;
+
+  if (item.discountAmount > grossTotal) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["discountAmount"],
+      message: "Discount cannot exceed the purchase amount including VAT + tax",
+    });
+  }
 });
 
 export const createPurchaseSchema = z.object({

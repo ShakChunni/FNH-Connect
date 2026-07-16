@@ -7,6 +7,10 @@ import { prisma } from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
 import { SessionDeviceInfo } from "@/types/auth";
 import { isGynecologyDepartment } from "@/lib/departmentRecognition";
+import {
+  calculateMedicinePurchaseGrossTotal,
+  calculateMedicinePurchaseLineTotal,
+} from "@/lib/medicinePurchaseCalculations";
 
 // ═══════════════════════════════════════════════════════════════
 // TYPES
@@ -186,7 +190,9 @@ export interface CreatePurchaseInvoiceItemInput {
   medicineId: number;
   quantity: number;
   unitPrice: number;
+  vatTax?: number;
   salePrice?: number;
+  discountAmount?: number;
   expiryDate?: Date;
   batchNumber?: string;
 }
@@ -418,7 +424,11 @@ export async function getMedicineInventoryStats(
 
     const stockValue = await prisma.$queryRaw<{ total: number }[]>`
       SELECT COALESCE(SUM(m."currentStock" * COALESCE(
-        (SELECT mp."unitPrice"::numeric
+        (SELECT GREATEST(
+          mp."unitPrice" + mp."vatTax" -
+            (mp."discountAmount" / NULLIF(mp."quantity", 0)),
+          0
+        )::numeric
          FROM "MedicinePurchase" mp
          WHERE mp."medicineId" = m.id
          ORDER BY mp."purchaseDate" DESC
@@ -491,6 +501,8 @@ export interface MedicineInventoryReport {
     invoiceNumber: string;
     quantity: number;
     unitPrice: number;
+    vatTax: number;
+    discountAmount: number;
     totalAmount: number;
     purchaseDate: Date;
     expiryDate: Date | null;
@@ -622,6 +634,8 @@ export async function getMedicineInventoryReport(
         invoiceNumber: true,
         quantity: true,
         unitPrice: true,
+        vatTax: true,
+        discountAmount: true,
         totalAmount: true,
         purchaseDate: true,
         expiryDate: true,
@@ -720,6 +734,8 @@ export async function getMedicineInventoryReport(
   const normalizedPurchases = purchases.map((purchase) => ({
     ...purchase,
     unitPrice: Number(purchase.unitPrice),
+    vatTax: Number(purchase.vatTax),
+    discountAmount: Number(purchase.discountAmount),
     totalAmount: Number(purchase.totalAmount),
   }));
 
@@ -768,7 +784,11 @@ export async function getMedicineInventoryReport(
 
   const stockValue = await prisma.$queryRaw<{ total: number }[]>`
     SELECT COALESCE(SUM(m."currentStock" * COALESCE(
-      (SELECT mp."unitPrice"::numeric
+      (SELECT GREATEST(
+        mp."unitPrice" + mp."vatTax" -
+          (mp."discountAmount" / NULLIF(mp."quantity", 0)),
+        0
+      )::numeric
        FROM "MedicinePurchase" mp
        WHERE mp."medicineId" = m.id
        ORDER BY mp."purchaseDate" DESC
@@ -1290,6 +1310,8 @@ export async function getPurchases(filters: PurchaseFilters) {
         invoiceNumber: true,
         quantity: true,
         unitPrice: true,
+        vatTax: true,
+        discountAmount: true,
         totalAmount: true,
         purchaseDate: true,
         expiryDate: true,
@@ -1323,7 +1345,15 @@ export async function getPurchases(filters: PurchaseFilters) {
     prisma.medicinePurchase.count({ where }),
   ]);
 
-  return { purchases, total, page, limit };
+  const normalizedPurchases = purchases.map((purchase) => ({
+    ...purchase,
+    unitPrice: Number(purchase.unitPrice),
+    vatTax: Number(purchase.vatTax),
+    discountAmount: Number(purchase.discountAmount),
+    totalAmount: Number(purchase.totalAmount),
+  }));
+
+  return { purchases: normalizedPurchases, total, page, limit };
 }
 
 const medicinePurchaseSelect = {
@@ -1331,6 +1361,8 @@ const medicinePurchaseSelect = {
   invoiceNumber: true,
   quantity: true,
   unitPrice: true,
+  vatTax: true,
+  discountAmount: true,
   totalAmount: true,
   purchaseDate: true,
   expiryDate: true,
@@ -1376,6 +1408,29 @@ export async function createPurchaseInvoice(
   }
 
   for (const item of data.items) {
+    const vatTax = item.vatTax ?? 0;
+    const discountAmount = item.discountAmount ?? 0;
+
+    if (!Number.isFinite(vatTax) || vatTax < 0) {
+      throw new Error("VAT + tax cannot be negative");
+    }
+
+    if (!Number.isFinite(discountAmount) || discountAmount < 0) {
+      throw new Error("Discount amount cannot be negative");
+    }
+
+    const grossTotal = calculateMedicinePurchaseGrossTotal({
+      quantity: item.quantity,
+      unitPrice: item.unitPrice,
+      vatTax,
+    });
+
+    if (discountAmount > grossTotal) {
+      throw new Error(
+        "Discount cannot exceed the purchase amount including VAT + tax",
+      );
+    }
+
     if (item.expiryDate && item.expiryDate < effectivePurchaseDate) {
       throw new Error("Expiry date cannot be earlier than purchase date");
     }
@@ -1418,19 +1473,31 @@ export async function createPurchaseInvoice(
     );
 
     const purchaseRows: Prisma.MedicinePurchaseCreateManyInput[] =
-      data.items.map((item) => ({
-        invoiceNumber: data.invoiceNumber,
-        companyId: data.companyId,
-        medicineId: item.medicineId,
-        quantity: item.quantity,
-        unitPrice: item.unitPrice,
-        totalAmount: item.quantity * item.unitPrice,
-        purchaseDate: effectivePurchaseDate,
-        expiryDate: item.expiryDate || null,
-        batchNumber: item.batchNumber,
-        remainingQty: item.quantity,
-        createdBy: staffId,
-      }));
+      data.items.map((item) => {
+        const vatTax = item.vatTax ?? 0;
+        const discountAmount = item.discountAmount ?? 0;
+
+        return {
+          invoiceNumber: data.invoiceNumber,
+          companyId: data.companyId,
+          medicineId: item.medicineId,
+          quantity: item.quantity,
+          unitPrice: item.unitPrice,
+          vatTax,
+          discountAmount,
+          totalAmount: calculateMedicinePurchaseLineTotal({
+            quantity: item.quantity,
+            unitPrice: item.unitPrice,
+            vatTax,
+            discountAmount,
+          }),
+          purchaseDate: effectivePurchaseDate,
+          expiryDate: item.expiryDate || null,
+          batchNumber: item.batchNumber,
+          remainingQty: item.quantity,
+          createdBy: staffId,
+        };
+      });
 
     const createdPurchaseIds = await tx.medicinePurchase.createManyAndReturn({
       data: purchaseRows,
@@ -1483,7 +1550,14 @@ export async function createPurchaseInvoice(
     });
 
     const invoiceTotal = data.items.reduce(
-      (total, item) => total + item.quantity * item.unitPrice,
+      (total, item) =>
+        total +
+        calculateMedicinePurchaseLineTotal({
+          quantity: item.quantity,
+          unitPrice: item.unitPrice,
+          vatTax: item.vatTax ?? 0,
+          discountAmount: item.discountAmount ?? 0,
+        }),
       0,
     );
     const medicineSummary = data.items
@@ -2520,6 +2594,8 @@ export async function getInventoryActivity(filters: InventoryActivityFilters) {
         groupName: string;
         quantity: number;
         unitPrice: number | Prisma.Decimal;
+        vatTax: number | Prisma.Decimal | null;
+        discountAmount: number | Prisma.Decimal | null;
         totalAmount: number | Prisma.Decimal;
         companyName: string | null;
         invoiceNumber: string | null;
@@ -2538,6 +2614,8 @@ export async function getInventoryActivity(filters: InventoryActivityFilters) {
           COALESCE(mg."name", 'Unknown Group') AS "groupName",
           mp."quantity" AS quantity,
           mp."unitPrice" AS "unitPrice",
+          mp."vatTax" AS "vatTax",
+          mp."discountAmount" AS "discountAmount",
           mp."totalAmount" AS "totalAmount",
           mc."name" AS "companyName",
           mp."invoiceNumber" AS "invoiceNumber",
@@ -2560,6 +2638,8 @@ export async function getInventoryActivity(filters: InventoryActivityFilters) {
           COALESCE(mg."name", 'Unknown Group') AS "groupName",
           ms."quantity" AS quantity,
           ms."unitPrice" AS "unitPrice",
+          NULL::numeric AS "vatTax",
+          NULL::numeric AS "discountAmount",
           ms."totalAmount" AS "totalAmount",
           mc."name" AS "companyName",
           NULL::text AS "invoiceNumber",
@@ -2585,6 +2665,9 @@ export async function getInventoryActivity(filters: InventoryActivityFilters) {
     records: rows.map((record) => ({
       ...record,
       unitPrice: Number(record.unitPrice),
+      vatTax: record.vatTax === null ? null : Number(record.vatTax),
+      discountAmount:
+        record.discountAmount === null ? null : Number(record.discountAmount),
       totalAmount: Number(record.totalAmount),
     })),
     total,

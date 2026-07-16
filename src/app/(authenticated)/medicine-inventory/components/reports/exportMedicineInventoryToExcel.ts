@@ -352,8 +352,8 @@ const addPurchaseSheet = (
 ) => {
   const worksheet = workbook.addWorksheet("Purchases");
   applyWorksheetDefaults(worksheet);
-  styleTitle(worksheet, "Medicine Purchases", 12);
-  addMetadata(worksheet, periodLabel, generatedBy, 12);
+  styleTitle(worksheet, "Medicine Purchases", 14);
+  addMetadata(worksheet, periodLabel, generatedBy, 14);
 
   const headerRow = addHeader(
     worksheet,
@@ -367,11 +367,13 @@ const addPurchaseSheet = (
       "Quantity",
       "Remaining Quantity",
       "Unit Price (BDT)",
+      "VAT + Tax (BDT)",
+      "Discount (BDT)",
       "Total Amount (BDT)",
       "Expiry Date",
       "Batch Number",
     ],
-    [18, 18, 24, 22, 28, 28, 14, 20, 18, 20, 18, 18],
+    [18, 18, 24, 22, 28, 28, 14, 20, 18, 18, 18, 20, 18, 18],
   );
 
   purchases.forEach((purchase) => {
@@ -385,6 +387,8 @@ const addPurchaseSheet = (
       purchase.quantity,
       purchase.remainingQty,
       purchase.unitPrice,
+      purchase.vatTax,
+      purchase.discountAmount,
       purchase.totalAmount,
       displayDate(purchase.expiryDate),
       safeText(purchase.batchNumber),
@@ -393,10 +397,10 @@ const addPurchaseSheet = (
 
   if (purchases.length === 0) {
     const emptyRow = worksheet.addRow(["No purchase records found for this report."]);
-    worksheet.mergeCells(`A${emptyRow.number}:L${emptyRow.number}`);
+    worksheet.mergeCells(`A${emptyRow.number}:N${emptyRow.number}`);
   }
 
-  formatDataRows(worksheet, headerRow + 1, [7, 8, 9, 10], [1, 11]);
+  formatDataRows(worksheet, headerRow + 1, [7, 8, 9, 10, 11, 12], [1, 13]);
 };
 
 const addSalesSheet = (

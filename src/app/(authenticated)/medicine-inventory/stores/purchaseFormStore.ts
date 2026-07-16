@@ -4,6 +4,7 @@
  */
 
 import { create } from "zustand";
+import { calculateMedicinePurchaseLineTotal } from "@/lib/medicinePurchaseCalculations";
 
 export interface PurchaseLineItem {
   id: string;
@@ -12,7 +13,9 @@ export interface PurchaseLineItem {
   medicineGroupName: string;
   quantity: number;
   unitPrice: number;
+  vatTax: number;
   salePrice: number;
+  discountAmount: number;
   batchNumber: string;
   expiryDate: Date | null;
 }
@@ -57,13 +60,25 @@ const createEmptyLineItem = (): PurchaseLineItem => ({
   medicineGroupName: "",
   quantity: 0,
   unitPrice: 0,
+  vatTax: 0,
   salePrice: 0,
+  discountAmount: 0,
   batchNumber: "",
   expiryDate: null,
 });
 
 const calculateItemsTotal = (items: PurchaseLineItem[]) =>
-  items.reduce((total, item) => total + item.quantity * item.unitPrice, 0);
+  items.reduce(
+    (total, item) =>
+      total +
+      calculateMedicinePurchaseLineTotal({
+        quantity: item.quantity,
+        unitPrice: item.unitPrice,
+        vatTax: item.vatTax,
+        discountAmount: item.discountAmount,
+      }),
+    0,
+  );
 
 const createInitialFormData = (): PurchaseFormData => ({
   invoiceNumber: "",

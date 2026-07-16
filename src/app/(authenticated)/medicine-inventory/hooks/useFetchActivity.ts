@@ -10,6 +10,8 @@ export interface ActivityRecord {
   groupName: string;
   quantity: number;
   unitPrice: number;
+  vatTax?: number | null;
+  discountAmount?: number | null;
   totalAmount: number;
   companyName?: string | null;
   invoiceNumber?: string | null;

@@ -148,6 +148,12 @@ const PurchaseTable: React.FC = () => {
                   Price
                 </th>
                 <th className="text-right px-6 py-3 text-[10px] font-black uppercase tracking-widest text-gray-500">
+                  VAT + Tax
+                </th>
+                <th className="text-right px-6 py-3 text-[10px] font-black uppercase tracking-widest text-gray-500">
+                  Discount
+                </th>
+                <th className="text-right px-6 py-3 text-[10px] font-black uppercase tracking-widest text-gray-500">
                   Total
                 </th>
                 <th className="text-left px-6 py-3 text-[10px] font-black uppercase tracking-widest text-gray-500">
@@ -191,6 +197,12 @@ const PurchaseTable: React.FC = () => {
                   </td>
                   <td className="px-6 py-3.5 text-right text-sm text-gray-700">
                     {formatCurrency(purchase.unitPrice)}
+                  </td>
+                  <td className="px-6 py-3.5 text-right text-sm text-gray-700">
+                    {formatCurrency(purchase.vatTax)}
+                  </td>
+                  <td className="px-6 py-3.5 text-right text-sm text-gray-700">
+                    {formatCurrency(purchase.discountAmount)}
                   </td>
                   <td className="px-6 py-3.5 text-right">
                     <span className="text-sm font-bold text-emerald-700">
@@ -237,6 +249,14 @@ const PurchaseTable: React.FC = () => {
                   <span className="font-semibold text-gray-500">Qty:</span>{" "}
                   {formatNumber(purchase.quantity)} ×{" "}
                   {formatCurrency(purchase.unitPrice)}
+                </span>
+                <span>
+                  <span className="font-semibold text-gray-500">VAT + Tax:</span>{" "}
+                  {formatCurrency(purchase.vatTax)}
+                </span>
+                <span>
+                  <span className="font-semibold text-gray-500">Discount:</span>{" "}
+                  {formatCurrency(purchase.discountAmount)}
                 </span>
                 <span>
                   <span className="font-semibold text-gray-500">Date:</span>{" "}
