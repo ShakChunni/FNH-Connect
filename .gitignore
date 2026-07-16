@@ -20,6 +20,14 @@
 /scripts/*
 !/scripts/standardize-patient-addresses.ts
 !/scripts/merge-infertility-cases.ts
+!/scripts/fix-payment-allocations.ts
+!/scripts/migrate-registration-numbers.ts
+
+# local agent and prompt metadata
+.opencode/
+.codex/
+AGENTS.md
+agents.html
 # misc
 .DS_Store
 *.pem
