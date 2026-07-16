@@ -6,7 +6,7 @@
 
 import { useMutation } from "@tanstack/react-query";
 import { api } from "@/lib/axios";
-import type { PathologyPatient, PathologyFilters } from "../types";
+import type { PathologyPatient } from "../types";
 
 interface FetchReportResponse {
   success: boolean;
@@ -23,6 +23,8 @@ export interface FetchReportDataParams {
   testNames?: string[];
   orderedById?: number;
   doneById?: number;
+  hasDue?: boolean;
+  hasDiscount?: boolean;
 }
 
 /**
@@ -70,6 +72,15 @@ export function useFetchPathologyReportData() {
 
       if (filters.doneById) {
         params.append("doneById", filters.doneById.toString());
+      }
+
+      // Financial filters
+      if (filters.hasDue !== undefined) {
+        params.append("hasDue", filters.hasDue.toString());
+      }
+
+      if (filters.hasDiscount !== undefined) {
+        params.append("hasDiscount", filters.hasDiscount.toString());
       }
 
       const response = await api.get<FetchReportResponse>(

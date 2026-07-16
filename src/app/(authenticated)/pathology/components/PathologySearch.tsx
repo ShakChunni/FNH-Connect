@@ -69,6 +69,8 @@ export const PathologySearch: React.FC<PathologySearchProps> = ({
         orderedById: filters.orderedById ?? undefined,
         doneById: filters.doneById ?? undefined,
         testNames: filters.testNames.length > 0 ? filters.testNames : undefined,
+        hasDue: filters.hasDue ?? undefined,
+        hasDiscount: filters.hasDiscount ?? undefined,
       };
 
       const rawData = await fetchReportData(reportFilters);

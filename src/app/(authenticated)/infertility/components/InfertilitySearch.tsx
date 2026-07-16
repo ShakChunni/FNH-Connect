@@ -1,11 +1,16 @@
 "use client";
 
 import React, { useState, useCallback, useMemo } from "react";
-import { Search, X, Loader2 } from "lucide-react";
+import { Search, X } from "lucide-react";
 import { useDebounce } from "@/hooks/useDebounce";
 import { useInfertilityFilterStore } from "../stores/filterStore";
 import { useInfertilityTestFilterStore } from "../stores/testFilterStore";
-import { ReportTriggerButton, DateRangePill, FilterTriggerButton } from "./filter";
+import {
+  PatientReportTriggerButton,
+  InvestigationReportTriggerButton,
+  DateRangePill,
+  FilterTriggerButton,
+} from "./filter";
 
 interface InfertilitySearchProps {
   disabled?: boolean;
@@ -113,15 +118,24 @@ export const InfertilitySearch: React.FC<InfertilitySearchProps> = ({
             </div>
           )}
           
-          <div className="h-full">
-            <DateRangePill disabled={disabled} />
-          </div>
+          {activeTab === "patients" && (
+            <div className="h-full">
+              <DateRangePill disabled={disabled} />
+            </div>
+          )}
 
           <div className="h-full">
-            <ReportTriggerButton 
-              disabled={disabled} 
-              recordCount={recordCount} 
-            />
+            {activeTab === "patients" ? (
+              <PatientReportTriggerButton
+                disabled={disabled}
+                recordCount={recordCount}
+              />
+            ) : (
+              <InvestigationReportTriggerButton
+                disabled={disabled}
+                recordCount={recordCount}
+              />
+            )}
           </div>
         </div>
       </div>

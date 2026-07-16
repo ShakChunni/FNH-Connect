@@ -92,6 +92,8 @@ export const AdmissionSearch: React.FC<AdmissionSearchProps> = ({
         status: filters.status !== "All" ? filters.status : undefined,
         departmentId: filters.departmentId ?? undefined,
         doctorId: filters.doctorId ?? undefined,
+        hasDue: filters.hasDue ?? undefined,
+        hasDiscount: filters.hasDiscount ?? undefined,
       };
 
       return await fetchReportData(reportFilters);
