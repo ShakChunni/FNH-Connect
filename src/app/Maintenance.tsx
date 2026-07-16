@@ -2,9 +2,7 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Settings, Clock } from "lucide-react";
-import { FaWhatsapp } from "react-icons/fa";
 
-const REDACTED_WHATSAPP = "REDACTED_PHONE";
 const MAINTENANCE_END = new Date("2025-07-16T20:00:00+08:00"); // 8pm MYT, 16 July 2025
 
 function formatDuration(ms: number) {
@@ -13,17 +11,6 @@ function formatDuration(ms: number) {
   const hours = Math.floor(totalMinutes / 60);
   const minutes = totalMinutes % 60;
   return `${hours > 0 ? `${hours}h ` : ""}${minutes}m remaining`;
-}
-
-function formatMaintenanceEndTime() {
-  return MAINTENANCE_END.toLocaleString("en-MY", {
-    timeZone: "Asia/Kuala_Lumpur",
-    hour: "2-digit",
-    minute: "2-digit",
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
 }
 
 const Maintenance = () => {
@@ -54,11 +41,6 @@ const Maintenance = () => {
     const interval = setInterval(update, 1000 * 60); // update every minute
     return () => clearInterval(interval);
   }, []);
-
-  const openWhatsApp = () => {
-    const number = REDACTED_WHATSAPP.replace(/[^0-9]/g, "");
-    window.open(`https://wa.me/${number}`, "_blank");
-  };
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-[#f6f9fd] p-2 sm:p-6">
@@ -151,23 +133,6 @@ const Maintenance = () => {
             </div>
           </motion.div>
 
-          {/* Contact info */}
-          <motion.div
-            className="flex flex-col items-center justify-center mt-4 space-y-3"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 1.4, duration: 0.6 }}
-          >
-            <span className="text-sm text-gray-500">Questions?</span>
-            <button
-              type="button"
-              className="flex items-center gap-3 bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-xl font-semibold transition-colors shadow-lg hover:shadow-xl"
-              onClick={openWhatsApp}
-            >
-              <FaWhatsapp className="w-5 h-5" />
-              Contact REDACTED REDACTED
-            </button>
-          </motion.div>
         </motion.div>
       </AnimatePresence>
     </div>
