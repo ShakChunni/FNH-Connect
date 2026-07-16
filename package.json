@@ -14,19 +14,10 @@
     "rebuild": "npm run clean:all && npm install && npm run build:clean",
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
-    "db:seed": "tsx scripts/seed.ts",
     "db:studio": "prisma studio",
-    "db:audit-infertility-migration": "tsx scripts/audit-infertility-migration.ts",
     "db:audit-patient-addresses": "tsx scripts/standardize-patient-addresses.ts",
-    "db:reset-infertility-migration": "tsx scripts/reset-infertility-migration-batch.ts",
-    "db:migrate-pathology-to-infertility-v2": "tsx scripts/migrate-pathology-to-infertility-v2.ts",
     "db:fix-payments": "tsx scripts/fix-payment-allocations.ts",
-    "db:fix-patient-dobs": "tsx scripts/fix-patient-dobs.ts --apply",
-    "db:merge-infertility-cases": "tsx scripts/merge-infertility-cases.ts",
-    "db:cleanup-test": "tsx scripts/cleanup-test-data.ts",
-    "db:fix-cash-tracking": "tsx scripts/fix-cash-tracking-data.ts",
-    "seed:test-user": "tsx scripts/seed-test-user.ts",
-    "seed:voucher-presets": "tsx scripts/seed-voucher-presets.ts"
+    "db:merge-infertility-cases": "tsx scripts/merge-infertility-cases.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
