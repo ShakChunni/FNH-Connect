@@ -37,7 +37,6 @@
     "@types/lodash": "^4.17.20",
     "@types/lodash.debounce": "^4.0.9",
     "@types/node": "^20",
-    "@types/nodemailer": "^8.0.0",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@types/react-window": "^1.8.8",
@@ -66,7 +65,6 @@
     "next": "15.5.18",
     "node-cron": "^4.2.1",
     "node-device-detector": "^2.2.4",
-    "nodemailer": "^8.0.10",
     "postmark": "^4.0.5",
     "prisma": "^6.16.2",
     "radix-ui": "^1.4.3",
@@ -85,7 +83,6 @@
     "tailwind-merge": "^3.3.1",
     "tailwindcss": "^4",
     "typescript": "^5",
-    "ua-parser-js": "^2.0.5",
     "zod": "^4.1.11",
     "zustand": "^5.0.9"
   },
