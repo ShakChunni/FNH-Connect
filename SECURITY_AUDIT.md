@@ -345,11 +345,11 @@ async headers() {
 
 ---
 
-#### F-21: Tracked seed scripts contain hardcoded passwords 🟢 Info
+#### F-21: Tracked seed scripts contain hardcoded passwords ✅ Remediated
 
-**Context:** Files under `scripts/` are tracked by git and contain plaintext passwords.
+**Context:** The original audit found plaintext passwords in tracked account and seed scripts.
 
-**Fix:** Pass passwords via environment variables or generate them at runtime. Rotate any accounts whose passwords appear in git history.
+**Remediation:** The credential-bearing and destructive scripts were removed from the working tree and reachable Git history. The remaining tracked utilities do not seed users or contain credentials. Accounts whose passwords appeared in the former scripts should still be rotated because remote hosts may retain old unreachable objects temporarily.
 
 ---
 
