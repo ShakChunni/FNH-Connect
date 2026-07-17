@@ -99,6 +99,33 @@ async function findPotentialSpouseCase(
   );
 }
 
+async function getNextInfertilityCaseNumber(
+  tx: Prisma.TransactionClient,
+): Promise<string> {
+  const currentYear = getTwoDigitYear();
+  const sequenceRows = await tx.$queryRaw<{ lastSequence: number }[]>`
+    INSERT INTO "InfertilityCaseNumberSequence" ("year", "lastSequence")
+    VALUES (${Number(currentYear)}, 1)
+    ON CONFLICT ("year") DO UPDATE
+      SET "lastSequence" =
+        "InfertilityCaseNumberSequence"."lastSequence" + 1,
+        "updatedAt" = CURRENT_TIMESTAMP
+    RETURNING "lastSequence"
+  `;
+
+  const nextSequence = Number(sequenceRows[0]?.lastSequence);
+
+  if (!Number.isInteger(nextSequence) || nextSequence < 1) {
+    throw new Error("Failed to allocate an infertility case number");
+  }
+
+  return formatRegistrationNumber(
+    "INF",
+    currentYear,
+    nextSequence,
+  );
+}
+
 export interface InfertilityFilters {
   status?: string;
   hospitalId?: number;
@@ -428,29 +455,8 @@ export async function createInfertilityPatient(
       });
     }
 
-    // 3. Generate unique case number (format: INF-YY-XXXXX, e.g., INF-25-00001)
-    const currentYear = getTwoDigitYear();
-    const yearStart = new Date(new Date().getFullYear(), 0, 1); // Jan 1 of current year
-    const yearEnd = new Date(new Date().getFullYear() + 1, 0, 1); // Jan 1 of next year
-
-    // Count infertility cases in the current year
-    const countThisYear = await tx.infertilityPatient.count({
-      where: {
-        createdAt: {
-          gte: yearStart,
-          lt: yearEnd,
-        },
-      },
-    });
-
-    const caseNumber = formatRegistrationNumber(
-      "INF",
-      currentYear,
-      countThisYear + 1,
-    );
-
-    // 4. Create infertility record
-    // First, check if a record already exists for this patient at this hospital
+    // 3. Check if a record already exists for this patient at this hospital
+    // before allocating a new case number.
     const existingInfertilityRecord = await tx.infertilityPatient.findUnique({
       where: {
         patientId_hospitalId: {
@@ -466,9 +472,13 @@ export async function createInfertilityPatient(
       );
     }
 
+    // 4. Generate a gap-safe, concurrency-safe case number.
+    const caseNumber = await getNextInfertilityCaseNumber(tx);
+
+    // 5. Create infertility record
     const infertilityRecord = await tx.infertilityPatient.create({
       data: {
-        caseNumber, // Generated case number: INF-YYMMDD-XXXX
+        caseNumber, // Generated case number: INF-YY-XXXXX
         patientId: patient.id,
         hospitalId: hospital.id,
         yearsMarried: medicalData.yearsMarried,
