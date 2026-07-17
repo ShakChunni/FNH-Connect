@@ -592,7 +592,7 @@ model Hospital {
 
 model InfertilityPatient {
   id         Int    @id @default(autoincrement())
-  caseNumber String @unique // Format: INF-YYMMDD-XXXX
+  caseNumber String @unique // Format: INF-YY-XXXXX
 
   // References to central tables
   patientId  Int // Links to main Patient table
@@ -658,6 +658,14 @@ model InfertilityPatient {
   @@index([createdAt])
   @@index([status])
   @@index([mergedIntoId])
+}
+
+// Persists the last allocated case number so deleted or merged cases never
+// cause a future registration number to be reused.
+model InfertilityCaseNumberSequence {
+  year         Int      @id
+  lastSequence Int
+  updatedAt    DateTime @updatedAt
 }
 
 model InfertilityCaseMergeArchive {
