@@ -13,6 +13,7 @@ import { prisma } from "@/lib/prisma";
 import { getAuthenticatedUserForAPI } from "@/lib/auth-validation";
 import { getSessionCashUTCDateRange } from "@/lib/timezone";
 import { GENERAL_TO_INFERTILITY_TRANSFER_MARKER } from "@/lib/infertilityTransfer";
+import { isDashboardCashDepartment } from "@/lib/dashboardCashDepartments";
 import {
   parseSessionCashStaffId,
   resolveSessionCashStaffContext,
@@ -92,6 +93,30 @@ export async function GET(request: NextRequest) {
       customStartDate,
       customEndDate,
     );
+
+    // Keep this list aligned with General Admission and include the separate
+    // Private Chamber department when it exists. Pathology and Infertility
+    // have dedicated cash workflows and must not appear in this tracker.
+    const departments = (
+      await prisma.department.findMany({
+        where: { isActive: true },
+        select: { id: true, name: true },
+        orderBy: { name: "asc" },
+      })
+    ).filter((department) => isDashboardCashDepartment(department.name));
+    const allowedDepartmentIds = new Set(
+      departments.map((department) => department.id),
+    );
+
+    if (
+      selectedDepartmentId !== null &&
+      !allowedDepartmentIds.has(selectedDepartmentId)
+    ) {
+      return NextResponse.json(
+        { success: false, error: "That department is not available in cash tracking" },
+        { status: 400 },
+      );
+    }
 
     // 4. Get all shifts for this user that are relevant:
     //    - Shifts that started during the date range
@@ -231,24 +256,22 @@ export async function GET(request: NextRequest) {
     });
 
     const unresolvedRefundReferences = new Set<string>();
-    if (selectedDepartmentId !== null) {
-      for (const shift of shifts) {
-        for (const movement of shift.cashMovements) {
-          if (movement.payment) {
-            continue;
-          }
+    for (const shift of shifts) {
+      for (const movement of shift.cashMovements) {
+        if (movement.payment) {
+          continue;
+        }
 
-          const reference = extractRefundReference(movement.description);
-          if (reference) {
-            unresolvedRefundReferences.add(reference);
-          }
+        const reference = extractRefundReference(movement.description);
+        if (reference) {
+          unresolvedRefundReferences.add(reference);
         }
       }
     }
 
     const unresolvedReferences = Array.from(unresolvedRefundReferences);
     const [admissionsByNumber, pathologyTestsByNumber] = await Promise.all([
-      selectedDepartmentId !== null && unresolvedReferences.length > 0
+      unresolvedReferences.length > 0
         ? prisma.admission.findMany({
             where: { admissionNumber: { in: unresolvedReferences } },
             select: {
@@ -257,7 +280,7 @@ export async function GET(request: NextRequest) {
             },
           })
         : Promise.resolve([]),
-      selectedDepartmentId !== null && unresolvedReferences.length > 0
+      unresolvedReferences.length > 0
         ? prisma.pathologyTest.findMany({
             where: { testNumber: { in: unresolvedReferences }, migratedToInfertility: false },
             select: {
@@ -281,14 +304,7 @@ export async function GET(request: NextRequest) {
       ]),
     );
 
-    // 5. Get all active departments for the dropdown
-    const departments = await prisma.department.findMany({
-      where: { isActive: true },
-      select: { id: true, name: true },
-      orderBy: { name: "asc" },
-    });
-
-    // 6. Process each shift individually
+    // 5. Process each shift individually
     const shiftSummaries: ShiftSummary[] = [];
     let overallTotalCollected = 0;
     let overallTotalRefunded = 0;
@@ -311,7 +327,7 @@ export async function GET(request: NextRequest) {
 
         // If no allocations, add as general
         if (payment.paymentAllocations.length === 0) {
-          if (departmentId && departmentId !== "all") {
+          if (selectedDepartmentId !== null) {
             continue;
           }
           shiftCollected += paymentAmount;
@@ -325,8 +341,12 @@ export async function GET(request: NextRequest) {
           const deptName = allocation.serviceCharge.department.name;
           const allocatedAmount = allocation.allocatedAmount.toNumber();
 
-          // Department filter
-          if (selectedDepartmentId !== null && deptId !== selectedDepartmentId) {
+          const matchesDepartmentFilter =
+            selectedDepartmentId === null
+              ? allowedDepartmentIds.has(deptId)
+              : deptId === selectedDepartmentId;
+
+          if (!matchesDepartmentFilter) {
             continue;
           }
 
@@ -362,15 +382,11 @@ export async function GET(request: NextRequest) {
       }
 
       // Calculate refunds from date-filtered cash movements.
-      // For department-scoped queries, include only refunds linked to that department.
+      // Include only refunds linked to an allowed department. Unallocated
+      // refunds remain visible when viewing all departments.
       let shiftRefunded = 0;
       for (const refundMovement of shift.cashMovements) {
         const refundAmount = refundMovement.amount.toNumber();
-
-        if (selectedDepartmentId === null) {
-          shiftRefunded += refundAmount;
-          continue;
-        }
 
         let refundDepartmentId: number | undefined;
         const firstAllocation =
@@ -386,7 +402,13 @@ export async function GET(request: NextRequest) {
           }
         }
 
-        if (refundDepartmentId === selectedDepartmentId) {
+        const matchesDepartmentFilter =
+          selectedDepartmentId === null
+            ? refundDepartmentId === undefined ||
+              allowedDepartmentIds.has(refundDepartmentId)
+            : refundDepartmentId === selectedDepartmentId;
+
+        if (matchesDepartmentFilter) {
           shiftRefunded += refundAmount;
         }
       }
@@ -426,7 +448,7 @@ export async function GET(request: NextRequest) {
       overallTransactionCount += shiftTransactionCount;
     }
 
-    // 7. Build overall department breakdown
+    // 6. Build overall department breakdown
     const departmentBreakdown: DepartmentBreakdown[] = [];
     for (const [deptId, data] of overallDepartmentMap) {
       departmentBreakdown.push({
@@ -438,7 +460,7 @@ export async function GET(request: NextRequest) {
     }
     departmentBreakdown.sort((a, b) => b.totalCollected - a.totalCollected);
 
-    // 8. Return response
+    // 7. Return response
     return NextResponse.json({
       success: true,
       data: {
