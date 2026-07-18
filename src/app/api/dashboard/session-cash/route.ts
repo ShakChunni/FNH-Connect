@@ -130,6 +130,25 @@ export async function GET(request: NextRequest) {
           ? admissionDepartmentIds.has(departmentId)
           : departmentId === selectedDepartmentId;
 
+    // This counts unique admissions recorded by the selected staff member.
+    // It is intentionally separate from payment interactions: a different
+    // staff member may record the admission and this staff member may later
+    // collect a payment against it.
+    const admissionDepartmentWhere = isAllDepartmentFilter
+      ? {}
+      : isAdmissionDepartmentFilter
+        ? { departmentId: { in: Array.from(admissionDepartmentIds) } }
+        : { departmentId: selectedDepartmentId! };
+    const admittedPatients = await prisma.admission.findMany({
+      where: {
+        createdBy: staffContext.selectedStaffId,
+        dateAdmitted: { gte: startDate, lt: endDate },
+        ...admissionDepartmentWhere,
+      },
+      select: { patientId: true },
+      distinct: ["patientId"],
+    });
+
     // 4. Get all shifts for this user that are relevant:
     //    - Shifts that started during the date range
     //    - OR active shifts (regardless of when they started)
@@ -202,6 +221,7 @@ export async function GET(request: NextRequest) {
             ],
           },
           include: {
+            patientAccount: { select: { patientId: true } },
             paymentAllocations: {
               include: {
                 serviceCharge: {
@@ -321,6 +341,7 @@ export async function GET(request: NextRequest) {
     let overallTotalCollected = 0;
     let overallTotalRefunded = 0;
     let overallTransactionCount = 0;
+    const transactedPatientIds = new Set<number>();
     const overallDepartmentMap = new Map<
       number,
       { name: string; collected: number; count: number }
@@ -344,6 +365,7 @@ export async function GET(request: NextRequest) {
           }
           shiftCollected += paymentAmount;
           shiftTransactionCount += 1;
+          transactedPatientIds.add(payment.patientAccount.patientId);
           continue;
         }
 
@@ -359,6 +381,7 @@ export async function GET(request: NextRequest) {
 
           shiftCollected += allocatedAmount;
           shiftTransactionCount += 1;
+          transactedPatientIds.add(payment.patientAccount.patientId);
 
           // Update shift department map
           const existing = shiftDepartmentMap.get(deptId);
@@ -473,6 +496,8 @@ export async function GET(request: NextRequest) {
         totalRefunded: overallTotalRefunded,
         netCash: overallTotalCollected - overallTotalRefunded,
         transactionCount: overallTransactionCount,
+        admittedPatientCount: admittedPatients.length,
+        transactedPatientCount: transactedPatientIds.size,
         departmentBreakdown,
         shifts: shiftSummaries,
         staffName: staffContext.selectedStaffName,

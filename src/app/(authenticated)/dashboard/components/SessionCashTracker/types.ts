@@ -58,6 +58,8 @@ export interface SessionCashData {
   totalRefunded: number;
   netCash: number;
   transactionCount: number;
+  admittedPatientCount: number;
+  transactedPatientCount: number;
   departmentBreakdown: DepartmentCashBreakdown[];
   shifts?: ShiftSummary[];
   staffName: string;
@@ -91,6 +93,8 @@ export interface SessionCashReportData {
   totalRefunded: number;
   netCash: number;
   transactionCount: number;
+  admittedPatientCount?: number;
+  transactedPatientCount?: number;
   departmentBreakdown: DepartmentCashBreakdown[];
   shifts?: ShiftSummary[];
 }
