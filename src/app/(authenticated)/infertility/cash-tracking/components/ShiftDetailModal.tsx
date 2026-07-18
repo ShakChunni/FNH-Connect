@@ -17,6 +17,7 @@ import {
   Stethoscope,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { formatBDT } from "@/lib/timezone";
 
 interface ShiftDetailModalProps {
   shiftId: number;
@@ -88,14 +89,7 @@ const formatCurrency = (amount: number) => {
 };
 
 const formatDate = (dateStr: string) => {
-  return new Date(dateStr).toLocaleString("en-BD", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: true,
-  });
+  return formatBDT(dateStr, "d MMM yyyy, hh:mm a");
 };
 
 export const ShiftDetailModal: React.FC<ShiftDetailModalProps> = ({

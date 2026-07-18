@@ -6,15 +6,11 @@
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { InfertilityPatientData } from "../types";
+import { formatBDT } from "@/lib/timezone";
 
 const formatDate = (dateStr: string | null): string => {
   if (!dateStr) return "N/A";
-  const date = new Date(dateStr);
-  return date.toLocaleDateString("en-GB", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  });
+  return formatBDT(dateStr, "dd MMM yyyy");
 };
 
 const loadImage = (src: string): Promise<HTMLImageElement> => {
@@ -67,7 +63,7 @@ export async function generateInfertilitySummaryReport(
 
   // Report info on right
   doc.setFontSize(10);
-  doc.text(`Generated: ${new Date().toLocaleDateString("en-GB")}`, 220, 15);
+  doc.text(`Generated: ${formatBDT(new Date(), "d MMM yyyy")}`, 220, 15);
   doc.text(`By: ${staffName}`, 220, 22);
 
   // Summary stats

@@ -72,6 +72,7 @@ export const ExportActionBar: React.FC<ExportActionBarProps> = ({ data }) => {
       doctorId: filters.doctorId ?? undefined,
       hasDue: filters.hasDue ?? undefined,
       hasDiscount: filters.hasDiscount ?? undefined,
+      isDischarged: filters.isDischarged ?? undefined,
     };
 
     return await fetchReportData(reportFilters);

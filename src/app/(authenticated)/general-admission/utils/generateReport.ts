@@ -2,6 +2,7 @@ import jsPDF from "jspdf";
 import autoTable, { type Table } from "jspdf-autotable";
 import { AdmissionPatientData } from "../types";
 import { format } from "date-fns";
+import { formatBDT } from "@/lib/timezone";
 
 // FNH Brand Colors
 const COLORS = {
@@ -96,7 +97,7 @@ const drawHeader = async (doc: jsPDF, title: string, dateRange?: string) => {
     doc.setFontSize(8);
     doc.setTextColor(COLORS.text);
     doc.text(
-      `Generated: ${format(new Date(), "PPpp")}`,
+      `Generated: ${formatBDT(new Date(), "PPpp")}`,
       pageWidth / 2,
       currentY,
       {
@@ -515,7 +516,7 @@ export const generateAdmissionsReport = async (
       body: data.map((item, index) => [
         (index + 1).toString(),
         item.admissionNumber || "",
-        format(new Date(item.dateAdmitted), "dd/MM/yy"),
+        formatBDT(item.dateAdmitted, "dd/MM/yy"),
         item.patientFullName || "",
         item.doctorName || "Self",
         item.departmentName || "",
@@ -590,7 +591,7 @@ export const generateAdmissionsReport = async (
     doc.setFont("helvetica", "bold");
     doc.setFontSize(8);
     doc.setTextColor(COLORS.text);
-    const footerDate = format(new Date(), "PPpp");
+    const footerDate = formatBDT(new Date(), "PPpp");
     doc.text(
       `Generated on ${footerDate} - Page ${i} of ${pageCount}`,
       pageWidth / 2,

@@ -28,6 +28,9 @@ export const FilterTriggerButton: React.FC<FilterTriggerButtonProps> = ({
     if (filters.status !== "All") count++;
     if (filters.dateRange !== "all") count++;
     if (filters.search !== "") count++;
+    if (filters.hasDue !== null) count++;
+    if (filters.hasDiscount !== null) count++;
+    if (filters.isDischarged !== null) count++;
     return count;
   }, [filters]);
 

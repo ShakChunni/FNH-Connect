@@ -2,6 +2,7 @@ import jsPDF, { GState } from "jspdf";
 import autoTable from "jspdf-autotable";
 import { InfertilityTestData } from "../types";
 import { PATHOLOGY_TESTS } from "../../pathology/constants/pathologyTests";
+import { formatBDT } from "@/lib/timezone";
 
 // FNH Brand Colors
 const COLORS = {
@@ -222,13 +223,7 @@ export const generateInfertilityTestReceipt = async (
 
       doc.setFont("helvetica", "normal");
       doc.setTextColor(COLORS.text);
-      const testDate = new Date(data.testDate).toLocaleDateString("en-BD", {
-        day: "numeric",
-        month: "short",
-        year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-      });
+      const testDate = formatBDT(data.testDate, "d MMM yyyy, hh:mm a");
       doc.text(`Date: ${testDate}`, pageWidth - margin, currentY, { align: "right" });
       currentY += 7;
 
@@ -456,14 +451,7 @@ export const generateInfertilityTestReceipt = async (
 
     // Footer
     const footerY = pageHeight - 30;
-    const printTime = new Date().toLocaleString("en-BD", {
-      hour: "numeric",
-      minute: "numeric",
-      hour12: true,
-      day: "numeric",
-      month: "short",
-      year: "numeric",
-    });
+    const printTime = formatBDT(new Date(), "d MMM yyyy, h:mm a");
     drawAuditFooter(doc, {
       footerY,
       margin,

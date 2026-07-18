@@ -18,6 +18,7 @@ import { useEditInfertilityTest } from "../../hooks/useEditInfertilityTest";
 import { InfertilityTestData } from "../../types";
 import { useNotification } from "@/hooks/useNotification";
 import { buildInvestigationSubjectCards } from "../../utils/investigationSubjects";
+import { formatBDT } from "@/lib/timezone";
 
 interface EditInvestigationModalProps {
   isOpen: boolean;
@@ -179,7 +180,7 @@ export const EditInvestigationModal: React.FC<EditInvestigationModalProps> = ({
                   <div>
                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Test Date</p>
                     <p className="text-sm font-semibold text-slate-700">
-                      {new Date(investigationData.testDate).toLocaleDateString()}
+                      {formatBDT(investigationData.testDate, "d MMM yyyy")}
                     </p>
                   </div>
                 </div>

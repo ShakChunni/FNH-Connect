@@ -7,6 +7,7 @@ import { useUpdatePathologyStatus } from "../../../hooks";
 import { generatePathologyReceipt } from "../../../utils/generateReceipt";
 import { useAuth } from "@/app/AuthContext";
 import { useNotification } from "@/hooks/useNotification";
+import { formatBDT } from "@/lib/timezone";
 
 interface TableRowProps {
   row: PathologyPatientData;
@@ -55,11 +56,7 @@ const TableRow: React.FC<TableRowProps> = ({
 
   const formatDate = (dateStr: string | null) => {
     if (!dateStr) return "N/A";
-    return new Date(dateStr).toLocaleDateString("en-US", {
-      month: "short",
-      day: "2-digit",
-      year: "numeric",
-    });
+    return formatBDT(dateStr, "MMM dd, yyyy");
   };
 
   const handleStatusToggle = () => {

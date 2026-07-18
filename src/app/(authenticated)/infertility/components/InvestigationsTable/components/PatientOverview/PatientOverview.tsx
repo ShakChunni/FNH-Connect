@@ -11,6 +11,7 @@ import { ClinicalRemarks } from "./components/ClinicalRemarks";
 import { generateInfertilityTestReceipt } from "../../../../utils/generateReceipt";
 import { useAuth } from "@/app/AuthContext";
 import { useNotification } from "@/hooks/useNotification";
+import { formatBDT } from "@/lib/timezone";
 
 interface PatientOverviewProps {
   isOpen: boolean;
@@ -31,53 +32,15 @@ const PatientOverview: React.FC<PatientOverviewProps> = ({
   if (!patient && !isOpen) return null;
   if (!patient) return null;
 
-  const formatDateShort = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString("en-GB", {
-      day: "numeric",
-      month: "short",
-      year: "numeric",
-    });
-  };
-
   const formatDateWithTime = (dateStr: string) => {
-    const date = new Date(dateStr);
-    const dateFormatted = date.toLocaleDateString("en-GB", {
-      day: "numeric",
-      month: "short",
-      year: "numeric",
-    });
-    const timeFormatted = date.toLocaleTimeString("en-BD", {
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: true,
-      timeZone: "Asia/Dhaka",
-    });
-    return { date: dateFormatted, time: timeFormatted };
-  };
-
-  const formatMetadataDateTime = (dateStr: string) => {
-    const date = new Date(dateStr);
-    return date.toLocaleString("en-BD", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: true,
-      timeZone: "Asia/Dhaka",
-    });
+    return {
+      date: formatBDT(dateStr, "d MMM yyyy"),
+      time: formatBDT(dateStr, "hh:mm a"),
+    };
   };
 
   const formatCompactMetadataDateTime = (dateStr: string) => {
-    const date = new Date(dateStr);
-    return date.toLocaleString("en-BD", {
-      day: "2-digit",
-      month: "short",
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: true,
-      timeZone: "Asia/Dhaka",
-    });
+    return formatBDT(dateStr, "dd MMM, hh:mm a");
   };
 
   const handleEdit = () => {
@@ -108,7 +71,7 @@ const PatientOverview: React.FC<PatientOverviewProps> = ({
               Last Updated
             </span>
             <span className="text-xs font-black text-slate-700">
-              {formatDateShort(patient.updatedAt)}
+              {formatCompactMetadataDateTime(patient.updatedAt)}
             </span>
           </div>
         }

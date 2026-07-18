@@ -87,6 +87,7 @@ const GeneralAdmissionPage = React.memo(() => {
         status: filterValues.status !== "All" ? filterValues.status : undefined,
         hasDue: filterValues.hasDue ?? undefined,
         hasDiscount: filterValues.hasDiscount ?? undefined,
+        isDischarged: filterValues.isDischarged ?? undefined,
         ...dateRangeParams,
       };
     },

@@ -4,6 +4,7 @@ import React from "react";
 import { CashTrackingShift } from "../types";
 import { Clock, User, AlertCircle, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { formatBDT } from "@/lib/timezone";
 
 interface ShiftTableProps {
   shifts: CashTrackingShift[];
@@ -35,13 +36,7 @@ export const ShiftTable: React.FC<ShiftTableProps> = ({
   };
 
   const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleString("en-BD", {
-      day: "numeric",
-      month: "short",
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: true,
-    });
+    return formatBDT(dateStr, "d MMM, hh:mm a");
   };
 
   if (isLoading && shifts.length === 0) {

@@ -1,5 +1,5 @@
 import { PathologyPatientData } from "../types";
-import { format } from "date-fns";
+import { formatBDT } from "@/lib/timezone";
 
 /**
  * Export pathology data to CSV format
@@ -22,7 +22,7 @@ export const exportPathologyToCSV = (data: PathologyPatientData[]) => {
 
   const rows = data.map((row) => [
     row.testNumber,
-    format(new Date(row.testDate), "yyyy-MM-dd"),
+    formatBDT(row.testDate, "yyyy-MM-dd"),
     row.patientFullName,
     row.mobileNumber || "",
     row.testCategory,
@@ -45,6 +45,6 @@ export const exportPathologyToCSV = (data: PathologyPatientData[]) => {
   const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
   const link = document.createElement("a");
   link.href = URL.createObjectURL(blob);
-  link.download = `pathology-export-${format(new Date(), "yyyy-MM-dd")}.csv`;
+  link.download = `pathology-export-${formatBDT(new Date(), "yyyy-MM-dd")}.csv`;
   link.click();
 };

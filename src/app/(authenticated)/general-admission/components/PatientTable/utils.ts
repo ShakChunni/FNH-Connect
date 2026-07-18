@@ -1,4 +1,5 @@
 import type { AdmissionPatientData } from "../../types";
+import { formatBDT } from "@/lib/timezone";
 
 export interface TableHeader {
   key: string;
@@ -22,12 +23,7 @@ export function getTableHeaders(): TableHeader[] {
 
 export function formatDateWithTime(dateStr: string | null): string {
   if (!dateStr) return "N/A";
-  const date = new Date(dateStr);
-  return date.toLocaleDateString("en-BD", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  });
+  return formatBDT(dateStr, "dd MMM yyyy");
 }
 
 export function formatCurrency(amount: number): string {

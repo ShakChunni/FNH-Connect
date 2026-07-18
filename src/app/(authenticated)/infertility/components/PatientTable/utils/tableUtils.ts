@@ -1,9 +1,9 @@
-import { format } from "date-fns";
+import { formatBDT } from "@/lib/timezone";
 
 export const formatDate = (date: string | null) => {
   if (!date) return "";
   try {
-    return format(new Date(date), "MMM dd, yyyy");
+    return formatBDT(date, "MMM dd, yyyy");
   } catch {
     return date;
   }
@@ -12,7 +12,7 @@ export const formatDate = (date: string | null) => {
 export const formatDateWithTime = (date: string | null) => {
   if (!date) return "";
   try {
-    return format(new Date(date), "dd MMM yyyy, h:mm a");
+    return formatBDT(date, "dd MMM yyyy, h:mm a");
   } catch {
     return date;
   }

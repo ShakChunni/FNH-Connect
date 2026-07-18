@@ -2,6 +2,7 @@ import jsPDF from "jspdf";
 import autoTable, { type Table } from "jspdf-autotable";
 import { PathologyPatientData } from "../types";
 import { format } from "date-fns";
+import { formatBDT } from "@/lib/timezone";
 import { PATHOLOGY_TESTS, getTestByCode } from "../constants/pathologyTests";
 
 // FNH Brand Colors
@@ -116,7 +117,7 @@ const drawHeader = async (doc: jsPDF, title: string, dateRange?: string) => {
     doc.setFontSize(8);
     doc.setTextColor(COLORS.text);
     doc.text(
-      `Generated: ${format(new Date(), "PPpp")}`,
+      `Generated: ${formatBDT(new Date(), "PPpp")}`,
       pageWidth / 2,
       currentY,
       {
@@ -582,7 +583,7 @@ export const generatePathologyReport = async (
       body: data.map((item, index) => [
         (index + 1).toString(),
         item.testNumber || "",
-        format(new Date(item.testDate), "dd/MM/yy"),
+        formatBDT(item.testDate, "dd/MM/yy"),
         item.orderedBy || "Self",
         item.patientFullName || "",
         extractTestNames(item.testResults).length > 0
@@ -658,7 +659,7 @@ export const generatePathologyReport = async (
     doc.setFont("helvetica", "bold");
     doc.setFontSize(8);
     doc.setTextColor(COLORS.text);
-    const footerDate = format(new Date(), "PPpp");
+    const footerDate = formatBDT(new Date(), "PPpp");
     doc.text(
       `Generated on ${footerDate} - Page ${i} of ${pageCount}`,
       pageWidth / 2,

@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { AdmissionPatientData } from "../../../../../types";
 import { cn } from "@/lib/utils";
+import { formatBDT } from "@/lib/timezone";
 
 interface ProfileCardProps {
   patient: AdmissionPatientData;
@@ -21,11 +22,7 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({ patient }) => {
   const isMale = patient.patientGender?.toLowerCase() === "male";
 
   const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString("en-GB", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-    });
+    return formatBDT(dateStr, "dd MMM yyyy");
   };
 
   // Shared info row component for consistency

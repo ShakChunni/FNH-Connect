@@ -10,6 +10,7 @@ import {
   Globe,
 } from "lucide-react";
 import { InfertilityPatientData } from "../../../../../types";
+import { formatBDT } from "@/lib/timezone";
 
 interface HospitalDetailsProps {
   patient: InfertilityPatientData;
@@ -20,11 +21,7 @@ export const HospitalDetails: React.FC<HospitalDetailsProps> = ({
 }) => {
   const formatDate = (dateStr: string | null) => {
     if (!dateStr) return "Not scheduled";
-    return new Date(dateStr).toLocaleDateString("en-GB", {
-      day: "numeric",
-      month: "long",
-      year: "numeric",
-    });
+    return formatBDT(dateStr, "d MMMM yyyy");
   };
 
   return (
