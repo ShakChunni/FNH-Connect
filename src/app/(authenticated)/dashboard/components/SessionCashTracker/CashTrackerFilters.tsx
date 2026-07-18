@@ -108,6 +108,17 @@ export const CashTrackerFilters: React.FC<CashTrackerFiltersProps> = ({
         ? "All Admissions"
         : departments.find((d) => d.id === departmentId)?.name || "All";
 
+  const orderedDepartments = React.useMemo(() => {
+    return [...departments].sort((a, b) => {
+      const aIsPathology = a.name.trim().toLowerCase() === "pathology";
+      const bIsPathology = b.name.trim().toLowerCase() === "pathology";
+
+      if (aIsPathology) return -1;
+      if (bIsPathology) return 1;
+      return 0;
+    });
+  }, [departments]);
+
   // Get date label - show custom range dates if custom is selected
   const getSelectedDateLabel = () => {
     if (
@@ -245,7 +256,7 @@ export const CashTrackerFilters: React.FC<CashTrackerFiltersProps> = ({
           >
             All Admission Departments
           </button>
-          {departments.map((dept) => (
+          {orderedDepartments.map((dept) => (
             <button
               key={dept.id}
               onClick={() => onDepartmentSelect(dept.id)}
