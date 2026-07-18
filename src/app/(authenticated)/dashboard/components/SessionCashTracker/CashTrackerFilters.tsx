@@ -9,6 +9,7 @@ import { StaffFilter } from "@/components/ui/StaffFilter";
 import type {
   DatePreset,
   Department,
+  DepartmentFilter,
   CustomDateRange,
   CashTrackerStaffOption,
 } from "./types";
@@ -30,7 +31,7 @@ const DATE_PRESETS: { value: DatePreset; label: string }[] = [
 
 interface CashTrackerFiltersProps {
   datePreset: DatePreset;
-  departmentId: number | "all";
+  departmentId: DepartmentFilter;
   staffId: number | null;
   departments: Department[];
   staffOptions: CashTrackerStaffOption[];
@@ -42,7 +43,7 @@ interface CashTrackerFiltersProps {
   customDateRange: CustomDateRange | null;
   isFetching: boolean;
   onStaffSelect: (staffId: number | null) => void;
-  onDepartmentSelect: (deptId: number | "all") => void;
+  onDepartmentSelect: (deptId: DepartmentFilter) => void;
   onDatePresetSelect: (preset: DatePreset) => void;
   onCustomDateRangeSelect: (range: CustomDateRange | null) => void;
   onDeptDropdownToggle: () => void;
@@ -103,7 +104,9 @@ export const CashTrackerFilters: React.FC<CashTrackerFiltersProps> = ({
   const selectedDeptLabel =
     departmentId === "all"
       ? "All Depts"
-      : departments.find((d) => d.id === departmentId)?.name || "All";
+      : departmentId === "admission"
+        ? "All Admissions"
+        : departments.find((d) => d.id === departmentId)?.name || "All";
 
   // Get date label - show custom range dates if custom is selected
   const getSelectedDateLabel = () => {
@@ -231,6 +234,16 @@ export const CashTrackerFilters: React.FC<CashTrackerFiltersProps> = ({
             }`}
           >
             All Departments
+          </button>
+          <button
+            onClick={() => onDepartmentSelect("admission")}
+            className={`w-full px-3 py-2 text-left text-xs font-medium hover:bg-gray-50 transition-colors cursor-pointer ${
+              departmentId === "admission"
+                ? "text-fnh-navy bg-fnh-navy/5"
+                : "text-gray-700"
+            }`}
+          >
+            All Admission Departments
           </button>
           {departments.map((dept) => (
             <button

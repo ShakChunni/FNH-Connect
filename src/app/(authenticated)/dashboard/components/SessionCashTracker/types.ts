@@ -21,6 +21,8 @@ export interface Department {
   name: string;
 }
 
+export type DepartmentFilter = number | "all" | "admission";
+
 export interface CashTrackerStaffOption {
   id: number;
   fullName: string;
@@ -47,7 +49,7 @@ export interface ShiftSummary {
 
 export interface SessionCashFilters {
   datePreset: DatePreset;
-  departmentId?: number | "all";
+  departmentId?: DepartmentFilter;
   staffId?: number | null;
 }
 

@@ -7,6 +7,7 @@ import { create } from "zustand";
 import type {
   DatePreset,
   Department,
+  DepartmentFilter,
   CustomDateRange,
   CashTrackerStaffOption,
 } from "../components/SessionCashTracker/types";
@@ -14,7 +15,7 @@ import type {
 interface SessionCashStoreState {
   // Filters
   datePreset: DatePreset;
-  departmentId: number | "all";
+  departmentId: DepartmentFilter;
   staffId: number | null;
   customDateRange: CustomDateRange | null;
 
@@ -29,7 +30,7 @@ interface SessionCashStoreState {
 
   // Actions
   setDatePreset: (preset: DatePreset) => void;
-  setDepartmentId: (deptId: number | "all") => void;
+  setDepartmentId: (deptId: DepartmentFilter) => void;
   setStaffId: (staffId: number | null) => void;
   setCustomDateRange: (range: CustomDateRange | null) => void;
   setDeptDropdownOpen: (open: boolean) => void;
@@ -42,7 +43,7 @@ interface SessionCashStoreState {
 
 const initialState = {
   datePreset: "today" as DatePreset,
-  departmentId: "all" as number | "all",
+  departmentId: "all" as DepartmentFilter,
   staffId: null as number | null,
   customDateRange: null as CustomDateRange | null,
   isDeptDropdownOpen: false,

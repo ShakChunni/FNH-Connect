@@ -6,6 +6,7 @@ import type {
   DatePreset,
   SessionCashData,
   Department,
+  DepartmentFilter,
   DepartmentCashBreakdown,
   ShiftSummary,
   CustomDateRange,
@@ -37,7 +38,7 @@ interface SessionCashApiResponse {
 
 interface UseSessionCashDataOptions {
   datePreset: DatePreset;
-  departmentId: number | "all";
+  departmentId: DepartmentFilter;
   staffId?: number | null;
   customDateRange?: CustomDateRange | null;
 }
