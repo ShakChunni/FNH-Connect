@@ -25,6 +25,7 @@ import type {
   DatePreset,
   DetailedCashReportData,
   CustomDateRange,
+  DepartmentFilter,
 } from "./types";
 
 interface SessionCashTrackerProps {
@@ -90,10 +91,18 @@ export const SessionCashTracker: React.FC<SessionCashTrackerProps> = ({
 
   // Update departments in store when fetched
   useEffect(() => {
-    if (fetchedDepartments.length > 0 && departments.length === 0) {
+    const departmentsChanged =
+      departments.length !== fetchedDepartments.length ||
+      fetchedDepartments.some(
+        (department, index) =>
+          departments[index]?.id !== department.id ||
+          departments[index]?.name !== department.name,
+      );
+
+    if (fetchedDepartments.length > 0 && departmentsChanged) {
       setDepartments(fetchedDepartments);
     }
-  }, [fetchedDepartments, departments.length, setDepartments]);
+  }, [fetchedDepartments, departments, setDepartments]);
 
   useEffect(() => {
     if (canSelectStaff) {
@@ -103,7 +112,7 @@ export const SessionCashTracker: React.FC<SessionCashTrackerProps> = ({
 
   // Handlers
   const handleDepartmentSelect = useCallback(
-    (deptId: number | "all") => {
+    (deptId: DepartmentFilter) => {
       setDepartmentId(deptId);
     },
     [setDepartmentId],
@@ -143,6 +152,8 @@ export const SessionCashTracker: React.FC<SessionCashTrackerProps> = ({
       const selectedDept =
         departmentId === "all"
           ? "All Departments"
+          : departmentId === "admission"
+            ? "All Admission Departments"
           : departments.find((d) => d.id === departmentId)?.name || "All";
 
       await generateSessionCashReport({
@@ -184,7 +195,7 @@ export const SessionCashTracker: React.FC<SessionCashTrackerProps> = ({
       const queryParams = new URLSearchParams();
       queryParams.set("datePreset", datePreset);
       if (departmentId && departmentId !== "all") {
-        queryParams.set("departmentId", departmentId.toString());
+        queryParams.set("departmentId", String(departmentId));
       }
       if (canSelectStaff && staffId) {
         queryParams.set("staffId", staffId.toString());
@@ -214,6 +225,8 @@ export const SessionCashTracker: React.FC<SessionCashTrackerProps> = ({
       const selectedDept =
         departmentId === "all"
           ? "All Departments"
+          : departmentId === "admission"
+            ? "All Admission Departments"
           : departments.find((d) => d.id === departmentId)?.name || "All";
 
       // Generate detailed report

@@ -1,18 +1,17 @@
 /**
- * Departments included in the main dashboard cash tracker.
+ * Departments included in the General Admission group filter.
  *
- * General Admission owns the regular admission departments. Pathology and
- * Infertility have dedicated workflows/cash tracking, so they are excluded.
- * Private Chamber is created as its own active department by the chamber
- * service and is included automatically when it exists.
+ * Pathology and Infertility have dedicated workflows, so they are not part
+ * of the General Admission group. They remain available as individual
+ * department filters, as does the separate Private Chamber department.
  */
-const EXCLUDED_DASHBOARD_CASH_DEPARTMENTS = new Set([
+const EXCLUDED_GENERAL_ADMISSION_DEPARTMENTS = new Set([
   "pathology",
   "infertility",
 ]);
 
-export function isDashboardCashDepartment(departmentName: string): boolean {
-  return !EXCLUDED_DASHBOARD_CASH_DEPARTMENTS.has(
+export function isGeneralAdmissionDepartment(departmentName: string): boolean {
+  return !EXCLUDED_GENERAL_ADMISSION_DEPARTMENTS.has(
     departmentName.trim().toLowerCase(),
   );
 }

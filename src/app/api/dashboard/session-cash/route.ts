@@ -13,7 +13,7 @@ import { prisma } from "@/lib/prisma";
 import { getAuthenticatedUserForAPI } from "@/lib/auth-validation";
 import { getSessionCashUTCDateRange } from "@/lib/timezone";
 import { GENERAL_TO_INFERTILITY_TRANSFER_MARKER } from "@/lib/infertilityTransfer";
-import { isDashboardCashDepartment } from "@/lib/dashboardCashDepartments";
+import { isGeneralAdmissionDepartment } from "@/lib/dashboardCashDepartments";
 import {
   parseSessionCashStaffId,
   resolveSessionCashStaffContext,
@@ -64,16 +64,16 @@ export async function GET(request: NextRequest) {
     // 2. Parse query params
     const { searchParams } = new URL(request.url);
     const datePreset = searchParams.get("datePreset") || "today";
-    const departmentId = searchParams.get("departmentId");
+    const departmentId = searchParams.get("departmentId") || "all";
     const customStartDate = searchParams.get("startDate") || undefined;
     const customEndDate = searchParams.get("endDate") || undefined;
     const requestedStaffId = parseSessionCashStaffId(searchParams.get("staffId"));
-    const parsedDepartmentId =
-      departmentId && departmentId !== "all" ? parseInt(departmentId, 10) : null;
+    const isAllDepartmentFilter = departmentId === "all";
+    const isAdmissionDepartmentFilter = departmentId === "admission";
     const selectedDepartmentId =
-      parsedDepartmentId !== null && Number.isNaN(parsedDepartmentId)
-        ? null
-        : parsedDepartmentId;
+      !isAllDepartmentFilter && !isAdmissionDepartmentFilter
+        ? parseInt(departmentId, 10)
+        : null;
 
     const staffContext = await resolveSessionCashStaffContext(
       user,
@@ -94,29 +94,41 @@ export async function GET(request: NextRequest) {
       customEndDate,
     );
 
-    // Keep this list aligned with General Admission and include the separate
-    // Private Chamber department when it exists. Pathology and Infertility
-    // have dedicated cash workflows and must not appear in this tracker.
-    const departments = (
-      await prisma.department.findMany({
-        where: { isActive: true },
-        select: { id: true, name: true },
-        orderBy: { name: "asc" },
-      })
-    ).filter((department) => isDashboardCashDepartment(department.name));
+    // Every active department is available individually. The separate
+    // "admission" mode groups only General Admission departments.
+    const departments = await prisma.department.findMany({
+      where: { isActive: true },
+      select: { id: true, name: true },
+      orderBy: { name: "asc" },
+    });
     const allowedDepartmentIds = new Set(
       departments.map((department) => department.id),
     );
+    const admissionDepartmentIds = new Set(
+      departments
+        .filter((department) => isGeneralAdmissionDepartment(department.name))
+        .map((department) => department.id),
+    );
 
     if (
-      selectedDepartmentId !== null &&
-      !allowedDepartmentIds.has(selectedDepartmentId)
+      !isAllDepartmentFilter &&
+      !isAdmissionDepartmentFilter &&
+      (selectedDepartmentId === null ||
+        Number.isNaN(selectedDepartmentId) ||
+        !allowedDepartmentIds.has(selectedDepartmentId))
     ) {
       return NextResponse.json(
         { success: false, error: "That department is not available in cash tracking" },
         { status: 400 },
       );
     }
+
+    const matchesDepartmentFilter = (departmentId: number) =>
+      isAllDepartmentFilter
+        ? true
+        : isAdmissionDepartmentFilter
+          ? admissionDepartmentIds.has(departmentId)
+          : departmentId === selectedDepartmentId;
 
     // 4. Get all shifts for this user that are relevant:
     //    - Shifts that started during the date range
@@ -327,7 +339,7 @@ export async function GET(request: NextRequest) {
 
         // If no allocations, add as general
         if (payment.paymentAllocations.length === 0) {
-          if (selectedDepartmentId !== null) {
+          if (!isAllDepartmentFilter) {
             continue;
           }
           shiftCollected += paymentAmount;
@@ -341,12 +353,7 @@ export async function GET(request: NextRequest) {
           const deptName = allocation.serviceCharge.department.name;
           const allocatedAmount = allocation.allocatedAmount.toNumber();
 
-          const matchesDepartmentFilter =
-            selectedDepartmentId === null
-              ? allowedDepartmentIds.has(deptId)
-              : deptId === selectedDepartmentId;
-
-          if (!matchesDepartmentFilter) {
+          if (!matchesDepartmentFilter(deptId)) {
             continue;
           }
 
@@ -402,13 +409,11 @@ export async function GET(request: NextRequest) {
           }
         }
 
-        const matchesDepartmentFilter =
-          selectedDepartmentId === null
-            ? refundDepartmentId === undefined ||
-              allowedDepartmentIds.has(refundDepartmentId)
-            : refundDepartmentId === selectedDepartmentId;
-
-        if (matchesDepartmentFilter) {
+        if (
+          (refundDepartmentId === undefined && isAllDepartmentFilter) ||
+          (refundDepartmentId !== undefined &&
+            matchesDepartmentFilter(refundDepartmentId))
+        ) {
           shiftRefunded += refundAmount;
         }
       }
