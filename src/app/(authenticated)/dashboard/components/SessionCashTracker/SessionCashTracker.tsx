@@ -170,6 +170,8 @@ export const SessionCashTracker: React.FC<SessionCashTrackerProps> = ({
         totalRefunded: data.totalRefunded,
         netCash: data.netCash,
         transactionCount: data.transactionCount,
+        admittedPatientCount: data.admittedPatientCount,
+        transactedPatientCount: data.transactedPatientCount,
         departmentBreakdown: data.departmentBreakdown,
         shifts: data.shifts,
       });
@@ -244,6 +246,8 @@ export const SessionCashTracker: React.FC<SessionCashTrackerProps> = ({
         totalRefunded: detailedData.totalRefunded,
         netCash: detailedData.netCash,
         transactionCount: detailedData.transactionCount,
+        admittedPatientCount: detailedData.admittedPatientCount,
+        transactedPatientCount: detailedData.transactedPatientCount,
         departmentBreakdown: detailedData.departmentBreakdown,
         shifts: detailedData.shifts,
       });
@@ -279,6 +283,8 @@ export const SessionCashTracker: React.FC<SessionCashTrackerProps> = ({
     totalRefunded: 0,
     netCash: 0,
     transactionCount: 0,
+    admittedPatientCount: 0,
+    transactedPatientCount: 0,
     departmentBreakdown: [],
     staffName: propsStaffName || "Staff",
     periodLabel: "Today",

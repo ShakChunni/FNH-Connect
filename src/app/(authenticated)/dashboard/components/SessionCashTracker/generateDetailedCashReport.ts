@@ -176,7 +176,7 @@ export const generateDetailedCashReport = async (
   const contentWidth = pageWidth - margin * 2;
   const boxPadding = 5;
   const rowHeight = 6;
-  const boxHeight = boxPadding * 2 + rowHeight * 3;
+  const boxHeight = boxPadding * 2 + rowHeight * 4;
 
   doc.setFillColor(248, 250, 252);
   doc.roundedRect(margin, currentY, contentWidth, boxHeight, 2, 2, "F");
@@ -203,6 +203,7 @@ export const generateDetailedCashReport = async (
   doc.setFont("helvetica", "normal");
   doc.text(data.departmentFilter, col2X + 14, infoY);
 
+  // Row 2: Period | Transactions
   infoY += rowHeight;
   doc.setFont("helvetica", "bold");
   doc.setTextColor(COLORS.lightText);
@@ -218,6 +219,23 @@ export const generateDetailedCashReport = async (
   doc.setFont("helvetica", "normal");
   doc.text(data.transactionCount.toString(), col2X + 30, infoY);
 
+  // Row 3: Patient activity
+  infoY += rowHeight;
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(COLORS.lightText);
+  doc.text("Admitted:", margin + boxPadding, infoY);
+  doc.setTextColor(COLORS.primary);
+  doc.setFont("helvetica", "normal");
+  doc.text((data.admittedPatientCount ?? 0).toString(), margin + boxPadding + 19, infoY);
+
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(COLORS.lightText);
+  doc.text("Interacted:", col2X, infoY);
+  doc.setTextColor(COLORS.primary);
+  doc.setFont("helvetica", "normal");
+  doc.text((data.transactedPatientCount ?? 0).toString(), col2X + 22, infoY);
+
+  // Row 4: Date range | Generated
   infoY += rowHeight;
   doc.setFont("helvetica", "bold");
   doc.setTextColor(COLORS.lightText);

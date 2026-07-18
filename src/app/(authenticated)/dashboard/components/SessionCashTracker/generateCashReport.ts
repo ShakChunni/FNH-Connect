@@ -163,7 +163,7 @@ export const generateSessionCashReport = async (
   const contentWidth = pageWidth - margin * 2;
   const boxPadding = 5;
   const rowHeight = 6;
-  const boxHeight = boxPadding * 2 + rowHeight * 3;
+  const boxHeight = boxPadding * 2 + rowHeight * 4;
 
   // Draw box background
   doc.setFillColor(248, 250, 252);
@@ -207,7 +207,23 @@ export const generateSessionCashReport = async (
   doc.setFont("helvetica", "normal");
   doc.text(data.transactionCount.toString(), col2X + 30, infoY);
 
-  // Row 3: Date Range | Generated
+  // Row 3: Patient activity
+  infoY += rowHeight;
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(COLORS.lightText);
+  doc.text("Admitted:", margin + boxPadding, infoY);
+  doc.setTextColor(COLORS.primary);
+  doc.setFont("helvetica", "normal");
+  doc.text((data.admittedPatientCount ?? 0).toString(), margin + boxPadding + 19, infoY);
+
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(COLORS.lightText);
+  doc.text("Interacted:", col2X, infoY);
+  doc.setTextColor(COLORS.primary);
+  doc.setFont("helvetica", "normal");
+  doc.text((data.transactedPatientCount ?? 0).toString(), col2X + 22, infoY);
+
+  // Row 4: Date Range | Generated
   infoY += rowHeight;
   doc.setFont("helvetica", "bold");
   doc.setTextColor(COLORS.lightText);

@@ -21,6 +21,8 @@ interface SessionCashApiResponse {
     totalRefunded: number;
     netCash: number;
     transactionCount: number;
+    admittedPatientCount: number;
+    transactedPatientCount: number;
     departmentBreakdown: DepartmentCashBreakdown[];
     shifts: ShiftSummary[];
     staffName: string;
@@ -106,6 +108,8 @@ export function useSessionCashData({
         totalRefunded: response.data.data.totalRefunded,
         netCash: response.data.data.netCash,
         transactionCount: response.data.data.transactionCount,
+        admittedPatientCount: response.data.data.admittedPatientCount,
+        transactedPatientCount: response.data.data.transactedPatientCount,
         departmentBreakdown: response.data.data.departmentBreakdown,
         shifts: response.data.data.shifts,
         staffName: response.data.data.staffName,
