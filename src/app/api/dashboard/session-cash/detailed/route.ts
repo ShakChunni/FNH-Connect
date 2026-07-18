@@ -10,6 +10,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getAuthenticatedUserForAPI } from "@/lib/auth-validation";
 import { GENERAL_TO_INFERTILITY_TRANSFER_MARKER } from "@/lib/infertilityTransfer";
+import { isDashboardCashDepartment } from "@/lib/dashboardCashDepartments";
 import { getDepartmentCode, getTwoDigitYear } from "@/lib/registrationNumber";
 import { formatBDT, getSessionCashUTCDateRange } from "@/lib/timezone";
 import {
@@ -122,6 +123,29 @@ export async function GET(request: NextRequest) {
       customStartDate,
       customEndDate,
     );
+
+    // Match the summary tracker: General Admission departments plus the
+    // separate Private Chamber department, excluding dedicated Pathology and
+    // Infertility cash workflows.
+    const departments = (
+      await prisma.department.findMany({
+        where: { isActive: true },
+        select: { id: true, name: true },
+      })
+    ).filter((department) => isDashboardCashDepartment(department.name));
+    const allowedDepartmentIds = new Set(
+      departments.map((department) => department.id),
+    );
+
+    if (
+      selectedDepartmentId !== null &&
+      !allowedDepartmentIds.has(selectedDepartmentId)
+    ) {
+      return NextResponse.json(
+        { success: false, error: "That department is not available in cash tracking" },
+        { status: 400 },
+      );
+    }
 
     // 4. Get shifts with FULL payment details including patient info
     const shifts = await prisma.shift.findMany({
@@ -345,7 +369,7 @@ export async function GET(request: NextRequest) {
 
         // If no allocations, add as general payment
         if (payment.paymentAllocations.length === 0) {
-          if (departmentId && departmentId !== "all") {
+          if (selectedDepartmentId !== null) {
             continue;
           }
 
@@ -378,8 +402,12 @@ export async function GET(request: NextRequest) {
           const deptName = allocation.serviceCharge.department.name;
           const allocatedAmount = allocation.allocatedAmount.toNumber();
 
-          // Department filter
-          if (selectedDepartmentId !== null && deptId !== selectedDepartmentId) {
+          const matchesDepartmentFilter =
+            selectedDepartmentId === null
+              ? allowedDepartmentIds.has(deptId)
+              : deptId === selectedDepartmentId;
+
+          if (!matchesDepartmentFilter) {
             continue;
           }
 
@@ -517,10 +545,13 @@ export async function GET(request: NextRequest) {
           }
         }
 
-        if (
-          selectedDepartmentId !== null &&
-          refundDepartmentId !== selectedDepartmentId
-        ) {
+        const matchesDepartmentFilter =
+          selectedDepartmentId === null
+            ? refundDepartmentId === undefined ||
+              allowedDepartmentIds.has(refundDepartmentId)
+            : refundDepartmentId === selectedDepartmentId;
+
+        if (!matchesDepartmentFilter) {
           continue;
         }
 
