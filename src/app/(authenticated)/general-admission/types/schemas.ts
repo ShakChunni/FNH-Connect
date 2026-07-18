@@ -34,6 +34,14 @@ export const admissionFiltersSchema = z.object({
       if (val === "false") return false;
       return undefined;
     }),
+  isDischarged: z
+    .string()
+    .optional()
+    .transform((val) => {
+      if (val === "true") return true;
+      if (val === "false") return false;
+      return undefined;
+    }),
   page: z.string().default("1").transform(Number),
   limit: z.string().default("10").transform(Number),
 });

@@ -23,6 +23,7 @@ import { generateInfertilityReport } from "../../../../utils/generateReport";
 import { useFetchInfertilityTests } from "../../../../hooks";
 import { useAuth } from "@/app/AuthContext";
 import type { InfertilityTestData } from "../../../../types";
+import { formatBDT } from "@/lib/timezone";
 
 interface PatientOverviewProps {
   isOpen: boolean;
@@ -57,28 +58,15 @@ const PatientOverview: React.FC<PatientOverviewProps> = ({
   if (!patient) return null;
 
   const formatDateShort = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString("en-GB", {
-      day: "numeric",
-      month: "short",
-      year: "numeric",
-    });
+    return formatBDT(dateStr, "d MMM yyyy");
   };
 
   const formatDateWithTime = (dateStr: string | null) => {
     if (!dateStr) return { date: "N/A", time: "" };
-    const date = new Date(dateStr);
-    const dateFormatted = date.toLocaleDateString("en-GB", {
-      day: "numeric",
-      month: "short",
-      year: "numeric",
-    });
-    const timeFormatted = date.toLocaleTimeString("en-BD", {
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: true,
-      timeZone: "Asia/Dhaka",
-    });
-    return { date: dateFormatted, time: timeFormatted };
+    return {
+      date: formatBDT(dateStr, "d MMM yyyy"),
+      time: formatBDT(dateStr, "hh:mm a"),
+    };
   };
 
   const handleEdit = () => {

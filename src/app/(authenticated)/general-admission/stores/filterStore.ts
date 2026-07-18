@@ -32,6 +32,7 @@ export interface FilterValues {
   search: string;
   hasDue: boolean | null;
   hasDiscount: boolean | null;
+  isDischarged: boolean | null;
   page: number;
   limit: number;
 }
@@ -60,6 +61,7 @@ interface FilterActions {
   setSearch: (search: string) => void;
   setHasDue: (hasDue: boolean | null) => void;
   setHasDiscount: (hasDiscount: boolean | null) => void;
+  setIsDischarged: (isDischarged: boolean | null) => void;
   setPage: (page: number) => void;
   setLimit: (limit: number) => void;
 
@@ -84,6 +86,7 @@ const initialFilterValues: FilterValues = {
   search: "",
   hasDue: null,
   hasDiscount: null,
+  isDischarged: null,
   page: 1,
   limit: 10,
 };
@@ -182,6 +185,11 @@ export const useFilterStore = create<FilterStore>((set, get) => ({
       filters: { ...state.filters, hasDiscount, page: 1 },
     })),
 
+  setIsDischarged: (isDischarged) =>
+    set((state) => ({
+      filters: { ...state.filters, isDischarged, page: 1 },
+    })),
+
   setPage: (page) =>
     set((state) => ({
       filters: { ...state.filters, page },
@@ -208,6 +216,7 @@ export const useFilterStore = create<FilterStore>((set, get) => ({
     if (filters.search !== "") count++;
     if (filters.hasDue !== null) count++;
     if (filters.hasDiscount !== null) count++;
+    if (filters.isDischarged !== null) count++;
     return count;
   },
 }));
@@ -234,6 +243,7 @@ export const useFilterActions = () =>
       setSearch: state.setSearch,
       setHasDue: state.setHasDue,
       setHasDiscount: state.setHasDiscount,
+      setIsDischarged: state.setIsDischarged,
       setPage: state.setPage,
       setLimit: state.setLimit,
       clearAllFilters: state.clearAllFilters,

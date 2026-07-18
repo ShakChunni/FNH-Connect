@@ -2,6 +2,7 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { InfertilityTestData } from "../types";
 import { format } from "date-fns";
+import { formatBDT } from "@/lib/timezone";
 import { PATHOLOGY_TESTS } from "../../pathology/constants/pathologyTests";
 
 // FNH Brand Colors
@@ -83,7 +84,7 @@ const drawHeader = async (doc: jsPDF, title: string, dateRange?: string) => {
     currentY += 5;
     doc.setFontSize(8);
     doc.setTextColor(150);
-    doc.text(`Generated: ${format(new Date(), "PPpp")}`, pageWidth / 2, currentY, { align: "center" });
+    doc.text(`Generated: ${formatBDT(new Date(), "PPpp")}`, pageWidth / 2, currentY, { align: "center" });
     currentY += 8;
   }
 
@@ -239,7 +240,7 @@ export const generateInfertilityInvestigationReport = async (
       body: data.map((item, i) => [
         (i + 1).toString(),
         item.testNumber,
-        format(new Date(item.testDate), "dd/MM/yy"),
+        formatBDT(item.testDate, "dd/MM/yy"),
         item.patientFullName,
         item.subjectType === "SPOUSE"
           ? `Spouse: ${item.subjectName || item.guardianName || "Not recorded"}`
@@ -292,14 +293,7 @@ export const generateInfertilityInvestigationReport = async (
   );
 
   // Collected by info on the last page - left side
-  const printTime = new Date().toLocaleString("en-BD", {
-    hour: "numeric",
-    minute: "numeric",
-    hour12: true,
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
+  const printTime = formatBDT(new Date(), "d MMM yyyy, h:mm a");
 
   // Use the most frequent createdByName from data, fallback to printedBy
   const creatorCounts = new Map<string, number>();

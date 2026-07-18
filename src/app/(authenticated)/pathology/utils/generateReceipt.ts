@@ -2,6 +2,7 @@ import jsPDF, { GState } from "jspdf";
 import autoTable, { type Table } from "jspdf-autotable";
 import { PathologyPatientData } from "../types";
 import { PATHOLOGY_TESTS } from "../constants/pathologyTests";
+import { formatBDT } from "@/lib/timezone";
 
 // FNH Brand Colors
 const COLORS = {
@@ -253,13 +254,7 @@ export const generatePathologyReceipt = async (
       // Date (Normal & Text Color)
       doc.setFont("helvetica", "normal");
       doc.setTextColor(COLORS.text);
-      const requestDate = new Date(data.testDate).toLocaleDateString("en-BD", {
-        day: "numeric",
-        month: "short",
-        year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-      });
+      const requestDate = formatBDT(data.testDate, "d MMM yyyy, hh:mm a");
       doc.text(`Date: ${requestDate}`, pageWidth - margin, currentY, {
         align: "right",
       });
@@ -590,14 +585,7 @@ export const generatePathologyReceipt = async (
 
     // === FOOTER (All Pages) ===
     const footerY = pageHeight - 38;
-    const printTime = new Date().toLocaleString("en-BD", {
-      hour: "numeric",
-      minute: "numeric",
-      hour12: true,
-      day: "numeric",
-      month: "short",
-      year: "numeric",
-    });
+    const printTime = formatBDT(new Date(), "d MMM yyyy, h:mm a");
     drawAuditFooter(doc, {
       footerY,
       margin,

@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { InfertilityTestData } from "../../../../../types";
 import { cn } from "@/lib/utils";
+import { formatBDT } from "@/lib/timezone";
 import {
   INFERTILITY_TESTS,
   getTestByCode,
@@ -29,11 +30,7 @@ export const TestDetails: React.FC<TestDetailsProps> = ({
 
   const formatDate = (dateStr: string | null) => {
     if (!dateStr) return "Not Scheduled";
-    return new Date(dateStr).toLocaleDateString("en-GB", {
-      day: "numeric",
-      month: "short",
-      year: "numeric",
-    });
+    return formatBDT(dateStr, "d MMM yyyy");
   };
 
   // Get test codes from testResults

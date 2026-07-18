@@ -64,6 +64,10 @@ export function useFetchAdmissions(filters: AdmissionFilters = {}) {
         params.append("hasDiscount", filters.hasDiscount.toString());
       }
 
+      if (filters.isDischarged !== undefined) {
+        params.append("isDischarged", filters.isDischarged.toString());
+      }
+
       if (filters.page) {
         params.append("page", filters.page.toString());
       }

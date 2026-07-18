@@ -5,6 +5,7 @@ import { DropdownPortal } from "@/components/ui/DropdownPortal";
 import { api } from "@/lib/axios";
 import { useAuth } from "@/app/AuthContext";
 import { useNotification } from "@/hooks/useNotification";
+import { formatBDT } from "@/lib/timezone";
 import { generateInfertilityTestReceipt } from "../../../utils/generateReceipt";
 import { generateInfertilityInvestigationReport } from "../../../utils/generateInvestigationReport";
 import type { InfertilityTestData } from "../../../types";
@@ -99,11 +100,7 @@ const InvestigationPrintDropdown: React.FC<InvestigationPrintDropdownProps> = ({
   };
 
   const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString("en-US", {
-      month: "short",
-      day: "2-digit",
-      year: "numeric",
-    });
+    return formatBDT(dateStr, "MMM dd, yyyy");
   };
 
   const groupedInvestigations = [

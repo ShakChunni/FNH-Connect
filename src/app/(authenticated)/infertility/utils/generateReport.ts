@@ -1,6 +1,7 @@
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { format } from "date-fns";
+import { formatBDT } from "@/lib/timezone";
 import { InfertilityPatientData } from "../types";
 
 // FNH Brand Colors
@@ -37,13 +38,7 @@ const loadImage = (src: string): Promise<HTMLImageElement> => {
  */
 const formatDate = (dateStr: string | null | undefined): string => {
   if (!dateStr) return "N/A";
-  return new Date(dateStr).toLocaleDateString("en-BD", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  return formatBDT(dateStr, "d MMM yyyy, hh:mm a");
 };
 
 /**
@@ -714,14 +709,7 @@ export const generateInfertilityReport = async (
   );
 
   // Collected by info on the last page - left side
-  const printTime = new Date().toLocaleString("en-BD", {
-    hour: "numeric",
-    minute: "numeric",
-    hour12: true,
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
+  const printTime = formatBDT(new Date(), "d MMM yyyy, h:mm a");
 
   doc.setFont("helvetica", "bold");
   doc.setFontSize(7);

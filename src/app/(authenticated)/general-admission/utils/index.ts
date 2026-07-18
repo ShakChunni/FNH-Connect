@@ -19,6 +19,7 @@ import {
   getAgeInYears,
   serializeDateOfBirth,
 } from "@/components/form-sections/utils/dateUtils";
+import { formatBDT } from "@/lib/timezone";
 
 /**
  * Serialize date to YYYY-MM-DD format (local date without timezone conversion)
@@ -145,11 +146,7 @@ export function transformFormToUpdatePayload(
  */
 export function formatDate(dateStr: string | null): string {
   if (!dateStr) return "-";
-  return new Date(dateStr).toLocaleDateString("en-GB", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  });
+  return formatBDT(dateStr, "dd MMM yyyy");
 }
 
 /**
@@ -157,13 +154,7 @@ export function formatDate(dateStr: string | null): string {
  */
 export function formatDateTime(dateStr: string | null): string {
   if (!dateStr) return "-";
-  return new Date(dateStr).toLocaleDateString("en-GB", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  return formatBDT(dateStr, "dd MMM yyyy, hh:mm a");
 }
 
 /**

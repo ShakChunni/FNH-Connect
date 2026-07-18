@@ -21,6 +21,7 @@ import { useAddInfertilityTest } from "../hooks/useAddInfertilityTest";
 import { useUpdateInfertilityPatientStatus } from "../hooks/useUpdateInfertilityPatientStatus";
 import { buildInvestigationSubjectCards } from "../utils/investigationSubjects";
 import { api } from "@/lib/axios";
+import { formatBDT } from "@/lib/timezone";
 
 interface OrderInvestigationModalProps {
   isOpen: boolean;
@@ -36,11 +37,7 @@ interface InvestigationListResponse {
 }
 
 function formatInvestigationDate(value: string): string {
-  return new Date(value).toLocaleDateString("en-US", {
-    month: "short",
-    day: "2-digit",
-    year: "numeric",
-  });
+  return formatBDT(value, "MMM dd, yyyy");
 }
 
 function getInvestigationTestSummary(test: InfertilityTestData): string {

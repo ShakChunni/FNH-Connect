@@ -24,6 +24,7 @@ export interface FetchAdmissionReportParams {
   doctorId?: number;
   hasDue?: boolean;
   hasDiscount?: boolean;
+  isDischarged?: boolean;
 }
 
 /**
@@ -73,6 +74,10 @@ export function useFetchAdmissionsReportData() {
 
       if (filters.hasDiscount !== undefined) {
         params.append("hasDiscount", filters.hasDiscount.toString());
+      }
+
+      if (filters.isDischarged !== undefined) {
+        params.append("isDischarged", filters.isDischarged.toString());
       }
 
       const response = await api.get<FetchReportResponse>(

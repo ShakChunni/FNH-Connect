@@ -4,6 +4,7 @@ import React, { useEffect, useCallback } from "react";
 import { ClientPortal } from "@/components/ui/ClientPortal";
 import { motion, AnimatePresence } from "framer-motion";
 import {
+  BadgeCheck,
   CircleDollarSign,
   Percent,
   X,
@@ -31,8 +32,10 @@ export const Filters: React.FC = () => {
   const filters = useFilterStore((state) => state.filters);
   const hasDue = useFilterStore((state) => state.filters.hasDue);
   const hasDiscount = useFilterStore((state) => state.filters.hasDiscount);
+  const isDischarged = useFilterStore((state) => state.filters.isDischarged);
   const setHasDue = useFilterStore((state) => state.setHasDue);
   const setHasDiscount = useFilterStore((state) => state.setHasDiscount);
+  const setIsDischarged = useFilterStore((state) => state.setIsDischarged);
 
   const activeCount = [
     filters.departmentId !== null,
@@ -42,6 +45,7 @@ export const Filters: React.FC = () => {
     filters.search !== "",
     filters.hasDue !== null,
     filters.hasDiscount !== null,
+    filters.isDischarged !== null,
   ].filter(Boolean).length;
 
   // Close on Escape key
@@ -174,6 +178,14 @@ export const Filters: React.FC = () => {
                 value={hasDiscount}
                 onChange={setHasDiscount}
                 activeLabel="Patients with discount"
+              />
+
+              <FinancialFilterSelect
+                label="Discharged"
+                icon={BadgeCheck}
+                value={isDischarged}
+                onChange={setIsDischarged}
+                activeLabel="Discharged patients"
               />
             </div>
 

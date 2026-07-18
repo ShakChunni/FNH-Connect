@@ -9,6 +9,7 @@ import {
   ClipboardList,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { formatBDT } from "@/lib/timezone";
 
 interface HistorySectionProps {
   medicalHistory: string | null;
@@ -31,14 +32,10 @@ export const HistorySection: React.FC<HistorySectionProps> = ({
 }) => {
   const formatDateDayMonth = (dateStr: string | null | undefined) => {
     if (!dateStr) return "N/A";
-    const date = new Date(dateStr);
-    const now = new Date();
-    const isToday = date.toDateString() === now.toDateString();
+    const isToday =
+      formatBDT(dateStr, "yyyy-MM-dd") === formatBDT(new Date(), "yyyy-MM-dd");
     if (isToday) return "Today";
-    return date.toLocaleDateString("en-GB", {
-      day: "numeric",
-      month: "short",
-    });
+    return formatBDT(dateStr, "d MMM");
   };
   const sections = [
     {

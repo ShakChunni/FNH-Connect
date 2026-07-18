@@ -11,6 +11,7 @@ import {
   UserRound,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { formatBDT } from "@/lib/timezone";
 import { InfertilityTestData } from "../../../../../types";
 import { INFERTILITY_TESTS } from "../../../../../constants/infertilityTests";
 import { generateInfertilityTestReceipt } from "../../../../../utils/generateReceipt";
@@ -38,11 +39,7 @@ function formatDate(dateStr: string | null): string {
     return "Not Scheduled";
   }
 
-  return new Date(dateStr).toLocaleDateString("en-GB", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
+  return formatBDT(dateStr, "d MMM yyyy");
 }
 
 function formatCurrency(amount: number): string {

@@ -3,7 +3,7 @@
  */
 
 import { InfertilityTestData } from "../types";
-import { format } from "date-fns";
+import { formatBDT } from "@/lib/timezone";
 
 export const exportInvestigationsToCSV = (data: InfertilityTestData[]) => {
   if (!data || data.length === 0) return;
@@ -36,7 +36,7 @@ export const exportInvestigationsToCSV = (data: InfertilityTestData[]) => {
 
     return [
       item.testNumber,
-      format(new Date(item.testDate), "yyyy-MM-dd"),
+      formatBDT(item.testDate, "yyyy-MM-dd"),
       item.patientFullName,
       item.subjectName
         ? `${item.subjectLabel}: ${item.subjectName}`
@@ -51,7 +51,7 @@ export const exportInvestigationsToCSV = (data: InfertilityTestData[]) => {
       item.grandTotal,
       item.paidAmount,
       item.dueAmount,
-      format(new Date(item.createdAt), "yyyy-MM-dd HH:mm:ss")
+      formatBDT(item.createdAt, "yyyy-MM-dd HH:mm:ss")
     ];
   });
 
@@ -66,7 +66,7 @@ export const exportInvestigationsToCSV = (data: InfertilityTestData[]) => {
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.setAttribute("href", url);
-  link.setAttribute("download", `infertility_investigations_${format(new Date(), "yyyy-MM-dd")}.csv`);
+  link.setAttribute("download", `infertility_investigations_${formatBDT(new Date(), "yyyy-MM-dd")}.csv`);
   link.style.visibility = "hidden";
   document.body.appendChild(link);
   link.click();

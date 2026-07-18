@@ -208,6 +208,7 @@ export interface AdmissionFilters {
   endDate?: string;
   hasDue?: boolean;
   hasDiscount?: boolean;
+  isDischarged?: boolean;
   page?: number;
   limit?: number;
 }
