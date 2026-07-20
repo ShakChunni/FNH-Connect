@@ -11,8 +11,8 @@
  * - denormalized shift totals are rebuilt from payment/cash ledgers;
  * - dueAmount is rebuilt from grandTotal - paidAmount;
  * - active shifts with no unexpired session are closed at their last activity;
- * - an active general shift gets an empty paired infertility shift when it is
- *   missing, but historical shifts containing cash are never retargeted.
+ * - every general shift gets a paired infertility shift when it is missing;
+ *   existing shifts and their transactions are never retargeted.
  */
 
 import { PrismaClient } from "@prisma/client";
@@ -30,6 +30,10 @@ function amount(value: unknown): number {
 
 function differs(left: number, right: number): boolean {
   return Math.abs(left - right) > EPSILON;
+}
+
+function sameTimestamp(left: Date | null, right: Date | null): boolean {
+  return (left?.getTime() ?? null) === (right?.getTime() ?? null);
 }
 
 function isTransferred(value: string | null): boolean {
@@ -340,19 +344,32 @@ async function main() {
     })),
   ].filter((row) => differs(row.current, row.expected));
 
-  const missingPairs = generalShifts.filter(
-    (shift) =>
-      shift.isActive &&
-      !infertilityShifts.some(
-        (infertilityShift) => infertilityShift.sourceShiftId === shift.id,
-      ),
+  const infertilitySourceIds = new Set(
+    infertilityShifts
+      .map((shift) => shift.sourceShiftId)
+      .filter((sourceShiftId): sourceShiftId is number => sourceShiftId !== null),
   );
+  const generalById = new Map(generalShifts.map((shift) => [shift.id, shift]));
+  const missingPairs = generalShifts.filter(
+    (shift) => !infertilitySourceIds.has(shift.id),
+  );
+  const missingActivePairs = missingPairs.filter((shift) => shift.isActive);
   const orphanInfertility = infertilityShifts.filter(
     (shift) =>
-      shift.isActive &&
-      (shift.sourceShiftId === null ||
-        !generalShifts.some((generalShift) => generalShift.id === shift.sourceShiftId)),
+      shift.sourceShiftId === null ||
+      !generalById.has(shift.sourceShiftId),
   );
+  const pairMismatches = infertilityShifts.filter((shift) => {
+    if (shift.sourceShiftId === null) return false;
+    const generalShift = generalById.get(shift.sourceShiftId);
+    if (!generalShift) return false;
+    return (
+      shift.staffId !== generalShift.staffId ||
+      !sameTimestamp(shift.startTime, generalShift.startTime) ||
+      !sameTimestamp(shift.endTime, generalShift.endTime) ||
+      shift.isActive !== generalShift.isActive
+    );
+  });
   const duplicateActiveStaff = Array.from(activeGeneralByStaff.entries()).filter(
     ([, shiftsForStaff]) => shiftsForStaff.length > 1,
   );
@@ -368,8 +385,10 @@ async function main() {
   console.log(`Infertility shifts: ${infertilityShifts.length}`);
   console.log(`Shift ledger repairs: ${generalRepairs.length} general, ${infertilityRepairs.length} infertility`);
   console.log(`Due repairs: ${dueRepairs.length}`);
-  console.log(`Missing active pairs: ${missingPairs.length}`);
-  console.log(`Orphan active infertility shifts: ${orphanInfertility.length}`);
+  console.log(`Missing historical pairs: ${missingPairs.length}`);
+  console.log(`Missing active pairs: ${missingActivePairs.length}`);
+  console.log(`Orphan infertility shifts: ${orphanInfertility.length}`);
+  console.log(`Shift pair metadata mismatches: ${pairMismatches.length}`);
   console.log(`Staff with duplicate active general shifts: ${duplicateActiveStaff.length}`);
   console.log(`Staff with active shifts but no unexpired session: ${staleActiveStaffIds.length}`);
 
@@ -401,8 +420,13 @@ async function main() {
   if (dueRepairs.length > 0) console.log("Due differences:", dueRepairs);
   if (missingPairs.length > 0) {
     console.log(
-      "Missing pair details:",
-      missingPairs.map((shift) => ({ id: shift.id, staffId: shift.staffId })),
+      "Missing pair counts by staff:",
+      Array.from(
+        missingPairs.reduce((counts, shift) => {
+          counts.set(shift.staffId, (counts.get(shift.staffId) ?? 0) + 1);
+          return counts;
+        }, new Map<number, number>()),
+      ).map(([staffId, count]) => ({ staffId, count })),
     );
   }
   if (orphanInfertility.length > 0) {
@@ -412,6 +436,16 @@ async function main() {
         id: shift.id,
         staffId: shift.staffId,
         sourceShiftId: shift.sourceShiftId,
+      })),
+    );
+  }
+  if (pairMismatches.length > 0) {
+    console.log(
+      "Shift pair metadata mismatch details:",
+      pairMismatches.map((shift) => ({
+        infertilityShiftId: shift.id,
+        sourceShiftId: shift.sourceShiftId,
+        staffId: shift.staffId,
       })),
     );
   }
@@ -522,15 +556,37 @@ async function main() {
       }
     }
 
-    // Create only empty pairs. Existing infertility rows with transactions
-    // remain immutable historical records and are reported as orphans.
-    for (const generalShift of missingPairs) {
-      if (!activeStaffIds.has(generalShift.staffId)) continue;
+    // Refresh after stale-shift closure so the paired row receives the
+    // general shift's final historical status and end time.
+    const currentGeneralShifts = await tx.shift.findMany({
+      select: {
+        id: true,
+        staffId: true,
+        startTime: true,
+        endTime: true,
+        isActive: true,
+      },
+    });
+    const currentInfertilitySourceIds = new Set(
+      (
+        await tx.infertilityShift.findMany({
+          select: { sourceShiftId: true },
+        })
+      )
+        .map((shift) => shift.sourceShiftId)
+        .filter((sourceShiftId): sourceShiftId is number => sourceShiftId !== null),
+    );
+
+    // Create only missing counterpart rows. Existing infertility rows and
+    // their transactions remain immutable historical records.
+    for (const generalShift of currentGeneralShifts) {
+      if (currentInfertilitySourceIds.has(generalShift.id)) continue;
       const emptyOrphan = await tx.infertilityShift.findFirst({
         where: {
           staffId: generalShift.staffId,
-          isActive: true,
+          isActive: generalShift.isActive,
           sourceShiftId: null,
+          startTime: generalShift.startTime,
           payments: { none: {} },
           cashMovements: { none: {} },
         },
@@ -539,13 +595,21 @@ async function main() {
       if (emptyOrphan) {
         await tx.infertilityShift.update({
           where: { id: emptyOrphan.id },
-          data: { sourceShiftId: generalShift.id, startTime: generalShift.startTime, notes: `[Linked to general shift #${generalShift.id}]` },
+          data: {
+            sourceShiftId: generalShift.id,
+            startTime: generalShift.startTime,
+            endTime: generalShift.endTime,
+            isActive: generalShift.isActive,
+            notes: `${emptyOrphan.notes ? `${emptyOrphan.notes}\n` : ""}[Historical reconciliation: paired with general shift #${generalShift.id}]`,
+          },
         });
       } else {
         await tx.infertilityShift.create({
           data: {
             staffId: generalShift.staffId,
             startTime: generalShift.startTime,
+            endTime: generalShift.endTime,
+            isActive: generalShift.isActive,
             sourceShiftId: generalShift.id,
             openingCash: 0,
             closingCash: 0,
@@ -558,6 +622,9 @@ async function main() {
         });
       }
     }
+  }, {
+    maxWait: 15_000,
+    timeout: 120_000,
   });
 
   console.log("Historical reconciliation applied successfully.");
