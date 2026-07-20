@@ -19,6 +19,11 @@ interface FinancialOverviewProps {
 export const FinancialOverview: React.FC<FinancialOverviewProps> = ({
   patient,
 }) => {
+  const calculatedDueAmount = Math.max(
+    0,
+    Number(patient.grandTotal) - Number(patient.paidAmount),
+  );
+
   const formatCurrency = (amount: number) => {
     return `৳${amount.toLocaleString("en-BD")}`;
   };
@@ -129,10 +134,10 @@ export const FinancialOverview: React.FC<FinancialOverviewProps> = ({
               <p
                 className={cn(
                   "text-sm sm:text-lg font-black",
-                  patient.dueAmount > 0 ? "text-red-500" : "text-gray-400"
+                  calculatedDueAmount > 0 ? "text-red-500" : "text-gray-400"
                 )}
               >
-                {formatCurrency(patient.dueAmount)}
+                {formatCurrency(calculatedDueAmount)}
               </p>
             </div>
           </div>
@@ -141,12 +146,12 @@ export const FinancialOverview: React.FC<FinancialOverviewProps> = ({
           <div
             className={cn(
               "flex items-center justify-center gap-1.5 px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg sm:rounded-xl text-[10px] sm:text-xs font-bold transition-all",
-              patient.dueAmount > 0
+              calculatedDueAmount > 0
                 ? "bg-red-100 text-red-700"
                 : "bg-emerald-100 text-emerald-700"
             )}
           >
-            {patient.dueAmount > 0 ? (
+            {calculatedDueAmount > 0 ? (
               <>
                 <AlertCircle className="w-3 h-3 sm:w-4 sm:h-4" />
                 Pending

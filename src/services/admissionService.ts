@@ -16,6 +16,7 @@ import {
 } from "@/lib/dateOfBirth";
 import { SessionDeviceInfo } from "@/types/auth";
 import { shiftService } from "@/services/shiftService";
+import { normalizeFinancialTotals } from "@/lib/financialTotals";
 import {
   createSaleWithTx,
   reverseAdmissionMedicineSales,
@@ -659,7 +660,10 @@ export async function createAdmission(
       paidAmount = Math.min(paidAmount, grandTotal);
     }
 
-    const dueAmount = grandTotal - paidAmount;
+    const normalizedTotals = normalizeFinancialTotals(grandTotal, paidAmount);
+    const normalizedGrandTotal = normalizedTotals.grandTotal;
+    const normalizedPaidAmount = normalizedTotals.paidAmount;
+    const dueAmount = normalizedTotals.dueAmount;
     const status = admissionData.status ?? "Admitted";
 
     // 7. Create admission record
@@ -685,8 +689,8 @@ export async function createAdmission(
         discountType,
         discountValue: discountValue !== null ? discountValue : undefined,
         discountAmount,
-        grandTotal,
-        paidAmount,
+        grandTotal: normalizedGrandTotal,
+        paidAmount: normalizedPaidAmount,
         dueAmount,
         seatNumber: admissionData.seatNumber || null,
         ward: admissionData.ward || null,
@@ -778,8 +782,8 @@ export async function createAdmission(
       patientAccount = await tx.patientAccount.create({
         data: {
           patientId: patient.id,
-          totalCharges: grandTotal,
-          totalPaid: paidAmount,
+          totalCharges: normalizedGrandTotal,
+          totalPaid: normalizedPaidAmount,
           totalDue: dueAmount,
         },
       });
@@ -787,8 +791,8 @@ export async function createAdmission(
       patientAccount = await tx.patientAccount.update({
         where: { id: patientAccount.id },
         data: {
-          totalCharges: { increment: grandTotal },
-          totalPaid: { increment: paidAmount },
+          totalCharges: { increment: normalizedGrandTotal },
+          totalPaid: { increment: normalizedPaidAmount },
           totalDue: { increment: dueAmount },
         },
       });
@@ -803,17 +807,17 @@ export async function createAdmission(
         departmentId: admissionData.departmentId,
         originalAmount: totalAmount,
         discountAmount: discountAmount,
-        finalAmount: grandTotal,
+        finalAmount: normalizedGrandTotal,
         admissionId: admission.id,
         createdBy: staffId,
       },
     });
 
     // 11. Create Payment and Cash Movement if paidAmount > 0
-    if (paidAmount > 0) {
-      const activeShift = shiftId
-        ? { id: shiftId }
-        : await shiftService.ensureActiveShift(staffId, tx);
+    if (normalizedPaidAmount > 0) {
+      // Resolve the canonical active shift server-side. A client can hold a
+      // stale/closed shift id after logout, portal switching, or expiry.
+      const activeShift = await shiftService.ensureActiveShift(staffId, tx);
 
       const paymentCount = await tx.payment.count();
       const receiptNumber = `RCP-${Date.now()}-${paymentCount + 1}`;
@@ -821,7 +825,7 @@ export async function createAdmission(
       const payment = await tx.payment.create({
         data: {
           patientAccountId: patientAccount.id,
-          amount: new Prisma.Decimal(paidAmount),
+          amount: new Prisma.Decimal(normalizedPaidAmount),
           paymentMethod: "Cash",
           collectedById: staffId,
           shiftId: activeShift.id,
@@ -830,7 +834,7 @@ export async function createAdmission(
           paymentAllocations: {
             create: {
               serviceChargeId: serviceChargeRecord.id,
-              allocatedAmount: new Prisma.Decimal(paidAmount),
+              allocatedAmount: new Prisma.Decimal(normalizedPaidAmount),
             },
           },
         },
@@ -839,7 +843,7 @@ export async function createAdmission(
       await tx.cashMovement.create({
         data: {
           shiftId: activeShift.id,
-          amount: new Prisma.Decimal(paidAmount),
+          amount: new Prisma.Decimal(normalizedPaidAmount),
           movementType: "COLLECTION",
           description: `Payment collection for ${admissionNumber}`,
           paymentId: payment.id,
@@ -849,8 +853,8 @@ export async function createAdmission(
       await tx.shift.update({
         where: { id: activeShift.id },
         data: {
-          systemCash: { increment: paidAmount },
-          totalCollected: { increment: paidAmount },
+          systemCash: { increment: normalizedPaidAmount },
+          totalCollected: { increment: normalizedPaidAmount },
         },
       });
     }
@@ -1222,8 +1226,9 @@ export async function updateAdmission(
     discountAmount = Math.min(discountAmount, totalAmount);
 
     const grandTotal = totalAmount - discountAmount;
-    const paidAmount = paidAmountNew;
-    const dueAmount = grandTotal - paidAmount;
+    const normalizedTotals = normalizeFinancialTotals(grandTotal, paidAmountNew);
+    const paidAmount = normalizedTotals.paidAmount;
+    const dueAmount = normalizedTotals.dueAmount;
 
     const oldPaidAmount = Number(existingAdmission.paidAmount);
     const paidAmountDiff = paidAmount - oldPaidAmount;
@@ -1296,9 +1301,7 @@ export async function updateAdmission(
     });
 
     if (paidAmountDiff !== 0) {
-      const activeShift = shiftId
-        ? { id: shiftId }
-        : await shiftService.ensureActiveShift(staffId, tx);
+      const activeShift = await shiftService.ensureActiveShift(staffId, tx);
 
       const existingServiceCharge = await tx.serviceCharge.findFirst({
         where: { admissionId: id },
@@ -1647,7 +1650,10 @@ export function transformAdmissionForResponse(admission: AdmissionWithRelations)
     discountAmount: Number(admission.discountAmount),
     grandTotal: Number(admission.grandTotal),
     paidAmount: Number(admission.paidAmount),
-    dueAmount: Number(admission.dueAmount),
+    dueAmount: Math.max(
+      0,
+      Number(admission.grandTotal) - Number(admission.paidAmount),
+    ),
     createdAt: admission.createdAt.toISOString(),
     updatedAt: admission.updatedAt.toISOString(),
     createdBy: admission.createdBy,

@@ -134,7 +134,13 @@ export const generateInfertilityTestReceipt = async (
   const pageWidth = doc.internal.pageSize.width;
   const pageHeight = doc.internal.pageSize.height;
   const margin = 15;
-  const isPaid = Number(data.dueAmount) <= 0;
+  // Derive the printed balance from the authoritative total and paid values.
+  // The denormalized dueAmount field may be stale on older records.
+  const calculatedDueAmount = Math.max(
+    0,
+    Number(data.grandTotal) - Number(data.paidAmount),
+  );
+  const isPaid = calculatedDueAmount <= 0;
 
   // Prepare table rows
   const tests = data.selectedTests;
@@ -390,7 +396,7 @@ export const generateInfertilityTestReceipt = async (
       doc.setFont("helvetica", "bold");
       doc.setFontSize(11);
 
-      if (Number(data.dueAmount) > 0) {
+      if (calculatedDueAmount > 0) {
         // === LEFT-SIDE DUE STAMP/SEAL (Double-ring) ===
         const stampRadius = 18;
         const stampCenterX = margin + stampRadius + 8;
@@ -428,7 +434,7 @@ export const generateInfertilityTestReceipt = async (
         doc.setTextColor(COLORS.lightText);
         doc.text("Due Amount:", tLabelX, tY, { align: "right" });
         doc.setTextColor(220, 38, 38);
-        doc.text(`${Number(data.dueAmount).toLocaleString()}`, tValX, tY, { align: "right" });
+        doc.text(`${calculatedDueAmount.toLocaleString()}`, tValX, tY, { align: "right" });
       } else {
         doc.setFont("helvetica", "bold");
         doc.setFontSize(11);

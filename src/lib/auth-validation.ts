@@ -12,6 +12,7 @@ import {
   getPortalFromSessionToken,
   normalizePortal,
 } from "@/lib/sessionPortal";
+import { closeActiveStaffCashShifts } from "@/services/staffShiftClosureService";
 
 const SECRET_KEY = process.env.SECRET_KEY as string;
 
@@ -62,9 +63,20 @@ export async function validateServerSession() {
 
     // Check if session has expired
     if (session.expiresAt < new Date()) {
-      // Clean up expired session
-      await prisma.session.delete({
-        where: { id: session.id },
+      const expiredAt = new Date();
+      await prisma.$transaction(async (tx) => {
+        await closeActiveStaffCashShifts({
+          tx,
+          staffId: session.user.staff.id,
+          endedAt: expiredAt,
+          generalNotes: "Shift auto-closed on session expiry",
+          infertilityNotes: "HSI Center shift auto-closed on session expiry",
+        });
+        await tx.activityLog.updateMany({
+          where: { sessionId: session.id },
+          data: { sessionId: null },
+        });
+        await tx.session.delete({ where: { id: session.id } });
       });
       redirect("/login");
     }
@@ -183,10 +195,21 @@ export async function getAuthenticatedUserForAPI(): Promise<AuthenticatedUser | 
 
     // Check if session has expired (cleanup handled by cron or login usually, but check here too)
     if (session.expiresAt < new Date()) {
-      // Optional: delete expired session async
-      await prisma.session
-        .delete({
-          where: { id: session.id },
+      const expiredAt = new Date();
+      await prisma
+        .$transaction(async (tx) => {
+          await closeActiveStaffCashShifts({
+            tx,
+            staffId: session.user.staff.id,
+            endedAt: expiredAt,
+            generalNotes: "Shift auto-closed on session expiry",
+            infertilityNotes: "HSI Center shift auto-closed on session expiry",
+          });
+          await tx.activityLog.updateMany({
+            where: { sessionId: session.id },
+            data: { sessionId: null },
+          });
+          await tx.session.delete({ where: { id: session.id } });
         })
         .catch(console.error);
       return null;

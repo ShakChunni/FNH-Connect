@@ -34,8 +34,11 @@ const InvestigationInformation: React.FC<InvestigationInformationProps> = ({
     // discountValue, // We rely on store value
     discountAmount,
     grandTotal,
-    dueAmount,
   } = testInfo;
+  const calculatedDueAmount = Math.max(
+    0,
+    Number(grandTotal) - Number(testInfo.paidAmount),
+  );
 
   // Local state for discount input to handle empty strings gracefully while user types
   const [discountInput, setDiscountInput] = useState<number | "">("");
@@ -471,20 +474,20 @@ const InvestigationInformation: React.FC<InvestigationInformationProps> = ({
                 </span>
                 <NumberInput
                   className={`${inputClassName(
-                    testInfo.dueAmount,
-                    true
+                    calculatedDueAmount,
+                    true,
                   )} pl-10 ${
-                    testInfo.dueAmount > 0
+                    calculatedDueAmount > 0
                       ? "text-orange-600 font-bold"
                       : "text-green-600 font-bold"
                   }`}
-                  value={testInfo.dueAmount}
+                  value={calculatedDueAmount}
                   readOnly
                   placeholder="0"
                 />
               </div>
               <p className="text-xs text-gray-500 mt-1">
-                {testInfo.dueAmount > 0
+                {calculatedDueAmount > 0
                   ? "Remaining balance to be collected"
                   : "Fully paid ✓"}
               </p>

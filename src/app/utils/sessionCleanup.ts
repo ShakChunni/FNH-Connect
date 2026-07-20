@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { closeActiveStaffCashShifts } from "@/services/staffShiftClosureService";
 
 export type SessionCleanupResult =
   | {
@@ -22,36 +23,66 @@ export async function runSessionCleanup(
   });
 
   try {
-    // Defensively disconnect activity logs from expired sessions before
-    // deleting them. The schema already uses onDelete: SetNull, but making
-    // this explicit keeps the cleanup self-contained and protects against
-    // unexpected FK issues if the relation ever changes.
-    const disconnectedLogs = await prisma.activityLog.updateMany({
-      where: {
-        session: {
-          expiresAt: { lt: now },
-        },
+    const expiredSessions = await prisma.session.findMany({
+      where: { expiresAt: { lt: now } },
+      select: {
+        id: true,
+        userId: true,
+        user: { select: { staffId: true } },
       },
-      data: { sessionId: null },
     });
 
-    const deletedSessions = await prisma.session.deleteMany({
-      where: {
-        expiresAt: {
-          lt: now,
-        },
-      },
+    const expiredSessionIds = expiredSessions.map((session) => session.id);
+    const staffIds = Array.from(
+      new Set(
+        expiredSessions
+          .map((session) => session.user.staffId)
+          .filter((staffId): staffId is number => staffId !== null),
+      ),
+    );
+
+    const result = await prisma.$transaction(async (tx) => {
+      // An expired session is a shift boundary. Close both portal ledgers
+      // before removing the session, using the same idempotent closure used by
+      // explicit logout.
+      for (const staffId of staffIds) {
+        await closeActiveStaffCashShifts({
+          tx,
+          staffId,
+          endedAt: now,
+          generalNotes: "Shift auto-closed on session expiry",
+          infertilityNotes: "HSI Center shift auto-closed on session expiry",
+        });
+      }
+
+      let disconnectedLogs = 0;
+      let deletedSessions = 0;
+
+      if (expiredSessionIds.length > 0) {
+        const disconnected = await tx.activityLog.updateMany({
+          where: { sessionId: { in: expiredSessionIds } },
+          data: { sessionId: null },
+        });
+        disconnectedLogs = disconnected.count;
+
+        const deleted = await tx.session.deleteMany({
+          where: { id: { in: expiredSessionIds } },
+        });
+        deletedSessions = deleted.count;
+      }
+
+      return { disconnectedLogs, deletedSessions };
     });
 
     console.info("[Session Cleanup] Deleted expired sessions", {
-      cleaned: deletedSessions.count,
-      disconnectedLogs: disconnectedLogs.count,
+      cleaned: result.deletedSessions,
+      disconnectedLogs: result.disconnectedLogs,
       cutoffUtc: now.toISOString(),
     });
 
     return {
       success: true,
-      cleaned: deletedSessions.count,
+      cleaned: result.deletedSessions,
       timestamp: now.toISOString(),
     };
   } catch (error) {

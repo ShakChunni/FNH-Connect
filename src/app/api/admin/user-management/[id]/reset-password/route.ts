@@ -13,6 +13,7 @@ import { isSystemAdminRole } from "@/lib/roles";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcrypt";
 import { z } from "zod";
+import { closeActiveStaffCashShifts } from "@/services/staffShiftClosureService";
 
 const resetPasswordSchema = z.object({
   newPassword: z
@@ -83,7 +84,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
         select: {
           id: true,
           username: true,
-          staff: { select: { fullName: true } },
+          staff: { select: { id: true, fullName: true } },
         },
       });
 
@@ -105,6 +106,15 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 
       if (userSessions.length > 0) {
         const sessionIds = userSessions.map((s) => s.id);
+
+        await closeActiveStaffCashShifts({
+          tx,
+          staffId: existingUser.staff.id,
+          endedAt: new Date(),
+          generalNotes: "Shift auto-closed on administrator session revocation",
+          infertilityNotes:
+            "HSI Center shift auto-closed on administrator session revocation",
+        });
 
         // First, disconnect these sessions from any existing activity logs to prevent foreign key errors
         await tx.activityLog.updateMany({

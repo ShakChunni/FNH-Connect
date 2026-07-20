@@ -392,7 +392,14 @@ export const OrderInvestigationModal: React.FC<OrderInvestigationModalProps> = (
                                 )}
                               </span>
                               <span>Charge: ৳{investigation.grandTotal}</span>
-                              <span>Due: ৳{investigation.dueAmount}</span>
+                              <span>
+                                Due: ৳
+                                {Math.max(
+                                  0,
+                                  Number(investigation.grandTotal) -
+                                    Number(investigation.paidAmount),
+                                )}
+                              </span>
                             </div>
                           </div>
                           <button

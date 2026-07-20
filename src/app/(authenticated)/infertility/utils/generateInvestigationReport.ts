@@ -5,6 +5,9 @@ import { format } from "date-fns";
 import { formatBDT } from "@/lib/timezone";
 import { PATHOLOGY_TESTS } from "../../pathology/constants/pathologyTests";
 
+const getCalculatedDueAmount = (item: InfertilityTestData): number =>
+  Math.max(0, Number(item.grandTotal) - Number(item.paidAmount));
+
 // FNH Brand Colors
 const COLORS = {
   primary: "#020617", // darker navy
@@ -147,7 +150,7 @@ export const generateInfertilityInvestigationReport = async (
   const totalDiscount = data.reduce((sum, item) => sum + Number(item.discountAmount || 0), 0);
   const totalRevenue = data.reduce((sum, item) => sum + Number(item.grandTotal), 0);
   const totalCollected = data.reduce((sum, item) => sum + Number(item.paidAmount), 0);
-  const totalDue = data.reduce((sum, item) => sum + Number(item.dueAmount), 0);
+  const totalDue = data.reduce((sum, item) => sum + getCalculatedDueAmount(item), 0);
   const collectionRate = totalRevenue > 0 ? ((totalCollected / totalRevenue) * 100).toFixed(1) : "0";
 
   doc.setFont("helvetica", "bold");
@@ -249,7 +252,7 @@ export const generateInfertilityInvestigationReport = async (
         item.isCompleted ? "Done" : "Pending",
         Number(item.grandTotal).toLocaleString(),
         Number(item.paidAmount).toLocaleString(),
-        Number(item.dueAmount).toLocaleString(),
+        getCalculatedDueAmount(item).toLocaleString(),
       ]),
       theme: "striped",
       headStyles: { fillColor: COLORS.primary, fontSize: 6.5 },

@@ -1,5 +1,70 @@
-import { Prisma } from "@prisma/client";
+import { Prisma, Shift } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { closeActiveStaffCashShifts } from "@/services/staffShiftClosureService";
+
+async function ensureLinkedInfertilityShift(
+  db: Prisma.TransactionClient | typeof prisma,
+  generalShift: {
+    id: number;
+    staffId: number;
+    startTime: Date;
+    endTime: Date | null;
+    isActive: boolean;
+  },
+) {
+  const linkedShift = await db.infertilityShift.findUnique({
+    where: { sourceShiftId: generalShift.id },
+  });
+
+  if (linkedShift?.isActive) {
+    return linkedShift;
+  }
+
+  // Reuse only an untouched legacy shift. A shift with transactions is a
+  // historical cash record and must never be retargeted to a new shift.
+  const reusableEmptyShift = await db.infertilityShift.findFirst({
+    where: {
+      staffId: generalShift.staffId,
+      isActive: true,
+      sourceShiftId: null,
+      payments: { none: {} },
+      cashMovements: { none: {} },
+    },
+    orderBy: { startTime: "desc" },
+  });
+
+  if (reusableEmptyShift) {
+    return db.infertilityShift.update({
+      where: { id: reusableEmptyShift.id },
+      data: {
+        startTime: generalShift.startTime,
+        endTime: generalShift.endTime,
+        isActive: generalShift.isActive,
+        sourceShiftId: generalShift.id,
+        notes: reusableEmptyShift.notes
+          ? `${reusableEmptyShift.notes}\n[Linked to general shift #${generalShift.id}]`
+          : `[Linked to general shift #${generalShift.id}]`,
+      },
+    });
+  }
+
+  return db.infertilityShift.create({
+    data: {
+      staffId: generalShift.staffId,
+      startTime: generalShift.startTime,
+      endTime: generalShift.endTime,
+      isActive: generalShift.isActive,
+      sourceShiftId: generalShift.id,
+      openingCash: 0,
+      systemCash: 0,
+      totalCollected: 0,
+      totalRefunded: 0,
+      closingCash: 0,
+      variance: 0,
+      notes: `[Linked to general shift #${generalShift.id}]`,
+    },
+  });
+}
 
 export const shiftService = {
   /**
@@ -10,8 +75,22 @@ export const shiftService = {
    * This is designed to support multi-device logins where the user
    * should ideally remain on the same "logical" shift until they explicitly close it.
    */
-  ensureActiveShift: async (staffId: number, tx?: Prisma.TransactionClient) => {
+  ensureActiveShift: async (
+    staffId: number,
+    tx?: Prisma.TransactionClient,
+  ): Promise<Shift> => {
+    if (!tx) {
+      return prisma.$transaction((transaction) =>
+        shiftService.ensureActiveShift(staffId, transaction),
+      );
+    }
+
     const db = tx || prisma;
+
+    // Serialize shift creation for one staff member. The schema intentionally
+    // allows historical duplicates, so this lock is the runtime guard that
+    // prevents concurrent payments from opening two current shifts.
+    await tx.$executeRaw(Prisma.sql`SELECT pg_advisory_xact_lock(${staffId})`);
 
     // 1. Check for an existing active shift
     const activeShift = await db.shift.findFirst({
@@ -19,9 +98,11 @@ export const shiftService = {
         staffId,
         isActive: true,
       },
+      orderBy: { startTime: "desc" },
     });
 
     if (activeShift) {
+      await ensureLinkedInfertilityShift(db, activeShift);
       return activeShift;
     }
 
@@ -43,6 +124,8 @@ export const shiftService = {
       },
     });
 
+    await ensureLinkedInfertilityShift(db, newShift);
+
     return newShift;
   },
 
@@ -54,31 +137,29 @@ export const shiftService = {
     closingCash: number,
     notes?: string
   ) => {
-    const activeShift = await prisma.shift.findFirst({
-      where: {
+    return prisma.$transaction(async (tx) => {
+      const closed = await closeActiveStaffCashShifts({
+        tx,
         staffId,
-        isActive: true,
-      },
-    });
+        endedAt: new Date(),
+        generalNotes: notes ?? "Shift ended",
+        infertilityNotes: notes ?? "HSI Center shift ended",
+      });
 
-    if (!activeShift) {
-      throw new Error("No active shift found to close.");
-    }
+      if (!closed.generalShiftId) {
+        throw new Error("No active shift found to close.");
+      }
 
-    // Calculate variance
-    // System cash should ideally match (Opening + Collected - Refunded)
-    // But we trust the persisted systemCash field which we should be maintaining accurately on every transaction.
-    const variance = closingCash - activeShift.systemCash.toNumber();
+      const generalShift = await tx.shift.findUniqueOrThrow({
+        where: { id: closed.generalShiftId },
+        select: { systemCash: true },
+      });
 
-    return await prisma.shift.update({
-      where: { id: activeShift.id },
-      data: {
-        isActive: false,
-        endTime: new Date(),
-        closingCash,
-        variance,
-        notes,
-      },
+      const variance = closingCash - generalShift.systemCash.toNumber();
+      return tx.shift.update({
+        where: { id: closed.generalShiftId },
+        data: { closingCash, variance, notes },
+      });
     });
   },
 };

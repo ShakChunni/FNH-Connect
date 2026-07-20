@@ -50,7 +50,7 @@ export const exportInvestigationsToCSV = (data: InfertilityTestData[]) => {
       item.discountAmount || 0,
       item.grandTotal,
       item.paidAmount,
-      item.dueAmount,
+      Math.max(0, Number(item.grandTotal) - Number(item.paidAmount)),
       formatBDT(item.createdAt, "yyyy-MM-dd HH:mm:ss")
     ];
   });

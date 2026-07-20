@@ -12,6 +12,7 @@ import {
 } from "@/lib/registrationNumber";
 import { SessionDeviceInfo } from "@/types/auth";
 import { shiftService } from "@/services/shiftService";
+import { normalizeFinancialTotals } from "@/lib/financialTotals";
 
 // ═══════════════════════════════════════════════════════════════
 // TYPES
@@ -187,6 +188,8 @@ export async function getPathologyPatients(filters: PathologyFilters) {
   }
 
   if (filters.hasDue !== undefined) {
+    // All writes and the historical repair keep this denormalized column in
+    // sync with grandTotal - paidAmount, so this remains index-friendly.
     where.dueAmount = filters.hasDue ? { gt: 0 } : { lte: 0 };
   }
 
@@ -404,6 +407,11 @@ export async function createPathologyPatient(
     }
     const finalOrderedById = pathologyData.orderedById;
 
+    const normalizedTotals = normalizeFinancialTotals(
+      pathologyData.grandTotal,
+      pathologyData.paidAmount,
+    );
+
     // 5. Create pathology test record
     const pathologyTest = await tx.pathologyTest.create({
       data: {
@@ -422,9 +430,9 @@ export async function createPathologyPatient(
         discountType: pathologyData.discountType,
         discountValue: pathologyData.discountValue,
         discountAmount: pathologyData.discountAmount,
-        grandTotal: pathologyData.grandTotal,
-        paidAmount: pathologyData.paidAmount,
-        dueAmount: pathologyData.dueAmount,
+        grandTotal: normalizedTotals.grandTotal,
+        paidAmount: normalizedTotals.paidAmount,
+        dueAmount: normalizedTotals.dueAmount,
         orderedById: finalOrderedById,
         doneById: pathologyData.doneById ?? undefined,
         createdBy: staffId,
@@ -441,9 +449,9 @@ export async function createPathologyPatient(
       patientAccount = await tx.patientAccount.create({
         data: {
           patientId: patient.id,
-          totalCharges: pathologyData.grandTotal,
-          totalPaid: pathologyData.paidAmount,
-          totalDue: pathologyData.dueAmount,
+          totalCharges: normalizedTotals.grandTotal,
+          totalPaid: normalizedTotals.paidAmount,
+          totalDue: normalizedTotals.dueAmount,
         },
       });
     } else {
@@ -451,9 +459,9 @@ export async function createPathologyPatient(
       patientAccount = await tx.patientAccount.update({
         where: { id: patientAccount.id },
         data: {
-          totalCharges: { increment: pathologyData.grandTotal },
-          totalPaid: { increment: pathologyData.paidAmount },
-          totalDue: { increment: pathologyData.dueAmount },
+          totalCharges: { increment: normalizedTotals.grandTotal },
+          totalPaid: { increment: normalizedTotals.paidAmount },
+          totalDue: { increment: normalizedTotals.dueAmount },
         },
       });
     }
@@ -467,18 +475,16 @@ export async function createPathologyPatient(
         departmentId: department.id,
         originalAmount: pathologyData.testCharge,
         discountAmount: pathologyData.discountAmount,
-        finalAmount: pathologyData.grandTotal,
+        finalAmount: normalizedTotals.grandTotal,
         pathologyTestId: pathologyTest.id,
         createdBy: staffId,
       },
     });
 
     // 8. Record initial payment if any
-    if (pathologyData.paidAmount > 0) {
+    if (normalizedTotals.paidAmount > 0) {
       // Always ensure a shift exists so payments are never silently lost
-      const activeShift = shiftId
-        ? { id: shiftId }
-        : await shiftService.ensureActiveShift(staffId, tx);
+      const activeShift = await shiftService.ensureActiveShift(staffId, tx);
 
       // Generate unique receipt number
       const paymentCount = await tx.payment.count();
@@ -487,7 +493,7 @@ export async function createPathologyPatient(
       const payment = await tx.payment.create({
         data: {
           patientAccountId: patientAccount.id,
-          amount: pathologyData.paidAmount,
+          amount: normalizedTotals.paidAmount,
           paymentMethod: "Cash", // Default to cash
           collectedById: staffId,
           shiftId: activeShift.id,
@@ -501,7 +507,7 @@ export async function createPathologyPatient(
         data: {
           paymentId: payment.id,
           serviceChargeId: serviceCharge.id,
-          allocatedAmount: pathologyData.paidAmount,
+          allocatedAmount: normalizedTotals.paidAmount,
         },
       });
 
@@ -509,7 +515,7 @@ export async function createPathologyPatient(
       await tx.cashMovement.create({
         data: {
           shiftId: activeShift.id,
-          amount: pathologyData.paidAmount,
+          amount: normalizedTotals.paidAmount,
           movementType: "COLLECTION",
           description: `Pathology test payment - ${testNumber}`,
           paymentId: payment.id,
@@ -520,8 +526,8 @@ export async function createPathologyPatient(
       await tx.shift.update({
         where: { id: activeShift.id },
         data: {
-          systemCash: { increment: pathologyData.paidAmount },
-          totalCollected: { increment: pathologyData.paidAmount },
+          systemCash: { increment: normalizedTotals.paidAmount },
+          totalCollected: { increment: normalizedTotals.paidAmount },
         },
       });
     }
@@ -531,7 +537,7 @@ export async function createPathologyPatient(
       data: {
         userId,
         action: "CREATE",
-        description: `Created pathology test ${testNumber} for ${patient.fullName}. Total: BDT ${pathologyData.grandTotal}, Paid: BDT ${pathologyData.paidAmount}, Due: BDT ${pathologyData.dueAmount}`,
+        description: `Created pathology test ${testNumber} for ${patient.fullName}. Total: BDT ${normalizedTotals.grandTotal}, Paid: BDT ${normalizedTotals.paidAmount}, Due: BDT ${normalizedTotals.dueAmount}`,
         entityType: "PathologyTest",
         entityId: pathologyTest.id,
         timestamp: new Date(),
@@ -607,11 +613,14 @@ export async function updatePathologyPatient(
     // 2. Calculate payment difference for updating totals
     const oldGrandTotal = Number(existingRecord.grandTotal);
     const oldPaidAmount = Number(existingRecord.paidAmount);
-    const oldDueAmount = Number(existingRecord.dueAmount);
-
-    const grandTotalDiff = pathologyData.grandTotal - oldGrandTotal;
-    const paidAmountDiff = pathologyData.paidAmount - oldPaidAmount;
-    const dueAmountDiff = pathologyData.dueAmount - oldDueAmount;
+    const normalizedTotals = normalizeFinancialTotals(
+      pathologyData.grandTotal,
+      pathologyData.paidAmount,
+    );
+    const grandTotalDiff = normalizedTotals.grandTotal - oldGrandTotal;
+    const paidAmountDiff = normalizedTotals.paidAmount - oldPaidAmount;
+    const dueAmountDiff =
+      normalizedTotals.dueAmount - Math.max(0, oldGrandTotal - oldPaidAmount);
 
     // 3. Determine orderedById - use orderedById if provided, otherwise keep existing
     const finalOrderedById =
@@ -631,9 +640,9 @@ export async function updatePathologyPatient(
         discountType: pathologyData.discountType,
         discountValue: pathologyData.discountValue,
         discountAmount: pathologyData.discountAmount,
-        grandTotal: pathologyData.grandTotal,
-        paidAmount: pathologyData.paidAmount,
-        dueAmount: pathologyData.dueAmount,
+        grandTotal: normalizedTotals.grandTotal,
+        paidAmount: normalizedTotals.paidAmount,
+        dueAmount: normalizedTotals.dueAmount,
         orderedById: finalOrderedById,
         doneById: pathologyData.doneById ?? undefined,
         lastModifiedBy: staffId,
@@ -646,16 +655,14 @@ export async function updatePathologyPatient(
       data: {
         originalAmount: pathologyData.testCharge,
         discountAmount: pathologyData.discountAmount,
-        finalAmount: pathologyData.grandTotal,
+        finalAmount: normalizedTotals.grandTotal,
       },
     });
 
     // 4.5 Handle financial updates (Payments & Refunds)
     if (paidAmountDiff !== 0) {
       // Always ensure a shift exists so payments are never silently lost
-      const activeShift = shiftId
-        ? { id: shiftId }
-        : await shiftService.ensureActiveShift(staffId, tx);
+      const activeShift = await shiftService.ensureActiveShift(staffId, tx);
 
       // Find the existing service charge for this pathology test
       const existingServiceCharge = await tx.serviceCharge.findFirst({

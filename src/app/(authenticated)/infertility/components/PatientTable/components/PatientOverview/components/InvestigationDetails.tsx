@@ -199,7 +199,11 @@ export const InvestigationDetails: React.FC<InvestigationDetailsProps> = ({
                 <div className="space-y-3 p-3 sm:p-4">
                   {group.items.map((test, index) => {
                     const resolvedTests = getResolvedTestNames(test);
-                    const isPaid = Number(test.dueAmount) <= 0;
+                    const calculatedDueAmount = Math.max(
+                      0,
+                      Number(test.grandTotal) - Number(test.paidAmount),
+                    );
+                    const isPaid = calculatedDueAmount <= 0;
 
                     return (
                       <div
@@ -290,7 +294,7 @@ export const InvestigationDetails: React.FC<InvestigationDetailsProps> = ({
                               isPaid ? "text-slate-400" : "text-red-600",
                             )}
                           >
-                            Due: {formatCurrency(test.dueAmount)}
+                            Due: {formatCurrency(calculatedDueAmount)}
                           </span>
                           {test.isCompleted ? (
                             <>

@@ -1,6 +1,7 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { shiftService } from "@/services/shiftService";
+import { closeActiveStaffCashShifts } from "@/services/staffShiftClosureService";
 
 export const infertilityShiftService = {
   /**
@@ -19,67 +20,16 @@ export const infertilityShiftService = {
       },
     });
 
-    if (linkedShift) {
-      const metadataMatches =
-        linkedShift.staffId === activeGeneralShift.staffId &&
-        linkedShift.startTime.getTime() === activeGeneralShift.startTime.getTime() &&
-        linkedShift.endTime?.getTime() === activeGeneralShift.endTime?.getTime() &&
-        linkedShift.isActive === activeGeneralShift.isActive;
+    // shiftService creates and maintains the paired row for every active
+    // general shift. This fallback is only for a legacy row created during a
+    // partially completed migration.
+    if (linkedShift) return linkedShift;
 
-      if (metadataMatches) {
-        return linkedShift;
-      }
-
-      return db.infertilityShift.update({
-        where: { id: linkedShift.id },
-        data: {
-          staffId: activeGeneralShift.staffId,
-          startTime: activeGeneralShift.startTime,
-          endTime: activeGeneralShift.endTime,
-          isActive: activeGeneralShift.isActive,
-        },
-      });
-    }
-
-    const reusableEmptyShift = await db.infertilityShift.findFirst({
-      where: {
-        staffId,
-        isActive: true,
-        sourceShiftId: null,
-        payments: {
-          none: {},
-        },
-        cashMovements: {
-          none: {},
-        },
-      },
-      orderBy: {
-        startTime: "desc",
-      },
-    });
-
-    if (reusableEmptyShift) {
-      return db.infertilityShift.update({
-        where: { id: reusableEmptyShift.id },
-        data: {
-          staffId: activeGeneralShift.staffId,
-          startTime: activeGeneralShift.startTime,
-          endTime: activeGeneralShift.endTime,
-          isActive: activeGeneralShift.isActive,
-          sourceShiftId: activeGeneralShift.id,
-          notes: reusableEmptyShift.notes
-            ? `${reusableEmptyShift.notes}\n[Linked to general shift #${activeGeneralShift.id}]`
-            : `[Linked to general shift #${activeGeneralShift.id}]`,
-        },
-      });
-    }
-
-    const newShift = await db.infertilityShift.create({
+    return db.infertilityShift.create({
       data: {
-        staffId: activeGeneralShift.staffId,
+        staffId,
         startTime: activeGeneralShift.startTime,
-        endTime: activeGeneralShift.endTime,
-        isActive: activeGeneralShift.isActive,
+        isActive: true,
         sourceShiftId: activeGeneralShift.id,
         openingCash: 0,
         systemCash: 0,
@@ -90,8 +40,6 @@ export const infertilityShiftService = {
         notes: `[Linked to general shift #${activeGeneralShift.id}]`,
       },
     });
-
-    return newShift;
   },
 
   /**
@@ -102,28 +50,29 @@ export const infertilityShiftService = {
     closingCash: number,
     notes?: string
   ) => {
-    const activeShift = await prisma.infertilityShift.findFirst({
-      where: {
+    return prisma.$transaction(async (tx) => {
+      const closed = await closeActiveStaffCashShifts({
+        tx,
         staffId,
-        isActive: true,
-      },
-    });
+        endedAt: new Date(),
+        generalNotes: notes ?? "Shift ended",
+        infertilityNotes: notes ?? "HSI Center shift ended",
+      });
 
-    if (!activeShift) {
-      throw new Error("No active infertility shift found to close.");
-    }
+      if (!closed.infertilityShiftId) {
+        throw new Error("No active infertility shift found to close.");
+      }
 
-    const variance = closingCash - activeShift.systemCash.toNumber();
+      const infertilityShift = await tx.infertilityShift.findUniqueOrThrow({
+        where: { id: closed.infertilityShiftId },
+        select: { systemCash: true },
+      });
 
-    return await prisma.infertilityShift.update({
-      where: { id: activeShift.id },
-      data: {
-        isActive: false,
-        endTime: new Date(),
-        closingCash,
-        variance,
-        notes,
-      },
+      const variance = closingCash - infertilityShift.systemCash.toNumber();
+      return tx.infertilityShift.update({
+        where: { id: closed.infertilityShiftId },
+        data: { closingCash, variance, notes },
+      });
     });
   },
 };
