@@ -20,6 +20,48 @@ interface CloseActiveStaffCashShiftsInput {
   infertilityNotes: string;
 }
 
+export async function hasUnexpiredStaffSession(
+  tx: Prisma.TransactionClient,
+  staffId: number,
+  now: Date,
+  excludedSessionId?: string,
+): Promise<boolean> {
+  const count = await tx.session.count({
+    where: {
+      user: { staffId },
+      expiresAt: { gte: now },
+      ...(excludedSessionId ? { id: { not: excludedSessionId } } : {}),
+    },
+  });
+
+  return count > 0;
+}
+
+export async function closeActiveStaffCashShiftsIfNoUnexpiredSession({
+  tx,
+  staffId,
+  endedAt,
+  generalNotes,
+  infertilityNotes,
+  excludedSessionId,
+}: CloseActiveStaffCashShiftsInput & {
+  excludedSessionId?: string;
+}): Promise<ClosedStaffCashShifts | null> {
+  await tx.$executeRaw(Prisma.sql`SELECT pg_advisory_xact_lock(${staffId})`);
+
+  if (await hasUnexpiredStaffSession(tx, staffId, endedAt, excludedSessionId)) {
+    return null;
+  }
+
+  return closeActiveStaffCashShifts({
+    tx,
+    staffId,
+    endedAt,
+    generalNotes,
+    infertilityNotes,
+  });
+}
+
 /**
  * A staff member can have separate cash shifts in the general and HSI portals.
  * Ending work from either portal must close both active shifts for the staff member.

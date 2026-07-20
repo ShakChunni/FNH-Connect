@@ -3,7 +3,9 @@ import { prisma } from "@/lib/prisma";
 import { cookies } from "next/headers";
 import { validateCSRFToken } from "@/lib/csrfProtection";
 import type { LogoutResponse } from "@/types/auth";
-import { closeActiveStaffCashShifts } from "@/services/staffShiftClosureService";
+import {
+  closeActiveStaffCashShiftsIfNoUnexpiredSession,
+} from "@/services/staffShiftClosureService";
 
 const COOKIE_SECURE = process.env.SESSION_COOKIE_SECURE
   ? process.env.SESSION_COOKIE_SECURE === "true"
@@ -51,15 +53,16 @@ export async function POST(request: NextRequest) {
       const logoutAt = new Date();
 
       if (session.user.staff) {
-        const closedShifts = await closeActiveStaffCashShifts({
+        const closedShifts = await closeActiveStaffCashShiftsIfNoUnexpiredSession({
           tx,
           staffId: session.user.staff.id,
           endedAt: logoutAt,
           generalNotes: "Shift auto-closed on logout",
           infertilityNotes: "HSI Center shift auto-closed on logout",
+          excludedSessionId: session.id,
         });
 
-        if (closedShifts.generalShiftId) {
+        if (closedShifts?.generalShiftId) {
           await tx.activityLog.create({
             data: {
               userId: session.userId,
@@ -80,7 +83,7 @@ export async function POST(request: NextRequest) {
           });
         }
 
-        if (closedShifts.infertilityShiftId) {
+        if (closedShifts?.infertilityShiftId) {
           await tx.activityLog.create({
             data: {
               userId: session.userId,

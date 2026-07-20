@@ -19,6 +19,9 @@ import {
 } from "@/lib/securityActions";
 import type { SessionUser, LoginResponse, PortalType } from "@/types/auth";
 import { shiftService } from "@/services/shiftService";
+import {
+  closeActiveStaffCashShiftsIfNoUnexpiredSession,
+} from "@/services/staffShiftClosureService";
 import { canAccessPortal, normalizeRole, SystemRole } from "@/lib/roles";
 
 const SECRET_KEY = process.env.SECRET_KEY as string;
@@ -443,12 +446,40 @@ export async function POST(request: NextRequest) {
         },
       });
 
-      // Delete existing session to prevent multiple concurrent sessions from same device
-      if (existingSession) {
-        await tx.session.delete({
-          where: { id: existingSession.id },
+      // Remove expired sessions for this account before opening a new shift.
+      // Without this, an expired session can leave yesterday's active shift
+      // behind and the new login will incorrectly reuse it.
+      const sessionsToDelete = await tx.session.findMany({
+        where: {
+          userId: user.id,
+          OR: [
+            { expiresAt: { lt: new Date() } },
+            ...(existingSession ? [{ id: existingSession.id }] : []),
+          ],
+        },
+        select: { id: true },
+      });
+
+      const sessionIdsToDelete = sessionsToDelete.map((session) => session.id);
+      if (sessionIdsToDelete.length > 0) {
+        await tx.activityLog.updateMany({
+          where: { sessionId: { in: sessionIdsToDelete } },
+          data: { sessionId: null },
+        });
+        await tx.session.deleteMany({
+          where: { id: { in: sessionIdsToDelete } },
         });
       }
+
+      // A new login starts a new cash shift only when no other device still
+      // has a valid session for the same staff member.
+      await closeActiveStaffCashShiftsIfNoUnexpiredSession({
+        tx,
+        staffId: user.staff.id,
+        endedAt: new Date(),
+        generalNotes: "Shift auto-closed before new login",
+        infertilityNotes: "HSI Center shift auto-closed before new login",
+      });
 
       // Create new session
       const session = await tx.session.create({
