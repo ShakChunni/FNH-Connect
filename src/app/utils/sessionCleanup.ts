@@ -1,5 +1,7 @@
 import { prisma } from "@/lib/prisma";
-import { closeActiveStaffCashShifts } from "@/services/staffShiftClosureService";
+import {
+  closeActiveStaffCashShiftsIfNoUnexpiredSession,
+} from "@/services/staffShiftClosureService";
 
 export type SessionCleanupResult =
   | {
@@ -46,7 +48,7 @@ export async function runSessionCleanup(
       // before removing the session, using the same idempotent closure used by
       // explicit logout.
       for (const staffId of staffIds) {
-        await closeActiveStaffCashShifts({
+        await closeActiveStaffCashShiftsIfNoUnexpiredSession({
           tx,
           staffId,
           endedAt: now,

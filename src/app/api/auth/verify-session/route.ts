@@ -6,7 +6,9 @@ import {
   getPortalFromSessionToken,
   normalizePortal,
 } from "@/lib/sessionPortal";
-import { closeActiveStaffCashShifts } from "@/services/staffShiftClosureService";
+import {
+  closeActiveStaffCashShiftsIfNoUnexpiredSession,
+} from "@/services/staffShiftClosureService";
 
 export async function GET(request: NextRequest) {
   try {
@@ -58,12 +60,13 @@ export async function GET(request: NextRequest) {
       // Session expiry is also a cash-session boundary. Close both portals
       // atomically before removing the expired session.
       await prisma.$transaction(async (tx) => {
-        await closeActiveStaffCashShifts({
+        await closeActiveStaffCashShiftsIfNoUnexpiredSession({
           tx,
           staffId: session.user.staff.id,
           endedAt: now,
           generalNotes: "Shift auto-closed on session expiry",
           infertilityNotes: "HSI Center shift auto-closed on session expiry",
+          excludedSessionId: session.id,
         });
         await tx.activityLog.updateMany({
           where: { sessionId: session.id },

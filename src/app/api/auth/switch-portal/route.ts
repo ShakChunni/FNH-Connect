@@ -6,7 +6,9 @@ import { prisma } from "@/lib/prisma";
 import { validateCSRFToken } from "@/lib/csrfProtection";
 import { shiftService } from "@/services/shiftService";
 import { infertilityShiftService } from "@/services/infertilityShiftService";
-import { closeActiveStaffCashShifts } from "@/services/staffShiftClosureService";
+import {
+  closeActiveStaffCashShiftsIfNoUnexpiredSession,
+} from "@/services/staffShiftClosureService";
 import { canAccessPortal } from "@/lib/roles";
 import type { LoginResponse, PortalType, SessionUser } from "@/types/auth";
 
@@ -150,12 +152,14 @@ export async function POST(request: NextRequest) {
 
     if (expInSeconds <= nowInSeconds) {
       await prisma.$transaction(async (tx) => {
-        await closeActiveStaffCashShifts({
+        const expiredAt = new Date();
+        await closeActiveStaffCashShiftsIfNoUnexpiredSession({
           tx,
           staffId: currentSession.user.staff.id,
-          endedAt: new Date(),
+          endedAt: expiredAt,
           generalNotes: "Shift auto-closed on session expiry",
           infertilityNotes: "HSI Center shift auto-closed on session expiry",
+          excludedSessionId: currentSession.id,
         });
         await tx.activityLog.updateMany({
           where: { sessionId: currentSession.id },

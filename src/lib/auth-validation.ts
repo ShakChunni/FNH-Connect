@@ -12,7 +12,9 @@ import {
   getPortalFromSessionToken,
   normalizePortal,
 } from "@/lib/sessionPortal";
-import { closeActiveStaffCashShifts } from "@/services/staffShiftClosureService";
+import {
+  closeActiveStaffCashShiftsIfNoUnexpiredSession,
+} from "@/services/staffShiftClosureService";
 
 const SECRET_KEY = process.env.SECRET_KEY as string;
 
@@ -65,12 +67,13 @@ export async function validateServerSession() {
     if (session.expiresAt < new Date()) {
       const expiredAt = new Date();
       await prisma.$transaction(async (tx) => {
-        await closeActiveStaffCashShifts({
+        await closeActiveStaffCashShiftsIfNoUnexpiredSession({
           tx,
           staffId: session.user.staff.id,
           endedAt: expiredAt,
           generalNotes: "Shift auto-closed on session expiry",
           infertilityNotes: "HSI Center shift auto-closed on session expiry",
+          excludedSessionId: session.id,
         });
         await tx.activityLog.updateMany({
           where: { sessionId: session.id },
@@ -198,12 +201,13 @@ export async function getAuthenticatedUserForAPI(): Promise<AuthenticatedUser | 
       const expiredAt = new Date();
       await prisma
         .$transaction(async (tx) => {
-          await closeActiveStaffCashShifts({
+          await closeActiveStaffCashShiftsIfNoUnexpiredSession({
             tx,
             staffId: session.user.staff.id,
             endedAt: expiredAt,
             generalNotes: "Shift auto-closed on session expiry",
             infertilityNotes: "HSI Center shift auto-closed on session expiry",
+            excludedSessionId: session.id,
           });
           await tx.activityLog.updateMany({
             where: { sessionId: session.id },
