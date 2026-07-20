@@ -6,6 +6,7 @@ import {
   getPortalFromSessionToken,
   normalizePortal,
 } from "@/lib/sessionPortal";
+import { closeActiveStaffCashShifts } from "@/services/staffShiftClosureService";
 
 export async function GET(request: NextRequest) {
   try {
@@ -54,8 +55,22 @@ export async function GET(request: NextRequest) {
     // Check expiry
     const now = new Date();
     if (session.expiresAt < now) {
-      // Clean up expired session from database
-      await prisma.session.delete({ where: { id: session.id } });
+      // Session expiry is also a cash-session boundary. Close both portals
+      // atomically before removing the expired session.
+      await prisma.$transaction(async (tx) => {
+        await closeActiveStaffCashShifts({
+          tx,
+          staffId: session.user.staff.id,
+          endedAt: now,
+          generalNotes: "Shift auto-closed on session expiry",
+          infertilityNotes: "HSI Center shift auto-closed on session expiry",
+        });
+        await tx.activityLog.updateMany({
+          where: { sessionId: session.id },
+          data: { sessionId: null },
+        });
+        await tx.session.delete({ where: { id: session.id } });
+      });
       // Delete the session cookie server-side since client can't delete httpOnly cookies
       const response = NextResponse.json<VerifySessionResponse>(
         { success: false, valid: false, error: "Session expired" },

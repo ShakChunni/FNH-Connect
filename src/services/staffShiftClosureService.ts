@@ -1,8 +1,14 @@
 import { Prisma } from "@prisma/client";
+import {
+  reconcileGeneralShiftLedger,
+  reconcileInfertilityShiftLedger,
+} from "@/services/shiftLedgerService";
 
 export interface ClosedStaffCashShifts {
   generalShiftId: number | null;
   infertilityShiftId: number | null;
+  generalShiftIds: number[];
+  infertilityShiftIds: number[];
   closedCount: number;
 }
 
@@ -25,62 +31,79 @@ export async function closeActiveStaffCashShifts({
   generalNotes,
   infertilityNotes,
 }: CloseActiveStaffCashShiftsInput): Promise<ClosedStaffCashShifts> {
-  const [activeGeneralShift, activeInfertilityShift] = await Promise.all([
-    tx.shift.findFirst({
+  await tx.$executeRaw(Prisma.sql`SELECT pg_advisory_xact_lock(${staffId})`);
+
+  const [activeGeneralShifts, activeInfertilityShifts] = await Promise.all([
+    tx.shift.findMany({
       where: {
         staffId,
         isActive: true,
       },
-      select: {
-        id: true,
-        systemCash: true,
-      },
+      orderBy: { startTime: "desc" },
     }),
-    tx.infertilityShift.findFirst({
+    tx.infertilityShift.findMany({
       where: {
         staffId,
         isActive: true,
       },
-      select: {
-        id: true,
-        systemCash: true,
-      },
+      orderBy: { startTime: "desc" },
     }),
   ]);
 
-  if (activeGeneralShift) {
+  for (const activeGeneralShift of activeGeneralShifts) {
+    const ledger = await reconcileGeneralShiftLedger(
+      tx,
+      activeGeneralShift.id,
+      activeGeneralShift.openingCash,
+    );
+
     await tx.shift.update({
       where: { id: activeGeneralShift.id },
       data: {
         isActive: false,
         endTime: endedAt,
-        closingCash: activeGeneralShift.systemCash,
+        totalCollected: ledger.totalCollected,
+        totalRefunded: ledger.totalRefunded,
+        systemCash: ledger.systemCash,
+        closingCash: ledger.systemCash,
         variance: 0,
         notes: generalNotes,
       },
     });
   }
 
-  if (activeInfertilityShift) {
+  for (const activeInfertilityShift of activeInfertilityShifts) {
+    const ledger = await reconcileInfertilityShiftLedger(
+      tx,
+      activeInfertilityShift.id,
+      activeInfertilityShift.openingCash,
+    );
+
     await tx.infertilityShift.update({
       where: { id: activeInfertilityShift.id },
       data: {
         isActive: false,
         endTime: endedAt,
-        closingCash: activeInfertilityShift.systemCash,
+        totalCollected: ledger.totalCollected,
+        totalRefunded: ledger.totalRefunded,
+        systemCash: ledger.systemCash,
+        closingCash: ledger.systemCash,
         variance: 0,
         notes: infertilityNotes,
       },
     });
   }
 
-  const generalShiftId = activeGeneralShift?.id ?? null;
-  const infertilityShiftId = activeInfertilityShift?.id ?? null;
+  const generalShiftIds = activeGeneralShifts.map((shift) => shift.id);
+  const infertilityShiftIds = activeInfertilityShifts.map((shift) => shift.id);
+  const generalShiftId = generalShiftIds[0] ?? null;
+  const infertilityShiftId = infertilityShiftIds[0] ?? null;
 
   return {
     generalShiftId,
     infertilityShiftId,
-    closedCount:
-      Number(generalShiftId !== null) + Number(infertilityShiftId !== null),
+    generalShiftIds,
+    infertilityShiftIds,
+    closedCount: generalShiftIds.length + infertilityShiftIds.length,
   };
 }

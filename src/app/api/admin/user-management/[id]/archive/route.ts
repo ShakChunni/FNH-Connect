@@ -12,6 +12,7 @@ import { getAuthenticatedUserForAPI } from "@/lib/auth-validation";
 import { isSystemAdminRole } from "@/lib/roles";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
+import { closeActiveStaffCashShifts } from "@/services/staffShiftClosureService";
 
 const archiveSchema = z.object({
   isActive: z.boolean(),
@@ -126,6 +127,14 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 
         if (userSessions.length > 0) {
           const sessionIds = userSessions.map((s) => s.id);
+
+          await closeActiveStaffCashShifts({
+            tx,
+            staffId: existingUser.staffId,
+            endedAt: new Date(),
+            generalNotes: "Shift auto-closed on account archive",
+            infertilityNotes: "HSI Center shift auto-closed on account archive",
+          });
 
           await tx.activityLog.updateMany({
             where: { sessionId: { in: sessionIds } },

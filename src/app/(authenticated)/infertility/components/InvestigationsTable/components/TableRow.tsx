@@ -163,15 +163,22 @@ const TableRow: React.FC<TableRowProps> = ({
         );
 
       case "dueAmount":
-        return (
-          <span
-            className={`font-semibold ${
-              row.dueAmount > 0 ? "text-red-600" : "text-gray-400"
-            }`}
-          >
-            {formatCurrency(row.dueAmount)}
-          </span>
-        );
+        {
+          const calculatedDueAmount = Math.max(
+            0,
+            Number(row.grandTotal) - Number(row.paidAmount),
+          );
+
+          return (
+            <span
+              className={`font-semibold ${
+                calculatedDueAmount > 0 ? "text-red-600" : "text-gray-400"
+              }`}
+            >
+              {formatCurrency(calculatedDueAmount)}
+            </span>
+          );
+        }
 
       case "isCompleted":
         return (

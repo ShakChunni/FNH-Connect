@@ -1098,6 +1098,9 @@ function serializeInfertilityTestRow(
     patient,
     row.subjectNameSnapshot,
   );
+  const grandTotal = Number(row.grandTotal);
+  const paidAmount = Math.max(0, Number(row.paidAmount));
+  const dueAmount = Math.max(0, grandTotal - paidAmount);
 
   return {
     id: row.id,
@@ -1139,9 +1142,9 @@ function serializeInfertilityTestRow(
     discountType: row.discountType,
     discountValue: row.discountValue ? Number(row.discountValue) : null,
     discountAmount: row.discountAmount ? Number(row.discountAmount) : null,
-    grandTotal: Number(row.grandTotal),
-    paidAmount: Number(row.paidAmount),
-    dueAmount: Number(row.dueAmount),
+    grandTotal,
+    paidAmount,
+    dueAmount,
     orderedById: row.orderedById,
     orderedBy: row.orderedBy.fullName,
     doneById: row.doneById,
@@ -1357,6 +1360,16 @@ export async function createInfertilityTest(
       throw new Error("HSI Center patient record not found");
     }
 
+    // Financial values are derived on the server. The client may submit a
+    // stale dueAmount while a payment is being recorded, so never persist a
+    // due value that disagrees with the total and paid amount.
+    const grandTotal = Math.max(0, Number(testData.grandTotal));
+    const paidAmount = Math.max(
+      0,
+      Math.min(Number(testData.paidAmount), grandTotal),
+    );
+    const dueAmount = Math.max(0, grandTotal - paidAmount);
+
     // 2. Generate test number from the highest existing unique number.
     const testNumber = await getNextInfertilityTestNumber(tx);
 
@@ -1393,9 +1406,9 @@ export async function createInfertilityTest(
         discountType: testData.discountType,
         discountValue: testData.discountValue,
         discountAmount: testData.discountAmount,
-        grandTotal: testData.grandTotal,
-        paidAmount: testData.paidAmount,
-        dueAmount: testData.dueAmount,
+        grandTotal,
+        paidAmount,
+        dueAmount,
         orderedById: testData.orderedById,
         doneById: testData.doneById,
         createdBy: staffId,
@@ -1412,18 +1425,18 @@ export async function createInfertilityTest(
       patientAccount = await tx.infertilityPatientAccount.create({
         data: {
           patientId: infertilityPatient.patientId,
-          totalCharges: testData.grandTotal,
-          totalPaid: testData.paidAmount,
-          totalDue: testData.dueAmount,
+          totalCharges: grandTotal,
+          totalPaid: paidAmount,
+          totalDue: dueAmount,
         },
       });
     } else {
       patientAccount = await tx.infertilityPatientAccount.update({
         where: { id: patientAccount.id },
         data: {
-        totalCharges: { increment: testData.grandTotal },
-        totalPaid: { increment: testData.paidAmount },
-        totalDue: { increment: testData.dueAmount },
+        totalCharges: { increment: grandTotal },
+        totalPaid: { increment: paidAmount },
+        totalDue: { increment: dueAmount },
         },
       });
     }
@@ -1437,17 +1450,18 @@ export async function createInfertilityTest(
         departmentId: department ? department.id : 1, // Fallback
         originalAmount: testData.testCharge,
         discountAmount: testData.discountAmount || 0,
-        finalAmount: testData.grandTotal,
+        finalAmount: grandTotal,
         infertilityTestId: infertilityTest.id,
         createdBy: staffId,
       },
     });
 
     // 6. Handle payments and shadow cash via infertility-only tables
-    if (testData.paidAmount > 0) {
-      const activeShift = shiftId
-        ? { id: shiftId }
-        : await infertilityShiftService.ensureActiveShift(staffId, tx);
+    if (paidAmount > 0) {
+      const activeShift = await infertilityShiftService.ensureActiveShift(
+        staffId,
+        tx,
+      );
 
       const paymentCount = await tx.infertilityPayment.count();
       const receiptNumber = `RCP-INF-${Date.now()}-${paymentCount + 1}`;
@@ -1455,7 +1469,7 @@ export async function createInfertilityTest(
       const payment = await tx.infertilityPayment.create({
         data: {
           patientAccountId: patientAccount.id,
-          amount: testData.paidAmount,
+          amount: paidAmount,
           paymentMethod: "Cash",
           collectedById: staffId,
           shiftId: activeShift.id,
@@ -1468,14 +1482,14 @@ export async function createInfertilityTest(
         data: {
           paymentId: payment.id,
           serviceChargeId: serviceCharge.id,
-          allocatedAmount: testData.paidAmount,
+          allocatedAmount: paidAmount,
         },
       });
 
       await tx.infertilityCashMovement.create({
         data: {
           shiftId: activeShift.id,
-          amount: testData.paidAmount,
+          amount: paidAmount,
           movementType: "PAYMENT_RECEIVED",
           description: `Infertility test payment - ${testNumber}`,
           paymentId: payment.id,
@@ -1485,8 +1499,8 @@ export async function createInfertilityTest(
       await tx.infertilityShift.update({
         where: { id: activeShift.id },
         data: {
-          systemCash: { increment: testData.paidAmount },
-          totalCollected: { increment: testData.paidAmount },
+          systemCash: { increment: paidAmount },
+          totalCollected: { increment: paidAmount },
         },
       });
     }
@@ -1549,9 +1563,18 @@ export async function updateInfertilityTest(
     const nextTestCharge = testData.testCharge ?? Number(existingTest.testCharge);
     const nextDiscountAmount =
       testData.discountAmount ?? Number(existingTest.discountAmount ?? 0);
-    const nextGrandTotal = testData.grandTotal ?? Number(existingTest.grandTotal);
-    const nextPaidAmount = testData.paidAmount ?? Number(existingTest.paidAmount);
-    const nextDueAmount = testData.dueAmount ?? Number(existingTest.dueAmount);
+    const nextGrandTotal = Math.max(
+      0,
+      testData.grandTotal ?? Number(existingTest.grandTotal),
+    );
+    const nextPaidAmount = Math.max(
+      0,
+      Math.min(
+        testData.paidAmount ?? Number(existingTest.paidAmount),
+        nextGrandTotal,
+      ),
+    );
+    const nextDueAmount = Math.max(0, nextGrandTotal - nextPaidAmount);
     const paidAmountDiff = nextPaidAmount - Number(existingTest.paidAmount);
     const grandTotalDiff = nextGrandTotal - Number(existingTest.grandTotal);
     const dueAmountDiff = nextDueAmount - Number(existingTest.dueAmount);
@@ -1601,15 +1624,13 @@ export async function updateInfertilityTest(
     if (testData.discountAmount !== undefined) {
       dataToUpdate.discountAmount = testData.discountAmount;
     }
-    if (testData.grandTotal !== undefined) {
-      dataToUpdate.grandTotal = testData.grandTotal;
-    }
-    if (testData.paidAmount !== undefined) {
-      dataToUpdate.paidAmount = testData.paidAmount;
-    }
-    if (testData.dueAmount !== undefined) {
-      dataToUpdate.dueAmount = testData.dueAmount;
-    }
+    // Normalize both financial inputs to the values used for the server-side
+    // due calculation. This also repairs legacy rows with an overpayment.
+    dataToUpdate.grandTotal = nextGrandTotal;
+    dataToUpdate.paidAmount = nextPaidAmount;
+    // Always persist the server-derived due amount, even when the client
+    // omitted it or sent an outdated value.
+    dataToUpdate.dueAmount = nextDueAmount;
 
     const updatedTest = await tx.infertilityTest.update({
       where: { id },

@@ -196,6 +196,10 @@ export const useInfertilityTestFormStore = create<FormState & FormActions>()(
           console.error("Error parsing test results:", e);
         }
 
+        const grandTotal = Math.max(0, Number(patient.grandTotal) || 0);
+        const paidAmount = Math.max(0, Number(patient.paidAmount) || 0);
+        const dueAmount = Math.max(0, grandTotal - paidAmount);
+
         set({
           hospitalData: {
             id: null,
@@ -236,9 +240,9 @@ export const useInfertilityTestFormStore = create<FormState & FormActions>()(
               (patient.discountType as "percentage" | "value") || "percentage",
             discountValue: Number(patient.discountValue) || null,
             discountAmount: Number(patient.discountAmount) || 0,
-            grandTotal: Number(patient.grandTotal) || 0,
-            paidAmount: Number(patient.paidAmount) || 0,
-            dueAmount: Number(patient.dueAmount) || 0,
+            grandTotal,
+            paidAmount,
+            dueAmount,
             testDate: patient.testDate || "",
             testCategory: patient.testCategory || "",
             remarks: patient.remarks || "",

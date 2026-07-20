@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { validateCSRFToken } from "@/lib/csrfProtection";
 import { shiftService } from "@/services/shiftService";
 import { infertilityShiftService } from "@/services/infertilityShiftService";
+import { closeActiveStaffCashShifts } from "@/services/staffShiftClosureService";
 import { canAccessPortal } from "@/lib/roles";
 import type { LoginResponse, PortalType, SessionUser } from "@/types/auth";
 
@@ -148,8 +149,19 @@ export async function POST(request: NextRequest) {
     const expInSeconds = Math.floor(currentSession.expiresAt.getTime() / 1000);
 
     if (expInSeconds <= nowInSeconds) {
-      await prisma.session.delete({
-        where: { id: currentSession.id },
+      await prisma.$transaction(async (tx) => {
+        await closeActiveStaffCashShifts({
+          tx,
+          staffId: currentSession.user.staff.id,
+          endedAt: new Date(),
+          generalNotes: "Shift auto-closed on session expiry",
+          infertilityNotes: "HSI Center shift auto-closed on session expiry",
+        });
+        await tx.activityLog.updateMany({
+          where: { sessionId: currentSession.id },
+          data: { sessionId: null },
+        });
+        await tx.session.delete({ where: { id: currentSession.id } });
       });
 
       return NextResponse.json<LoginResponse>(

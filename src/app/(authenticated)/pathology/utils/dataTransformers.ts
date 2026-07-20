@@ -50,7 +50,10 @@ export function transformPathologyPatient(
     discountAmount: Number(patient.discountAmount),
     grandTotal: Number(patient.grandTotal),
     paidAmount: Number(patient.paidAmount),
-    dueAmount: Number(patient.dueAmount),
+    dueAmount: Math.max(
+      0,
+      Number(patient.grandTotal) - Number(patient.paidAmount),
+    ),
     referredBy: patient.referredBy || null,
     orderedById: patient.orderedById,
     orderedBy: patient.orderedBy?.fullName || null,

@@ -132,6 +132,15 @@ export async function runMaintenanceJobs(
 
   const session = await runSessionCleanup(now);
 
+  if (!session.success) {
+    console.error("[Session Cleanup] Maintenance failed; retrying next run", {
+      source,
+      bdtDate,
+      error: session.error,
+    });
+    return { session, alreadyRanToday: false, bdtDate };
+  }
+
   await prisma.hospitalConfig.upsert({
     where: { key: SESSION_CLEANUP_LAST_RUN_CONFIG_KEY },
     create: {
