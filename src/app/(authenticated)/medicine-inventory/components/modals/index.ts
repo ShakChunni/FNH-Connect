@@ -11,3 +11,4 @@ export { default as AddCompanyModal } from "./AddCompanyModal";
 export { default as EditCompanyModal } from "./EditCompanyModal";
 export { default as AddGroupModal } from "./AddGroupModal";
 export { default as EditGroupModal } from "./EditGroupModal";
+export { default as ManageMedicinePackagesModal } from "./ManageMedicinePackagesModal";

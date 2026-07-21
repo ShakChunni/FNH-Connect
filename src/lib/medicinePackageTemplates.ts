@@ -15,6 +15,7 @@
 export interface MedicinePackageTemplateItem {
   templateName: string;
   aliases: string[];
+  quantity?: number;
 }
 
 export interface MedicinePackageTemplate {

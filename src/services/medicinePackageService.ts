@@ -17,6 +17,11 @@ import {
   type MedicinePackageTemplate,
   type MedicinePackageTemplateItem,
 } from "@/lib/medicinePackageTemplates";
+import {
+  medicinePackageDefinitionSchema,
+  medicinePackageDefinitionsSchema,
+  type MedicinePackageDefinition,
+} from "@/lib/medicinePackageSchemas";
 
 export interface ResolvedMedicinePackageItem {
   templateName: string;
@@ -41,6 +46,166 @@ export interface ResolvedMedicinePackage {
 }
 
 const DEFAULT_QUANTITY = 1;
+const MEDICINE_PACKAGE_CONFIG_KEY = "MEDICINE_INVENTORY_PACKAGES";
+
+const getStaticMedicinePackageDefinitions = (): MedicinePackageTemplate[] =>
+  MEDICINE_PACKAGE_TEMPLATES.map((definition) => ({
+    ...definition,
+    items: definition.items.map((item) => ({
+      ...item,
+      quantity: item.quantity ?? DEFAULT_QUANTITY,
+    })),
+  }));
+
+function normalizePackageDefinition(
+  definition: MedicinePackageDefinition,
+): MedicinePackageTemplate {
+  return {
+    code: definition.code.trim().toUpperCase(),
+    name: definition.name.trim(),
+    operationName: definition.operationName.trim(),
+    items: definition.items.map((item) => ({
+      templateName: item.templateName.trim(),
+      aliases: Array.from(
+        new Set([item.templateName, ...item.aliases].map((alias) => alias.trim())),
+      ),
+      quantity: item.quantity ?? DEFAULT_QUANTITY,
+    })),
+  };
+}
+
+export async function getMedicinePackageDefinitions(): Promise<
+  MedicinePackageTemplate[]
+> {
+  const config = await prisma.hospitalConfig.findUnique({
+    where: { key: MEDICINE_PACKAGE_CONFIG_KEY },
+    select: { value: true },
+  });
+
+  if (!config) return getStaticMedicinePackageDefinitions();
+
+  try {
+    const parsed = medicinePackageDefinitionsSchema.safeParse(
+      JSON.parse(config.value),
+    );
+    if (!parsed.success || parsed.data.length === 0) {
+      return getStaticMedicinePackageDefinitions();
+    }
+    return parsed.data.map(normalizePackageDefinition);
+  } catch {
+    return getStaticMedicinePackageDefinitions();
+  }
+}
+
+async function persistMedicinePackageDefinitions(
+  definitions: MedicinePackageTemplate[],
+  userId: number,
+  action: string,
+): Promise<MedicinePackageTemplate[]> {
+  const normalized = definitions.map((definition) =>
+    normalizePackageDefinition(
+      medicinePackageDefinitionSchema.parse({
+        ...definition,
+        items: definition.items.map((item) => ({
+          ...item,
+          quantity: item.quantity ?? DEFAULT_QUANTITY,
+        })),
+      }),
+    ),
+  );
+
+  await prisma.$transaction(async (tx) => {
+    await tx.hospitalConfig.upsert({
+      where: { key: MEDICINE_PACKAGE_CONFIG_KEY },
+      create: {
+        key: MEDICINE_PACKAGE_CONFIG_KEY,
+        value: JSON.stringify(normalized),
+        description: "Medicine inventory sale package definitions",
+        updatedBy: userId,
+      },
+      update: {
+        value: JSON.stringify(normalized),
+        description: "Medicine inventory sale package definitions",
+        updatedBy: userId,
+      },
+    });
+
+    await tx.activityLog.create({
+      data: {
+        userId,
+        action,
+        description: `${action} medicine sale package definitions`,
+        entityType: "MedicinePackage",
+        timestamp: new Date(),
+      },
+    });
+  });
+
+  return normalized;
+}
+
+export async function createMedicinePackage(
+  definition: MedicinePackageDefinition,
+  userId: number,
+): Promise<MedicinePackageTemplate> {
+  const normalized = normalizePackageDefinition(definition);
+  const definitions = await getMedicinePackageDefinitions();
+  if (definitions.some((item) => item.code === normalized.code)) {
+    throw new Error("A package with this code already exists");
+  }
+  await persistMedicinePackageDefinitions(
+    [...definitions, normalized],
+    userId,
+    "CREATE",
+  );
+  return normalized;
+}
+
+export async function updateMedicinePackage(
+  code: string,
+  definition: MedicinePackageDefinition,
+  userId: number,
+): Promise<MedicinePackageTemplate> {
+  const definitions = await getMedicinePackageDefinitions();
+  const normalized = normalizePackageDefinition({
+    ...definition,
+    code,
+  });
+  const index = definitions.findIndex(
+    (item) => item.code === code.trim().toUpperCase(),
+  );
+  if (index < 0) throw new Error("Medicine package not found");
+
+  const duplicate = definitions.some(
+    (item, itemIndex) =>
+      itemIndex !== index && item.code === normalized.code,
+  );
+  if (duplicate) throw new Error("A package with this code already exists");
+
+  const next = [...definitions];
+  next[index] = normalized;
+  await persistMedicinePackageDefinitions(next, userId, "UPDATE");
+  return normalized;
+}
+
+export async function deleteMedicinePackage(
+  code: string,
+  userId: number,
+): Promise<void> {
+  const definitions = await getMedicinePackageDefinitions();
+  const normalizedCode = code.trim().toUpperCase();
+  if (!definitions.some((item) => item.code === normalizedCode)) {
+    throw new Error("Medicine package not found");
+  }
+  if (definitions.length === 1) {
+    throw new Error("At least one medicine package must remain");
+  }
+  await persistMedicinePackageDefinitions(
+    definitions.filter((item) => item.code !== normalizedCode),
+    userId,
+    "DELETE",
+  );
+}
 
 type ResolvedMedicine = {
   id: number;
@@ -225,7 +390,7 @@ const resolveTemplateItem = (
       defaultSalePrice: unitPrice,
       currentStock: medicine.currentStock,
       lowStockThreshold: medicine.lowStockThreshold,
-      quantity: DEFAULT_QUANTITY,
+      quantity: item.quantity ?? DEFAULT_QUANTITY,
       matchReason: match.matchReason,
     };
   }
@@ -241,7 +406,7 @@ const resolveTemplateItem = (
     defaultSalePrice: 0,
     currentStock: 0,
     lowStockThreshold: 0,
-    quantity: DEFAULT_QUANTITY,
+    quantity: item.quantity ?? DEFAULT_QUANTITY,
     matchReason: null,
   };
 };
@@ -269,7 +434,11 @@ export function lookupMedicinePackageTemplate(
 export async function resolveMedicinePackage(
   code: string | null | undefined,
 ): Promise<ResolvedMedicinePackage | null> {
-  const template = lookupMedicinePackageTemplate(code);
+  const templates = await getMedicinePackageDefinitions();
+  const normalizedCode = code?.trim().toUpperCase();
+  const template = code
+    ? templates.find((item) => item.code === normalizedCode)
+    : templates[0];
   if (!template) return null;
 
   const medicines = await prisma.medicine.findMany({
