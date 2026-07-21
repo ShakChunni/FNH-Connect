@@ -247,7 +247,14 @@ const AddPurchaseModal: React.FC<AddPurchaseModalProps> = ({
     return formData.items.reduce(
       (acc, item) => ({
         quantity: acc.quantity + item.quantity,
-        amount: acc.amount + item.quantity * item.unitPrice,
+        amount:
+          acc.amount +
+          calculateMedicinePurchaseLineTotal({
+            quantity: item.quantity,
+            unitPrice: item.unitPrice,
+            vatTax: item.vatTax,
+            discountAmount: item.discountAmount,
+          }),
       }),
       { quantity: 0, amount: 0 },
     );

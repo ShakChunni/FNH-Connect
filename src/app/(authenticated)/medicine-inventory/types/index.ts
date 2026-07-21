@@ -396,6 +396,7 @@ export type ModalType =
   | "editCompany"
   | "addPurchase"
   | "addSale"
+  | "managePackages"
   | null;
 
 export type TabType =

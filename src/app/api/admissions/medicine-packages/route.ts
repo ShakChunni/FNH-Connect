@@ -11,8 +11,10 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthenticatedUserForAPI } from "@/lib/auth-validation";
-import { resolveMedicinePackage } from "@/services/medicinePackageService";
-import { MEDICINE_PACKAGE_TEMPLATES } from "@/lib/medicinePackageTemplates";
+import {
+  getMedicinePackageDefinitions,
+  resolveMedicinePackage,
+} from "@/services/medicinePackageService";
 import { medicinePackageQuerySchema } from "@/lib/medicinePackageSchemas";
 
 export interface AdmissionMedicinePackageItemResponse {
@@ -39,8 +41,6 @@ export interface AdmissionMedicinePackageResponse {
   items: AdmissionMedicinePackageItemResponse[];
 }
 
-const DEFAULT_QUANTITY = 1;
-
 export async function GET(request: NextRequest) {
   try {
     const user = await getAuthenticatedUserForAPI();
@@ -63,7 +63,8 @@ export async function GET(request: NextRequest) {
     }
 
     const requestedCode = validation.data.code;
-    const fallbackCode = MEDICINE_PACKAGE_TEMPLATES[0]?.code ?? "";
+    const definitions = await getMedicinePackageDefinitions();
+    const fallbackCode = definitions[0]?.code ?? "";
     const code = requestedCode || fallbackCode;
 
     const resolved = await resolveMedicinePackage(code);
@@ -83,7 +84,7 @@ export async function GET(request: NextRequest) {
       operationName: resolved.operationName,
       items: resolved.items.map((item) => {
         const unitPrice = item.defaultSalePrice;
-        const totalAmount = DEFAULT_QUANTITY * unitPrice;
+        const totalAmount = item.quantity * unitPrice;
         return {
           templateName: item.templateName,
           matched: item.matched,
