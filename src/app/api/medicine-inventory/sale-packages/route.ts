@@ -11,7 +11,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthenticatedUserForAPI } from "@/lib/auth-validation";
-import { isAdminRole, normalizeRole, SystemRole } from "@/lib/roles";
+import { isAdminRole } from "@/lib/roles";
 import {
   createMedicinePackage,
   deleteMedicinePackage,
@@ -53,10 +53,7 @@ export interface MedicineInventoryPackageResponse {
 }
 
 function canManageMedicinePackages(role: string): boolean {
-  return (
-    isAdminRole(role) ||
-    normalizeRole(role) === SystemRole.MEDICINE_PHARMACIST
-  );
+  return isAdminRole(role);
 }
 
 function packageError(error: unknown): string {
