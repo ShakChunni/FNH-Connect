@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/app/AuthContext";
 import { useNotification } from "@/hooks/useNotification";
+import { isAdminRole } from "@/lib/roles";
 import { useFetchMedicineStats, useFetchMedicineGroups, useFetchMedicineReport } from "./hooks";
 import {
   useUIStore,
@@ -72,11 +73,12 @@ import { getMedicineDisplayName } from "./utils/medicineDisplay";
 
 // Manage Dropdown — clean way to access Add Medicine/Group/Company
 const ManageDropdown: React.FC<{
+  canManagePackages: boolean;
   openModal: (
     type: "addMedicine" | "addGroup" | "addCompany" | "managePackages",
     data?: Record<string, unknown>,
   ) => void;
-}> = ({ openModal }) => {
+}> = ({ canManagePackages, openModal }) => {
   const [isOpen, setIsOpen] = useState(false);
   const buttonRef = useRef<HTMLButtonElement>(null);
 
@@ -134,16 +136,18 @@ const ManageDropdown: React.FC<{
             <Plus className="w-3.5 h-3.5 text-emerald-500" />
             Add Company
           </button>
-          <button
-            onClick={() => {
-              openModal("managePackages");
-              setIsOpen(false);
-            }}
-            className="w-full flex items-center gap-2 px-4 py-2.5 text-xs font-semibold text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer whitespace-nowrap"
-          >
-            <Package className="w-3.5 h-3.5 text-indigo-500" />
-            Manage medicine packages
-          </button>
+          {canManagePackages && (
+            <button
+              onClick={() => {
+                openModal("managePackages");
+                setIsOpen(false);
+              }}
+              className="w-full flex items-center gap-2 px-4 py-2.5 text-xs font-semibold text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer whitespace-nowrap"
+            >
+              <Package className="w-3.5 h-3.5 text-indigo-500" />
+              Manage medicine packages
+            </button>
+          )}
         </div>
       </DropdownPortal>
     </div>
@@ -749,7 +753,10 @@ const MedicineInventoryPage = () => {
               </div>
 
               {/* Manage Dropdown */}
-              <ManageDropdown openModal={openModal} />
+              <ManageDropdown
+                openModal={openModal}
+                canManagePackages={Boolean(user?.role && isAdminRole(user.role))}
+              />
 
               {activeTab === "medicines" && (
                 <GroupFilterDropdown
