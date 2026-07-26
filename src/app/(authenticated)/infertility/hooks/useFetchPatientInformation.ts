@@ -42,6 +42,7 @@ export function useFetchPatientInformation(searchQuery: string) {
         params: {
           search: trimmedQuery,
           limit: 10,
+          infertilityOnly: "true",
         },
         timeout: 5000,
       });
