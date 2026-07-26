@@ -20,8 +20,10 @@ import { INFERTILITY_ORDERING_DOCTOR_ID } from "../stores/testFormStore";
 import { useAddInfertilityTest } from "../hooks/useAddInfertilityTest";
 import { useUpdateInfertilityPatientStatus } from "../hooks/useUpdateInfertilityPatientStatus";
 import { buildInvestigationSubjectCards } from "../utils/investigationSubjects";
+import { generateInfertilityTestReceipt } from "../utils/generateReceipt";
 import { api } from "@/lib/axios";
 import { formatBDT } from "@/lib/timezone";
+import { useAuth } from "@/app/AuthContext";
 
 interface OrderInvestigationModalProps {
   isOpen: boolean;
@@ -62,6 +64,7 @@ export const OrderInvestigationModal: React.FC<OrderInvestigationModalProps> = (
 }) => {
   const popupRef = useRef<HTMLDivElement>(null);
   const { showNotification } = useNotification();
+  const { user } = useAuth();
   const [existingInvestigations, setExistingInvestigations] = useState<
     InfertilityTestData[]
   >([]);
@@ -178,8 +181,19 @@ export const OrderInvestigationModal: React.FC<OrderInvestigationModalProps> = (
       return;
     }
 
+    // Reserve the browser tab while the click still has user activation.
+    // The API request and PDF generation are asynchronous, so opening the
+    // tab only after they finish can be blocked by the browser.
+    const printWindow = window.open("", "_blank");
+    if (printWindow) {
+      printWindow.document.write(
+        "<!doctype html><html><head><title>Preparing investigation receipt</title></head><body style=\"font-family: sans-serif; padding: 2rem;\"><p>Preparing investigation receipt...</p></body></html>",
+      );
+      printWindow.document.close();
+    }
+
     try {
-      await addTestAsync({
+      const createdResponse = await addTestAsync({
         infertilityPatientId: patient.id,
         subjectType: testInfo.subjectType,
         subjectNameSnapshot:
@@ -210,9 +224,48 @@ export const OrderInvestigationModal: React.FC<OrderInvestigationModalProps> = (
         // Status update failure is already surfaced by the hook notification.
       }
 
+      try {
+        const createdTestId = createdResponse.data?.infertilityTest?.id;
+        if (!createdTestId) {
+          throw new Error("The created investigation could not be identified");
+        }
+
+        const investigationResponse = await api.get<{
+          success: boolean;
+          data: InfertilityTestData;
+          error?: string;
+        }>(`/infertility-patients/tests/${createdTestId}`);
+
+        if (!investigationResponse.data.success || !investigationResponse.data.data) {
+          throw new Error(
+            investigationResponse.data.error ||
+              "The created investigation could not be loaded for printing",
+          );
+        }
+
+        await generateInfertilityTestReceipt(
+          investigationResponse.data.data,
+          user?.fullName || "Staff",
+          printWindow,
+        );
+        showNotification("Investigation ordered and receipt opened", "success");
+      } catch (printError) {
+        console.error("Investigation ordered but receipt printing failed:", printError);
+        if (printWindow && !printWindow.closed) {
+          printWindow.close();
+        }
+        showNotification(
+          "Investigation ordered, but the receipt could not be opened. Use the print button to try again.",
+          "error",
+        );
+      }
+
       handleClose();
     } catch {
       // Errors are surfaced by mutation hooks.
+      if (printWindow && !printWindow.closed) {
+        printWindow.close();
+      }
     }
   }, [
     patient,
@@ -223,6 +276,7 @@ export const OrderInvestigationModal: React.FC<OrderInvestigationModalProps> = (
     handleClose,
     subjectCards,
     showNotification,
+    user?.fullName,
   ]);
 
   useEffect(() => {
