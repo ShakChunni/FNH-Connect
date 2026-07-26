@@ -12,8 +12,8 @@ import { getAuthenticatedUserForAPI } from "@/lib/auth-validation";
 import { isReceptionistRole, isReceptionistInfertilityRole } from "@/lib/roles";
 import { serializeDateOfBirth } from "@/lib/dateOfBirth";
 
-function getPatientAccessWhereByRole(userRole: string) {
-  if (isReceptionistInfertilityRole(userRole)) {
+function getPatientAccessWhereByRole(userRole: string, portal?: string) {
+  if (portal === "infertility" || isReceptionistInfertilityRole(userRole)) {
     return {
       infertilityRecords: {
         some: {},
@@ -57,7 +57,7 @@ export async function GET(request: NextRequest) {
     // 3. Build where clause
     const where: Record<string, unknown> = {};
 
-    Object.assign(where, getPatientAccessWhereByRole(user.role));
+    Object.assign(where, getPatientAccessWhereByRole(user.role, user.portal));
 
     // Infertility portal Patient Records: restrict to patients that have
     // infertility records. Combined via AND so it can only *narrow* the

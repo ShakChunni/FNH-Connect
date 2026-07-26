@@ -1021,10 +1021,13 @@ function getSubjectName(
   }
 
   if (subjectType === InvestigationSubjectType.SPOUSE) {
-    return subjectNameSnapshot || patient.guardianName;
+    // The current patient record is the source of truth for the spouse name.
+    // Keep the stored snapshot only as a fallback for legacy rows where the
+    // spouse is no longer present on the patient record.
+    return patient.guardianName?.trim() || subjectNameSnapshot;
   }
 
-  return subjectNameSnapshot || patient.guardianName || patient.fullName;
+  return patient.guardianName?.trim() || subjectNameSnapshot || patient.fullName;
 }
 
 function getSubjectLabel(subjectType: InvestigationSubjectType): string {

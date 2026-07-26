@@ -21,8 +21,8 @@ interface RouteParams {
   params: Promise<{ id: string }>;
 }
 
-function getPatientAccessWhereByRole(userRole: string) {
-  if (isReceptionistInfertilityRole(userRole)) {
+function getPatientAccessWhereByRole(userRole: string, portal?: string) {
+  if (portal === "infertility" || isReceptionistInfertilityRole(userRole)) {
     return {
       infertilityRecords: {
         some: {},
@@ -90,7 +90,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     const existingPatient = await prisma.patient.findFirst({
       where: {
         id: patientId,
-        ...getPatientAccessWhereByRole(user.role),
+        ...getPatientAccessWhereByRole(user.role, user.portal),
       },
     });
 
@@ -240,7 +240,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     const patient = await prisma.patient.findFirst({
       where: {
         id: patientId,
-        ...getPatientAccessWhereByRole(user.role),
+        ...getPatientAccessWhereByRole(user.role, user.portal),
       },
     });
 
