@@ -128,7 +128,8 @@ const drawAuditFooter = (
 
 export const generateInfertilityTestReceipt = async (
   data: InfertilityTestData,
-  printedBy: string = "Staff"
+  printedBy: string = "Staff",
+  targetWindow?: Window | null,
 ) => {
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.width;
@@ -254,10 +255,16 @@ export const generateInfertilityTestReceipt = async (
       doc.setFont("helvetica", "bold");
       doc.setFontSize(10);
       doc.setTextColor(COLORS.lightText);
-      doc.text("Patient:", col1X, pY);
+      doc.text("Subject:", col1X, pY);
       doc.setTextColor(COLORS.primary);
       doc.setFontSize(11);
-      doc.text(data.patientFullName || "N/A", col1ValX, pY);
+      doc.text(
+        data.subjectName
+          ? `${data.subjectName} (${data.subjectLabel})`
+          : data.subjectLabel || "N/A",
+        col1ValX,
+        pY,
+      );
 
       doc.setFont("helvetica", "bold");
       doc.setFontSize(10);
@@ -271,16 +278,10 @@ export const generateInfertilityTestReceipt = async (
       doc.setFont("helvetica", "bold");
       doc.setFontSize(10);
       doc.setTextColor(COLORS.lightText);
-      doc.text("Subject:", col1X, pY);
+      doc.text("Patient:", col1X, pY);
       doc.setTextColor(COLORS.primary);
       doc.setFontSize(11);
-      doc.text(
-        data.subjectName
-          ? `${data.subjectLabel} - ${data.subjectName}`
-          : data.subjectLabel,
-        col1ValX,
-        pY,
-      );
+      doc.text(data.patientFullName || "N/A", col1ValX, pY);
 
       doc.setFont("helvetica", "bold");
       doc.setFontSize(10);
@@ -488,5 +489,10 @@ export const generateInfertilityTestReceipt = async (
 
   doc.autoPrint();
   const pdfBlob = doc.output("blob");
-  window.open(URL.createObjectURL(pdfBlob), "_blank");
+  const pdfUrl = URL.createObjectURL(pdfBlob);
+  if (targetWindow && !targetWindow.closed) {
+    targetWindow.location.href = pdfUrl;
+  } else {
+    window.open(pdfUrl, "_blank");
+  }
 };
