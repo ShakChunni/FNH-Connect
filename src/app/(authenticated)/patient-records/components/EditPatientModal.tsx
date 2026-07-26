@@ -38,6 +38,7 @@ export const EditPatientModal: React.FC<EditPatientModalProps> = ({
     gender: "Female",
     dateOfBirth: null as Date | null,
     guardianName: "",
+    guardianDOB: null as Date | null,
     phoneNumber: "",
     address: "",
   });
@@ -52,6 +53,7 @@ export const EditPatientModal: React.FC<EditPatientModalProps> = ({
         gender: patientData.gender || "Female",
         dateOfBirth: parseDateOfBirth(patientData.dateOfBirth),
         guardianName: patientData.guardianName || "",
+        guardianDOB: parseDateOfBirth(patientData.guardianDOB),
         phoneNumber: patientData.phoneNumber || "",
         address: patientData.address || "",
       });
@@ -72,6 +74,10 @@ export const EditPatientModal: React.FC<EditPatientModalProps> = ({
 
   const handleDobChange = useCallback((date: Date | null) => {
     setFormData((prev) => ({ ...prev, dateOfBirth: date }));
+  }, []);
+
+  const handleGuardianDobChange = useCallback((date: Date | null) => {
+    setFormData((prev) => ({ ...prev, guardianDOB: date }));
   }, []);
 
   const handlePhoneChange = useCallback((value: string) => {
@@ -102,9 +108,10 @@ export const EditPatientModal: React.FC<EditPatientModalProps> = ({
           lastName: formData.lastName, // Allow empty string to clear lastName
           gender: formData.gender,
           dateOfBirth: serializeDateOfBirth(formData.dateOfBirth),
-          guardianName: formData.guardianName || undefined,
-          phoneNumber: formData.phoneNumber || undefined,
-          address: formData.address || undefined,
+          guardianName: formData.guardianName.trim(),
+          guardianDOB: serializeDateOfBirth(formData.guardianDOB),
+          phoneNumber: formData.phoneNumber.trim(),
+          address: formData.address.trim(),
         },
       });
 
@@ -200,6 +207,18 @@ export const EditPatientModal: React.FC<EditPatientModalProps> = ({
                     onChange={handleInputChange}
                     className="w-full px-3 sm:px-4 py-2 h-12 md:h-14 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-950 focus:ring-2 focus:ring-blue-950 transition-all text-xs sm:text-sm cursor-text"
                     placeholder="Guardian or spouse name"
+                  />
+                </div>
+
+                {/* Guardian / spouse date of birth and editable age controls */}
+                <div>
+                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5">
+                    Guardian / Spouse Date of Birth
+                  </label>
+                  <DobDropdown
+                    value={formData.guardianDOB}
+                    onChange={handleGuardianDobChange}
+                    placeholder="Select spouse date of birth (age is calculated)"
                   />
                 </div>
 

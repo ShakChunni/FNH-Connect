@@ -40,6 +40,7 @@ export interface PatientFormData {
   gender: string;
   dateOfBirth: Date | null;
   guardianName: string;
+  guardianDOB: Date | null;
   phoneNumber: string;
   address: string;
 }
@@ -63,6 +64,7 @@ export interface PatientUpdateRequest {
   gender?: string;
   dateOfBirth?: string | null;
   guardianName?: string;
+  guardianDOB?: string | null;
   phoneNumber?: string;
   address?: string;
 }
