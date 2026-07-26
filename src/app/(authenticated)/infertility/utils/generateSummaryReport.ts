@@ -89,6 +89,7 @@ export async function generateInfertilitySummaryReport(
         "Patient Name",
         "Age",
         "Spouse",
+        "Spouse Age",
         "Type",
         "Status",
         "Years Trying",
@@ -101,6 +102,7 @@ export async function generateInfertilitySummaryReport(
         "Patient Name",
         "Age",
         "Spouse",
+        "Spouse Age",
         "Type",
         "Status",
         "Phone",
@@ -113,6 +115,7 @@ export async function generateInfertilitySummaryReport(
       patient.patientFullName,
       patient.patientAge?.toString() || "N/A",
       patient.husbandName || "N/A",
+      patient.husbandAge?.toString() || "N/A",
       patient.infertilityType || "N/A",
       patient.status || "Active",
       patient.mobileNumber || "N/A",
@@ -120,7 +123,7 @@ export async function generateInfertilitySummaryReport(
 
     if (detailed) {
       return [
-        ...baseData.slice(0, 8),
+        ...baseData.slice(0, 9),
         patient.yearsTrying?.toString() || "N/A",
         formatDate(patient.createdAt),
       ];
@@ -153,9 +156,10 @@ export async function generateInfertilitySummaryReport(
       2: { cellWidth: detailed ? 40 : 50 }, // Patient Name
       3: { cellWidth: 12 }, // Age
       4: { cellWidth: detailed ? 35 : 45 }, // Spouse
-      5: { cellWidth: 20 }, // Type
-      6: { cellWidth: 18 }, // Status
-      7: { cellWidth: detailed ? 25 : 35 }, // Phone
+      5: { cellWidth: 12 }, // Spouse Age
+      6: { cellWidth: 20 }, // Type
+      7: { cellWidth: 18 }, // Status
+      8: { cellWidth: detailed ? 25 : 35 }, // Phone
     },
     margin: { left: 10, right: 10 },
   });

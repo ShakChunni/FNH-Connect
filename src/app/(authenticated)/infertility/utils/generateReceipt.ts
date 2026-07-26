@@ -245,10 +245,10 @@ export const generateInfertilityTestReceipt = async (
       const col2ValX = col2X + labelWidth;
 
       doc.setFillColor(248, 250, 252);
-      doc.roundedRect(margin, currentY, contentWidth, 25, 2, 2, "F");
+      doc.roundedRect(margin, currentY, contentWidth, 31, 2, 2, "F");
       doc.setDrawColor(COLORS.border);
       doc.setLineWidth(0.3);
-      doc.roundedRect(margin, currentY, contentWidth, 25, 2, 2, "S");
+      doc.roundedRect(margin, currentY, contentWidth, 31, 2, 2, "S");
 
       let pY = currentY + boxPadding + 3;
 
@@ -295,21 +295,38 @@ export const generateInfertilityTestReceipt = async (
       doc.setFont("helvetica", "bold");
       doc.setFontSize(10);
       doc.setTextColor(COLORS.lightText);
-      doc.text("Age/Gender:", col1X, pY);
+      doc.text("Patient Age:", col1X, pY);
       doc.setTextColor(COLORS.primary);
       doc.setFontSize(11);
-      const age = data.patientAge ? `${data.patientAge}Y` : "N/A";
-      doc.text(`${age} / ${data.patientGender || "N/A"}`, col1ValX, pY);
+      const patientAge = data.patientAge != null ? `${data.patientAge}Y` : "N/A";
+      doc.text(`${patientAge} / ${data.patientGender || "N/A"}`, col1ValX, pY);
 
       doc.setFont("helvetica", "bold");
       doc.setFontSize(10);
       doc.setTextColor(COLORS.lightText);
-      doc.text("Ordered By:", col2X, pY);
+      doc.text("Subject Age:", col2X, pY);
       doc.setTextColor(COLORS.primary);
       doc.setFontSize(11);
-      doc.text(data.orderedBy || "Self", col2ValX, pY);
+      const subjectAge =
+        data.subjectType === "PATIENT" ? data.patientAge : data.guardianAge;
+      const subjectGender =
+        data.subjectType === "PATIENT" ? data.patientGender : data.guardianGender;
+      doc.text(
+        `${subjectAge != null ? `${subjectAge}Y` : "N/A"} / ${subjectGender || "N/A"}`,
+        col2ValX,
+        pY,
+      );
 
-      currentY += 31;
+      pY += rowHeight;
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(10);
+      doc.setTextColor(COLORS.lightText);
+      doc.text("Ordered By:", col1X, pY);
+      doc.setTextColor(COLORS.primary);
+      doc.setFontSize(11);
+      doc.text(data.orderedBy || "Self", col1ValX, pY);
+
+      currentY += 37;
     } else {
       // Continuation Header
       doc.setFont("helvetica", "bold");

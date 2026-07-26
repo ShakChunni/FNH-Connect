@@ -51,6 +51,10 @@ const updatePatientRequestSchema = z
       .nullable()
       .optional(),
     guardianName: z.string().nullable().optional(),
+    guardianDOB: z
+      .union([z.string(), z.date(), z.null()])
+      .nullable()
+      .optional(),
     phoneNumber: z.string().nullable().optional(),
     address: patientAddressSchema.optional(),
   })
@@ -122,6 +126,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       gender,
       dateOfBirth,
       guardianName,
+      guardianDOB,
       phoneNumber,
       address,
     } = validation.data;
@@ -143,6 +148,9 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     }
     if (guardianName !== undefined) {
       updateData.guardianName = guardianName || null;
+    }
+    if (guardianDOB !== undefined) {
+      updateData.guardianDOB = parseDateOfBirth(guardianDOB);
     }
     if (phoneNumber !== undefined) {
       updateData.phoneNumber = phoneNumber || null;

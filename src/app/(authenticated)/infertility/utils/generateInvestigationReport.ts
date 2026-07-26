@@ -8,6 +8,11 @@ import { PATHOLOGY_TESTS } from "../../pathology/constants/pathologyTests";
 const getCalculatedDueAmount = (item: InfertilityTestData): number =>
   Math.max(0, Number(item.grandTotal) - Number(item.paidAmount));
 
+const getSubjectAgeLabel = (item: InfertilityTestData): string => {
+  const age = item.subjectType === "PATIENT" ? item.patientAge : item.guardianAge;
+  return age == null ? "N/A" : `${age}Y`;
+};
+
 // FNH Brand Colors
 const COLORS = {
   primary: "#020617", // darker navy
@@ -245,7 +250,7 @@ export const generateInfertilityInvestigationReport = async (
         item.testNumber,
         formatBDT(item.testDate, "dd/MM/yy"),
         item.subjectName
-          ? `${item.subjectName} (${item.subjectLabel})`
+          ? `${item.subjectName} (${item.subjectLabel}, ${getSubjectAgeLabel(item)})`
           : item.subjectLabel || "N/A",
         item.patientFullName,
         item.selectedTests.join(", ").substring(0, 30),
