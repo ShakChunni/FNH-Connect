@@ -2,8 +2,8 @@
  * Add Sale Modal — Multi-Item Cart
  *
  * Replaces the legacy single-medicine form. The pharmacist selects a
- * central patient, optionally applies the LUCS medicine package when
- * the patient has an active Gynecology admission, adds / merges / edits
+ * central patient, optionally applies a department medicine package when
+ * the patient has an eligible admission, adds / merges / edits
  * cart rows, and submits the entire cart to the batch endpoint.
  */
 
@@ -25,6 +25,7 @@ import {
   AlertTriangle,
   Plus,
   Package,
+  Building2,
   Trash2,
   RefreshCcw,
   CheckCircle2,
@@ -51,8 +52,12 @@ import { PatientSearch } from "../shared/PatientSearch";
 import { SaleItemsTable } from "../sales/SaleItemsTable";
 import { fetchOldestPurchase } from "../../utils/fetchOldestPurchase";
 import { useAddBatchSaleData } from "../../hooks/useAddBatchSaleData";
-import { useFetchPatientGyneContext } from "../../hooks/useFetchPatientGyneContext";
-import { useFetchSalePackage } from "../../hooks/useFetchSalePackage";
+import { useFetchPatientPackageContext } from "../../hooks/useFetchPatientPackageContext";
+import {
+  useFetchSalePackageSummaries,
+  type SalePackageSummary,
+} from "../../hooks/useFetchSalePackageSummaries";
+import { isMedicinePackageForDepartment } from "@/lib/medicinePackageDepartments";
 import {
   useSaleFormData,
   useSetPatient,
@@ -63,21 +68,25 @@ import {
   useUpdateRow,
   useSetMedicineForRow,
   useApplyPackage,
-  useSetGyneContext,
+  useSetPackageContext,
   useResetSaleForm,
 } from "../../stores";
-import type { Medicine, SalePatientOption } from "../../types";
+import type { Medicine } from "../../types";
 import type {
   MedicineSaleDraftItem,
   SalePatientSelection,
 } from "../../stores/saleFormStore";
-
-const LUCS_PACKAGE_CODE = "LUCS_OT_MEDICINE";
+import type { PatientPackageAdmissionContext } from "../../hooks/useFetchPatientPackageContext";
 
 interface AddSaleModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
+
+type PackageOption = {
+  pkg: SalePackageSummary;
+  admission: PatientPackageAdmissionContext;
+};
 
 const AddSaleModal: React.FC<AddSaleModalProps> = ({ isOpen, onClose }) => {
   const popupRef = useRef<HTMLDivElement>(null);
@@ -92,7 +101,7 @@ const AddSaleModal: React.FC<AddSaleModalProps> = ({ isOpen, onClose }) => {
   const updateRow = useUpdateRow();
   const setMedicineForRow = useSetMedicineForRow();
   const applyPackage = useApplyPackage();
-  const setGyneContext = useSetGyneContext();
+  const setPackageContext = useSetPackageContext();
   const resetForm = useResetSaleForm();
 
   const [showSaleCalendar, setShowSaleCalendar] = useState(false);
@@ -102,38 +111,53 @@ const AddSaleModal: React.FC<AddSaleModalProps> = ({ isOpen, onClose }) => {
   const queryClient = useQueryClient();
 
   const {
-    data: gyneContext,
-    isLoading: isLoadingGyneContext,
-    isError: isGyneContextError,
-    error: gyneContextError,
-    refetch: refetchGyneContext,
-  } = useFetchPatientGyneContext(
+    data: packageContextData,
+    isLoading: isLoadingPackageContext,
+    isError: isPackageContextError,
+    error: packageContextError,
+    refetch: refetchPackageContext,
+  } = useFetchPatientPackageContext(
     formData.patient?.id ?? null,
     isOpen && Boolean(formData.patient?.id),
   );
+
+  const {
+    data: packageSummaries = [],
+    isLoading: isLoadingPackageSummaries,
+    isError: isPackageSummariesError,
+    error: packageSummariesError,
+    refetch: refetchPackageSummaries,
+  } = useFetchSalePackageSummaries(isOpen);
 
   useEffect(() => {
     if (!isOpen) return;
     const currentId = formData.patient?.id ?? null;
 
     if (currentId === null) {
-      setGyneContext(null);
+      setPackageContext([]);
       return;
     }
-    setGyneContext(
-      gyneContext
-        ? {
-            admissionId: gyneContext.admissionId,
-            admissionNumber: gyneContext.admissionNumber,
-            status: gyneContext.status,
-            departmentName: gyneContext.departmentName,
-            hasLucsPackage: gyneContext.hasLucsPackage,
-          }
-        : null,
+    setPackageContext(
+      (packageContextData?.admissions ?? []).map((admission) => ({
+        admissionId: admission.admissionId,
+        admissionNumber: admission.admissionNumber,
+        status: admission.status,
+        departmentName: admission.departmentName,
+        attachedPackageCodes: admission.attachedPackageCodes,
+      })),
     );
-  }, [formData.patient?.id, gyneContext, isOpen, setGyneContext]);
+  }, [formData.patient?.id, isOpen, packageContextData, setPackageContext]);
 
-  const eligibleForLucs = Boolean(formData.gyneContext);
+  const packageOptions = useMemo(
+    () =>
+      packageSummaries.flatMap((pkg) => {
+        const admission = (packageContextData?.admissions ?? []).find((item) =>
+          isMedicinePackageForDepartment(pkg.departmentName, item.departmentName),
+        );
+        return admission ? [{ pkg, admission }] : [];
+      }),
+    [packageContextData?.admissions, packageSummaries],
+  );
   const hasRows = formData.items.length > 0;
   const hasUnmatched = formData.items.some(
     (item) => item.medicineId === null,
@@ -180,15 +204,10 @@ const AddSaleModal: React.FC<AddSaleModalProps> = ({ isOpen, onClose }) => {
     },
   });
 
-  const {
-    data: lucsPackage,
-    isLoading: isLoadingLucs,
-    isError: isLucsError,
-    error: lucsError,
-    refetch: refetchLucsPackage,
-  } = useFetchSalePackage(LUCS_PACKAGE_CODE, eligibleForLucs);
-
   const [applyConfirmOpen, setApplyConfirmOpen] = useState(false);
+  const [isApplyingPackage, setIsApplyingPackage] = useState(false);
+  const [pendingPackageOption, setPendingPackageOption] =
+    useState<PackageOption | null>(null);
   const [clearRowsConfirmOpen, setClearRowsConfirmOpen] = useState(false);
   const [patientChangeConfirmOpen, setPatientChangeConfirmOpen] =
     useState(false);
@@ -198,40 +217,93 @@ const AddSaleModal: React.FC<AddSaleModalProps> = ({ isOpen, onClose }) => {
   const [pendingPatientSelection, setPendingPatientSelection] =
     useState<SalePatientSelection | null>(null);
 
-  const requestApplyLucsPackage = useCallback(() => {
-    if (!lucsPackage) return;
-    if (lucsPackage.items.length === 0) {
-      showNotification("LUCS package has no items to apply.", "error");
-      return;
-    }
-    if (formData.gyneContext?.hasLucsPackage) {
-      setApplyConfirmOpen(true);
-      return;
-    }
-    doApplyLucsPackage();
-  }, [lucsPackage, formData.gyneContext?.hasLucsPackage, showNotification]);
+  const applyPackageOption = useCallback(
+    async (option: PackageOption) => {
+      setIsApplyingPackage(true);
+      try {
+        const response = await api.get<{
+          success: boolean;
+          data: {
+            code: string;
+            operationName: string;
+            items: Array<{
+              templateName: string;
+              matched: boolean;
+              medicineId: number | null;
+              medicineName: string;
+              genericName: string | null;
+              groupName: string | null;
+              companyName: string | null;
+              defaultSalePrice: number;
+              currentStock: number;
+              lowStockThreshold: number;
+              quantity: number;
+              matchReason: string | null;
+            }>;
+          } | null;
+          error?: string;
+        }>(
+          `/medicine-inventory/sale-packages?code=${encodeURIComponent(option.pkg.code)}`,
+          { timeout: 8000 },
+        );
+        if (!response.data.success || !response.data.data) {
+          throw new Error(response.data.error || "Could not load medicine package");
+        }
+        if (response.data.data.items.length === 0) {
+          throw new Error(`${option.pkg.operationName} package has no items to apply.`);
+        }
 
-  const doApplyLucsPackage = useCallback(() => {
-    if (!lucsPackage) return;
-    const rows: Omit<MedicineSaleDraftItem, "clientId">[] =
-      lucsPackage.items.map((item) => ({
-        medicineId: item.medicineId,
-        medicineName: item.matched ? item.medicineName : item.templateName,
-        genericName: item.genericName,
-        groupName: item.groupName,
-        companyName: item.companyName,
-        currentStock: item.currentStock,
-        lowStockThreshold: item.lowStockThreshold,
-        quantity: item.quantity || 1,
-        unitPrice: item.defaultSalePrice,
-        requestedMedicineName: item.matched ? null : item.templateName,
-        operationName: lucsPackage.operationName,
-        packageCode: lucsPackage.code,
-        matchReason: item.matchReason,
-      }));
-    applyPackage(rows);
-    setApplyConfirmOpen(false);
-  }, [lucsPackage, applyPackage]);
+        const resolvedPackage = response.data.data;
+        const rows: Omit<MedicineSaleDraftItem, "clientId">[] =
+          resolvedPackage.items.map((item) => ({
+            medicineId: item.medicineId,
+            medicineName: item.matched ? item.medicineName : item.templateName,
+            genericName: item.genericName,
+            groupName: item.groupName,
+            companyName: item.companyName,
+            currentStock: item.currentStock,
+            lowStockThreshold: item.lowStockThreshold,
+            quantity: item.quantity || 1,
+            unitPrice: item.defaultSalePrice,
+            requestedMedicineName: item.matched ? null : item.templateName,
+            admissionId: option.admission.admissionId,
+            operationName: resolvedPackage.operationName,
+            packageCode: resolvedPackage.code,
+            matchReason: item.matchReason,
+          }));
+        applyPackage(rows);
+        showNotification(
+          `${resolvedPackage.operationName} package added for ${option.admission.admissionNumber}.`,
+          "success",
+        );
+        setApplyConfirmOpen(false);
+        setPendingPackageOption(null);
+      } catch (error) {
+        showNotification(
+          error instanceof Error ? error.message : "Could not apply medicine package.",
+          "error",
+        );
+      } finally {
+        setIsApplyingPackage(false);
+      }
+    },
+    [applyPackage, showNotification],
+  );
+
+  const requestApplyPackage = useCallback(
+    (option: PackageOption) => {
+      const alreadyAttached = option.admission.attachedPackageCodes.some(
+        (code) => code.toUpperCase() === option.pkg.code.toUpperCase(),
+      );
+      if (alreadyAttached) {
+        setPendingPackageOption(option);
+        setApplyConfirmOpen(true);
+        return;
+      }
+      void applyPackageOption(option);
+    },
+    [applyPackageOption],
+  );
 
   const handleSelectMedicine = useCallback(
     (clientId: string, medicine: Medicine) => {
@@ -367,6 +439,9 @@ const AddSaleModal: React.FC<AddSaleModalProps> = ({ isOpen, onClose }) => {
               medicineId: item.medicineId,
               quantity: item.quantity,
               unitPrice: item.unitPrice,
+              admissionId: item.admissionId,
+              packageCode: item.packageCode,
+              operationName: item.operationName,
             },
           ],
     );
@@ -515,7 +590,7 @@ const AddSaleModal: React.FC<AddSaleModalProps> = ({ isOpen, onClose }) => {
               className="flex-1 overflow-y-auto p-4 sm:p-6"
             >
               <div className="space-y-5">
-                {/* Patient + Gynecology context */}
+                {/* Patient + department admission context */}
                 <div className="bg-indigo-50/50 rounded-2xl p-4 sm:p-5 border border-indigo-100">
                   <div className="flex items-center gap-2 mb-3">
                     <div className="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center">
@@ -534,7 +609,7 @@ const AddSaleModal: React.FC<AddSaleModalProps> = ({ isOpen, onClose }) => {
                   />
 
                   <AnimatePresence>
-                    {formData.patient && isLoadingGyneContext && (
+                    {formData.patient && isLoadingPackageContext && (
                       <motion.div
                         initial={{ opacity: 0, y: 4 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -542,49 +617,46 @@ const AddSaleModal: React.FC<AddSaleModalProps> = ({ isOpen, onClose }) => {
                         className="mt-3 flex items-center gap-2 text-xs text-gray-500"
                       >
                         <Activity className="w-3.5 h-3.5 animate-pulse" />
-                        Checking Gynecology admission history…
+                        Checking admission and package context…
                       </motion.div>
                     )}
                   </AnimatePresence>
 
                   <AnimatePresence>
-                    {formData.gyneContext && (
+                    {formData.packageContext.length > 0 && (
                       <motion.div
                         initial={{ opacity: 0, y: 6 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0 }}
                         className="mt-3 flex flex-wrap items-center gap-2"
                       >
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-pink-50 border border-pink-200 text-pink-700 rounded-lg text-xs font-semibold">
-                          <Stethoscope className="w-3.5 h-3.5" />
-                          {formData.gyneContext.departmentName} ·{" "}
-                          {formData.gyneContext.admissionNumber}
-                          <span className="text-pink-500 font-normal">
-                            ({formData.gyneContext.status})
-                          </span>
-                        </span>
-                        {formData.gyneContext.hasLucsPackage && (
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-amber-50 border border-amber-200 text-amber-700 rounded-lg text-xs font-semibold">
-                            <Package className="w-3.5 h-3.5" />
-                            LUCS already attached — applying again will add a
-                            fresh cart row, not edit the existing one.
-                          </span>
-                        )}
+                        {formData.packageContext.slice(0, 4).map((admission) => (
+                            <span
+                              key={admission.admissionId}
+                              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-white border border-indigo-200 text-indigo-700 rounded-lg text-xs font-semibold"
+                            >
+                              <Stethoscope className="w-3.5 h-3.5" />
+                              {admission.departmentName} · {admission.admissionNumber}
+                              <span className="text-indigo-500 font-normal">
+                                ({admission.status})
+                              </span>
+                            </span>
+                        ))}
                       </motion.div>
                     )}
                   </AnimatePresence>
 
-                  {formData.patient && isGyneContextError && (
+                  {formData.patient && isPackageContextError && (
                     <div className="mt-3 flex flex-wrap items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
                       <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
                       <span>
-                        {gyneContextError instanceof Error
-                          ? gyneContextError.message
-                          : "Could not check Gynecology admission context."}
+                        {packageContextError instanceof Error
+                          ? packageContextError.message
+                          : "Could not check patient admission context."}
                       </span>
                       <button
                         type="button"
-                        onClick={() => void refetchGyneContext()}
+                        onClick={() => void refetchPackageContext()}
                         className="font-bold underline underline-offset-2"
                       >
                         Retry
@@ -607,32 +679,40 @@ const AddSaleModal: React.FC<AddSaleModalProps> = ({ isOpen, onClose }) => {
                     Add medicine
                   </motion.button>
 
-                  <motion.button
-                    type="button"
-                    onClick={requestApplyLucsPackage}
-                    disabled={
-                      isSubmitting || !eligibleForLucs || isLoadingLucs
-                    }
-                    whileTap={
-                      isSubmitting || !eligibleForLucs || isLoadingLucs
-                        ? undefined
-                        : { scale: 0.96 }
-                    }
-                    transition={{ type: "spring", stiffness: 400, damping: 17 }}
-                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border-2 border-pink-300 bg-pink-50 hover:bg-pink-100 text-pink-700 text-xs font-bold transition disabled:opacity-50"
-                  >
-                    {isLoadingLucs ? (
-                      <Activity className="w-3.5 h-3.5 animate-pulse" />
-                    ) : (
-                      <Pill className="w-3.5 h-3.5" />
-                    )}
-                    Add LUCS package
-                    {!eligibleForLucs && !isLoadingLucs && (
-                      <span className="text-[10px] text-pink-500 font-medium ml-1">
-                        (needs Gynecology admission)
+                  {packageOptions.map(({ pkg, admission }) => (
+                    <motion.button
+                      key={`${pkg.code}-${admission.admissionId}`}
+                      type="button"
+                      onClick={() => requestApplyPackage({ pkg, admission })}
+                      disabled={
+                        isSubmitting ||
+                        isApplyingPackage ||
+                        isLoadingPackageSummaries
+                      }
+                      whileTap={
+                        isSubmitting || isApplyingPackage
+                          ? undefined
+                          : { scale: 0.96 }
+                      }
+                      transition={{ type: "spring", stiffness: 400, damping: 17 }}
+                      className="inline-flex min-w-[190px] flex-1 items-center gap-2 rounded-xl border-2 border-pink-300 bg-pink-50 px-3 py-2 text-left text-pink-700 transition hover:border-pink-400 hover:bg-pink-100 disabled:opacity-50 sm:flex-none"
+                    >
+                      {isApplyingPackage ? (
+                        <Activity className="h-4 w-4 shrink-0 animate-pulse" />
+                      ) : (
+                        <Package className="h-4 w-4 shrink-0" />
+                      )}
+                      <span className="min-w-0">
+                        <span className="block truncate text-xs font-bold">
+                          Add {pkg.operationName} package
+                        </span>
+                        <span className="flex items-center gap-1 text-[10px] font-medium text-pink-500">
+                          <Building2 className="h-3 w-3" />
+                          {pkg.departmentName} · {admission.admissionNumber}
+                        </span>
                       </span>
-                    )}
-                  </motion.button>
+                    </motion.button>
+                  ))}
 
                   {hasRows && (
                     <motion.button
@@ -652,10 +732,10 @@ const AddSaleModal: React.FC<AddSaleModalProps> = ({ isOpen, onClose }) => {
                     type="button"
                     onClick={() => {
                       queryClient.invalidateQueries({
-                        queryKey: ["medicine-inventory", "patient-gyne-context"],
+                        queryKey: ["medicine-inventory", "patient-package-context"],
                       });
                       queryClient.invalidateQueries({
-                        queryKey: ["medicine-inventory", "sale-package"],
+                        queryKey: ["medicine-inventory", "sale-package-summaries"],
                       });
                     }}
                     disabled={isSubmitting}
@@ -666,23 +746,34 @@ const AddSaleModal: React.FC<AddSaleModalProps> = ({ isOpen, onClose }) => {
                   </button>
                 </div>
 
-                {eligibleForLucs && isLucsError && (
+                {formData.patient && isPackageSummariesError && (
                   <div className="flex flex-wrap items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
                     <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
                     <span>
-                      {lucsError instanceof Error
-                        ? lucsError.message
-                        : "Could not load the LUCS medicine package."}
+                      {packageSummariesError instanceof Error
+                        ? packageSummariesError.message
+                        : "Could not load medicine packages."}
                     </span>
                     <button
                       type="button"
-                      onClick={() => void refetchLucsPackage()}
+                      onClick={() => void refetchPackageSummaries()}
                       className="font-bold underline underline-offset-2"
                     >
                       Retry
                     </button>
                   </div>
                 )}
+
+                {formData.patient &&
+                  !isLoadingPackageContext &&
+                  !isLoadingPackageSummaries &&
+                  !isPackageContextError &&
+                  !isPackageSummariesError &&
+                  packageOptions.length === 0 && (
+                    <p className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-500">
+                      No medicine package is configured for this patient’s department.
+                    </p>
+                  )}
 
                 {/* Empty state vs cart */}
                 {!hasRows ? (
@@ -695,8 +786,8 @@ const AddSaleModal: React.FC<AddSaleModalProps> = ({ isOpen, onClose }) => {
                     </h3>
                     <p className="text-xs text-gray-500 max-w-sm mx-auto">
                       Use <strong>Add medicine</strong> to start a manual
-                      cart, or pick a Gynecology patient and use{" "}
-                      <strong>Add LUCS package</strong> for the full template.
+                      cart, or select a patient admission and use a department
+                      package for the full template.
                     </p>
                   </div>
                 ) : (
@@ -806,20 +897,28 @@ const AddSaleModal: React.FC<AddSaleModalProps> = ({ isOpen, onClose }) => {
       )}
 
       <ConfirmModal
-        key="apply-lucs-confirmation"
+        key="apply-package-confirmation"
         isOpen={applyConfirmOpen}
-        title="LUCS package already attached"
+        title={`${pendingPackageOption?.pkg.operationName ?? "Medicine"} package already attached`}
         confirmLabel="Add anyway"
         cancelLabel="Cancel"
         variant="warning"
-        onClose={() => setApplyConfirmOpen(false)}
-        onConfirm={doApplyLucsPackage}
+        onClose={() => {
+          setApplyConfirmOpen(false);
+          setPendingPackageOption(null);
+        }}
+        onConfirm={() => {
+          if (pendingPackageOption) {
+            void applyPackageOption(pendingPackageOption);
+          }
+        }}
+        isLoading={isApplyingPackage}
         zIndex={100100}
         manageBodyScroll={false}
       >
-        This admission already has a LUCS package. Applying it again adds fresh
-        medicine rows to this cart and does not edit the existing admission
-        rows.
+        This admission already has this package attached. Applying it again
+        adds fresh medicine rows to the current cart; it does not edit the
+        existing admission rows.
       </ConfirmModal>
 
       <ConfirmModal

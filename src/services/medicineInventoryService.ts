@@ -7,6 +7,11 @@ import { prisma } from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
 import { SessionDeviceInfo } from "@/types/auth";
 import { isGynecologyDepartment } from "@/lib/departmentRecognition";
+import { isMedicinePackageForDepartment } from "@/lib/medicinePackageDepartments";
+import {
+  getMedicinePackageDefinitions,
+  resolveMedicinePackage,
+} from "@/services/medicinePackageService";
 import {
   calculateMedicinePurchaseGrossTotal,
   calculateMedicinePurchaseLineTotal,
@@ -24,6 +29,8 @@ export interface ActivityLogContext {
 export interface MedicineSaleLinkContext {
   admissionId?: number;
   admissionMedicineChargeId?: number;
+  packageCode?: string;
+  operationName?: string;
 }
 
 export interface MedicineSaleWithRelations {
@@ -32,6 +39,8 @@ export interface MedicineSaleWithRelations {
   unitPrice: number | Prisma.Decimal;
   totalAmount: number | Prisma.Decimal;
   saleDate: Date;
+  packageCode: string | null;
+  operationName: string | null;
   patient: {
     id: number;
     fullName: string;
@@ -65,6 +74,8 @@ export interface MedicineSaleResponse {
   saleDate: string;
   createdAt: string;
   admissionId: number | null;
+  packageCode: string | null;
+  operationName: string | null;
   admission: {
     id: number;
     admissionNumber: string;
@@ -157,6 +168,9 @@ export interface CreateSalesBatchItemInput {
   medicineId: number;
   quantity: number;
   unitPrice: number;
+  admissionId?: number | null;
+  packageCode?: string | null;
+  operationName?: string | null;
 }
 
 export interface CreateSalesBatchResult {
@@ -166,6 +180,16 @@ export interface CreateSalesBatchResult {
   totalQuantity: number;
   totalAmount: number;
   sales: MedicineSaleResponse[];
+}
+
+export interface PatientPackageAdmissionContext {
+  admissionId: number;
+  admissionNumber: string;
+  status: string;
+  dateAdmitted: Date;
+  departmentId: number;
+  departmentName: string;
+  attachedPackageCodes: string[];
 }
 
 export interface GroupFilters {
@@ -251,6 +275,8 @@ const transformMedicineSaleForResponse = (sale: {
   saleDate: Date;
   createdAt?: Date;
   admissionId?: number | null;
+  packageCode?: string | null;
+  operationName?: string | null;
   admission?: {
     id: number;
     admissionNumber: string;
@@ -287,6 +313,8 @@ const transformMedicineSaleForResponse = (sale: {
     saleDate: sale.saleDate.toISOString(),
     createdAt: (sale.createdAt ?? sale.saleDate).toISOString(),
     admissionId: sale.admissionId ?? null,
+    packageCode: sale.packageCode ?? null,
+    operationName: sale.operationName ?? null,
     admission: sale.admission ?? null,
     patient: sale.patient,
     medicine: sale.medicine,
@@ -675,6 +703,8 @@ export async function getMedicineInventoryReport(
         saleDate: true,
         createdAt: true,
         admissionId: true,
+        packageCode: true,
+        operationName: true,
         admission: {
           select: {
             id: true,
@@ -1761,6 +1791,8 @@ export async function getSales(filters: SaleFilters) {
         saleDate: true,
         createdAt: true,
         admissionId: true,
+        packageCode: true,
+        operationName: true,
         admission: {
           select: {
             id: true,
@@ -2011,6 +2043,8 @@ export async function createSaleWithTx(
         admissionId: linkContext?.admissionId ?? null,
         admissionMedicineChargeId:
           linkContext?.admissionMedicineChargeId ?? null,
+        packageCode: linkContext?.packageCode ?? null,
+        operationName: linkContext?.operationName ?? null,
       },
       select: {
         id: true,
@@ -2018,6 +2052,10 @@ export async function createSaleWithTx(
         unitPrice: true,
         totalAmount: true,
         saleDate: true,
+        createdAt: true,
+        admissionId: true,
+        packageCode: true,
+        operationName: true,
         patient: {
           select: {
             id: true,
@@ -2173,6 +2211,17 @@ export async function createSalesBatch(
     if (!Number.isFinite(item.unitPrice) || item.unitPrice <= 0) {
       throw new Error("Unit price must be greater than zero.");
     }
+    const packageCode = item.packageCode?.trim().toUpperCase() || null;
+    const admissionId = item.admissionId ?? null;
+    if (item.packageCode && !packageCode) {
+      throw new Error("Invalid medicine package.");
+    }
+    if (packageCode && !admissionId) {
+      throw new Error("Package admission context is required.");
+    }
+    if (admissionId && !packageCode) {
+      throw new Error("Package admission context is invalid.");
+    }
     if (seenMedicineIds.has(item.medicineId)) {
       throw new Error(
         `Duplicate medicine in cart: ${item.medicineId}. Merge quantities before submitting.`,
@@ -2180,6 +2229,36 @@ export async function createSalesBatch(
     }
     seenMedicineIds.add(item.medicineId);
   }
+
+  const packageDefinitions = await getMedicinePackageDefinitions();
+  const packageByCode = new Map(
+    packageDefinitions.map((definition) => [definition.code, definition]),
+  );
+  const packageMedicineIds = new Map<string, Set<number>>();
+  for (const code of new Set(
+    data.items
+      .map((item) => item.packageCode?.trim().toUpperCase())
+      .filter((code): code is string => Boolean(code)),
+  )) {
+    const resolved = await resolveMedicinePackage(code);
+    if (!resolved) throw new Error("Invalid medicine package.");
+    packageMedicineIds.set(
+      code,
+      new Set(
+        resolved.items
+          .map((item) => item.medicineId)
+          .filter((id): id is number => typeof id === "number"),
+      ),
+    );
+  }
+  const packageAdmissionIds = Array.from(
+    new Set(
+      data.items
+        .filter((item) => item.packageCode)
+        .map((item) => item.admissionId)
+        .filter((id): id is number => typeof id === "number"),
+    ),
+  );
 
   return prisma.$transaction(async (tx) => {
     const patient = await tx.patient.findUnique({
@@ -2189,6 +2268,54 @@ export async function createSalesBatch(
 
     if (!patient) {
       throw new Error("Patient not found");
+    }
+
+    const admissions = packageAdmissionIds.length
+      ? await tx.admission.findMany({
+          where: {
+            id: { in: packageAdmissionIds },
+            patientId: data.patientId,
+            status: { not: "Canceled" },
+          },
+          select: {
+            id: true,
+            department: { select: { name: true } },
+          },
+        })
+      : [];
+    const admissionById = new Map(admissions.map((admission) => [admission.id, admission]));
+
+    for (const item of data.items) {
+      const packageCode = item.packageCode?.trim().toUpperCase() || null;
+      if (!packageCode) continue;
+
+      const definition = packageByCode.get(packageCode);
+      if (!definition) {
+        throw new Error("Invalid medicine package.");
+      }
+      if (!packageMedicineIds.get(packageCode)?.has(item.medicineId)) {
+        throw new Error("Medicine is not part of the selected package.");
+      }
+      const admission = item.admissionId
+        ? admissionById.get(item.admissionId)
+        : null;
+      if (!admission) {
+        throw new Error("Package admission context is invalid.");
+      }
+      if (
+        !isMedicinePackageForDepartment(
+          definition.departmentName,
+          admission.department.name,
+        )
+      ) {
+        throw new Error("Medicine package does not match the admission department.");
+      }
+      if (
+        item.operationName?.trim().toLowerCase() !==
+        definition.operationName.trim().toLowerCase()
+      ) {
+        throw new Error("Invalid medicine package operation.");
+      }
     }
 
     const medicineIds = data.items.map((item) => item.medicineId);
@@ -2241,7 +2368,15 @@ export async function createSalesBatch(
         staffId,
         userId,
         activityLogContext,
-        undefined,
+        item.packageCode?.trim()
+          ? {
+              admissionId: item.admissionId ?? undefined,
+              packageCode: item.packageCode.trim().toUpperCase(),
+              operationName:
+                packageByCode.get(item.packageCode.trim().toUpperCase())
+                  ?.operationName ?? item.operationName ?? undefined,
+            }
+          : undefined,
         {
           patient: { id: patient.id, fullName: patient.fullName },
           medicine,
@@ -2327,6 +2462,53 @@ export async function getPatientGyneContext(
     departmentName: admission.department.name,
     hasLucsPackage: admission.medicineChargeItems.length > 0,
   };
+}
+
+/**
+ * Return all non-canceled admissions that can provide a department context
+ * for medicine inventory package actions. Discharged admissions remain
+ * visible because dispensing a package is a separate pharmacy transaction.
+ */
+export async function getPatientPackageContext(
+  patientId: number,
+): Promise<PatientPackageAdmissionContext[]> {
+  if (!Number.isFinite(patientId) || patientId <= 0) return [];
+
+  const admissions = await prisma.admission.findMany({
+    where: {
+      patientId,
+      status: { not: "Canceled" },
+    },
+    orderBy: { dateAdmitted: "desc" },
+    select: {
+      id: true,
+      admissionNumber: true,
+      status: true,
+      dateAdmitted: true,
+      departmentId: true,
+      department: { select: { name: true } },
+      medicineChargeItems: {
+        where: { packageCode: { not: null } },
+        select: { packageCode: true },
+      },
+    },
+  });
+
+  return admissions.map((admission) => ({
+    admissionId: admission.id,
+    admissionNumber: admission.admissionNumber,
+    status: admission.status,
+    dateAdmitted: admission.dateAdmitted,
+    departmentId: admission.departmentId,
+    departmentName: admission.department.name,
+    attachedPackageCodes: Array.from(
+      new Set(
+        admission.medicineChargeItems
+          .map((item) => item.packageCode)
+          .filter((code): code is string => Boolean(code)),
+      ),
+    ),
+  }));
 }
 
 /**

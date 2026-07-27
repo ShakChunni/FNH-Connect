@@ -3,6 +3,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import axios from "axios";
 import {
+  Building2,
   Loader2,
   Package,
   Plus,
@@ -33,7 +34,13 @@ interface MedicinePackageDefinition {
   code: string;
   name: string;
   operationName: string;
+  departmentName: string;
   items: MedicinePackageItem[];
+}
+
+interface DepartmentOption {
+  id: number;
+  name: string;
 }
 
 interface DraftPackageItem {
@@ -65,6 +72,7 @@ const blankPackage = (): Omit<MedicinePackageDefinition, "items"> & {
   code: "",
   name: "",
   operationName: "",
+  departmentName: "All Departments",
   items: [blankItem()],
 });
 
@@ -79,6 +87,7 @@ const toDraft = (definition: MedicinePackageDefinition) => ({
   code: definition.code,
   name: definition.name,
   operationName: definition.operationName,
+  departmentName: definition.departmentName,
   items: definition.items.map((item) => ({
     templateName: item.templateName,
     aliasesText: item.aliases.join(", "),
@@ -94,25 +103,35 @@ const ManageMedicinePackagesModal: React.FC<ManageMedicinePackagesModalProps> = 
   const queryClient = useQueryClient();
   const { showNotification } = useNotification();
   const [definitions, setDefinitions] = useState<MedicinePackageDefinition[]>([]);
+  const [departments, setDepartments] = useState<DepartmentOption[]>([]);
   const [editingCode, setEditingCode] = useState<string | null>(null);
   const [draft, setDraft] = useState(blankPackage);
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<MedicinePackageDefinition | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const isLucsDraft = draft.code.trim().toUpperCase() === "LUCS_OT_MEDICINE";
 
   const loadDefinitions = useCallback(async (preferredCode?: string) => {
     setIsLoading(true);
     try {
-      const response = await api.get<PackageApiResponse>(
-        "/medicine-inventory/sale-packages?mode=manage",
-      );
+      const [response, departmentsResponse] = await Promise.all([
+        api.get<PackageApiResponse>(
+          "/medicine-inventory/sale-packages?mode=manage",
+        ),
+        api.get<{ success: boolean; data: DepartmentOption[] }>(
+          "/departments",
+        ),
+      ]);
       if (!response.data.success || !Array.isArray(response.data.data)) {
         throw new Error(response.data.error || "Failed to load medicine packages");
       }
 
       const nextDefinitions = response.data.data;
       setDefinitions(nextDefinitions);
+      if (departmentsResponse.data.success) {
+        setDepartments(departmentsResponse.data.data);
+      }
       const nextCode =
         preferredCode && nextDefinitions.some((item) => item.code === preferredCode)
           ? preferredCode
@@ -203,6 +222,7 @@ const ManageMedicinePackagesModal: React.FC<ManageMedicinePackagesModalProps> = 
     code: draft.code.trim(),
     name: draft.name.trim(),
     operationName: draft.operationName.trim(),
+    departmentName: draft.departmentName.trim(),
     items: draft.items.map((item) => {
       const aliases = item.aliasesText
         .split(",")
@@ -223,6 +243,7 @@ const ManageMedicinePackagesModal: React.FC<ManageMedicinePackagesModalProps> = 
     }
     if (!payload.name) return "Package name is required";
     if (!payload.operationName) return "Operation name is required";
+    if (!payload.departmentName) return "Department is required";
     if (!payload.items.length) return "Add at least one medicine item";
     if (payload.items.some((item) => !item.templateName)) {
       return "Every medicine item needs a template name";
@@ -264,6 +285,9 @@ const ManageMedicinePackagesModal: React.FC<ManageMedicinePackagesModalProps> = 
       await queryClient.invalidateQueries({
         queryKey: ["medicine-inventory", "sale-package"],
       });
+      await queryClient.invalidateQueries({
+        queryKey: ["medicine-inventory", "sale-package-summaries"],
+      });
       await loadDefinitions(saved.code);
     } catch (error) {
       showNotification(
@@ -291,6 +315,9 @@ const ManageMedicinePackagesModal: React.FC<ManageMedicinePackagesModalProps> = 
       setEditingCode(null);
       await queryClient.invalidateQueries({
         queryKey: ["medicine-inventory", "sale-package"],
+      });
+      await queryClient.invalidateQueries({
+        queryKey: ["medicine-inventory", "sale-package-summaries"],
       });
       await loadDefinitions();
     } catch (error) {
@@ -381,7 +408,7 @@ const ManageMedicinePackagesModal: React.FC<ManageMedicinePackagesModalProps> = 
                           {definition.code}
                         </span>
                         <span className="mt-1 block text-[10px] text-gray-500">
-                          {definition.items.length} medicine items
+                          {definition.items.length} medicine items · {definition.departmentName}
                         </span>
                       </button>
                     ))}
@@ -418,8 +445,8 @@ const ManageMedicinePackagesModal: React.FC<ManageMedicinePackagesModalProps> = 
                   )}
                 </div>
 
-                <div className="grid gap-4 sm:grid-cols-3">
-                  <label className="block sm:col-span-1">
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                  <label className="block">
                     <span className="mb-1.5 block text-[11px] font-semibold text-gray-700">Package code *</span>
                     <input
                       value={draft.code}
@@ -429,7 +456,7 @@ const ManageMedicinePackagesModal: React.FC<ManageMedicinePackagesModalProps> = 
                       className={`${inputClass} font-mono disabled:bg-gray-100 disabled:text-gray-500`}
                     />
                   </label>
-                  <label className="block sm:col-span-1">
+                  <label className="block">
                     <span className="mb-1.5 block text-[11px] font-semibold text-gray-700">Display name *</span>
                     <input
                       value={draft.name}
@@ -439,15 +466,47 @@ const ManageMedicinePackagesModal: React.FC<ManageMedicinePackagesModalProps> = 
                       className={inputClass}
                     />
                   </label>
-                  <label className="block sm:col-span-1">
+                  <label className="block">
                     <span className="mb-1.5 block text-[11px] font-semibold text-gray-700">Operation name *</span>
                     <input
                       value={draft.operationName}
                       onChange={(event) => updateDraft("operationName", event.target.value)}
-                      disabled={isSaving || isDeleting}
+                      disabled={isLucsDraft || isSaving || isDeleting}
                       placeholder="LUCS"
                       className={inputClass}
                     />
+                  </label>
+                  <label className="block">
+                    <span className="mb-1.5 block text-[11px] font-semibold text-gray-700">
+                      Department *
+                    </span>
+                    <div className="relative">
+                      <Building2 className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-400" />
+                      <select
+                        value={draft.departmentName}
+                        onChange={(event) =>
+                          updateDraft("departmentName", event.target.value)
+                        }
+                        disabled={isLucsDraft || isSaving || isDeleting}
+                        className={`${inputClass} appearance-none pl-9`}
+                      >
+                        <option value="All Departments">All Departments</option>
+                        {departments.map((department) => (
+                          <option key={department.id} value={department.name}>
+                            {department.name}
+                          </option>
+                        ))}
+                        {draft.departmentName &&
+                        draft.departmentName !== "All Departments" &&
+                        !departments.some(
+                          (department) => department.name === draft.departmentName,
+                        ) ? (
+                          <option value={draft.departmentName}>
+                            {draft.departmentName} (legacy)
+                          </option>
+                        ) : null}
+                      </select>
+                    </div>
                   </label>
                 </div>
 

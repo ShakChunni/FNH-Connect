@@ -14,6 +14,7 @@ interface SalePackageApiResponse {
     code: string;
     name: string;
     operationName: string;
+    departmentName: string;
     items: Array<{
       templateName: string;
       matched: boolean;
@@ -39,6 +40,7 @@ export function useFetchSalePackage(code: string, enabled: boolean) {
       code: string;
       name: string;
       operationName: string;
+      departmentName: string;
       items: ResolvedMedicinePackageItem[];
     } | null> => {
       const response = await api.get<SalePackageApiResponse>(

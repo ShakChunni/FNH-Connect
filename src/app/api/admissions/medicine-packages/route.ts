@@ -38,6 +38,7 @@ export interface AdmissionMedicinePackageResponse {
   code: string;
   name: string;
   operationName: string;
+  departmentName: string;
   items: AdmissionMedicinePackageItemResponse[];
 }
 
@@ -82,6 +83,7 @@ export async function GET(request: NextRequest) {
       code: resolved.code,
       name: resolved.name,
       operationName: resolved.operationName,
+      departmentName: resolved.departmentName,
       items: resolved.items.map((item) => {
         const unitPrice = item.defaultSalePrice;
         const totalAmount = item.quantity * unitPrice;

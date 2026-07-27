@@ -104,6 +104,11 @@ export async function POST(request: NextRequest) {
         "Quantity must be a positive whole number",
         "Unit price must be greater than zero",
         "A single cart can contain up to 100 medicines",
+        "Package admission context",
+        "Invalid medicine package",
+        "Medicine package does not match",
+        "Invalid medicine package operation",
+        "Medicine is not part of the selected package",
       ];
       if (knownErrors.some((msg) => error.message.includes(msg))) {
         return NextResponse.json(
