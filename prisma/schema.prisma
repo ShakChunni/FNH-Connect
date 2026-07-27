@@ -1071,6 +1071,8 @@ model MedicineSale {
   purchaseId                Int // Which purchase batch this came from
   admissionId               Int?
   admissionMedicineChargeId Int?
+  packageCode               String?
+  operationName             String?
 
   quantity    Int // Units sold
   unitPrice   Decimal // Price per unit (from purchase)
@@ -1095,4 +1097,5 @@ model MedicineSale {
   @@index([saleDate])
   @@index([admissionId])
   @@index([admissionMedicineChargeId])
+  @@index([packageCode])
 }

@@ -374,18 +374,28 @@ const SaleTable: React.FC = () => {
                               </span>
                             </td>
                             <td className="px-6 py-3.5">
-                              {sale.admission?.admissionNumber ? (
-                                <span
-                                  className="inline-flex items-center gap-1 px-2 py-1 bg-emerald-50 text-emerald-700 text-[11px] font-semibold rounded-lg border border-emerald-100"
-                                  title="This sale came from an admission"
-                                >
-                                  Admission: {sale.admission.admissionNumber}
-                                </span>
-                              ) : (
-                                <span className="text-xs text-gray-400 font-medium">
-                                  Walk-in
-                                </span>
-                              )}
+                              <div className="flex flex-col items-start gap-1">
+                                {sale.packageCode ? (
+                                  <span
+                                    className="inline-flex items-center gap-1 rounded-lg border border-pink-100 bg-pink-50 px-2 py-1 text-[11px] font-semibold text-pink-700"
+                                    title={`Package: ${sale.packageCode}`}
+                                  >
+                                    {sale.operationName || sale.packageCode} package
+                                  </span>
+                                ) : null}
+                                {sale.admission?.admissionNumber ? (
+                                  <span
+                                    className="inline-flex items-center gap-1 rounded-lg border border-emerald-100 bg-emerald-50 px-2 py-1 text-[11px] font-semibold text-emerald-700"
+                                    title="This sale came from an admission"
+                                  >
+                                    Admission: {sale.admission.admissionNumber}
+                                  </span>
+                                ) : !sale.packageCode ? (
+                                  <span className="text-xs font-medium text-gray-400">
+                                    Walk-in
+                                  </span>
+                                ) : null}
+                              </div>
                             </td>
                             <td className="px-6 py-3.5 text-sm text-gray-600">
                               {formatDate(sale.saleDate)}
@@ -475,8 +485,13 @@ const SaleTable: React.FC = () => {
                                   {getMedicineGenericSubtitle(sale.medicine)}
                                 </p>
                               ) : null}
+                              {sale.packageCode ? (
+                                <span className="mt-1 inline-flex items-center gap-1 rounded-md border border-pink-100 bg-pink-50 px-2 py-0.5 text-[10px] font-semibold text-pink-700">
+                                  {sale.operationName || sale.packageCode} package
+                                </span>
+                              ) : null}
                               {sale.admission?.admissionNumber ? (
-                                <span className="mt-1 inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-50 text-emerald-700 text-[10px] font-semibold rounded-md border border-emerald-100">
+                                <span className="mt-1 inline-flex items-center gap-1 rounded-md border border-emerald-100 bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">
                                   Admission: {sale.admission.admissionNumber}
                                 </span>
                               ) : null}

@@ -16,6 +16,7 @@ import {
   createMedicinePackage,
   deleteMedicinePackage,
   getMedicinePackageDefinitions,
+  getMedicinePackageSummaries,
   resolveMedicinePackage,
   updateMedicinePackage,
 } from "@/services/medicinePackageService";
@@ -49,6 +50,7 @@ export interface MedicineInventoryPackageResponse {
   code: string;
   name: string;
   operationName: string;
+  departmentName: string;
   items: MedicineInventoryPackageItemResponse[];
 }
 
@@ -83,6 +85,13 @@ export async function GET(request: NextRequest) {
     }
 
     const requestedCode = validation.data.code;
+    if (validation.data.mode === "list") {
+      return NextResponse.json({
+        success: true,
+        data: await getMedicinePackageSummaries(),
+      });
+    }
+
     if (validation.data.mode === "manage") {
       if (!canManageMedicinePackages(user.role)) {
         return NextResponse.json(
@@ -115,6 +124,7 @@ export async function GET(request: NextRequest) {
       code: resolved.code,
       name: resolved.name,
       operationName: resolved.operationName,
+      departmentName: resolved.departmentName,
       items: resolved.items.map((item) => ({
         templateName: item.templateName,
         matched: item.matched,

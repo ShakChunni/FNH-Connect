@@ -43,24 +43,25 @@ export interface MedicineSaleDraftItem {
   quantity: number;
   unitPrice: number;
   requestedMedicineName: string | null;
+  admissionId?: number | null;
   operationName: string | null;
   packageCode: string | null;
   matchReason: string | null;
 }
 
-export interface GyneContextSnapshot {
+export interface PackageContextSnapshot {
   admissionId: number;
   admissionNumber: string;
   status: string;
   departmentName: string;
-  hasLucsPackage: boolean;
+  attachedPackageCodes: string[];
 }
 
 export interface SaleFormData {
   patient: SalePatientSelection | null;
   saleDate: Date;
   items: MedicineSaleDraftItem[];
-  gyneContext: GyneContextSnapshot | null;
+  packageContext: PackageContextSnapshot[];
 }
 
 interface SaleFormState {
@@ -88,7 +89,7 @@ interface SaleFormState {
     },
   ) => void;
   applyPackage: (rows: Omit<MedicineSaleDraftItem, "clientId">[]) => void;
-  setGyneContext: (context: GyneContextSnapshot | null) => void;
+  setPackageContext: (context: PackageContextSnapshot[]) => void;
   resetForm: () => void;
 }
 
@@ -104,6 +105,7 @@ const blankRow = (): MedicineSaleDraftItem => ({
   quantity: 1,
   unitPrice: 0,
   requestedMedicineName: null,
+  admissionId: null,
   operationName: null,
   packageCode: null,
   matchReason: null,
@@ -113,7 +115,7 @@ const initialFormData: SaleFormData = {
   patient: null,
   saleDate: new Date(),
   items: [],
-  gyneContext: null,
+  packageContext: [],
 };
 
 export const useSaleFormStore = create<SaleFormState>((set) => ({
@@ -193,7 +195,8 @@ export const useSaleFormStore = create<SaleFormState>((set) => ({
                         item.requestedMedicineName,
                       operationName:
                         target.operationName ?? item.operationName,
-                      packageCode: target.packageCode ?? item.packageCode,
+            packageCode: target.packageCode ?? item.packageCode,
+                      admissionId: target.admissionId ?? item.admissionId,
                       matchReason: target.matchReason ?? item.matchReason,
                     }
                   : item,
@@ -236,7 +239,9 @@ export const useSaleFormStore = create<SaleFormState>((set) => ({
           (item) =>
             item.medicineId !== null &&
             row.medicineId !== null &&
-            item.medicineId === row.medicineId,
+            item.medicineId === row.medicineId &&
+            item.packageCode === row.packageCode &&
+            item.admissionId === row.admissionId,
         );
 
         if (matchIndex >= 0) {
@@ -246,6 +251,7 @@ export const useSaleFormStore = create<SaleFormState>((set) => ({
             quantity: Math.max(1, matched.quantity + row.quantity),
             unitPrice: row.unitPrice > 0 ? row.unitPrice : matched.unitPrice,
             packageCode: row.packageCode ?? matched.packageCode,
+            admissionId: row.admissionId ?? matched.admissionId,
             operationName: row.operationName ?? matched.operationName,
             matchReason: row.matchReason ?? matched.matchReason,
             requestedMedicineName:
@@ -264,8 +270,8 @@ export const useSaleFormStore = create<SaleFormState>((set) => ({
       };
     }),
 
-  setGyneContext: (gyneContext) =>
-    set((state) => ({ formData: { ...state.formData, gyneContext } })),
+  setPackageContext: (packageContext) =>
+    set((state) => ({ formData: { ...state.formData, packageContext } })),
 
   resetForm: () =>
     set({ formData: { ...initialFormData, saleDate: new Date() } }),
@@ -292,7 +298,7 @@ export const useSetMedicineForRow = () =>
   useSaleFormStore((state) => state.setMedicineForRow);
 export const useApplyPackage = () =>
   useSaleFormStore((state) => state.applyPackage);
-export const useSetGyneContext = () =>
-  useSaleFormStore((state) => state.setGyneContext);
+export const useSetPackageContext = () =>
+  useSaleFormStore((state) => state.setPackageContext);
 export const useResetSaleForm = () =>
   useSaleFormStore((state) => state.resetForm);

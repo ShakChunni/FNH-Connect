@@ -33,14 +33,14 @@ export {
   useUpdateRow,
   useSetMedicineForRow,
   useApplyPackage,
-  useSetGyneContext,
+  useSetPackageContext,
   useResetSaleForm,
 } from "./saleFormStore";
 export type {
   SaleFormData,
   SalePatientSelection,
   MedicineSaleDraftItem,
-  GyneContextSnapshot,
+  PackageContextSnapshot,
 } from "./saleFormStore";
 
 // ═══════════════════════════════════════════════════════════════

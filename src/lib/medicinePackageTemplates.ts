@@ -22,6 +22,8 @@ export interface MedicinePackageTemplate {
   code: string;
   name: string;
   operationName: string;
+  /** Department label used to decide where this preset is offered. */
+  departmentName: string;
   items: MedicinePackageTemplateItem[];
 }
 
@@ -30,6 +32,7 @@ export const MEDICINE_PACKAGE_TEMPLATES: MedicinePackageTemplate[] = [
     code: "LUCS_OT_MEDICINE",
     name: "LUCS Ot medicine",
     operationName: "LUCS",
+    departmentName: "Gynecology",
     items: [
       { templateName: "IV Cannula", aliases: ["IV Cannula"] },
       { templateName: "Seline Set", aliases: ["Seline Set", "Saline Set"] },

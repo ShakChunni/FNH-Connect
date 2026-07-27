@@ -42,6 +42,7 @@ export interface ResolvedMedicinePackage {
   code: string;
   name: string;
   operationName: string;
+  departmentName: string;
   items: ResolvedMedicinePackageItem[];
 }
 
@@ -60,10 +61,15 @@ const getStaticMedicinePackageDefinitions = (): MedicinePackageTemplate[] =>
 function normalizePackageDefinition(
   definition: MedicinePackageDefinition,
 ): MedicinePackageTemplate {
+  const code = definition.code.trim().toUpperCase();
+  const isLucs = code === "LUCS_OT_MEDICINE";
   return {
-    code: definition.code.trim().toUpperCase(),
+    code,
     name: definition.name.trim(),
-    operationName: definition.operationName.trim(),
+    operationName: isLucs ? "LUCS" : definition.operationName.trim(),
+    departmentName: isLucs
+      ? "Gynecology"
+      : definition.departmentName?.trim() || "All Departments",
     items: definition.items.map((item) => ({
       templateName: item.templateName.trim(),
       aliases: Array.from(
@@ -95,6 +101,25 @@ export async function getMedicinePackageDefinitions(): Promise<
   } catch {
     return getStaticMedicinePackageDefinitions();
   }
+}
+
+export interface MedicinePackageSummary {
+  code: string;
+  name: string;
+  operationName: string;
+  departmentName: string;
+}
+
+export async function getMedicinePackageSummaries(): Promise<
+  MedicinePackageSummary[]
+> {
+  const definitions = await getMedicinePackageDefinitions();
+  return definitions.map(({ code, name, operationName, departmentName }) => ({
+    code,
+    name,
+    operationName,
+    departmentName,
+  }));
 }
 
 async function persistMedicinePackageDefinitions(
@@ -478,6 +503,7 @@ export async function resolveMedicinePackage(
     code: template.code,
     name: template.name,
     operationName: template.operationName,
+    departmentName: template.departmentName,
     items,
   };
 }

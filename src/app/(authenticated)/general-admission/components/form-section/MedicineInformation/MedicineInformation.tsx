@@ -27,13 +27,18 @@ import {
   useAdmissionMedicineChargeItems,
 } from "../../../stores";
 import { AdmissionMedicineChargeItem } from "../../../types";
-import { isGynecologyDepartment } from "@/lib/departmentRecognition";
+import { isMedicinePackageForDepartment } from "@/lib/medicinePackageDepartments";
 import {
   AdmissionMedicineItemsTable,
   type PharmacyMedicineOption,
 } from "../../AdmissionMedicineItemsTable";
 
-const DEFAULT_PACKAGE_CODE = "LUCS_OT_MEDICINE";
+interface AdmissionMedicinePackageSummary {
+  code: string;
+  name: string;
+  operationName: string;
+  departmentName: string;
+}
 
 interface AdmissionMedicinePackageItemResponse {
   templateName: string;
@@ -56,12 +61,19 @@ interface AdmissionMedicinePackageResponse {
   code: string;
   name: string;
   operationName: string;
+  departmentName: string;
   items: AdmissionMedicinePackageItemResponse[];
 }
 
 interface AdmissionMedicinePackageApiResponse {
   success: boolean;
   data?: AdmissionMedicinePackageResponse;
+  error?: string;
+}
+
+interface AdmissionMedicinePackageSummaryApiResponse {
+  success: boolean;
+  data: AdmissionMedicinePackageSummary[];
   error?: string;
 }
 
@@ -103,29 +115,33 @@ const MedicineInformation: React.FC<MedicineInformationProps> = ({
 
   const isCanceled = admissionInfo.status === "Canceled";
   const hasItemizedMedicines = medicineChargeItems.length > 0;
-  const isGynecology = isGynecologyDepartment(departmentData.name);
-
-  const [packageData, setPackageData] =
-    useState<AdmissionMedicinePackageResponse | null>(null);
+  const [packageSummaries, setPackageSummaries] = useState<
+    AdmissionMedicinePackageSummary[]
+  >([]);
+  const [packageDataByCode, setPackageDataByCode] = useState<
+    Record<string, AdmissionMedicinePackageResponse>
+  >({});
   const [packageLoadError, setPackageLoadError] = useState<string | null>(
     null,
   );
   const [packagesLoaded, setPackagesLoaded] = useState(false);
+  const [loadingPackageCode, setLoadingPackageCode] = useState<string | null>(
+    null,
+  );
   const [refreshing, setRefreshing] = useState(false);
 
-  const loadPackage = useCallback(async (showSpinner = false) => {
+  const loadPackages = useCallback(async (showSpinner = false) => {
     if (showSpinner) setRefreshing(true);
     try {
-      const response =
-        await api.get<AdmissionMedicinePackageApiResponse>(
-          `/admissions/medicine-packages?code=${DEFAULT_PACKAGE_CODE}`,
-        );
-      if (response.data.success && response.data.data) {
-        setPackageData(response.data.data);
+      const response = await api.get<AdmissionMedicinePackageSummaryApiResponse>(
+        "/medicine-inventory/sale-packages?mode=list",
+      );
+      if (response.data.success) {
+        setPackageSummaries(response.data.data);
         setPackageLoadError(null);
       } else {
         setPackageLoadError(
-          response.data.error || "Could not load medicine package.",
+          response.data.error || "Could not load medicine packages.",
         );
       }
     } catch (error) {
@@ -133,7 +149,7 @@ const MedicineInformation: React.FC<MedicineInformationProps> = ({
       setPackageLoadError(
         error instanceof Error
           ? error.message
-          : "Could not load medicine package.",
+          : "Could not load medicine packages.",
       );
     } finally {
       setPackagesLoaded(true);
@@ -142,18 +158,33 @@ const MedicineInformation: React.FC<MedicineInformationProps> = ({
   }, []);
 
   useEffect(() => {
-    if (!isGynecology) {
-      setPackageData(null);
-      setPackageLoadError(null);
-      setPackagesLoaded(false);
-      return;
-    }
-    void loadPackage(false);
-  }, [isGynecology, loadPackage]);
+    void loadPackages(false);
+  }, [loadPackages]);
+
+  const departmentPackages = useMemo(
+    () =>
+      packageSummaries.filter((pkg) =>
+        isMedicinePackageForDepartment(pkg.departmentName, departmentData.name),
+      ),
+    [departmentData.name, packageSummaries],
+  );
 
   const handlePackageSelect = useCallback(
-    (pkg: AdmissionMedicinePackageResponse) => {
+    async (summary: AdmissionMedicinePackageSummary) => {
       if (isCanceled) return;
+      setLoadingPackageCode(summary.code);
+      try {
+        let pkg = packageDataByCode[summary.code];
+        if (!pkg) {
+          const response = await api.get<AdmissionMedicinePackageApiResponse>(
+            `/admissions/medicine-packages?code=${encodeURIComponent(summary.code)}`,
+          );
+          if (!response.data.success || !response.data.data) {
+            throw new Error(response.data.error || "Could not load medicine package.");
+          }
+          pkg = response.data.data;
+          setPackageDataByCode((current) => ({ ...current, [pkg.code]: pkg }));
+        }
       const items: AdmissionMedicineChargeItem[] = pkg.items.map((it) => ({
         clientId: generateClientId(),
         medicineId: it.medicineId,
@@ -173,8 +204,15 @@ const MedicineInformation: React.FC<MedicineInformationProps> = ({
       }));
       setMedicineChargeItems(items);
       setAdmissionInfo({ otType: pkg.operationName });
+      } catch (error) {
+        setPackageLoadError(
+          error instanceof Error ? error.message : "Could not load medicine package.",
+        );
+      } finally {
+        setLoadingPackageCode(null);
+      }
     },
-    [isCanceled, setAdmissionInfo, setMedicineChargeItems],
+    [isCanceled, packageDataByCode, setAdmissionInfo, setMedicineChargeItems],
   );
 
   const handleAddEmptyMedicineRow = useCallback(() => {
@@ -285,10 +323,6 @@ const MedicineInformation: React.FC<MedicineInformationProps> = ({
     }
   }, [isCanceled, medicineChargeItems, setMedicineChargeItems]);
 
-  const totalItems = packageData?.items.length ?? 0;
-  const matchedCount = packageData?.items.filter((it) => it.matched).length ?? 0;
-  const unmatchedCount = totalItems - matchedCount;
-
   const totalQuantity = useMemo(
     () => medicineChargeItems.reduce((sum, i) => sum + i.quantity, 0),
     [medicineChargeItems],
@@ -340,12 +374,12 @@ const MedicineInformation: React.FC<MedicineInformationProps> = ({
         </div>
       )}
 
-      {isGynecology && (
+      <div className="mb-4 sm:mb-5">
         <div className="mb-4 sm:mb-5">
           <div className="flex items-center gap-2 mb-2.5">
             <Package className="w-4 h-4 text-emerald-600 shrink-0" />
             <span className="text-gray-700 text-xs sm:text-sm font-semibold">
-              Gynecology Medicine Package
+              Department Medicine Packages
             </span>
           </div>
 
@@ -353,55 +387,61 @@ const MedicineInformation: React.FC<MedicineInformationProps> = ({
             <p className="text-xs text-amber-600 mb-2">{packageLoadError}</p>
           )}
 
-          {packagesLoaded && !packageData && !packageLoadError && (
+          {packagesLoaded && departmentPackages.length === 0 && !packageLoadError && (
             <p className="text-xs text-gray-500 mb-2">
-              No gynecology medicine package configured.
+              No medicine package is configured for {departmentData.name || "this department"}.
             </p>
           )}
 
-          {packageData && (
-            <motion.button
-              type="button"
-              onClick={() => handlePackageSelect(packageData)}
-              disabled={isCanceled}
-              whileHover={isCanceled ? undefined : { scale: 1.005, y: -1 }}
-              whileTap={isCanceled ? undefined : { scale: 0.97 }}
-              transition={{ type: "spring", stiffness: 400, damping: 17 }}
-              className={`w-full text-left rounded-xl border-2 px-4 py-3 transition-all duration-200 ${
-                isCanceled
-                  ? "border-gray-200 bg-gray-50 opacity-50 cursor-not-allowed"
-                  : "border-emerald-300 bg-emerald-50 hover:border-emerald-500 hover:bg-emerald-100 hover:shadow-sm cursor-pointer"
-              }`}
-            >
-              <div className="flex items-center justify-between gap-3">
-                <div className="flex items-center gap-3 min-w-0">
-                  <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-emerald-100 text-emerald-700">
-                    <Pill className="w-5 h-5" />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="font-bold text-sm text-gray-800">
-                      Add all LUCS medicines
-                    </p>
-                    <p className="text-xs text-gray-500 mt-0.5">
-                      {totalItems} medicine{totalItems !== 1 ? "s" : ""} ·{" "}
-                      {matchedCount} matched
-                      {unmatchedCount > 0
-                        ? ` · ${unmatchedCount} unmatched`
-                        : ""}
-                    </p>
-                  </div>
-                </div>
-                <motion.span
-                  layout
-                  className="shrink-0 rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white"
+          <div className="grid gap-2 sm:grid-cols-2">
+            {departmentPackages.map((summary) => {
+              const data = packageDataByCode[summary.code];
+              const isLoading = loadingPackageCode === summary.code;
+              const matchedCount = data?.items.filter((item) => item.matched).length;
+              return (
+                <motion.button
+                  key={summary.code}
+                  type="button"
+                  onClick={() => void handlePackageSelect(summary)}
+                  disabled={isCanceled || Boolean(loadingPackageCode)}
+                  whileHover={isCanceled ? undefined : { scale: 1.005, y: -1 }}
+                  whileTap={isCanceled ? undefined : { scale: 0.97 }}
+                  transition={{ type: "spring", stiffness: 400, damping: 17 }}
+                  className={`w-full rounded-xl border-2 px-4 py-3 text-left transition-all duration-200 ${
+                    isCanceled
+                      ? "border-gray-200 bg-gray-50 opacity-50 cursor-not-allowed"
+                      : "border-emerald-300 bg-emerald-50 hover:border-emerald-500 hover:bg-emerald-100 hover:shadow-sm cursor-pointer"
+                  }`}
                 >
-                  Apply
-                </motion.span>
-              </div>
-            </motion.button>
-          )}
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex min-w-0 items-center gap-3">
+                      <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-emerald-100 text-emerald-700">
+                        <Pill className="h-5 w-5" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-bold text-gray-800">
+                          Add {summary.operationName} package
+                        </p>
+                        <p className="mt-0.5 text-xs text-gray-500">
+                          {data
+                            ? `${data.items.length} medicine${data.items.length !== 1 ? "s" : ""} · ${matchedCount} matched`
+                            : `${summary.departmentName} preset`}
+                        </p>
+                      </div>
+                    </div>
+                    <motion.span
+                      layout
+                      className="shrink-0 rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white"
+                    >
+                      {isLoading ? "Loading…" : "Apply"}
+                    </motion.span>
+                  </div>
+                </motion.button>
+              );
+            })}
+          </div>
         </div>
-      )}
+      </div>
 
       <AnimatePresence initial={false}>
         {hasItemizedMedicines && (

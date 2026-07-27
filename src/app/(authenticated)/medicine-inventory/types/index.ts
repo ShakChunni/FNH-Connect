@@ -182,6 +182,8 @@ export interface MedicineSale {
   saleDate: string;
   createdAt: string;
   admissionId?: number | null;
+  packageCode?: string | null;
+  operationName?: string | null;
   admission?: {
     id: number;
     admissionNumber: string;
@@ -229,6 +231,9 @@ export const createSaleBatchItemSchema = z.object({
   medicineId: z.number().int().positive("Medicine is required"),
   quantity: z.number().int().positive("Quantity must be positive"),
   unitPrice: z.number().positive("Unit price must be positive"),
+  admissionId: z.number().int().positive().nullable().optional(),
+  packageCode: z.string().trim().min(1).max(100).nullable().optional(),
+  operationName: z.string().trim().min(1).max(100).nullable().optional(),
 });
 
 export const createSaleBatchSchema = z.object({
