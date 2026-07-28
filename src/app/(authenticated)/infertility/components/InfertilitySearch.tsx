@@ -129,16 +129,13 @@ export const InfertilitySearch: React.FC<InfertilitySearchProps> = ({
   );
 
   return (
-    <div
-      className="mx-auto w-full max-w-4xl"
-      style={{ pointerEvents: disabled ? "none" : "auto" }}
-    >
+    <div className="mx-auto w-full max-w-4xl">
       <div className="flex flex-col gap-3 sm:hidden">
         {searchInput(true)}
         <div className="flex w-full gap-2">
           <div className="h-11 flex-1">{reportButton}</div>
           <div className="h-11 flex-1">
-            <FilterTriggerButton scope={activeTab} disabled={disabled} />
+            <FilterTriggerButton scope={activeTab} />
           </div>
         </div>
       </div>
@@ -147,7 +144,7 @@ export const InfertilitySearch: React.FC<InfertilitySearchProps> = ({
         {searchInput(false)}
         <div className="flex h-14 shrink-0 items-center">{reportButton}</div>
         <div className="flex h-14 shrink-0 items-center">
-          <FilterTriggerButton scope={activeTab} disabled={disabled} />
+          <FilterTriggerButton scope={activeTab} />
         </div>
       </div>
     </div>

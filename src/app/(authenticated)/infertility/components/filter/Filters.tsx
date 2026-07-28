@@ -53,23 +53,27 @@ export const Filters: React.FC = () => {
             className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[100000]"
           />
 
-          <motion.div
+          <motion.aside
             initial={{ x: "100%" }}
             animate={{ x: 0 }}
             exit={{ x: "100%" }}
             transition={{ type: "tween", duration: 0.4, ease: [0.25, 0.1, 0.25, 1] }}
-            className="fixed top-0 right-0 h-full w-full sm:w-[400px] max-w-full
-              bg-white shadow-none sm:shadow-[-8px_0_30px_rgba(0,0,0,0.15)] z-[100001]
-              flex flex-col sm:rounded-l-[2rem] overflow-hidden"
+            className="fixed inset-y-0 right-0 z-[100001] flex h-dvh max-h-dvh w-full max-w-full
+              transform-gpu flex-col overflow-hidden bg-white shadow-none will-change-transform
+              sm:w-[min(400px,calc(100vw-1rem))] sm:rounded-l-[2rem]
+              sm:shadow-[-8px_0_30px_rgba(0,0,0,0.15)]"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="investigation-filter-panel-title"
           >
             {/* Header */}
-            <div className="flex items-center justify-between px-6 py-5 bg-linear-to-r from-emerald-950 to-emerald-900">
+            <div className="flex shrink-0 items-center justify-between bg-linear-to-r from-emerald-950 to-emerald-900 px-5 py-4 sm:px-6 sm:py-5">
               <div className="flex items-center gap-3">
                 <div className="p-2.5 bg-white/15 rounded-xl backdrop-blur-sm">
                   <SlidersHorizontal className="w-5 h-5 text-white" />
                 </div>
                 <div>
-                  <h2 className="text-lg font-bold text-white tracking-tight">Investigation Filters</h2>
+                  <h2 id="investigation-filter-panel-title" className="text-lg font-bold text-white tracking-tight">Investigation Filters</h2>
                   {activeCount > 0 && (
                     <p className="text-xs text-fnh-yellow font-medium">{activeCount} filter(s) active</p>
                   )}
@@ -81,7 +85,7 @@ export const Filters: React.FC = () => {
             </div>
 
             {/* Content */}
-            <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
+            <div className="custom-scrollbar min-h-0 flex-1 space-y-6 overscroll-contain overflow-y-auto p-4 sm:p-6">
               <DoctorFilter />
               <StatusFilter />
               <DateRangeFilter />
@@ -89,7 +93,7 @@ export const Filters: React.FC = () => {
             </div>
 
             {/* Footer */}
-            <div className="px-6 py-4 border-t border-gray-100 bg-gray-50/50">
+            <div className="shrink-0 border-t border-gray-100 bg-gray-50/50 px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-4 sm:px-6">
               <div className="flex items-center gap-3">
                 <button
                   onClick={clearAllFilters}
@@ -107,7 +111,7 @@ export const Filters: React.FC = () => {
                 </button>
               </div>
             </div>
-          </motion.div>
+          </motion.aside>
         </>
       )}
     </AnimatePresence>

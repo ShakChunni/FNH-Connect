@@ -32,6 +32,12 @@ function run(): void {
 
   const investigationStore = useInfertilityTestFilterStore.getState();
   investigationStore.clearAllFilters();
+  investigationStore.openFilterPanel();
+  assert.equal(
+    useInfertilityTestFilterStore.getState().panel.isOpen,
+    true,
+    "investigation filter trigger must open its slide-out panel",
+  );
   investigationStore.setCustomDateRange(customStart, customEnd);
   let investigationFilters =
     useInfertilityTestFilterStore.getState().filters;
@@ -51,9 +57,15 @@ function run(): void {
     true,
     "clearing filters must keep the slide-out panel open",
   );
+  assert.equal(
+    useInfertilityTestFilterStore.getState().panel.isOpen,
+    true,
+    "clearing investigation filters must keep the slide-out panel open",
+  );
   assert.equal(investigationFilters.dateRange, "all");
 
   patientStore.closeFilterPanel();
+  investigationStore.closeFilterPanel();
   console.log("Infertility report filter validation passed.");
 }
 

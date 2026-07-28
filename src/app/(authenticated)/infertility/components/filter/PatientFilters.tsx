@@ -72,12 +72,12 @@ export const PatientFilters: React.FC = () => {
                 duration: 0.4,
                 ease: [0.25, 0.1, 0.25, 1],
               }}
-              className="fixed right-0 top-0 z-[100001] flex h-full w-full max-w-full flex-col overflow-hidden bg-white shadow-none sm:w-[400px] sm:rounded-l-[2rem] sm:shadow-[-8px_0_30px_rgba(0,0,0,0.15)]"
+              className="fixed inset-y-0 right-0 z-[100001] flex h-dvh max-h-dvh w-full max-w-full transform-gpu flex-col overflow-hidden bg-white shadow-none will-change-transform sm:w-[min(400px,calc(100vw-1rem))] sm:rounded-l-[2rem] sm:shadow-[-8px_0_30px_rgba(0,0,0,0.15)]"
               role="dialog"
               aria-modal="true"
               aria-labelledby="patient-filter-panel-title"
             >
-              <header className="flex items-center justify-between bg-linear-to-r from-emerald-950 to-emerald-900 px-5 py-4 sm:px-6 sm:py-5">
+              <header className="flex shrink-0 items-center justify-between bg-linear-to-r from-emerald-950 to-emerald-900 px-5 py-4 sm:px-6 sm:py-5">
                 <div className="flex items-center gap-3">
                   <div className="rounded-xl bg-white/15 p-2.5 backdrop-blur-sm">
                     <SlidersHorizontal className="h-5 w-5 text-white" />
@@ -109,13 +109,13 @@ export const PatientFilters: React.FC = () => {
                 </button>
               </header>
 
-              <div className="custom-scrollbar flex-1 overflow-y-auto p-4 sm:p-6">
+              <div className="custom-scrollbar min-h-0 flex-1 overscroll-contain overflow-y-auto p-4 sm:p-6">
                 <div className="rounded-2xl border border-gray-100 bg-gray-50/50 p-4">
                   <DateRangeFilter scope="patients" />
                 </div>
               </div>
 
-              <footer className="border-t border-gray-100 bg-gray-50/50 px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-4 sm:px-6">
+              <footer className="shrink-0 border-t border-gray-100 bg-gray-50/50 px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-4 sm:px-6">
                 <div className="flex items-center gap-3">
                   <button
                     type="button"
