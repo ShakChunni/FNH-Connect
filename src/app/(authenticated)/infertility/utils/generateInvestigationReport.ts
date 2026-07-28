@@ -202,12 +202,12 @@ export const generateInfertilityInvestigationReport = async (
 
   autoTable(doc, {
     startY: currentY,
-    head: [["Investigation Name", "Count", "Revenue (Estimated)"]],
+    head: [["Investigation Name", "Count", "Total Charge (Estimated)"]],
     body: Array.from(testCountMap.values()).sort((a, b) => b.count - a.count).map((s) => [s.name, s.count.toString(), s.revenue.toLocaleString()]),
     theme: "striped",
     headStyles: {
-      fillColor: COLORS.faint,
-      textColor: COLORS.primary,
+      fillColor: COLORS.primary,
+      textColor: "#fbbf24",
       lineColor: COLORS.primary,
       lineWidth: 0.2,
       fontStyle: "bold",
@@ -233,12 +233,12 @@ export const generateInfertilityInvestigationReport = async (
 
   autoTable(doc, {
     startY: currentY,
-    head: [["Doctor Name", "Total Tests", "Total Revenue"]],
+    head: [["Doctor Name", "Total Tests", "Net Revenue"]],
     body: Array.from(doctorMap.entries()).sort((a, b) => b[1].count - a[1].count).map(([n, s]) => [n, s.count.toString(), s.revenue.toLocaleString()]),
     theme: "striped",
     headStyles: {
-      fillColor: COLORS.faint,
-      textColor: COLORS.primary,
+      fillColor: COLORS.primary,
+      textColor: "#fbbf24",
       lineColor: COLORS.primary,
       lineWidth: 0.2,
       fontStyle: "bold",
@@ -275,8 +275,8 @@ export const generateInfertilityInvestigationReport = async (
       ]),
       theme: "striped",
       headStyles: {
-        fillColor: COLORS.faint,
-        textColor: COLORS.primary,
+        fillColor: COLORS.primary,
+        textColor: "#fbbf24",
         lineColor: COLORS.primary,
         lineWidth: 0.2,
         fontStyle: "bold",

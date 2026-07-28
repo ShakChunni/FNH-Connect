@@ -372,8 +372,8 @@ export const generateAdmissionsReport = async (
     body: statusData,
     theme: "striped",
     headStyles: {
-      fillColor: COLORS.faint,
-      textColor: COLORS.primary,
+      fillColor: COLORS.primary,
+      textColor: "#fbbf24",
       lineColor: COLORS.primary,
       lineWidth: 0.2,
       fontStyle: "bold",
@@ -436,8 +436,8 @@ export const generateAdmissionsReport = async (
     ]),
     theme: "striped",
     headStyles: {
-      fillColor: COLORS.faint,
-      textColor: COLORS.primary,
+      fillColor: COLORS.primary,
+      textColor: "#fbbf24",
       lineColor: COLORS.primary,
       lineWidth: 0.2,
       fontStyle: "bold",
@@ -481,8 +481,8 @@ export const generateAdmissionsReport = async (
       ]),
     theme: "striped",
     headStyles: {
-      fillColor: COLORS.faint,
-      textColor: COLORS.primary,
+      fillColor: COLORS.primary,
+      textColor: "#fbbf24",
       lineColor: COLORS.primary,
       lineWidth: 0.2,
       fontStyle: "bold",
@@ -549,8 +549,8 @@ export const generateAdmissionsReport = async (
       ]),
       theme: "striped",
       headStyles: {
-        fillColor: COLORS.faint,
-        textColor: COLORS.primary,
+        fillColor: COLORS.primary,
+        textColor: "#fbbf24",
         lineColor: COLORS.primary,
         lineWidth: 0.2,
         fontSize: 7,

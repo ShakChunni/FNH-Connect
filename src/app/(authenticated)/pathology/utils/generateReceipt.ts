@@ -431,8 +431,8 @@ export const generatePathologyReceipt = async (
       body: currentChunk,
       theme: "plain",
       headStyles: {
-        fillColor: COLORS.faint,
-        textColor: COLORS.primary,
+        fillColor: COLORS.primary,
+        textColor: "#fbbf24",
         lineColor: COLORS.primary,
         lineWidth: 0.2,
         fontStyle: "bold",
