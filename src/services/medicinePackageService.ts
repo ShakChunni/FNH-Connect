@@ -42,6 +42,7 @@ export interface ResolvedMedicinePackage {
   code: string;
   name: string;
   operationName: string;
+  departmentId: number | null;
   departmentName: string;
   items: ResolvedMedicinePackageItem[];
 }
@@ -67,6 +68,7 @@ function normalizePackageDefinition(
     code,
     name: definition.name.trim(),
     operationName: isLucs ? "LUCS" : definition.operationName.trim(),
+    departmentId: definition.departmentId ?? null,
     departmentName: isLucs
       ? "Gynecology"
       : definition.departmentName?.trim() || "All Departments",
@@ -88,18 +90,52 @@ export async function getMedicinePackageDefinitions(): Promise<
     select: { value: true },
   });
 
-  if (!config) return getStaticMedicinePackageDefinitions();
+  const hydrateDepartmentIds = async (
+    definitions: MedicinePackageTemplate[],
+  ): Promise<MedicinePackageTemplate[]> => {
+    const scopedNames = Array.from(
+      new Set(
+        definitions
+          .filter(
+            (definition) =>
+              !definition.departmentId &&
+              definition.departmentName !== "All Departments",
+          )
+          .map((definition) => definition.departmentName),
+      ),
+    );
+    if (scopedNames.length === 0) return definitions;
+
+    const departments = await prisma.department.findMany({
+      where: { name: { in: scopedNames } },
+      select: { id: true, name: true },
+    });
+    const idByName = new Map(
+      departments.map((department) => [department.name.toLowerCase(), department.id]),
+    );
+    return definitions.map((definition) => ({
+      ...definition,
+      departmentId:
+        definition.departmentId ??
+        idByName.get(definition.departmentName.toLowerCase()) ??
+        null,
+    }));
+  };
+
+  if (!config) {
+    return hydrateDepartmentIds(getStaticMedicinePackageDefinitions());
+  }
 
   try {
     const parsed = medicinePackageDefinitionsSchema.safeParse(
       JSON.parse(config.value),
     );
     if (!parsed.success || parsed.data.length === 0) {
-      return getStaticMedicinePackageDefinitions();
+      return hydrateDepartmentIds(getStaticMedicinePackageDefinitions());
     }
-    return parsed.data.map(normalizePackageDefinition);
+    return hydrateDepartmentIds(parsed.data.map(normalizePackageDefinition));
   } catch {
-    return getStaticMedicinePackageDefinitions();
+    return hydrateDepartmentIds(getStaticMedicinePackageDefinitions());
   }
 }
 
@@ -107,6 +143,7 @@ export interface MedicinePackageSummary {
   code: string;
   name: string;
   operationName: string;
+  departmentId: number | null;
   departmentName: string;
 }
 
@@ -114,12 +151,49 @@ export async function getMedicinePackageSummaries(): Promise<
   MedicinePackageSummary[]
 > {
   const definitions = await getMedicinePackageDefinitions();
-  return definitions.map(({ code, name, operationName, departmentName }) => ({
+  return definitions.map(({ code, name, operationName, departmentId, departmentName }) => ({
     code,
     name,
     operationName,
+    departmentId: departmentId ?? null,
     departmentName,
   }));
+}
+
+async function resolvePackageDepartment(
+  definition: MedicinePackageDefinition,
+): Promise<MedicinePackageDefinition> {
+  const code = definition.code.trim().toUpperCase();
+  const isLucs = code === "LUCS_OT_MEDICINE";
+  const requestedName =
+    isLucs ? "Gynecology" : definition.departmentName?.trim();
+
+  if (requestedName === "All Departments") {
+    return { ...definition, departmentId: null, departmentName: requestedName };
+  }
+
+  const requestedDepartmentId = isLucs ? null : definition.departmentId;
+  const department = requestedDepartmentId
+    ? await prisma.department.findFirst({
+        where: { id: requestedDepartmentId, isActive: true },
+        select: { id: true, name: true },
+      })
+    : requestedName
+      ? await prisma.department.findFirst({
+          where: { name: requestedName, isActive: true },
+          select: { id: true, name: true },
+        })
+      : null;
+
+  if (!department) {
+    throw new Error("Select a valid active department for this package");
+  }
+
+  return {
+    ...definition,
+    departmentId: department.id,
+    departmentName: department.name,
+  };
 }
 
 async function persistMedicinePackageDefinitions(
@@ -173,7 +247,9 @@ export async function createMedicinePackage(
   definition: MedicinePackageDefinition,
   userId: number,
 ): Promise<MedicinePackageTemplate> {
-  const normalized = normalizePackageDefinition(definition);
+  const normalized = normalizePackageDefinition(
+    await resolvePackageDepartment(definition),
+  );
   const definitions = await getMedicinePackageDefinitions();
   if (definitions.some((item) => item.code === normalized.code)) {
     throw new Error("A package with this code already exists");
@@ -192,10 +268,9 @@ export async function updateMedicinePackage(
   userId: number,
 ): Promise<MedicinePackageTemplate> {
   const definitions = await getMedicinePackageDefinitions();
-  const normalized = normalizePackageDefinition({
-    ...definition,
-    code,
-  });
+  const normalized = normalizePackageDefinition(
+    await resolvePackageDepartment({ ...definition, code }),
+  );
   const index = definitions.findIndex(
     (item) => item.code === code.trim().toUpperCase(),
   );
@@ -503,6 +578,7 @@ export async function resolveMedicinePackage(
     code: template.code,
     name: template.name,
     operationName: template.operationName,
+    departmentId: template.departmentId ?? null,
     departmentName: template.departmentName,
     items,
   };

@@ -96,7 +96,7 @@ export async function POST(request: NextRequest) {
         "Sale date is invalid",
         "cannot be before first stock purchase date",
         "No stock purchase history found",
-        "Duplicate medicine in cart",
+        "Duplicate medicine context in cart",
         "Patient is required",
         "At least one medicine is required",
         "One or more medicines are missing or inactive",
@@ -105,10 +105,11 @@ export async function POST(request: NextRequest) {
         "Unit price must be greater than zero",
         "A single cart can contain up to 100 medicines",
         "Package admission context",
+        "Package item context",
         "Invalid medicine package",
         "Medicine package does not match",
         "Invalid medicine package operation",
-        "Medicine is not part of the selected package",
+        "Package item does not belong to the selected package",
       ];
       if (knownErrors.some((msg) => error.message.includes(msg))) {
         return NextResponse.json(

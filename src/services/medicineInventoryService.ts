@@ -10,7 +10,6 @@ import { isGynecologyDepartment } from "@/lib/departmentRecognition";
 import { isMedicinePackageForDepartment } from "@/lib/medicinePackageDepartments";
 import {
   getMedicinePackageDefinitions,
-  resolveMedicinePackage,
 } from "@/services/medicinePackageService";
 import {
   calculateMedicinePurchaseGrossTotal,
@@ -171,6 +170,7 @@ export interface CreateSalesBatchItemInput {
   admissionId?: number | null;
   packageCode?: string | null;
   operationName?: string | null;
+  packageItemName?: string | null;
 }
 
 export interface CreateSalesBatchResult {
@@ -2198,9 +2198,9 @@ export async function createSalesBatch(
     throw new Error("A single cart can contain up to 100 medicines.");
   }
 
-  // Reject duplicate medicine IDs at the service boundary as well, in
-  // case a future caller skips the client-side merge step.
-  const seenMedicineIds = new Set<number>();
+  // Reject only duplicate logical rows. The same medicine can legitimately
+  // appear under different department packages/admissions in one cart.
+  const seenLogicalItems = new Set<string>();
   for (const item of data.items) {
     if (!Number.isInteger(item.medicineId) || item.medicineId <= 0) {
       throw new Error("Selected medicine is not available.");
@@ -2212,6 +2212,7 @@ export async function createSalesBatch(
       throw new Error("Unit price must be greater than zero.");
     }
     const packageCode = item.packageCode?.trim().toUpperCase() || null;
+    const packageItemName = item.packageItemName?.trim() || null;
     const admissionId = item.admissionId ?? null;
     if (item.packageCode && !packageCode) {
       throw new Error("Invalid medicine package.");
@@ -2219,38 +2220,41 @@ export async function createSalesBatch(
     if (packageCode && !admissionId) {
       throw new Error("Package admission context is required.");
     }
+    if (packageCode && !packageItemName) {
+      throw new Error("Package item context is required.");
+    }
     if (admissionId && !packageCode) {
       throw new Error("Package admission context is invalid.");
     }
-    if (seenMedicineIds.has(item.medicineId)) {
+    if (!packageCode && packageItemName) {
+      throw new Error("Package item context is invalid.");
+    }
+    const logicalKey = [
+      item.medicineId,
+      packageCode ?? "manual",
+      admissionId ?? "none",
+      packageItemName?.toLowerCase() ?? "manual",
+    ].join(":");
+    if (seenLogicalItems.has(logicalKey)) {
       throw new Error(
-        `Duplicate medicine in cart: ${item.medicineId}. Merge quantities before submitting.`,
+        `Duplicate medicine context in cart: ${item.medicineId}. Merge quantities before submitting.`,
       );
     }
-    seenMedicineIds.add(item.medicineId);
+    seenLogicalItems.add(logicalKey);
   }
 
   const packageDefinitions = await getMedicinePackageDefinitions();
   const packageByCode = new Map(
     packageDefinitions.map((definition) => [definition.code, definition]),
   );
-  const packageMedicineIds = new Map<string, Set<number>>();
-  for (const code of new Set(
-    data.items
-      .map((item) => item.packageCode?.trim().toUpperCase())
-      .filter((code): code is string => Boolean(code)),
-  )) {
-    const resolved = await resolveMedicinePackage(code);
-    if (!resolved) throw new Error("Invalid medicine package.");
-    packageMedicineIds.set(
-      code,
+  const packageTemplateNames = new Map(
+    packageDefinitions.map((definition) => [
+      definition.code,
       new Set(
-        resolved.items
-          .map((item) => item.medicineId)
-          .filter((id): id is number => typeof id === "number"),
+        definition.items.map((item) => item.templateName.trim().toLowerCase()),
       ),
-    );
-  }
+    ]),
+  );
   const packageAdmissionIds = Array.from(
     new Set(
       data.items
@@ -2279,6 +2283,7 @@ export async function createSalesBatch(
           },
           select: {
             id: true,
+            departmentId: true,
             department: { select: { name: true } },
           },
         })
@@ -2293,8 +2298,12 @@ export async function createSalesBatch(
       if (!definition) {
         throw new Error("Invalid medicine package.");
       }
-      if (!packageMedicineIds.get(packageCode)?.has(item.medicineId)) {
-        throw new Error("Medicine is not part of the selected package.");
+      const packageItemName = item.packageItemName?.trim().toLowerCase();
+      if (
+        !packageItemName ||
+        !packageTemplateNames.get(packageCode)?.has(packageItemName)
+      ) {
+        throw new Error("Package item does not belong to the selected package.");
       }
       const admission = item.admissionId
         ? admissionById.get(item.admissionId)
@@ -2306,6 +2315,8 @@ export async function createSalesBatch(
         !isMedicinePackageForDepartment(
           definition.departmentName,
           admission.department.name,
+          definition.departmentId,
+          admission.departmentId,
         )
       ) {
         throw new Error("Medicine package does not match the admission department.");
@@ -2318,7 +2329,9 @@ export async function createSalesBatch(
       }
     }
 
-    const medicineIds = data.items.map((item) => item.medicineId);
+    const medicineIds = Array.from(
+      new Set(data.items.map((item) => item.medicineId)),
+    );
     const medicines = await tx.medicine.findMany({
       where: { id: { in: medicineIds }, isActive: true },
       select: {
@@ -2341,9 +2354,24 @@ export async function createSalesBatch(
 
     const medicineById = new Map(medicines.map((m) => [m.id, m]));
 
-    // Per-medicine stock is validated in the loop below; the earlier single
-    // query is enough because each medicine appears at most once (we
-    // rejected duplicates above).
+    const requiredQuantityByMedicine = new Map<number, number>();
+    for (const item of data.items) {
+      requiredQuantityByMedicine.set(
+        item.medicineId,
+        (requiredQuantityByMedicine.get(item.medicineId) ?? 0) + item.quantity,
+      );
+    }
+    for (const [medicineId, requiredQuantity] of requiredQuantityByMedicine) {
+      const medicine = medicineById.get(medicineId);
+      if (!medicine || medicine.currentStock < requiredQuantity) {
+        throw new Error(
+          `Insufficient stock. Available: ${medicine?.currentStock ?? 0}, Requested: ${requiredQuantity}`,
+        );
+      }
+    }
+
+    // Combined stock was validated above; each logical row is still recorded
+    // independently so its package/admission provenance remains accurate.
     const aggregated: MedicineSaleWithRelations[] = [];
     let fifoRowCount = 0;
     let totalQuantity = 0;

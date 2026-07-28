@@ -22,6 +22,8 @@ export interface MedicinePackageTemplate {
   code: string;
   name: string;
   operationName: string;
+  /** Stable live department id. Null means the preset is global. */
+  departmentId?: number | null;
   /** Department label used to decide where this preset is offered. */
   departmentName: string;
   items: MedicinePackageTemplateItem[];
@@ -32,6 +34,7 @@ export const MEDICINE_PACKAGE_TEMPLATES: MedicinePackageTemplate[] = [
     code: "LUCS_OT_MEDICINE",
     name: "LUCS Ot medicine",
     operationName: "LUCS",
+    departmentId: null,
     departmentName: "Gynecology",
     items: [
       { templateName: "IV Cannula", aliases: ["IV Cannula"] },

@@ -50,6 +50,7 @@ export interface MedicineInventoryPackageResponse {
   code: string;
   name: string;
   operationName: string;
+  departmentId: number | null;
   departmentName: string;
   items: MedicineInventoryPackageItemResponse[];
 }
@@ -60,6 +61,18 @@ function canManageMedicinePackages(role: string): boolean {
 
 function packageError(error: unknown): string {
   return error instanceof Error ? error.message : "Package operation failed";
+}
+
+function packageErrorStatus(message: string): number {
+  if (message.includes("not found")) return 404;
+  if (message.includes("already exists")) return 409;
+  if (
+    message.includes("valid active department") ||
+    message.includes("Invalid package definition")
+  ) {
+    return 400;
+  }
+  return 500;
 }
 
 export async function GET(request: NextRequest) {
@@ -124,6 +137,7 @@ export async function GET(request: NextRequest) {
       code: resolved.code,
       name: resolved.name,
       operationName: resolved.operationName,
+      departmentId: resolved.departmentId,
       departmentName: resolved.departmentName,
       items: resolved.items.map((item) => ({
         templateName: item.templateName,
@@ -202,7 +216,7 @@ export async function POST(request: NextRequest) {
     );
   } catch (error) {
     const message = packageError(error);
-    const status = message.includes("already exists") ? 409 : 500;
+    const status = packageErrorStatus(message);
     return NextResponse.json({ success: false, error: message }, { status });
   }
 }
@@ -249,11 +263,7 @@ export async function PATCH(request: NextRequest) {
     );
   } catch (error) {
     const message = packageError(error);
-    const status = message.includes("not found")
-      ? 404
-      : message.includes("already exists")
-        ? 409
-        : 500;
+    const status = packageErrorStatus(message);
     return NextResponse.json({ success: false, error: message }, { status });
   }
 }

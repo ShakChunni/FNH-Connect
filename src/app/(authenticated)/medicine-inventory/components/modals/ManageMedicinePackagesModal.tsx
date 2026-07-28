@@ -34,6 +34,7 @@ interface MedicinePackageDefinition {
   code: string;
   name: string;
   operationName: string;
+  departmentId: number | null;
   departmentName: string;
   items: MedicinePackageItem[];
 }
@@ -72,7 +73,8 @@ const blankPackage = (): Omit<MedicinePackageDefinition, "items"> & {
   code: "",
   name: "",
   operationName: "",
-  departmentName: "All Departments",
+  departmentId: null,
+  departmentName: "",
   items: [blankItem()],
 });
 
@@ -87,6 +89,7 @@ const toDraft = (definition: MedicinePackageDefinition) => ({
   code: definition.code,
   name: definition.name,
   operationName: definition.operationName,
+  departmentId: definition.departmentId,
   departmentName: definition.departmentName,
   items: definition.items.map((item) => ({
     templateName: item.templateName,
@@ -222,6 +225,7 @@ const ManageMedicinePackagesModal: React.FC<ManageMedicinePackagesModalProps> = 
     code: draft.code.trim(),
     name: draft.name.trim(),
     operationName: draft.operationName.trim(),
+    departmentId: draft.departmentId,
     departmentName: draft.departmentName.trim(),
     items: draft.items.map((item) => {
       const aliases = item.aliasesText
@@ -337,7 +341,7 @@ const ManageMedicinePackagesModal: React.FC<ManageMedicinePackagesModalProps> = 
     <AnimatePresence mode="wait">
       {isOpen && (
         <motion.div
-          className="fixed inset-0 z-100000 flex items-center justify-center bg-slate-900/70 p-3 sm:p-6"
+          className="fixed inset-0 z-100000 flex items-center justify-center bg-slate-900/70 sm:p-6"
           variants={backdropVariants}
           initial="hidden"
           animate="visible"
@@ -350,7 +354,7 @@ const ManageMedicinePackagesModal: React.FC<ManageMedicinePackagesModalProps> = 
         >
           <motion.div
             ref={popupRef}
-            className="flex max-h-[92vh] w-full max-w-6xl flex-col overflow-hidden rounded-3xl bg-white shadow-2xl"
+            className="flex h-[100dvh] max-h-none w-full max-w-6xl flex-col overflow-hidden bg-white shadow-2xl sm:h-auto sm:max-h-[92vh] sm:rounded-3xl"
             variants={modalVariants}
             initial="hidden"
             animate="visible"
@@ -366,8 +370,8 @@ const ManageMedicinePackagesModal: React.FC<ManageMedicinePackagesModalProps> = 
               isDisabled={isSaving || isDeleting}
             />
 
-            <div className="grid min-h-0 flex-1 grid-cols-1 overflow-y-auto md:grid-cols-[260px_minmax(0,1fr)]">
-              <aside className="border-b border-gray-100 bg-gray-50/70 p-3 md:border-b-0 md:border-r md:p-4">
+            <div className="grid min-h-0 flex-1 grid-cols-1 grid-rows-[auto_minmax(0,1fr)] overflow-hidden md:grid-cols-[260px_minmax(0,1fr)] md:grid-rows-1">
+              <aside className="shrink-0 border-b border-gray-100 bg-gray-50/70 p-3 md:min-h-0 md:border-b-0 md:border-r md:p-4">
                 <div className="mb-3 flex items-center justify-between gap-2">
                   <div>
                     <p className="text-xs font-bold text-gray-800">Packages</p>
@@ -389,13 +393,13 @@ const ManageMedicinePackagesModal: React.FC<ManageMedicinePackagesModalProps> = 
                     <Loader2 className="h-4 w-4 animate-spin" /> Loading...
                   </div>
                 ) : definitions.length ? (
-                  <div className="space-y-2">
+                  <div className="flex gap-2 overflow-x-auto pb-1 md:block md:max-h-[calc(92vh-190px)] md:space-y-2 md:overflow-y-auto md:pb-0">
                     {definitions.map((definition) => (
                       <button
                         key={definition.code}
                         type="button"
                         onClick={() => selectDefinition(definition)}
-                        className={`w-full rounded-xl border px-3 py-3 text-left transition ${
+                        className={`min-w-[210px] rounded-xl border px-3 py-3 text-left transition md:w-full md:min-w-0 ${
                           editingCode === definition.code
                             ? "border-indigo-300 bg-indigo-50 shadow-sm"
                             : "border-gray-200 bg-white hover:border-indigo-200 hover:bg-indigo-50/50"
@@ -420,7 +424,7 @@ const ManageMedicinePackagesModal: React.FC<ManageMedicinePackagesModalProps> = 
                 )}
               </aside>
 
-              <section className="min-w-0 overflow-y-auto p-4 sm:p-6">
+              <section className="min-h-0 min-w-0 overflow-y-auto p-3 sm:p-6">
                 <div className="mb-5 flex items-start justify-between gap-3">
                   <div>
                     <p className="text-sm font-bold text-gray-900">
@@ -483,26 +487,47 @@ const ManageMedicinePackagesModal: React.FC<ManageMedicinePackagesModalProps> = 
                     <div className="relative">
                       <Building2 className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-400" />
                       <select
-                        value={draft.departmentName}
-                        onChange={(event) =>
-                          updateDraft("departmentName", event.target.value)
+                        value={
+                          draft.departmentName === "All Departments"
+                            ? "all"
+                            : draft.departmentId?.toString() ?? ""
                         }
+                        onChange={(event) => {
+                          if (event.target.value === "all") {
+                            setDraft((current) => ({
+                              ...current,
+                              departmentId: null,
+                              departmentName: "All Departments",
+                            }));
+                            return;
+                          }
+                          const selected = departments.find(
+                            (department) =>
+                              department.id === Number(event.target.value),
+                          );
+                          setDraft((current) => ({
+                            ...current,
+                            departmentId: selected?.id ?? null,
+                            departmentName: selected?.name ?? "",
+                          }));
+                        }}
                         disabled={isLucsDraft || isSaving || isDeleting}
                         className={`${inputClass} appearance-none pl-9`}
                       >
-                        <option value="All Departments">All Departments</option>
+                        <option value="" disabled>Select department</option>
                         {departments.map((department) => (
-                          <option key={department.id} value={department.name}>
+                          <option key={department.id} value={department.id}>
                             {department.name}
                           </option>
                         ))}
+                        <option value="all">All Departments (global)</option>
                         {draft.departmentName &&
                         draft.departmentName !== "All Departments" &&
                         !departments.some(
-                          (department) => department.name === draft.departmentName,
+                          (department) => department.id === draft.departmentId,
                         ) ? (
-                          <option value={draft.departmentName}>
-                            {draft.departmentName} (legacy)
+                          <option value={draft.departmentId ?? ""}>
+                            {draft.departmentName} (inactive/legacy)
                           </option>
                         ) : null}
                       </select>
@@ -582,7 +607,7 @@ const ManageMedicinePackagesModal: React.FC<ManageMedicinePackagesModalProps> = 
                   </p>
                 )}
 
-                <div className="mt-5 flex justify-end gap-2 border-t border-gray-100 pt-4">
+                <div className="sticky bottom-0 z-10 -mx-3 mt-5 flex justify-end gap-2 border-t border-gray-100 bg-white/95 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 backdrop-blur sm:static sm:mx-0 sm:bg-transparent sm:px-0 sm:pb-0 sm:pt-4">
                   <button
                     type="button"
                     onClick={onClose}

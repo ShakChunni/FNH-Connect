@@ -7,6 +7,7 @@ import { create } from "zustand";
 import { devtools } from "zustand/middleware";
 import { useShallow } from "zustand/react/shallow";
 import type { FilterState, SearchParams } from "../types";
+import { getBDTPresetCalendarRange } from "@/lib/timezone";
 
 // ═══════════════════════════════════════════════════════════════
 // TYPE DEFINITIONS
@@ -23,6 +24,7 @@ interface FilterStoreState {
   pagination: PaginationState;
   // Search state for debounced input
   search: string;
+  dateRange: string;
   startDate: Date | null;
   endDate: Date | null;
 }
@@ -40,6 +42,8 @@ interface FilterActions {
   setLimit: (limit: number) => void;
   // Search actions
   setSearch: (search: string) => void;
+  setDateRange: (range: string) => void;
+  setCustomDateRange: (start: Date | null, end: Date | null) => void;
   setStartDate: (date: Date | null) => void;
   setEndDate: (date: Date | null) => void;
   // Combined reset
@@ -67,6 +71,7 @@ const initialState: FilterStoreState = {
   searchParams: undefined,
   pagination: initialPagination,
   search: "",
+  dateRange: "all",
   startDate: null,
   endDate: null,
 };
@@ -96,9 +101,7 @@ export const useInfertilityFilterStore = create<
 
       resetFilters: () =>
         set({
-          filters: initialFilters,
-          searchParams: undefined,
-          pagination: initialPagination,
+          ...initialState,
         }),
 
       // Pagination actions
@@ -116,6 +119,24 @@ export const useInfertilityFilterStore = create<
       setSearch: (search) =>
         set((state) => ({
           search,
+          pagination: { ...state.pagination, page: 1 },
+        })),
+
+      setDateRange: (dateRange) => {
+        const range = getBDTPresetCalendarRange(dateRange);
+        set((state) => ({
+          dateRange,
+          startDate: range.start,
+          endDate: range.end,
+          pagination: { ...state.pagination, page: 1 },
+        }));
+      },
+
+      setCustomDateRange: (startDate, endDate) =>
+        set((state) => ({
+          dateRange: "custom",
+          startDate,
+          endDate,
           pagination: { ...state.pagination, page: 1 },
         })),
 
@@ -140,7 +161,7 @@ export const useInfertilityFilterStore = create<
         const state = get();
         let count = 0;
         if (state.search && state.search.length >= 2) count++;
-        if (state.startDate || state.endDate) count++;
+        if (state.dateRange !== "all") count++;
         if (state.filters.leadsFilter !== "All") count++;
         return count;
       },
@@ -167,6 +188,7 @@ export const useFilterValues = () =>
   useInfertilityFilterStore(
     useShallow((state) => ({
       search: state.search,
+      dateRange: state.dateRange,
       startDate: state.startDate,
       endDate: state.endDate,
       page: state.pagination.page,
@@ -185,6 +207,8 @@ export const useFilterActions = () =>
       setPage: state.setPage,
       setLimit: state.setLimit,
       setSearch: state.setSearch,
+      setDateRange: state.setDateRange,
+      setCustomDateRange: state.setCustomDateRange,
       setStartDate: state.setStartDate,
       setEndDate: state.setEndDate,
       clearAllFilters: state.clearAllFilters,

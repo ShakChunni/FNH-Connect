@@ -20,6 +20,7 @@ export const medicinePackageDefinitionSchema = z.object({
     .regex(/^[A-Za-z0-9_-]+$/, "Package code may contain only letters, numbers, _ and -"),
   name: z.string().trim().min(1).max(200),
   operationName: z.string().trim().min(1).max(100),
+  departmentId: z.number().int().positive().nullable().optional(),
   // Optional for backward compatibility with the original global package
   // config. The service assigns a safe legacy default when it is missing.
   departmentName: z.string().trim().min(1).max(100).optional(),

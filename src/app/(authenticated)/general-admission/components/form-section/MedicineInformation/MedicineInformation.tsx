@@ -37,6 +37,7 @@ interface AdmissionMedicinePackageSummary {
   code: string;
   name: string;
   operationName: string;
+  departmentId: number | null;
   departmentName: string;
 }
 
@@ -61,6 +62,7 @@ interface AdmissionMedicinePackageResponse {
   code: string;
   name: string;
   operationName: string;
+  departmentId: number | null;
   departmentName: string;
   items: AdmissionMedicinePackageItemResponse[];
 }
@@ -164,9 +166,14 @@ const MedicineInformation: React.FC<MedicineInformationProps> = ({
   const departmentPackages = useMemo(
     () =>
       packageSummaries.filter((pkg) =>
-        isMedicinePackageForDepartment(pkg.departmentName, departmentData.name),
+        isMedicinePackageForDepartment(
+          pkg.departmentName,
+          departmentData.name,
+          pkg.departmentId,
+          departmentData.id,
+        ),
       ),
-    [departmentData.name, packageSummaries],
+    [departmentData.id, departmentData.name, packageSummaries],
   );
 
   const handlePackageSelect = useCallback(
