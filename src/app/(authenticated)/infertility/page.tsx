@@ -14,7 +14,11 @@ import PatientTable from "./components/PatientTable/PatientTable";
 import { NewPatientButton } from "./components/NewPatientButton";
 import { InfertilityCashTrackerWidget } from "./components/InfertilityCashTrackerWidget";
 import InfertilitySearch from "./components/InfertilitySearch";
-import { Filters, ExportActionBar } from "./components/filter";
+import {
+  Filters,
+  PatientFilters,
+  ExportActionBar,
+} from "./components/filter";
 
 import InvestigationsTable from "./components/InvestigationsTable/InvestigationsTable";
 import { useFetchInfertilityTests } from "./hooks/useFetchInfertilityTests";
@@ -33,6 +37,7 @@ import {
   usePagination,
   useFilterActions,
   useFilterValues,
+  useInfertilityFilterStore,
   useInfertilityTestFilterValues,
   useInfertilityTestFilterStore,
 } from "./stores";
@@ -54,11 +59,26 @@ const InfertilityManagement = React.memo(() => {
   const patientPagination = usePagination();
   const patientFilterActions = useFilterActions();
   const patientFilterValues = useFilterValues();
+  const closePatientFilterPanel = useInfertilityFilterStore(
+    (state) => state.closeFilterPanel,
+  );
 
   // Investigation Store selectors
   const investigationFilters = useInfertilityTestFilterValues();
   const setInvestigationPage = useInfertilityTestFilterStore(
     (state) => state.setPage
+  );
+  const closeInvestigationFilterPanel = useInfertilityTestFilterStore(
+    (state) => state.closeFilterPanel,
+  );
+
+  const handleTabChange = useCallback(
+    (tab: "patients" | "investigations") => {
+      closePatientFilterPanel();
+      closeInvestigationFilterPanel();
+      setActiveTab(tab);
+    },
+    [closeInvestigationFilterPanel, closePatientFilterPanel],
   );
 
   // Patient Filters for hook
@@ -204,7 +224,7 @@ const InfertilityManagement = React.memo(() => {
                     ? "border-b-2 border-emerald-600 text-emerald-600" 
                     : "text-slate-500 hover:text-slate-700"
                 }`}
-                onClick={() => setActiveTab("patients")}
+                onClick={() => handleTabChange("patients")}
               >
                 Patients
               </button>
@@ -214,7 +234,7 @@ const InfertilityManagement = React.memo(() => {
                     ? "border-b-2 border-emerald-600 text-emerald-600" 
                     : "text-slate-500 hover:text-slate-700"
                 }`}
-                onClick={() => setActiveTab("investigations")}
+                onClick={() => handleTabChange("investigations")}
               >
                 Investigations
               </button>
@@ -276,7 +296,7 @@ const InfertilityManagement = React.memo(() => {
       </div>
 
       {/* Filter Panel (Slide-out) */}
-      {activeTab === "investigations" && <Filters />}
+      {activeTab === "patients" ? <PatientFilters /> : <Filters />}
 
       {/* Floating Export Bar */}
       {activeTab === "investigations" && <ExportActionBar recordCount={totalRecords} />}

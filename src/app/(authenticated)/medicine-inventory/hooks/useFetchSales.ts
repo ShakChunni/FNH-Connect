@@ -12,6 +12,7 @@ interface SalesResponse {
   data: MedicineSale[];
   pagination: {
     total: number;
+    totalSaleLines: number;
     page: number;
     limit: number;
     totalPages: number;
@@ -22,6 +23,7 @@ interface SalesResponse {
 export interface PaginatedSales {
   data: MedicineSale[];
   total: number;
+  totalSaleLines: number;
   totalPages: number;
   currentPage: number;
   limit: number;
@@ -72,6 +74,7 @@ export function useFetchSales(filters: SaleFilters = {}) {
       return {
         data: response.data.data,
         total: response.data.pagination.total,
+        totalSaleLines: response.data.pagination.totalSaleLines,
         totalPages: response.data.pagination.totalPages,
         currentPage: response.data.pagination.page,
         limit: response.data.pagination.limit,

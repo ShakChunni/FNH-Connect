@@ -5,6 +5,7 @@ import { Calendar, Check, ChevronDown, ChevronLeft } from "lucide-react";
 import { format } from "date-fns";
 import { DropdownPortal } from "@/components/ui/DropdownPortal";
 import { CalendarWithMonthYearPicker } from "@/components/ui/calendar";
+import { useInfertilityFilterStore } from "../../../stores/filterStore";
 import { useInfertilityTestFilterStore } from "../../../stores/testFilterStore";
 
 const DATE_OPTIONS = [
@@ -18,14 +19,49 @@ const DATE_OPTIONS = [
   { value: "custom", label: "Custom Range" },
 ];
 
-export const DateRangeFilter: React.FC = () => {
-  const filters = useInfertilityTestFilterStore((state) => state.filters);
-  const setDateRange = useInfertilityTestFilterStore(
+interface DateRangeFilterProps {
+  scope?: "patients" | "investigations";
+}
+
+export const DateRangeFilter: React.FC<DateRangeFilterProps> = ({
+  scope = "investigations",
+}) => {
+  const patientDateRange = useInfertilityFilterStore(
+    (state) => state.dateRange,
+  );
+  const patientStartDate = useInfertilityFilterStore(
+    (state) => state.startDate,
+  );
+  const patientEndDate = useInfertilityFilterStore((state) => state.endDate);
+  const setPatientDateRange = useInfertilityFilterStore(
     (state) => state.setDateRange,
   );
-  const setCustomDateRange = useInfertilityTestFilterStore(
+  const setPatientCustomDateRange = useInfertilityFilterStore(
     (state) => state.setCustomDateRange,
   );
+  const investigationFilters = useInfertilityTestFilterStore(
+    (state) => state.filters,
+  );
+  const setInvestigationDateRange = useInfertilityTestFilterStore(
+    (state) => state.setDateRange,
+  );
+  const setInvestigationCustomDateRange = useInfertilityTestFilterStore(
+    (state) => state.setCustomDateRange,
+  );
+  const isPatientScope = scope === "patients";
+  const filters = isPatientScope
+    ? {
+        dateRange: patientDateRange,
+        startDate: patientStartDate,
+        endDate: patientEndDate,
+      }
+    : investigationFilters;
+  const setDateRange = isPatientScope
+    ? setPatientDateRange
+    : setInvestigationDateRange;
+  const setCustomDateRange = isPatientScope
+    ? setPatientCustomDateRange
+    : setInvestigationCustomDateRange;
   const [isOpen, setIsOpen] = useState(false);
   const [showCalendar, setShowCalendar] = useState(false);
   const buttonRef = useRef<HTMLButtonElement>(null);

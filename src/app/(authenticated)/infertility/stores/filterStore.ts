@@ -22,6 +22,9 @@ interface FilterStoreState {
   filters: FilterState;
   searchParams: SearchParams | undefined;
   pagination: PaginationState;
+  panel: {
+    isOpen: boolean;
+  };
   // Search state for debounced input
   search: string;
   dateRange: string;
@@ -37,6 +40,9 @@ interface FilterActions {
   ) => void;
   setSearchParams: (params: SearchParams | undefined) => void;
   resetFilters: () => void;
+  openFilterPanel: () => void;
+  closeFilterPanel: () => void;
+  toggleFilterPanel: () => void;
   // Pagination actions
   setPage: (page: number) => void;
   setLimit: (limit: number) => void;
@@ -70,6 +76,7 @@ const initialState: FilterStoreState = {
   filters: initialFilters,
   searchParams: undefined,
   pagination: initialPagination,
+  panel: { isOpen: false },
   search: "",
   dateRange: "all",
   startDate: null,
@@ -98,6 +105,17 @@ export const useInfertilityFilterStore = create<
         })),
 
       setSearchParams: (params) => set({ searchParams: params }),
+
+      openFilterPanel: () =>
+        set((state) => ({ panel: { ...state.panel, isOpen: true } })),
+
+      closeFilterPanel: () =>
+        set((state) => ({ panel: { ...state.panel, isOpen: false } })),
+
+      toggleFilterPanel: () =>
+        set((state) => ({
+          panel: { ...state.panel, isOpen: !state.panel.isOpen },
+        })),
 
       resetFilters: () =>
         set({
@@ -153,9 +171,10 @@ export const useInfertilityFilterStore = create<
         })),
 
       clearAllFilters: () =>
-        set({
+        set((state) => ({
           ...initialState,
-        }),
+          panel: state.panel,
+        })),
 
       getActiveFilterCount: () => {
         const state = get();
@@ -204,6 +223,9 @@ export const useFilterActions = () =>
       updateFilter: state.updateFilter,
       setSearchParams: state.setSearchParams,
       resetFilters: state.resetFilters,
+      openFilterPanel: state.openFilterPanel,
+      closeFilterPanel: state.closeFilterPanel,
+      toggleFilterPanel: state.toggleFilterPanel,
       setPage: state.setPage,
       setLimit: state.setLimit,
       setSearch: state.setSearch,

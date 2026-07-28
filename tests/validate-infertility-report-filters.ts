@@ -6,6 +6,7 @@ import { useInfertilityTestFilterStore } from "../src/app/(authenticated)/infert
 function run(): void {
   const patientStore = useInfertilityFilterStore.getState();
   patientStore.clearAllFilters();
+  patientStore.openFilterPanel();
   patientStore.setDateRange("today");
 
   let patientFilters = useInfertilityFilterStore.getState();
@@ -45,8 +46,14 @@ function run(): void {
   assert.equal(patientFilters.dateRange, "all");
   assert.equal(patientFilters.startDate, null);
   assert.equal(patientFilters.endDate, null);
+  assert.equal(
+    patientFilters.panel.isOpen,
+    true,
+    "clearing filters must keep the slide-out panel open",
+  );
   assert.equal(investigationFilters.dateRange, "all");
 
+  patientStore.closeFilterPanel();
   console.log("Infertility report filter validation passed.");
 }
 

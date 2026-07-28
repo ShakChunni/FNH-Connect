@@ -28,7 +28,7 @@ const saleFiltersSchema = z.object({
   startDate: z.string().datetime({ offset: true }).optional(),
   endDate: z.string().datetime({ offset: true }).optional(),
   page: z.coerce.number().int().min(1).default(1),
-  limit: z.coerce.number().int().min(1).max(20).default(20),
+  limit: z.coerce.number().int().min(1).max(20).default(10),
 }).superRefine((value, ctx) => {
   if (!value.startDate || !value.endDate) {
     return;
@@ -73,13 +73,15 @@ export async function GET(request: NextRequest) {
     }
 
     const filters = validation.data;
-    const { sales, total, page, limit } = await getSales(filters);
+    const { sales, total, totalSaleLines, page, limit } =
+      await getSales(filters);
 
     return NextResponse.json({
       success: true,
       data: sales,
       pagination: {
         total,
+        totalSaleLines,
         page,
         limit,
         totalPages: Math.ceil(total / limit),
