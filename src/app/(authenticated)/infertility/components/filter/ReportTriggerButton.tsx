@@ -47,6 +47,10 @@ export const ReportTriggerButton: React.FC<ReportTriggerButtonProps> = ({
         patientFilterValues.startDate,
         patientFilterValues.endDate
       ),
+      testNames:
+        patientFilterValues.testNames.length > 0
+          ? patientFilterValues.testNames
+          : undefined,
     }),
     [patientFilterValues]
   );

@@ -206,6 +206,25 @@ export async function generateInfertilitySummaryReport(
     totals.netAmount > 0
       ? Math.min(100, (totals.paidAmount / totals.netAmount) * 100).toFixed(1)
       : "0";
+  const individualTestCounts = new Map<string, number>();
+  patients.forEach((patient) => {
+    patient.testBreakdown?.forEach(({ name, count }) => {
+      individualTestCounts.set(
+        name,
+        (individualTestCounts.get(name) ?? 0) + count,
+      );
+    });
+  });
+  const individualTestBreakdown = Array.from(individualTestCounts.entries())
+    .map(([name, count]) => ({ name, count }))
+    .sort(
+      (left, right) =>
+        right.count - left.count || left.name.localeCompare(right.name),
+    );
+  const totalIndividualTests = individualTestBreakdown.reduce(
+    (total, item) => total + item.count,
+    0,
+  );
 
   doc.setFont("helvetica", "bold");
   doc.setFontSize(11);
@@ -283,6 +302,55 @@ export async function generateInfertilitySummaryReport(
   });
 
   currentY = getLastTableFinalY(doc as AutoTableDocument) + 10;
+  if (individualTestBreakdown.length > 0) {
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(11);
+    doc.setTextColor(COLORS.primary);
+    doc.text("Individual Tests Breakdown", margin, currentY);
+    currentY += 5;
+    autoTable(doc, {
+      startY: currentY,
+      head: [["Investigation Name", "Times Conducted"]],
+      body: [
+        ...individualTestBreakdown.map(({ name, count }) => [
+          name,
+          String(count),
+        ]),
+        [
+          { content: "TOTAL", styles: { fontStyle: "bold" } },
+          {
+            content: String(totalIndividualTests),
+            styles: { fontStyle: "bold" },
+          },
+        ],
+      ],
+      theme: "striped",
+      headStyles: {
+        fillColor: COLORS.primary,
+        textColor: "#fbbf24",
+        lineColor: COLORS.primary,
+        lineWidth: 0.2,
+        fontStyle: "bold",
+        fontSize: 9,
+      },
+      styles: {
+        fontSize: 9,
+        textColor: COLORS.text,
+      },
+      columnStyles: {
+        1: { cellWidth: 35, halign: "center" },
+      },
+      margin: { left: margin, right: margin, bottom: 16 },
+      tableWidth: pageWidth / 2 - margin,
+    });
+    currentY = getLastTableFinalY(doc as AutoTableDocument) + 10;
+  }
+
+  if (currentY > doc.internal.pageSize.height - 55) {
+    doc.addPage();
+    currentY = 20;
+  }
+
   doc.setFont("helvetica", "bold");
   doc.setFontSize(11);
   doc.setTextColor(COLORS.primary);

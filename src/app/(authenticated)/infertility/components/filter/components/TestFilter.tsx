@@ -3,13 +3,45 @@
 import React, { useState, useMemo } from "react";
 import { Microscope, Search, Check, X } from "lucide-react";
 import { INFERTILITY_TESTS } from "../../../constants/infertilityTests";
+import { useInfertilityFilterStore } from "../../../stores/filterStore";
 import { useInfertilityTestFilterStore } from "../../../stores/testFilterStore";
 
-export const TestFilter: React.FC = () => {
+interface TestFilterProps {
+  scope?: "patients" | "investigations";
+}
+
+export const TestFilter: React.FC<TestFilterProps> = ({
+  scope = "investigations",
+}) => {
   const [searchTerm, setSearchValue] = useState("");
-  const selectedTests = useInfertilityTestFilterStore((state) => state.filters.testNames);
-  const toggleTestName = useInfertilityTestFilterStore((state) => state.toggleTestName);
-  const setTestNames = useInfertilityTestFilterStore((state) => state.setTestNames);
+  const patientSelectedTests = useInfertilityFilterStore(
+    (state) => state.testNames,
+  );
+  const patientToggleTestName = useInfertilityFilterStore(
+    (state) => state.toggleTestName,
+  );
+  const patientSetTestNames = useInfertilityFilterStore(
+    (state) => state.setTestNames,
+  );
+  const investigationSelectedTests = useInfertilityTestFilterStore(
+    (state) => state.filters.testNames,
+  );
+  const investigationToggleTestName = useInfertilityTestFilterStore(
+    (state) => state.toggleTestName,
+  );
+  const investigationSetTestNames = useInfertilityTestFilterStore(
+    (state) => state.setTestNames,
+  );
+  const isPatientScope = scope === "patients";
+  const selectedTests = isPatientScope
+    ? patientSelectedTests
+    : investigationSelectedTests;
+  const toggleTestName = isPatientScope
+    ? patientToggleTestName
+    : investigationToggleTestName;
+  const setTestNames = isPatientScope
+    ? patientSetTestNames
+    : investigationSetTestNames;
 
   const filteredTests = useMemo(() => {
     if (!searchTerm) return INFERTILITY_TESTS.slice(0, 10);

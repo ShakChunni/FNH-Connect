@@ -137,6 +137,7 @@ export interface InfertilityFilters {
   search?: string;
   startDate?: string;
   endDate?: string;
+  testNames?: string[];
   // Pagination params
   page?: number;
   limit?: number;
@@ -205,6 +206,22 @@ export interface MedicalData {
 // QUERY SERVICES
 // ═══════════════════════════════════════════════════════════════
 
+function buildInfertilityTestNameFilter(
+  testNames?: string[],
+): Prisma.InfertilityTestWhereInput | undefined {
+  if (!testNames?.length) return undefined;
+
+  return {
+    isMigrationSuperseded: false,
+    OR: testNames.map((name) => ({
+      testResults: {
+        path: ["tests"],
+        array_contains: [name],
+      },
+    })),
+  };
+}
+
 export async function getInfertilityPatients(filters: InfertilityFilters) {
   const where: Prisma.InfertilityPatientWhereInput = {
     mergedIntoId: null,
@@ -242,6 +259,13 @@ export async function getInfertilityPatients(filters: InfertilityFilters) {
     if (filters.endDate) {
       where.createdAt.lt = new Date(filters.endDate);
     }
+  }
+
+  const testNameFilter = buildInfertilityTestNameFilter(filters.testNames);
+  if (testNameFilter) {
+    where.tests = {
+      some: testNameFilter,
+    };
   }
 
   // Pagination defaults
@@ -300,9 +324,10 @@ export async function getInfertilityPatients(filters: InfertilityFilters) {
         _count: {
           select: {
             tests: {
-              where: {
-                isMigrationSuperseded: false,
-              },
+              where:
+                testNameFilter ?? {
+                  isMigrationSuperseded: false,
+                },
             },
           },
         },
@@ -359,10 +384,13 @@ export async function getInfertilityPatientsForReport(
   const investigations = await prisma.infertilityTest.findMany({
     where: {
       infertilityPatientId: { in: patientIds },
-      isMigrationSuperseded: false,
+      ...(buildInfertilityTestNameFilter(filters.testNames) ?? {
+        isMigrationSuperseded: false,
+      }),
     },
     select: {
       infertilityPatientId: true,
+      testResults: true,
       testCharge: true,
       discountAmount: true,
       grandTotal: true,
@@ -372,6 +400,31 @@ export async function getInfertilityPatientsForReport(
 
   const financialsByPatient =
     aggregateInfertilityPatientFinancials(investigations);
+  const selectedTestNames = new Set(filters.testNames ?? []);
+  const testBreakdownByPatient = new Map<
+    number,
+    Map<string, number>
+  >();
+
+  investigations.forEach((investigation) => {
+    const patientCounts =
+      testBreakdownByPatient.get(investigation.infertilityPatientId) ??
+      new Map<string, number>();
+
+    parseSelectedTests(investigation.testResults)
+      .filter(
+        (name) =>
+          selectedTestNames.size === 0 || selectedTestNames.has(name),
+      )
+      .forEach((name) => {
+        patientCounts.set(name, (patientCounts.get(name) ?? 0) + 1);
+      });
+
+    testBreakdownByPatient.set(
+      investigation.infertilityPatientId,
+      patientCounts,
+    );
+  });
 
   return {
     ...result,
@@ -381,6 +434,14 @@ export async function getInfertilityPatientsForReport(
         financialsByPatient.get(row.id) ?? {
           ...EMPTY_INFERTILITY_FINANCIAL_SUMMARY,
         },
+      testBreakdown: Array.from(
+        testBreakdownByPatient.get(row.id)?.entries() ?? [],
+      )
+        .map(([name, count]) => ({ name, count }))
+        .sort(
+          (left, right) =>
+            right.count - left.count || left.name.localeCompare(right.name),
+        ),
     })),
   };
 }

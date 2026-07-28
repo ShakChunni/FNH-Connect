@@ -38,6 +38,9 @@ async function main(): Promise<void> {
   const { generateInfertilitySummaryReport } = await import(
     "../src/app/(authenticated)/infertility/utils/generateSummaryReport"
   );
+  const { generateInfertilityReport } = await import(
+    "../src/app/(authenticated)/infertility/utils/generateReport"
+  );
   const { generatePathologyReport } = await import(
     "../src/app/(authenticated)/pathology/utils/generateReport"
   );
@@ -107,6 +110,11 @@ async function main(): Promise<void> {
       paidAmount,
       dueAmount: Math.max(0, netAmount - paidAmount),
     },
+    testBreakdown: [
+      { name: "CBC", count: 1 + (index % 3) },
+      { name: "TSH", count: 1 },
+      ...(index % 2 === 0 ? [{ name: "AMH", count: 1 }] : []),
+    ],
     createdAt: new Date(2026, 6, 1 + (index % 20)).toISOString(),
     updatedAt: new Date(2026, 6, 20).toISOString(),
   } as InfertilityPatientData;
@@ -120,6 +128,7 @@ async function main(): Promise<void> {
     startDate: new Date(2026, 6, 1),
     endDate: new Date(2026, 6, 20),
   });
+  await generateInfertilityReport(patients[0], "PDF QA");
 
   const pathologyRows = Array.from({ length: 12 }, (_, index) => ({
     id: index + 1,
@@ -147,6 +156,7 @@ async function main(): Promise<void> {
   const outputNames = [
     "infertility-patient-financial-summary.pdf",
     "infertility-patient-financial-detailed.pdf",
+    "infertility-individual-case-report.pdf",
     "pathology-summary.pdf",
   ];
   await Promise.all(

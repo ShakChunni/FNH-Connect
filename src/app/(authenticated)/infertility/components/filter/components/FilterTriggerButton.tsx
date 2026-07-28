@@ -25,6 +25,9 @@ export const FilterTriggerButton: React.FC<FilterTriggerButtonProps> = ({
   const patientDateRange = useInfertilityFilterStore(
     (state) => state.dateRange,
   );
+  const patientTestNames = useInfertilityFilterStore(
+    (state) => state.testNames,
+  );
   const patientLeadsFilter = useInfertilityFilterStore(
     (state) => state.filters.leadsFilter,
   );
@@ -47,6 +50,7 @@ export const FilterTriggerButton: React.FC<FilterTriggerButtonProps> = ({
         patientSearch.length >= 2,
         patientDateRange !== "all",
         patientLeadsFilter !== "All",
+        patientTestNames.length > 0,
       ].filter(Boolean).length
     : [
         investigationFilters.orderedById !== null,

@@ -92,6 +92,10 @@ const InfertilityManagement = React.memo(() => {
       page: patientPagination.page,
       limit: patientPagination.limit,
       search: patientFilterValues.search.length >= 2 ? patientFilterValues.search : undefined,
+      testNames:
+        patientFilterValues.testNames.length > 0
+          ? patientFilterValues.testNames
+          : undefined,
       ...dateRangeParams,
     };
   }, [patientPagination.page, patientPagination.limit, patientFilterValues]);
