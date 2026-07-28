@@ -2,10 +2,12 @@
 
 import React from "react";
 import { SlidersHorizontal } from "lucide-react";
+import { useInfertilityFilterStore } from "../../../stores/filterStore";
 import { useInfertilityTestFilterStore } from "../../../stores/testFilterStore";
 
 interface FilterTriggerButtonProps {
   disabled?: boolean;
+  scope?: "patients" | "investigations";
 }
 
 /**
@@ -14,22 +16,51 @@ interface FilterTriggerButtonProps {
  */
 export const FilterTriggerButton: React.FC<FilterTriggerButtonProps> = ({
   disabled = false,
+  scope = "investigations",
 }) => {
-  const openFilterPanel = useInfertilityTestFilterStore(
+  const openPatientFilterPanel = useInfertilityFilterStore(
+    (state) => state.openFilterPanel,
+  );
+  const patientSearch = useInfertilityFilterStore((state) => state.search);
+  const patientDateRange = useInfertilityFilterStore(
+    (state) => state.dateRange,
+  );
+  const patientLeadsFilter = useInfertilityFilterStore(
+    (state) => state.filters.leadsFilter,
+  );
+  const openInvestigationFilterPanel = useInfertilityTestFilterStore(
     (state) => state.openFilterPanel
   );
-  const getActiveFilterCount = useInfertilityTestFilterStore(
-    (state) => state.getActiveFilterCount
+  const investigationFilters = useInfertilityTestFilterStore(
+    (state) => state.filters,
   );
 
-  const activeCount = getActiveFilterCount();
+  const isPatientScope = scope === "patients";
+  const activeCount = isPatientScope
+    ? [
+        patientSearch.length >= 2,
+        patientDateRange !== "all",
+        patientLeadsFilter !== "All",
+      ].filter(Boolean).length
+    : [
+        investigationFilters.orderedById !== null,
+        investigationFilters.doneById !== null,
+        investigationFilters.status !== "All",
+        investigationFilters.testNames.length > 0,
+        investigationFilters.dateRange !== "all",
+        investigationFilters.search !== "",
+      ].filter(Boolean).length;
+  const openFilterPanel = isPatientScope
+    ? openPatientFilterPanel
+    : openInvestigationFilterPanel;
 
   return (
     <button
       onClick={openFilterPanel}
+      type="button"
       disabled={disabled}
       className={`
-        relative flex items-center gap-2.5 h-full px-5
+        relative flex h-full w-full items-center justify-center gap-2.5 px-5 sm:w-auto
         bg-white border rounded-full
         transition-all duration-300 ease-out
         ${

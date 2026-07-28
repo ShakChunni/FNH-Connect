@@ -7,12 +7,7 @@
 
 import React, { useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import {
-  ChevronDown,
-  ChevronRight,
-  Layers3,
-  ShoppingCart,
-} from "lucide-react";
+import { ChevronRight, Layers3, ShoppingCart } from "lucide-react";
 import { Pagination } from "@/components/pagination/Pagination";
 import { useFetchSales } from "../../hooks";
 import { useSaleFilterStore } from "../../stores";
@@ -64,13 +59,15 @@ const SaleTable: React.FC = () => {
     () => new Set(),
   );
 
-  const sales = data?.data || [];
-  const total = data?.total || 0;
+  const sales = useMemo(() => data?.data ?? [], [data?.data]);
+  const totalPatients = data?.total || 0;
+  const totalSaleLines = data?.totalSaleLines || 0;
   const totalPages = data?.totalPages || 1;
   const currentPage = data?.currentPage || filters.page || 1;
-  const limit = data?.limit || filters.limit || 20;
-  const startIndex = total === 0 ? 0 : (currentPage - 1) * limit + 1;
-  const endIndex = Math.min(currentPage * limit, total);
+  const limit = data?.limit || filters.limit || 10;
+  const startIndex =
+    totalPatients === 0 ? 0 : (currentPage - 1) * limit + 1;
+  const endIndex = Math.min(currentPage * limit, totalPatients);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("en-BD", {
@@ -145,6 +142,11 @@ const SaleTable: React.FC = () => {
     return expandedPatientKeys.has(groupKey);
   };
 
+  const changePage = (page: number) => {
+    setExpandedPatientKeys(new Set());
+    setFilter("page", page);
+  };
+
   if (isLoading) {
     return (
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
@@ -161,7 +163,7 @@ const SaleTable: React.FC = () => {
           <div className="h-3 w-20 bg-gray-100 rounded animate-pulse" />
           <div className="h-3 w-20 bg-gray-100 rounded animate-pulse" />
         </div>
-        {Array.from({ length: 6 }).map((_, i) => (
+        {Array.from({ length: 10 }).map((_, i) => (
           <div
             key={i}
             className="flex items-center px-6 py-3.5 gap-4 border-b border-gray-50"
@@ -220,11 +222,13 @@ const SaleTable: React.FC = () => {
         {/* Table Header */}
         <div className="px-4 sm:px-6 py-3 bg-gray-50/50 border-b border-gray-100 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-xs font-bold text-gray-500 uppercase tracking-widest">
-            {formatNumber(total)} sale{total !== 1 ? "s" : ""}
+            {formatNumber(totalSaleLines)} sale line
+            {totalSaleLines !== 1 ? "s" : ""}
           </p>
           <p className="text-xs font-semibold text-gray-400">
-            Grouped into {formatNumber(patientGroups.length)} patient
-            {patientGroups.length !== 1 ? "s" : ""} on this page
+            {formatNumber(patientGroups.length)} shown ·{" "}
+            {formatNumber(totalPatients)} patient
+            {totalPatients !== 1 ? "s" : ""} total
           </p>
         </div>
 
@@ -277,13 +281,15 @@ const SaleTable: React.FC = () => {
                         aria-expanded={isPatientGroupExpanded(group.key)}
                         aria-label={`${isPatientGroupExpanded(group.key) ? "Collapse" : "Expand"} sales for ${group.patientName}`}
                       >
-                        <span className="flex h-8 w-8 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-500 shadow-sm transition-colors group-hover:border-blue-200 group-hover:text-blue-700">
-                          {isPatientGroupExpanded(group.key) ? (
-                            <ChevronDown className="h-4 w-4" />
-                          ) : (
-                            <ChevronRight className="h-4 w-4" />
-                          )}
-                        </span>
+                        <motion.span
+                          animate={{
+                            rotate: isPatientGroupExpanded(group.key) ? 90 : 0,
+                          }}
+                          transition={{ duration: 0.18, ease: "easeOut" }}
+                          className="flex h-8 w-8 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-500 shadow-sm transition-colors group-hover:border-blue-200 group-hover:text-blue-700"
+                        >
+                          <ChevronRight className="h-4 w-4" />
+                        </motion.span>
                         <span>
                           <span className="block text-sm font-black text-gray-900">
                             {group.patientName}
@@ -327,82 +333,111 @@ const SaleTable: React.FC = () => {
                     </td>
                   </tr>
                   <AnimatePresence initial={false}>
-                    {isPatientGroupExpanded(group.key)
-                      ? group.sales.map((sale) => (
-                          <motion.tr
-                            key={sale.id}
-                            initial={{ opacity: 0, y: -6 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -6 }}
-                            transition={{ duration: 0.18, ease: "easeOut" }}
-                            className="bg-white hover:bg-blue-50/30 transition-colors"
+                    {isPatientGroupExpanded(group.key) ? (
+                      <motion.tr
+                        key={`${group.key}-details`}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                      >
+                        <td colSpan={10} className="p-0">
+                          <motion.div
+                            initial={{ height: 0 }}
+                            animate={{ height: "auto" }}
+                            exit={{ height: 0 }}
+                            transition={{
+                              duration: 0.26,
+                              ease: [0.22, 1, 0.36, 1],
+                            }}
+                            className="overflow-hidden bg-slate-50/70"
                           >
-                            <td className="px-6 py-3.5">
-                              <div className="ml-11 h-px w-8 bg-gray-200" />
-                            </td>
-                            <td className="px-6 py-3.5 text-xs font-semibold text-gray-400">
-                              Sale #{sale.id}
-                            </td>
-                            <td className="px-6 py-3.5">
-                              <p className="text-sm font-medium text-gray-900">
-                                {getMedicineDisplayName(sale.medicine)}
-                              </p>
-                              {getMedicineGenericSubtitle(sale.medicine) ? (
-                                <p className="text-xs text-gray-500">
-                                  Generic:{" "}
-                                  {getMedicineGenericSubtitle(sale.medicine)}
-                                </p>
-                              ) : null}
-                            </td>
-                            <td className="px-6 py-3.5">
-                              <span className="inline-flex px-2 py-1 bg-blue-50 text-blue-700 text-xs font-semibold rounded-lg">
-                                {sale.medicine.group?.name || "Unknown Group"}
-                              </span>
-                            </td>
-                            <td className="px-6 py-3.5 text-sm text-gray-700 font-medium">
-                              {sale.purchase.company?.name || "Unknown Company"}
-                            </td>
-                            <td className="px-6 py-3.5 text-right text-sm font-bold text-gray-900">
-                              {formatNumber(getSaleQuantity(sale))}
-                            </td>
-                            <td className="px-6 py-3.5 text-right text-sm text-gray-700">
-                              {formatCurrency(getSaleUnitPrice(sale))}
-                            </td>
-                            <td className="px-6 py-3.5 text-right">
-                              <span className="text-sm font-bold text-blue-700">
-                                {formatCurrency(getSaleTotalAmount(sale))}
-                              </span>
-                            </td>
-                            <td className="px-6 py-3.5">
-                              <div className="flex flex-col items-start gap-1">
-                                {sale.packageCode ? (
-                                  <span
-                                    className="inline-flex items-center gap-1 rounded-lg border border-pink-100 bg-pink-50 px-2 py-1 text-[11px] font-semibold text-pink-700"
-                                    title={`Package: ${sale.packageCode}`}
-                                  >
-                                    {sale.operationName || sale.packageCode} package
-                                  </span>
-                                ) : null}
-                                {sale.admission?.admissionNumber ? (
-                                  <span
-                                    className="inline-flex items-center gap-1 rounded-lg border border-emerald-100 bg-emerald-50 px-2 py-1 text-[11px] font-semibold text-emerald-700"
-                                    title="This sale came from an admission"
-                                  >
-                                    Admission: {sale.admission.admissionNumber}
-                                  </span>
-                                ) : !sale.packageCode ? (
-                                  <span className="text-xs font-medium text-gray-400">
-                                    Walk-in
-                                  </span>
-                                ) : null}
+                            <div className="border-y border-slate-100 px-6 py-3">
+                              <div className="ml-11 grid grid-cols-[minmax(180px,1.35fr)_minmax(130px,1fr)_90px_110px_120px_minmax(150px,1fr)] gap-4 px-4 pb-2 text-[9px] font-black uppercase tracking-widest text-slate-400">
+                                <span>Medicine</span>
+                                <span>Group & company</span>
+                                <span className="text-right">Qty</span>
+                                <span className="text-right">Unit price</span>
+                                <span className="text-right">Line total</span>
+                                <span>Source & date</span>
                               </div>
-                            </td>
-                            <td className="px-6 py-3.5 text-sm text-gray-600">
-                              {formatDate(sale.saleDate)}
-                            </td>
-                          </motion.tr>
-                        ))
-                      : null}
+                              <div className="ml-11 space-y-1.5">
+                                {group.sales.map((sale, index) => (
+                                  <motion.div
+                                    key={sale.id}
+                                    initial={{ opacity: 0, y: -6 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{
+                                      delay: Math.min(index * 0.025, 0.2),
+                                      duration: 0.18,
+                                    }}
+                                    className="grid grid-cols-[minmax(180px,1.35fr)_minmax(130px,1fr)_90px_110px_120px_minmax(150px,1fr)] items-center gap-4 rounded-xl border border-slate-100 bg-white px-4 py-3 shadow-[0_1px_2px_rgba(15,23,42,0.03)] transition hover:border-blue-100 hover:shadow-sm"
+                                  >
+                                    <div className="min-w-0">
+                                      <p className="truncate text-sm font-bold text-slate-900">
+                                        {getMedicineDisplayName(sale.medicine)}
+                                      </p>
+                                      {getMedicineGenericSubtitle(
+                                        sale.medicine,
+                                      ) ? (
+                                        <p className="truncate text-[11px] text-slate-500">
+                                          {getMedicineGenericSubtitle(
+                                            sale.medicine,
+                                          )}
+                                        </p>
+                                      ) : null}
+                                    </div>
+                                    <div className="min-w-0">
+                                      <p className="truncate text-xs font-semibold text-blue-700">
+                                        {sale.medicine.group?.name ||
+                                          "Unknown Group"}
+                                      </p>
+                                      <p className="truncate text-[11px] text-slate-500">
+                                        {sale.purchase.company?.name ||
+                                          "Unknown Company"}
+                                      </p>
+                                    </div>
+                                    <span className="text-right text-sm font-bold text-slate-900">
+                                      {formatNumber(getSaleQuantity(sale))}
+                                    </span>
+                                    <span className="text-right text-xs font-semibold text-slate-600">
+                                      {formatCurrency(getSaleUnitPrice(sale))}
+                                    </span>
+                                    <span className="text-right text-sm font-black text-blue-700">
+                                      {formatCurrency(
+                                        getSaleTotalAmount(sale),
+                                      )}
+                                    </span>
+                                    <div className="min-w-0">
+                                      <div className="flex flex-wrap gap-1">
+                                        {sale.packageCode ? (
+                                          <span className="truncate rounded-md border border-pink-100 bg-pink-50 px-1.5 py-0.5 text-[10px] font-semibold text-pink-700">
+                                            {sale.operationName ||
+                                              sale.packageCode}
+                                          </span>
+                                        ) : null}
+                                        {sale.admission?.admissionNumber ? (
+                                          <span className="truncate rounded-md border border-emerald-100 bg-emerald-50 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-700">
+                                            {sale.admission.admissionNumber}
+                                          </span>
+                                        ) : !sale.packageCode ? (
+                                          <span className="text-[10px] font-semibold text-slate-400">
+                                            Walk-in
+                                          </span>
+                                        ) : null}
+                                      </div>
+                                      <p className="mt-1 text-[11px] font-medium text-slate-500">
+                                        {formatDate(sale.saleDate)} · Sale #
+                                        {sale.id}
+                                      </p>
+                                    </div>
+                                  </motion.div>
+                                ))}
+                              </div>
+                            </div>
+                          </motion.div>
+                        </td>
+                      </motion.tr>
+                    ) : null}
                   </AnimatePresence>
                 </React.Fragment>
               ))}
@@ -413,7 +448,7 @@ const SaleTable: React.FC = () => {
         {/* Mobile Cards */}
         <div className="md:hidden divide-y divide-gray-100">
           {patientGroups.map((group) => (
-            <div key={group.key} className="p-4">
+            <motion.div layout key={group.key} className="p-4">
               <button
                 type="button"
                 onClick={() => togglePatientGroup(group.key)}
@@ -423,13 +458,15 @@ const SaleTable: React.FC = () => {
               >
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
-                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-gray-50 text-gray-500">
-                      {isPatientGroupExpanded(group.key) ? (
-                        <ChevronDown className="h-4 w-4" />
-                      ) : (
-                        <ChevronRight className="h-4 w-4" />
-                      )}
-                    </span>
+                    <motion.span
+                      animate={{
+                        rotate: isPatientGroupExpanded(group.key) ? 90 : 0,
+                      }}
+                      transition={{ duration: 0.18, ease: "easeOut" }}
+                      className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-gray-50 text-gray-500"
+                    >
+                      <ChevronRight className="h-4 w-4" />
+                    </motion.span>
                     <div className="min-w-0">
                       <p className="truncate text-sm font-black text-gray-900">
                         {group.patientName}
@@ -469,9 +506,15 @@ const SaleTable: React.FC = () => {
                     className="overflow-hidden"
                   >
                     <div className="mt-3 space-y-2 border-l border-gray-200 pl-3">
-                      {group.sales.map((sale) => (
-                        <div
+                      {group.sales.map((sale, index) => (
+                        <motion.div
                           key={sale.id}
+                          initial={{ opacity: 0, y: -5 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{
+                            delay: Math.min(index * 0.025, 0.18),
+                            duration: 0.18,
+                          }}
                           className="rounded-lg border border-gray-100 bg-gray-50/60 p-3"
                         >
                           <div className="flex items-start justify-between gap-3">
@@ -522,13 +565,13 @@ const SaleTable: React.FC = () => {
                               {formatDate(sale.saleDate)}
                             </span>
                           </div>
-                        </div>
+                        </motion.div>
                       ))}
                     </div>
                   </motion.div>
                 ) : null}
               </AnimatePresence>
-            </div>
+            </motion.div>
           ))}
         </div>
       </div>
@@ -538,13 +581,13 @@ const SaleTable: React.FC = () => {
           <Pagination
             currentPage={currentPage}
             totalPages={totalPages}
-            totalResults={total}
+            totalResults={totalPatients}
             startIndex={startIndex}
             endIndex={endIndex}
-            onPageChange={(page) => setFilter("page", page)}
-            onPrev={() => setFilter("page", Math.max(1, currentPage - 1))}
+            onPageChange={changePage}
+            onPrev={() => changePage(Math.max(1, currentPage - 1))}
             onNext={() =>
-              setFilter("page", Math.min(totalPages, currentPage + 1))
+              changePage(Math.min(totalPages, currentPage + 1))
             }
           />
         </div>

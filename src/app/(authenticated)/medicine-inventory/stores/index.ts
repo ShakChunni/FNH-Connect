@@ -164,7 +164,7 @@ const defaultSaleFilters: SaleFilters = {
   startDate: undefined,
   endDate: undefined,
   page: 1,
-  limit: 20,
+  limit: 10,
 };
 
 export const useSaleFilterStore = create<SaleFilterState>((set) => ({

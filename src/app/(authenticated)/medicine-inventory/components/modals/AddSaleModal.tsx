@@ -542,20 +542,21 @@ const AddSaleModal: React.FC<AddSaleModalProps> = ({ isOpen, onClose }) => {
     ) / 100;
 
   return (
-    <AnimatePresence
-      mode="wait"
-      onExitComplete={() => {
-        resetForm();
-        setApplyConfirmOpen(false);
-        setClearRowsConfirmOpen(false);
-        setPatientChangeConfirmOpen(false);
-        setCloseWithItemsConfirmOpen(false);
-        setSubmitConfirmOpen(false);
-        setPendingPatientSelection(null);
-      }}
-    >
-      {isOpen && (
-        <motion.div
+    <>
+      <AnimatePresence
+        mode="wait"
+        onExitComplete={() => {
+          resetForm();
+          setApplyConfirmOpen(false);
+          setClearRowsConfirmOpen(false);
+          setPatientChangeConfirmOpen(false);
+          setCloseWithItemsConfirmOpen(false);
+          setSubmitConfirmOpen(false);
+          setPendingPatientSelection(null);
+        }}
+      >
+        {isOpen && (
+          <motion.div
           key="sale-modal"
           className="fixed inset-0 z-100000 flex items-center justify-center bg-slate-900/70 sm:p-4"
           variants={backdropVariants}
@@ -922,8 +923,9 @@ const AddSaleModal: React.FC<AddSaleModalProps> = ({ isOpen, onClose }) => {
             />
 
           </motion.div>
-        </motion.div>
-      )}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <ConfirmModal
         key="apply-package-confirmation"
@@ -1022,7 +1024,7 @@ const AddSaleModal: React.FC<AddSaleModalProps> = ({ isOpen, onClose }) => {
         {formData.patient?.fullName ?? "the selected patient"} at{" "}
         {formatCurrency(totalAmount)}?
       </ConfirmModal>
-    </AnimatePresence>
+    </>
   );
 };
 

@@ -4,6 +4,9 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import axios from "axios";
 import {
   Building2,
+  Check,
+  ChevronDown,
+  CircleAlert,
   Loader2,
   Package,
   Plus,
@@ -16,6 +19,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { api } from "@/lib/axios";
 import { useNotification } from "@/hooks/useNotification";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
+import { DropdownPortal } from "@/components/ui/DropdownPortal";
 import { ModalHeader } from "@/components/ui/ModalHeader";
 import {
   backdropVariants,
@@ -45,6 +49,7 @@ interface DepartmentOption {
 }
 
 interface DraftPackageItem {
+  clientId: string;
   templateName: string;
   aliasesText: string;
   quantity: number;
@@ -61,7 +66,13 @@ interface PackageApiResponse {
   error?: string;
 }
 
+const createDraftItemId = () =>
+  typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+    ? crypto.randomUUID()
+    : `package-item-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+
 const blankItem = (): DraftPackageItem => ({
+  clientId: createDraftItemId(),
   templateName: "",
   aliasesText: "",
   quantity: 1,
@@ -92,70 +103,152 @@ const toDraft = (definition: MedicinePackageDefinition) => ({
   departmentId: definition.departmentId,
   departmentName: definition.departmentName,
   items: definition.items.map((item) => ({
+    clientId: createDraftItemId(),
     templateName: item.templateName,
     aliasesText: item.aliases.join(", "),
     quantity: item.quantity,
   })),
 });
 
+const PackageManagerSkeleton: React.FC = () => (
+  <div
+    className="grid min-h-0 flex-1 animate-pulse grid-cols-1 grid-rows-[auto_minmax(0,1fr)] overflow-hidden md:grid-cols-[260px_minmax(0,1fr)] md:grid-rows-1"
+    aria-busy="true"
+    aria-label="Loading medicine packages"
+  >
+    <aside className="border-b border-gray-100 bg-gray-50/70 p-3 md:border-b-0 md:border-r md:p-4">
+      <div className="mb-3 flex items-center justify-between">
+        <div className="space-y-2">
+          <div className="h-3 w-20 rounded bg-gray-200" />
+          <div className="h-2.5 w-28 rounded bg-gray-200/80" />
+        </div>
+        <div className="h-8 w-14 rounded-lg bg-indigo-100" />
+      </div>
+      <div className="flex gap-2 overflow-hidden md:block md:space-y-2">
+        {[0, 1, 2].map((item) => (
+          <div
+            key={item}
+            className="min-w-[210px] space-y-2 rounded-xl border border-gray-200 bg-white p-3 md:min-w-0"
+          >
+            <div className="h-3 w-3/4 rounded bg-gray-200" />
+            <div className="h-2.5 w-1/2 rounded bg-gray-100" />
+            <div className="h-2.5 w-5/6 rounded bg-gray-100" />
+          </div>
+        ))}
+      </div>
+    </aside>
+
+    <section className="min-h-0 overflow-hidden p-3 sm:p-6">
+      <div className="mb-5 space-y-2">
+        <div className="h-4 w-28 rounded bg-gray-200" />
+        <div className="h-3 w-72 max-w-full rounded bg-gray-100" />
+      </div>
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {[0, 1, 2, 3].map((item) => (
+          <div key={item} className="space-y-2">
+            <div className="h-2.5 w-20 rounded bg-gray-200" />
+            <div className="h-9 rounded-lg bg-gray-100" />
+          </div>
+        ))}
+      </div>
+      <div className="mt-6 overflow-hidden rounded-2xl border border-gray-200">
+        <div className="flex items-center justify-between border-b border-gray-200 bg-gray-50 p-4">
+          <div className="space-y-2">
+            <div className="h-3 w-32 rounded bg-gray-200" />
+            <div className="h-2.5 w-56 max-w-full rounded bg-gray-200/70" />
+          </div>
+          <div className="h-8 w-20 rounded-lg bg-indigo-100" />
+        </div>
+        <div className="space-y-3 p-3 sm:p-4">
+          {[0, 1, 2].map((item) => (
+            <div
+              key={item}
+              className="grid gap-2 rounded-xl bg-gray-50 p-3 sm:grid-cols-[1fr_1.4fr_90px_38px]"
+            >
+              <div className="h-9 rounded-lg bg-gray-200/80" />
+              <div className="h-9 rounded-lg bg-gray-200/70" />
+              <div className="h-9 rounded-lg bg-gray-200/70" />
+              <div className="h-9 rounded-lg bg-rose-100" />
+            </div>
+          ))}
+        </div>
+      </div>
+      <span className="sr-only">Loading medicine package editor</span>
+    </section>
+  </div>
+);
+
 const ManageMedicinePackagesModal: React.FC<ManageMedicinePackagesModalProps> = ({
   isOpen,
   onClose,
 }) => {
   const popupRef = useRef<HTMLDivElement>(null);
+  const departmentButtonRef = useRef<HTMLButtonElement>(null);
   const queryClient = useQueryClient();
   const { showNotification } = useNotification();
   const [definitions, setDefinitions] = useState<MedicinePackageDefinition[]>([]);
   const [departments, setDepartments] = useState<DepartmentOption[]>([]);
   const [editingCode, setEditingCode] = useState<string | null>(null);
   const [draft, setDraft] = useState(blankPackage);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
-  const [deleteTarget, setDeleteTarget] = useState<MedicinePackageDefinition | null>(null);
+  const [deleteTarget, setDeleteTarget] =
+    useState<MedicinePackageDefinition | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isDepartmentOpen, setIsDepartmentOpen] = useState(false);
   const isLucsDraft = draft.code.trim().toUpperCase() === "LUCS_OT_MEDICINE";
 
-  const loadDefinitions = useCallback(async (preferredCode?: string) => {
-    setIsLoading(true);
-    try {
-      const [response, departmentsResponse] = await Promise.all([
-        api.get<PackageApiResponse>(
-          "/medicine-inventory/sale-packages?mode=manage",
-        ),
-        api.get<{ success: boolean; data: DepartmentOption[] }>(
-          "/departments",
-        ),
-      ]);
-      if (!response.data.success || !Array.isArray(response.data.data)) {
-        throw new Error(response.data.error || "Failed to load medicine packages");
-      }
+  const loadDefinitions = useCallback(
+    async (preferredCode?: string) => {
+      setIsLoading(true);
+      setLoadError(null);
+      try {
+        const [response, departmentsResponse] = await Promise.all([
+          api.get<PackageApiResponse>(
+            "/medicine-inventory/sale-packages?mode=manage",
+          ),
+          api.get<{ success: boolean; data: DepartmentOption[] }>(
+            "/departments",
+          ),
+        ]);
+        if (!response.data.success || !Array.isArray(response.data.data)) {
+          throw new Error(
+            response.data.error || "Failed to load medicine packages",
+          );
+        }
 
-      const nextDefinitions = response.data.data;
-      setDefinitions(nextDefinitions);
-      if (departmentsResponse.data.success) {
-        setDepartments(departmentsResponse.data.data);
+        const nextDefinitions = response.data.data;
+        setDefinitions(nextDefinitions);
+        if (departmentsResponse.data.success) {
+          setDepartments(departmentsResponse.data.data);
+        }
+        const nextCode =
+          preferredCode &&
+          nextDefinitions.some((item) => item.code === preferredCode)
+            ? preferredCode
+            : nextDefinitions[0]?.code;
+        const selected = nextDefinitions.find((item) => item.code === nextCode);
+        if (selected) {
+          setEditingCode(selected.code);
+          setDraft(toDraft(selected));
+        } else {
+          setEditingCode(null);
+          setDraft(blankPackage());
+        }
+      } catch (error) {
+        const message = getErrorMessage(
+          error,
+          "Failed to load medicine packages",
+        );
+        setLoadError(message);
+        showNotification(message, "error");
+      } finally {
+        setIsLoading(false);
       }
-      const nextCode =
-        preferredCode && nextDefinitions.some((item) => item.code === preferredCode)
-          ? preferredCode
-          : nextDefinitions[0]?.code;
-      const selected = nextDefinitions.find((item) => item.code === nextCode);
-      if (selected) {
-        setEditingCode(selected.code);
-        setDraft(toDraft(selected));
-      } else {
-        setEditingCode(null);
-        setDraft(blankPackage());
-      }
-    } catch (error) {
-      showNotification(
-        getErrorMessage(error, "Failed to load medicine packages"),
-        "error",
-      );
-    } finally {
-      setIsLoading(false);
-    }
-  }, [showNotification]);
+    },
+    [showNotification],
+  );
 
   useEffect(() => {
     if (isOpen) {
@@ -172,20 +265,27 @@ const ManageMedicinePackagesModal: React.FC<ManageMedicinePackagesModalProps> = 
     if (!isOpen) return;
 
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape" && !isSaving && !isDeleting) onClose();
+      if (event.key !== "Escape") return;
+      if (isDepartmentOpen) {
+        setIsDepartmentOpen(false);
+        return;
+      }
+      if (!isSaving && !isDeleting) onClose();
     };
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [isDeleting, isOpen, isSaving, onClose]);
+  }, [isDeleting, isDepartmentOpen, isOpen, isSaving, onClose]);
 
   const selectDefinition = (definition: MedicinePackageDefinition) => {
     if (isSaving || isDeleting) return;
+    setIsDepartmentOpen(false);
     setEditingCode(definition.code);
     setDraft(toDraft(definition));
   };
 
   const startNew = () => {
     if (isSaving || isDeleting) return;
+    setIsDepartmentOpen(false);
     setEditingCode(null);
     setDraft(blankPackage());
   };
@@ -338,38 +438,84 @@ const ManageMedicinePackagesModal: React.FC<ManageMedicinePackagesModalProps> = 
     "w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs text-gray-700 outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100";
 
   return (
-    <AnimatePresence mode="wait">
-      {isOpen && (
-        <motion.div
-          className="fixed inset-0 z-100000 flex items-center justify-center bg-slate-900/70 sm:p-6"
-          variants={backdropVariants}
-          initial="hidden"
-          animate="visible"
-          exit="exit"
-          onMouseDown={(event) => {
-            if (event.target === event.currentTarget && !isSaving && !isDeleting) {
-              onClose();
-            }
-          }}
-        >
+    <>
+      <AnimatePresence
+        mode="wait"
+        onExitComplete={() => {
+          setDefinitions([]);
+          setDepartments([]);
+          setEditingCode(null);
+          setDraft(blankPackage());
+          setLoadError(null);
+          setIsDepartmentOpen(false);
+          setIsLoading(true);
+        }}
+      >
+        {isOpen && (
           <motion.div
-            ref={popupRef}
-            className="flex h-[100dvh] max-h-none w-full max-w-6xl flex-col overflow-hidden bg-white shadow-2xl sm:h-auto sm:max-h-[92vh] sm:rounded-3xl"
-            variants={modalVariants}
+            key="manage-medicine-packages-modal"
+            className="fixed inset-0 z-100000 flex items-center justify-center bg-slate-900/70 sm:p-6"
+            variants={backdropVariants}
             initial="hidden"
             animate="visible"
             exit="exit"
-            onMouseDown={(event) => event.stopPropagation()}
+            onMouseDown={(event) => {
+              if (
+                event.target === event.currentTarget &&
+                !isSaving &&
+                !isDeleting
+              ) {
+                onClose();
+              }
+            }}
           >
-            <ModalHeader
-              icon={Package}
-              iconColor="indigo"
-              title="Manage medicine packages"
-              subtitle="Create, edit, or remove reusable medicine bundles"
-              onClose={onClose}
-              isDisabled={isSaving || isDeleting}
-            />
+            <motion.div
+              ref={popupRef}
+              className="flex h-[100dvh] max-h-none w-full max-w-6xl flex-col overflow-hidden bg-white shadow-2xl sm:h-auto sm:max-h-[92vh] sm:rounded-3xl"
+              variants={modalVariants}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
+              onMouseDown={(event) => event.stopPropagation()}
+            >
+              <ModalHeader
+                icon={Package}
+                iconColor="indigo"
+                title="Manage medicine packages"
+                subtitle="Create, edit, or remove reusable medicine bundles"
+                onClose={onClose}
+                isDisabled={isSaving || isDeleting}
+              />
 
+            {isLoading ? (
+              <PackageManagerSkeleton />
+            ) : loadError ? (
+              <div className="flex min-h-0 flex-1 items-center justify-center p-6">
+                <motion.div
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="w-full max-w-sm rounded-2xl border border-rose-100 bg-rose-50/60 p-5 text-center"
+                  role="alert"
+                >
+                  <span className="mx-auto grid h-11 w-11 place-items-center rounded-xl bg-white text-rose-600 shadow-sm">
+                    <CircleAlert className="h-5 w-5" />
+                  </span>
+                  <h3 className="mt-3 text-sm font-bold text-slate-900">
+                    Could not load packages
+                  </h3>
+                  <p className="mt-1 text-xs leading-5 text-slate-600">
+                    {loadError}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => void loadDefinitions()}
+                    className="mt-4 inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-xs font-bold text-white transition hover:bg-indigo-700"
+                  >
+                    Try again
+                  </button>
+                </motion.div>
+              </div>
+            ) : (
             <div className="grid min-h-0 flex-1 grid-cols-1 grid-rows-[auto_minmax(0,1fr)] overflow-hidden md:grid-cols-[260px_minmax(0,1fr)] md:grid-rows-1">
               <aside className="shrink-0 border-b border-gray-100 bg-gray-50/70 p-3 md:min-h-0 md:border-b-0 md:border-r md:p-4">
                 <div className="mb-3 flex items-center justify-between gap-2">
@@ -377,45 +523,49 @@ const ManageMedicinePackagesModal: React.FC<ManageMedicinePackagesModalProps> = 
                     <p className="text-xs font-bold text-gray-800">Packages</p>
                     <p className="text-[11px] text-gray-500">Used by medicine sales</p>
                   </div>
-                  <button
+                  <motion.button
                     type="button"
                     onClick={startNew}
                     disabled={isLoading || isSaving || isDeleting}
+                    whileTap={{ scale: 0.96 }}
                     className="inline-flex items-center gap-1 rounded-lg bg-indigo-600 px-2.5 py-2 text-[11px] font-semibold text-white transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     <Plus className="h-3.5 w-3.5" />
                     New
-                  </button>
+                  </motion.button>
                 </div>
 
-                {isLoading ? (
-                  <div className="flex items-center justify-center gap-2 py-10 text-xs text-gray-500">
-                    <Loader2 className="h-4 w-4 animate-spin" /> Loading...
-                  </div>
-                ) : definitions.length ? (
+                {definitions.length ? (
                   <div className="flex gap-2 overflow-x-auto pb-1 md:block md:max-h-[calc(92vh-190px)] md:space-y-2 md:overflow-y-auto md:pb-0">
-                    {definitions.map((definition) => (
-                      <button
-                        key={definition.code}
-                        type="button"
-                        onClick={() => selectDefinition(definition)}
-                        className={`min-w-[210px] rounded-xl border px-3 py-3 text-left transition md:w-full md:min-w-0 ${
-                          editingCode === definition.code
-                            ? "border-indigo-300 bg-indigo-50 shadow-sm"
-                            : "border-gray-200 bg-white hover:border-indigo-200 hover:bg-indigo-50/50"
-                        }`}
-                      >
-                        <span className="block truncate text-xs font-bold text-gray-800">
-                          {definition.name}
-                        </span>
-                        <span className="mt-1 block truncate font-mono text-[10px] text-gray-500">
-                          {definition.code}
-                        </span>
-                        <span className="mt-1 block text-[10px] text-gray-500">
-                          {definition.items.length} medicine items · {definition.departmentName}
-                        </span>
-                      </button>
-                    ))}
+                    <AnimatePresence initial={false}>
+                      {definitions.map((definition) => (
+                        <motion.button
+                          layout
+                          key={definition.code}
+                          type="button"
+                          initial={{ opacity: 0, x: -8 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          exit={{ opacity: 0, x: -8, height: 0 }}
+                          whileTap={{ scale: 0.98 }}
+                          onClick={() => selectDefinition(definition)}
+                          className={`min-w-[210px] rounded-xl border px-3 py-3 text-left transition md:w-full md:min-w-0 ${
+                            editingCode === definition.code
+                              ? "border-indigo-300 bg-indigo-50 shadow-sm"
+                              : "border-gray-200 bg-white hover:border-indigo-200 hover:bg-indigo-50/50"
+                          }`}
+                        >
+                          <span className="block truncate text-xs font-bold text-gray-800">
+                            {definition.name}
+                          </span>
+                          <span className="mt-1 block truncate font-mono text-[10px] text-gray-500">
+                            {definition.code}
+                          </span>
+                          <span className="mt-1 block text-[10px] text-gray-500">
+                            {definition.items.length} medicine items · {definition.departmentName}
+                          </span>
+                        </motion.button>
+                      ))}
+                    </AnimatePresence>
                   </div>
                 ) : (
                   <p className="rounded-xl border border-dashed border-gray-300 bg-white p-4 text-center text-xs text-gray-500">
@@ -425,6 +575,14 @@ const ManageMedicinePackagesModal: React.FC<ManageMedicinePackagesModalProps> = 
               </aside>
 
               <section className="min-h-0 min-w-0 overflow-y-auto p-3 sm:p-6">
+                <AnimatePresence mode="wait" initial={false}>
+                  <motion.div
+                    key={editingCode ?? "new-package"}
+                    initial={{ opacity: 0, x: 10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -8 }}
+                    transition={{ duration: 0.18, ease: "easeOut" }}
+                  >
                 <div className="mb-5 flex items-start justify-between gap-3">
                   <div>
                     <p className="text-sm font-bold text-gray-900">
@@ -480,59 +638,134 @@ const ManageMedicinePackagesModal: React.FC<ManageMedicinePackagesModalProps> = 
                       className={inputClass}
                     />
                   </label>
-                  <label className="block">
+                  <div className="block">
                     <span className="mb-1.5 block text-[11px] font-semibold text-gray-700">
                       Department *
                     </span>
                     <div className="relative">
                       <Building2 className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-400" />
-                      <select
-                        value={
-                          draft.departmentName === "All Departments"
-                            ? "all"
-                            : draft.departmentId?.toString() ?? ""
+                      <button
+                        ref={departmentButtonRef}
+                        type="button"
+                        onClick={() =>
+                          setIsDepartmentOpen((current) => !current)
                         }
-                        onChange={(event) => {
-                          if (event.target.value === "all") {
+                        disabled={isLucsDraft || isSaving || isDeleting}
+                        className={`${inputClass} flex items-center justify-between gap-2 pl-9 text-left disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-500`}
+                        aria-expanded={isDepartmentOpen}
+                        aria-haspopup="listbox"
+                      >
+                        <span
+                          className={
+                            draft.departmentName
+                              ? "truncate font-medium text-gray-700"
+                              : "truncate text-gray-400"
+                          }
+                        >
+                          {draft.departmentName || "Select department"}
+                        </span>
+                        <ChevronDown
+                          className={`h-4 w-4 shrink-0 text-gray-400 transition-transform duration-200 ${
+                            isDepartmentOpen ? "rotate-180" : ""
+                          }`}
+                        />
+                      </button>
+                    </div>
+
+                    <DropdownPortal
+                      isOpen={isDepartmentOpen}
+                      onClose={() => setIsDepartmentOpen(false)}
+                      buttonRef={departmentButtonRef}
+                      className="min-w-[240px]"
+                    >
+                      <div
+                        className="max-h-[min(320px,50vh)] overflow-y-auto p-1.5"
+                        role="listbox"
+                        aria-label="Package department"
+                      >
+                        {draft.departmentName &&
+                          draft.departmentName !== "All Departments" &&
+                          !departments.some(
+                            (department) =>
+                              department.id === draft.departmentId,
+                          ) && (
+                            <div className="mb-1 rounded-lg bg-amber-50 px-3 py-2 text-[11px] font-medium text-amber-800">
+                              Current legacy department: {draft.departmentName}
+                            </div>
+                          )}
+
+                        {departments.map((department) => {
+                          const isSelected =
+                            draft.departmentId === department.id &&
+                            draft.departmentName !== "All Departments";
+                          return (
+                            <button
+                              key={department.id}
+                              type="button"
+                              role="option"
+                              aria-selected={isSelected}
+                              onClick={() => {
+                                setDraft((current) => ({
+                                  ...current,
+                                  departmentId: department.id,
+                                  departmentName: department.name,
+                                }));
+                                setIsDepartmentOpen(false);
+                              }}
+                              className={`flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2.5 text-left text-xs transition ${
+                                isSelected
+                                  ? "bg-indigo-600 font-semibold text-white"
+                                  : "text-gray-700 hover:bg-indigo-50 hover:text-indigo-800"
+                              }`}
+                            >
+                              <span className="truncate">{department.name}</span>
+                              {isSelected && <Check className="h-4 w-4" />}
+                            </button>
+                          );
+                        })}
+
+                        <div className="my-1.5 border-t border-gray-100" />
+                        <button
+                          type="button"
+                          role="option"
+                          aria-selected={
+                            draft.departmentName === "All Departments"
+                          }
+                          onClick={() => {
                             setDraft((current) => ({
                               ...current,
                               departmentId: null,
                               departmentName: "All Departments",
                             }));
-                            return;
-                          }
-                          const selected = departments.find(
-                            (department) =>
-                              department.id === Number(event.target.value),
-                          );
-                          setDraft((current) => ({
-                            ...current,
-                            departmentId: selected?.id ?? null,
-                            departmentName: selected?.name ?? "",
-                          }));
-                        }}
-                        disabled={isLucsDraft || isSaving || isDeleting}
-                        className={`${inputClass} appearance-none pl-9`}
-                      >
-                        <option value="" disabled>Select department</option>
-                        {departments.map((department) => (
-                          <option key={department.id} value={department.id}>
-                            {department.name}
-                          </option>
-                        ))}
-                        <option value="all">All Departments (global)</option>
-                        {draft.departmentName &&
-                        draft.departmentName !== "All Departments" &&
-                        !departments.some(
-                          (department) => department.id === draft.departmentId,
-                        ) ? (
-                          <option value={draft.departmentId ?? ""}>
-                            {draft.departmentName} (inactive/legacy)
-                          </option>
-                        ) : null}
-                      </select>
-                    </div>
-                  </label>
+                            setIsDepartmentOpen(false);
+                          }}
+                          className={`flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2.5 text-left transition ${
+                            draft.departmentName === "All Departments"
+                              ? "bg-indigo-600 text-white"
+                              : "text-gray-700 hover:bg-indigo-50 hover:text-indigo-800"
+                          }`}
+                        >
+                          <span>
+                            <span className="block text-xs font-semibold">
+                              All Departments
+                            </span>
+                            <span
+                              className={`block text-[10px] ${
+                                draft.departmentName === "All Departments"
+                                  ? "text-indigo-100"
+                                  : "text-gray-400"
+                              }`}
+                            >
+                              Make this preset available globally
+                            </span>
+                          </span>
+                          {draft.departmentName === "All Departments" && (
+                            <Check className="h-4 w-4" />
+                          )}
+                        </button>
+                      </div>
+                    </DropdownPortal>
+                  </div>
                 </div>
 
                 <div className="mt-6 rounded-2xl border border-gray-200">
@@ -541,19 +774,29 @@ const ManageMedicinePackagesModal: React.FC<ManageMedicinePackagesModalProps> = 
                       <p className="text-xs font-bold text-gray-800">Package medicines</p>
                       <p className="text-[11px] text-gray-500">Add the catalog spelling and optional alternate names.</p>
                     </div>
-                    <button
+                    <motion.button
                       type="button"
                       onClick={addItem}
                       disabled={isSaving || isDeleting}
+                      whileTap={{ scale: 0.96 }}
                       className="inline-flex items-center gap-1.5 rounded-lg border border-indigo-200 bg-white px-2.5 py-2 text-[11px] font-semibold text-indigo-700 transition hover:bg-indigo-50 disabled:opacity-50"
                     >
                       <Plus className="h-3.5 w-3.5" /> Add item
-                    </button>
+                    </motion.button>
                   </div>
 
                   <div className="space-y-3 p-3 sm:p-4">
+                    <AnimatePresence initial={false}>
                     {draft.items.map((item, index) => (
-                      <div key={index} className="grid gap-2 rounded-xl border border-gray-100 bg-gray-50/70 p-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)_90px_auto] sm:items-end">
+                      <motion.div
+                        layout
+                        key={item.clientId}
+                        initial={{ opacity: 0, height: 0, y: -8 }}
+                        animate={{ opacity: 1, height: "auto", y: 0 }}
+                        exit={{ opacity: 0, height: 0, x: 12 }}
+                        transition={{ duration: 0.2, ease: "easeOut" }}
+                        className="grid overflow-hidden gap-2 rounded-xl border border-gray-100 bg-gray-50/70 p-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)_90px_auto] sm:items-end"
+                      >
                         <label className="block">
                           <span className="mb-1 block text-[10px] font-semibold text-gray-600">Template / catalog name *</span>
                           <input
@@ -596,16 +839,26 @@ const ManageMedicinePackagesModal: React.FC<ManageMedicinePackagesModalProps> = 
                           <X className="h-3.5 w-3.5" />
                           <span className="sm:hidden">Remove</span>
                         </button>
-                      </div>
+                      </motion.div>
                     ))}
+                    </AnimatePresence>
                   </div>
                 </div>
 
-                {validationError && (
-                  <p className="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-xs font-medium text-amber-800">
-                    {validationError}
-                  </p>
-                )}
+                <AnimatePresence initial={false}>
+                  {validationError && (
+                    <motion.p
+                      initial={{ opacity: 0, height: 0, y: -4 }}
+                      animate={{ opacity: 1, height: "auto", y: 0 }}
+                      exit={{ opacity: 0, height: 0, y: -4 }}
+                      transition={{ duration: 0.18, ease: "easeOut" }}
+                      className="mt-3 overflow-hidden rounded-lg bg-amber-50 px-3 py-2 text-xs font-medium text-amber-800"
+                      role="status"
+                    >
+                      {validationError}
+                    </motion.p>
+                  )}
+                </AnimatePresence>
 
                 <div className="sticky bottom-0 z-10 -mx-3 mt-5 flex justify-end gap-2 border-t border-gray-100 bg-white/95 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 backdrop-blur sm:static sm:mx-0 sm:bg-transparent sm:px-0 sm:pb-0 sm:pt-4">
                   <button
@@ -616,22 +869,26 @@ const ManageMedicinePackagesModal: React.FC<ManageMedicinePackagesModalProps> = 
                   >
                     Close
                   </button>
-                  <button
+                  <motion.button
                     type="button"
                     onClick={() => void handleSave()}
                     disabled={Boolean(validationError) || isLoading || isSaving || isDeleting}
+                    whileTap={{ scale: 0.97 }}
                     className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2.5 text-xs font-semibold text-white transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {isSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
                     {isSaving ? "Saving..." : editingCode ? "Save changes" : "Create package"}
-                  </button>
+                  </motion.button>
                 </div>
+                  </motion.div>
+                </AnimatePresence>
               </section>
             </div>
+            )}
+            </motion.div>
           </motion.div>
-        </motion.div>
-      )}
-
+        )}
+      </AnimatePresence>
       <ConfirmModal
         isOpen={Boolean(deleteTarget)}
         title="Delete medicine package?"
@@ -646,7 +903,7 @@ const ManageMedicinePackagesModal: React.FC<ManageMedicinePackagesModalProps> = 
       >
         This removes <strong>{deleteTarget?.name}</strong> from the reusable sale package list. Existing sale records are not changed.
       </ConfirmModal>
-    </AnimatePresence>
+    </>
   );
 };
 

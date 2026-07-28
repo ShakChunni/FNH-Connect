@@ -16,6 +16,7 @@ import {
   formatCurrency,
   formatNumber,
   formatDate,
+  PRINT_TABLE_HEADER,
   safeText,
   checkNewPage,
 } from "./reportHelpers";
@@ -140,8 +141,8 @@ export const buildDetailedMedicineInventoryReportDocument = async (
         body: medicineRows,
         theme: "plain",
         headStyles: {
-          fillColor: COLORS.primary,
-          textColor: [255, 255, 255],
+          fillColor: PRINT_TABLE_HEADER.neutral,
+          textColor: PRINT_TABLE_HEADER.text,
           fontStyle: "bold",
           fontSize: 7,
           cellPadding: 2,
@@ -235,8 +236,8 @@ export const buildDetailedMedicineInventoryReportDocument = async (
         body: lowStockRows,
         theme: "plain",
         headStyles: {
-          fillColor: COLORS.warning,
-          textColor: [255, 255, 255],
+          fillColor: PRINT_TABLE_HEADER.warning,
+          textColor: PRINT_TABLE_HEADER.text,
           fontStyle: "bold",
           fontSize: 7,
           cellPadding: 2,
@@ -329,8 +330,8 @@ export const buildDetailedMedicineInventoryReportDocument = async (
         body: purchaseRows,
         theme: "plain",
         headStyles: {
-          fillColor: COLORS.success,
-          textColor: [255, 255, 255],
+          fillColor: PRINT_TABLE_HEADER.success,
+          textColor: PRINT_TABLE_HEADER.text,
           fontStyle: "bold",
           fontSize: 7,
           cellPadding: 2,
@@ -421,8 +422,8 @@ export const buildDetailedMedicineInventoryReportDocument = async (
           body: saleRows,
           theme: "plain",
           headStyles: {
-            fillColor: [30, 41, 59],
-            textColor: [255, 255, 255],
+            fillColor: PRINT_TABLE_HEADER.accent,
+            textColor: PRINT_TABLE_HEADER.text,
             fontStyle: "bold",
             fontSize: 7,
             cellPadding: 2,

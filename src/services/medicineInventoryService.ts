@@ -1718,7 +1718,7 @@ export async function getOldestPurchaseForMedicine(medicineId: number) {
 
 export async function getSales(filters: SaleFilters) {
   const page = filters.page || 1;
-  const limit = filters.limit || 20;
+  const limit = filters.limit || 10;
   const skip = (page - 1) * limit;
 
   const where: Prisma.MedicineSaleWhereInput = {
@@ -1780,69 +1780,98 @@ export async function getSales(filters: SaleFilters) {
       : {}),
   };
 
-  const [sales, total] = await Promise.all([
-    prisma.medicineSale.findMany({
+  const [patientPage, allPatientGroups, totalSaleLines] = await Promise.all([
+    prisma.medicineSale.groupBy({
+      by: ["patientId"],
       where,
-      select: {
-        id: true,
-        quantity: true,
-        unitPrice: true,
-        totalAmount: true,
+      _max: {
         saleDate: true,
-        createdAt: true,
-        admissionId: true,
-        packageCode: true,
-        operationName: true,
-        admission: {
-          select: {
-            id: true,
-            admissionNumber: true,
-          },
-        },
-        patient: {
-          select: {
-            id: true,
-            fullName: true,
-            phoneNumber: true,
-          },
-        },
-        medicine: {
-          select: {
-            id: true,
-            genericName: true,
-            brandName: true,
-            group: {
-              select: {
-                id: true,
-                name: true,
-              },
-            },
-          },
-        },
-        purchase: {
-          select: {
-            id: true,
-            invoiceNumber: true,
-            batchNumber: true,
-            company: {
-              select: {
-                id: true,
-                name: true,
-              },
-            },
-          },
-        },
       },
-      orderBy: { saleDate: "desc" },
+      orderBy: [
+        {
+          _max: {
+            saleDate: "desc",
+          },
+        },
+        {
+          patientId: "desc",
+        },
+      ],
       skip,
       take: limit,
+    }),
+    prisma.medicineSale.groupBy({
+      by: ["patientId"],
+      where,
     }),
     prisma.medicineSale.count({ where }),
   ]);
 
+  const patientIds = patientPage.map((group) => group.patientId);
+  const sales =
+    patientIds.length === 0
+      ? []
+      : await prisma.medicineSale.findMany({
+          where: {
+            AND: [where, { patientId: { in: patientIds } }],
+          },
+          select: {
+            id: true,
+            quantity: true,
+            unitPrice: true,
+            totalAmount: true,
+            saleDate: true,
+            createdAt: true,
+            admissionId: true,
+            packageCode: true,
+            operationName: true,
+            admission: {
+              select: {
+                id: true,
+                admissionNumber: true,
+              },
+            },
+            patient: {
+              select: {
+                id: true,
+                fullName: true,
+                phoneNumber: true,
+              },
+            },
+            medicine: {
+              select: {
+                id: true,
+                genericName: true,
+                brandName: true,
+                group: {
+                  select: {
+                    id: true,
+                    name: true,
+                  },
+                },
+              },
+            },
+            purchase: {
+              select: {
+                id: true,
+                invoiceNumber: true,
+                batchNumber: true,
+                company: {
+                  select: {
+                    id: true,
+                    name: true,
+                  },
+                },
+              },
+            },
+          },
+          orderBy: [{ saleDate: "desc" }, { id: "desc" }],
+        });
+
   return {
     sales: sales.map(transformMedicineSaleForResponse),
-    total,
+    total: allPatientGroups.length,
+    totalSaleLines,
     page,
     limit,
   };

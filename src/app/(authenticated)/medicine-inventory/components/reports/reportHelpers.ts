@@ -25,6 +25,22 @@ export const COLORS = {
   warning: "#d97706",
 };
 
+/**
+ * Printer-safe table header colors.
+ *
+ * Dark fills with white type can disappear when a PDF is printed with
+ * grayscale, toner-saving, or background-suppression enabled. These pale
+ * fills retain section cues while the dark text stays readable even if a
+ * printer drops the fill entirely.
+ */
+export const PRINT_TABLE_HEADER = {
+  text: [15, 23, 42] as [number, number, number],
+  neutral: [226, 232, 240] as [number, number, number],
+  accent: [219, 234, 254] as [number, number, number],
+  success: [220, 252, 231] as [number, number, number],
+  warning: [254, 243, 199] as [number, number, number],
+};
+
 export const COMPANY_INFO = {
   name: "Feroza Nursing Home",
   address:
