@@ -1,5 +1,6 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import type { InfertilityPatientData } from "../src/app/(authenticated)/infertility/types";
+import type { PathologyPatientData } from "../src/app/(authenticated)/pathology/types";
 
 const generatedBlobs: Blob[] = [];
 
@@ -36,6 +37,9 @@ Object.defineProperty(URL, "revokeObjectURL", {
 async function main(): Promise<void> {
   const { generateInfertilitySummaryReport } = await import(
     "../src/app/(authenticated)/infertility/utils/generateSummaryReport"
+  );
+  const { generatePathologyReport } = await import(
+    "../src/app/(authenticated)/pathology/utils/generateReport"
   );
 
   const patients = Array.from({ length: 18 }, (_, index) => {
@@ -117,18 +121,42 @@ async function main(): Promise<void> {
     endDate: new Date(2026, 6, 20),
   });
 
+  const pathologyRows = Array.from({ length: 12 }, (_, index) => ({
+    id: index + 1,
+    testNumber: `PATH-26-${String(index + 1).padStart(5, "0")}`,
+    testDate: new Date(2026, 6, index + 1).toISOString(),
+    patientFullName: `Pathology Patient ${index + 1}`,
+    orderedBy: index % 2 === 0 ? "Dr. A" : "Dr. B",
+    createdByName: "PDF QA",
+    testCategory: "Hematology",
+    testResults: { tests: ["CBC", "RBS"] },
+    isCompleted: index % 3 !== 0,
+    testCharge: 1000,
+    discountAmount: 100,
+    grandTotal: 900,
+    paidAmount: index % 4 === 0 ? 500 : 900,
+    dueAmount: index % 4 === 0 ? 400 : 0,
+  })) as PathologyPatientData[];
+
+  await generatePathologyReport(pathologyRows, "summary", {
+    startDate: new Date(2026, 6, 1),
+    endDate: new Date(2026, 6, 12),
+  });
+
   await mkdir("tmp/pdfs", { recursive: true });
+  const outputNames = [
+    "infertility-patient-financial-summary.pdf",
+    "infertility-patient-financial-detailed.pdf",
+    "pathology-summary.pdf",
+  ];
   await Promise.all(
     generatedBlobs.map(async (blob, index) => {
-      const name =
-        index === 0
-          ? "infertility-patient-financial-summary.pdf"
-          : "infertility-patient-financial-detailed.pdf";
+      const name = outputNames[index] ?? `report-${index + 1}.pdf`;
       await writeFile(`tmp/pdfs/${name}`, Buffer.from(await blob.arrayBuffer()));
     }),
   );
 
-  console.log(`Rendered ${generatedBlobs.length} infertility patient PDF files.`);
+  console.log(`Rendered ${generatedBlobs.length} clinical report PDF files.`);
 }
 
 void main().catch((error) => {
