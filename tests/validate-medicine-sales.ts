@@ -17,7 +17,12 @@ function saleMedicine(id: number, name: string) {
   };
 }
 
-function packageRow(medicineId: number, quantity: number) {
+function packageRow(
+  medicineId: number,
+  quantity: number,
+  packageItemName = `Medicine ${medicineId}`,
+  admissionId = 10,
+) {
   return {
     medicineId,
     medicineName: `Medicine ${medicineId}`,
@@ -29,8 +34,10 @@ function packageRow(medicineId: number, quantity: number) {
     quantity,
     unitPrice: 12,
     requestedMedicineName: null,
+    admissionId,
     operationName: "LUCS",
     packageCode: "LUCS_OT_MEDICINE",
+    packageItemName,
     matchReason: "test",
   };
 }
@@ -101,6 +108,18 @@ function run(): void {
   assert.ok(
     rows.some((row) => row.medicineId === 1),
     "applying LUCS must preserve manual rows",
+  );
+
+  useSaleFormStore.getState().applyPackage([
+    packageRow(1, 1),
+    packageRow(1, 1, "Alternate package item"),
+    packageRow(1, 1, "Medicine 1", 11),
+  ]);
+  rows = useSaleFormStore.getState().formData.items;
+  assert.equal(
+    rows.filter((row) => row.medicineId === 1).length,
+    4,
+    "manual, distinct package items, and distinct admissions must retain separate provenance",
   );
 
   const admissionStore = useAdmissionFormStore.getState();

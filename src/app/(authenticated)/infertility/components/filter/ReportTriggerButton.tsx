@@ -87,54 +87,69 @@ export const ReportTriggerButton: React.FC<ReportTriggerButtonProps> = ({
       return;
     }
 
-    if (reportType === "summary") {
+    const generateReport = async () => {
       try {
-        generateInfertilitySummaryReport(
-          normalizedData,
-          user?.fullName || "Staff"
-        );
-        toast.success("Summary report generated successfully!", {
-          id: "infertility-patient-report",
-        });
-      } catch (error) {
-        toast.error("Failed to generate summary report", {
-          id: "infertility-patient-report",
-        });
-        console.error(error);
-      } finally {
-        setIsGenerating(false);
-        setShouldFetch(false);
-        setReportType(null);
-      }
-    } else if (reportType === "detailed") {
-      try {
-        if (normalizedData.length === 1) {
-          generateInfertilityReport(
-            normalizedData[0],
-            user?.fullName || "Staff"
-          );
-        } else {
-          generateInfertilitySummaryReport(
+        if (reportType === "summary") {
+          await generateInfertilitySummaryReport(
             normalizedData,
             user?.fullName || "Staff",
-            true
+            false,
+            {
+              dateRange: patientFilterValues.dateRange,
+              startDate: patientFilterValues.startDate,
+              endDate: patientFilterValues.endDate,
+            },
           );
+          toast.success("Summary report generated successfully!", {
+            id: "infertility-patient-report",
+          });
+        } else if (reportType === "detailed") {
+          if (normalizedData.length === 1) {
+            await generateInfertilityReport(
+              normalizedData[0],
+              user?.fullName || "Staff",
+            );
+          } else {
+            await generateInfertilitySummaryReport(
+              normalizedData,
+              user?.fullName || "Staff",
+              true,
+              {
+                dateRange: patientFilterValues.dateRange,
+                startDate: patientFilterValues.startDate,
+                endDate: patientFilterValues.endDate,
+              },
+            );
+          }
+          toast.success("Detailed report generated successfully!", {
+            id: "infertility-patient-report",
+          });
         }
-        toast.success("Detailed report generated successfully!", {
-          id: "infertility-patient-report",
-        });
       } catch (error) {
-        toast.error("Failed to generate detailed report", {
-          id: "infertility-patient-report",
-        });
+        toast.error(
+          reportType === "summary"
+            ? "Failed to generate summary report"
+            : "Failed to generate detailed report",
+          { id: "infertility-patient-report" },
+        );
         console.error(error);
       } finally {
         setIsGenerating(false);
         setShouldFetch(false);
         setReportType(null);
       }
-    }
-  }, [shouldFetch, reportData, isLoadingData, isError, reportType, user?.fullName]);
+    };
+
+    void generateReport();
+  }, [
+    shouldFetch,
+    reportData,
+    isLoadingData,
+    isError,
+    reportType,
+    user?.fullName,
+    patientFilterValues,
+  ]);
 
   const handleSummaryReport = useCallback(() => {
     if (recordCount === 0) {

@@ -150,12 +150,18 @@ const AddSaleModal: React.FC<AddSaleModalProps> = ({ isOpen, onClose }) => {
 
   const packageOptions = useMemo(
     () =>
-      packageSummaries.flatMap((pkg) => {
-        const admission = (packageContextData?.admissions ?? []).find((item) =>
-          isMedicinePackageForDepartment(pkg.departmentName, item.departmentName),
-        );
-        return admission ? [{ pkg, admission }] : [];
-      }),
+      packageSummaries.flatMap((pkg) =>
+        (packageContextData?.admissions ?? [])
+          .filter((admission) =>
+            isMedicinePackageForDepartment(
+              pkg.departmentName,
+              admission.departmentName,
+              pkg.departmentId,
+              admission.departmentId,
+            ),
+          )
+          .map((admission) => ({ pkg, admission })),
+      ),
     [packageContextData?.admissions, packageSummaries],
   );
   const hasRows = formData.items.length > 0;
@@ -269,6 +275,7 @@ const AddSaleModal: React.FC<AddSaleModalProps> = ({ isOpen, onClose }) => {
             admissionId: option.admission.admissionId,
             operationName: resolvedPackage.operationName,
             packageCode: resolvedPackage.code,
+            packageItemName: item.templateName,
             matchReason: item.matchReason,
           }));
         applyPackage(rows);
@@ -442,6 +449,7 @@ const AddSaleModal: React.FC<AddSaleModalProps> = ({ isOpen, onClose }) => {
               admissionId: item.admissionId,
               packageCode: item.packageCode,
               operationName: item.operationName,
+              packageItemName: item.packageItemName,
             },
           ],
     );
@@ -549,7 +557,7 @@ const AddSaleModal: React.FC<AddSaleModalProps> = ({ isOpen, onClose }) => {
       {isOpen && (
         <motion.div
           key="sale-modal"
-          className="fixed inset-0 bg-slate-900/70 flex items-center justify-center z-100000"
+          className="fixed inset-0 z-100000 flex items-center justify-center bg-slate-900/70 sm:p-4"
           variants={backdropVariants}
           initial="hidden"
           animate="visible"
@@ -564,7 +572,7 @@ const AddSaleModal: React.FC<AddSaleModalProps> = ({ isOpen, onClose }) => {
         >
           <motion.div
             ref={popupRef}
-            className="bg-white rounded-3xl shadow-lg w-full max-w-[98%] sm:max-w-[95%] md:max-w-[90%] lg:max-w-[85%] xl:max-w-[78%] h-auto max-h-[96%] sm:max-h-[94%] popup-content flex flex-col"
+            className="popup-content flex h-[100dvh] max-h-none w-full max-w-full flex-col bg-white shadow-lg sm:h-auto sm:max-h-[94vh] sm:max-w-[95%] sm:rounded-3xl md:max-w-[90%] lg:max-w-[85%] xl:max-w-[78%]"
             variants={modalVariants}
             initial="hidden"
             animate="visible"
@@ -587,11 +595,11 @@ const AddSaleModal: React.FC<AddSaleModalProps> = ({ isOpen, onClose }) => {
 
             <div
               ref={scrollContainerRef}
-              className="flex-1 overflow-y-auto p-4 sm:p-6"
+              className="flex-1 overflow-y-auto p-3 sm:p-6"
             >
-              <div className="space-y-5">
+              <div className="space-y-4 sm:space-y-5">
                 {/* Patient + department admission context */}
-                <div className="bg-indigo-50/50 rounded-2xl p-4 sm:p-5 border border-indigo-100">
+                <div className="rounded-2xl border border-indigo-100 bg-indigo-50/50 p-3 sm:p-5">
                   <div className="flex items-center gap-2 mb-3">
                     <div className="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center">
                       <User className="w-4 h-4 text-indigo-600" />
@@ -666,84 +674,105 @@ const AddSaleModal: React.FC<AddSaleModalProps> = ({ isOpen, onClose }) => {
                 </div>
 
                 {/* Quick actions */}
-                <div className="flex flex-wrap items-center gap-2">
-                  <motion.button
-                    type="button"
-                    onClick={appendBlankRow}
-                    disabled={isSubmitting}
-                    whileTap={isSubmitting ? undefined : { scale: 0.96 }}
-                    transition={{ type: "spring", stiffness: 400, damping: 17 }}
-                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border-2 border-blue-300 bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-bold transition disabled:opacity-50"
-                  >
-                    <Plus className="w-3.5 h-3.5" />
-                    Add medicine
-                  </motion.button>
+                <div className="space-y-3 rounded-2xl border border-slate-200 bg-slate-50/70 p-3 sm:p-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <p className="text-xs font-bold text-slate-800">Sale actions</p>
+                      <p className="text-[11px] text-slate-500">Add manually or apply a department preset.</p>
+                    </div>
+                    <Package className="h-4 w-4 text-slate-400" />
+                  </div>
 
-                  {packageOptions.map(({ pkg, admission }) => (
+                  <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
                     <motion.button
-                      key={`${pkg.code}-${admission.admissionId}`}
                       type="button"
-                      onClick={() => requestApplyPackage({ pkg, admission })}
-                      disabled={
-                        isSubmitting ||
-                        isApplyingPackage ||
-                        isLoadingPackageSummaries
-                      }
-                      whileTap={
-                        isSubmitting || isApplyingPackage
-                          ? undefined
-                          : { scale: 0.96 }
-                      }
+                      onClick={appendBlankRow}
+                      disabled={isSubmitting}
+                      whileTap={isSubmitting ? undefined : { scale: 0.96 }}
                       transition={{ type: "spring", stiffness: 400, damping: 17 }}
-                      className="inline-flex min-w-[190px] flex-1 items-center gap-2 rounded-xl border-2 border-pink-300 bg-pink-50 px-3 py-2 text-left text-pink-700 transition hover:border-pink-400 hover:bg-pink-100 disabled:opacity-50 sm:flex-none"
+                      className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-xl border border-blue-200 bg-white px-3 py-2 text-xs font-bold text-blue-700 transition hover:bg-blue-50 disabled:opacity-50"
                     >
-                      {isApplyingPackage ? (
-                        <Activity className="h-4 w-4 shrink-0 animate-pulse" />
-                      ) : (
-                        <Package className="h-4 w-4 shrink-0" />
-                      )}
-                      <span className="min-w-0">
-                        <span className="block truncate text-xs font-bold">
-                          Add {pkg.operationName} package
-                        </span>
-                        <span className="flex items-center gap-1 text-[10px] font-medium text-pink-500">
-                          <Building2 className="h-3 w-3" />
-                          {pkg.departmentName} · {admission.admissionNumber}
-                        </span>
-                      </span>
+                      <Plus className="h-3.5 w-3.5" />
+                      Add medicine
                     </motion.button>
-                  ))}
 
-                  {hasRows && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        queryClient.invalidateQueries({
+                          queryKey: ["medicine-inventory", "patient-package-context"],
+                        });
+                        queryClient.invalidateQueries({
+                          queryKey: ["medicine-inventory", "sale-package-summaries"],
+                        });
+                      }}
+                      disabled={isSubmitting}
+                      className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-xl border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-600 transition hover:bg-gray-50 disabled:opacity-50"
+                    >
+                      <RefreshCcw className="h-3.5 w-3.5" />
+                      Refresh
+                    </button>
+
+                    {hasRows && (
                     <motion.button
                       type="button"
                       onClick={handleClearAllRows}
                       disabled={isSubmitting}
                       whileTap={isSubmitting ? undefined : { scale: 0.96 }}
                       transition={{ type: "spring", stiffness: 400, damping: 17 }}
-                      className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border-2 border-red-200 bg-red-50 hover:bg-red-100 text-red-600 text-xs font-bold transition disabled:opacity-50"
+                      className="col-span-2 inline-flex min-h-10 items-center justify-center gap-1.5 rounded-xl border border-red-200 bg-white px-3 py-2 text-xs font-bold text-red-600 transition hover:bg-red-50 disabled:opacity-50 sm:col-span-1"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                       Clear
                     </motion.button>
-                  )}
+                    )}
+                  </div>
 
-                  <button
-                    type="button"
-                    onClick={() => {
-                      queryClient.invalidateQueries({
-                        queryKey: ["medicine-inventory", "patient-package-context"],
-                      });
-                      queryClient.invalidateQueries({
-                        queryKey: ["medicine-inventory", "sale-package-summaries"],
-                      });
-                    }}
-                    disabled={isSubmitting}
-                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gray-200 bg-white text-gray-600 text-xs font-semibold hover:bg-gray-50 transition disabled:opacity-50"
-                  >
-                    <RefreshCcw className="w-3.5 h-3.5" />
-                    Refresh context
-                  </button>
+                  {packageOptions.length > 0 && (
+                    <div className="space-y-2 border-t border-slate-200 pt-3">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+                        Available presets
+                      </p>
+                      <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+                        {packageOptions.map(({ pkg, admission }) => (
+                          <motion.button
+                            key={`${pkg.code}-${admission.admissionId}`}
+                            type="button"
+                            onClick={() => requestApplyPackage({ pkg, admission })}
+                            disabled={
+                              isSubmitting ||
+                              isApplyingPackage ||
+                              isLoadingPackageSummaries
+                            }
+                            whileTap={
+                              isSubmitting || isApplyingPackage
+                                ? undefined
+                                : { scale: 0.97 }
+                            }
+                            transition={{ type: "spring", stiffness: 400, damping: 17 }}
+                            className="flex min-h-14 w-full items-center gap-3 rounded-xl border border-pink-200 bg-white px-3 py-2.5 text-left text-pink-700 transition hover:border-pink-400 hover:bg-pink-50 disabled:opacity-50"
+                          >
+                            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-pink-50">
+                              {isApplyingPackage ? (
+                                <Activity className="h-4 w-4 animate-pulse" />
+                              ) : (
+                                <Package className="h-4 w-4" />
+                              )}
+                            </span>
+                            <span className="min-w-0">
+                              <span className="block truncate text-xs font-bold">
+                                {pkg.operationName}
+                              </span>
+                              <span className="mt-0.5 flex items-center gap-1 truncate text-[10px] font-medium text-pink-500">
+                                <Building2 className="h-3 w-3 shrink-0" />
+                                {pkg.departmentName} · {admission.admissionNumber}
+                              </span>
+                            </span>
+                          </motion.button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {formData.patient && isPackageSummariesError && (

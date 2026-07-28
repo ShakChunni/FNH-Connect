@@ -46,6 +46,7 @@ export interface MedicineSaleDraftItem {
   admissionId?: number | null;
   operationName: string | null;
   packageCode: string | null;
+  packageItemName: string | null;
   matchReason: string | null;
 }
 
@@ -108,6 +109,7 @@ const blankRow = (): MedicineSaleDraftItem => ({
   admissionId: null,
   operationName: null,
   packageCode: null,
+  packageItemName: null,
   matchReason: null,
 });
 
@@ -167,7 +169,11 @@ export const useSaleFormStore = create<SaleFormState>((set) => ({
 
       const duplicate = state.formData.items.find(
         (item) =>
-          item.clientId !== clientId && item.medicineId === medicine.id,
+          item.clientId !== clientId &&
+          item.medicineId === medicine.id &&
+          item.packageCode === target.packageCode &&
+          item.admissionId === target.admissionId &&
+          item.packageItemName === target.packageItemName,
       );
       const displayName = medicine.brandName?.trim() || medicine.genericName;
 
@@ -195,8 +201,10 @@ export const useSaleFormStore = create<SaleFormState>((set) => ({
                         item.requestedMedicineName,
                       operationName:
                         target.operationName ?? item.operationName,
-            packageCode: target.packageCode ?? item.packageCode,
+                      packageCode: target.packageCode ?? item.packageCode,
                       admissionId: target.admissionId ?? item.admissionId,
+                      packageItemName:
+                        target.packageItemName ?? item.packageItemName,
                       matchReason: target.matchReason ?? item.matchReason,
                     }
                   : item,
@@ -241,7 +249,8 @@ export const useSaleFormStore = create<SaleFormState>((set) => ({
             row.medicineId !== null &&
             item.medicineId === row.medicineId &&
             item.packageCode === row.packageCode &&
-            item.admissionId === row.admissionId,
+            item.admissionId === row.admissionId &&
+            item.packageItemName === row.packageItemName,
         );
 
         if (matchIndex >= 0) {
@@ -253,6 +262,8 @@ export const useSaleFormStore = create<SaleFormState>((set) => ({
             packageCode: row.packageCode ?? matched.packageCode,
             admissionId: row.admissionId ?? matched.admissionId,
             operationName: row.operationName ?? matched.operationName,
+            packageItemName:
+              row.packageItemName ?? matched.packageItemName,
             matchReason: row.matchReason ?? matched.matchReason,
             requestedMedicineName:
               row.requestedMedicineName ?? matched.requestedMedicineName,

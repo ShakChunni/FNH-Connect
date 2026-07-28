@@ -7,6 +7,13 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { InfertilityPatientData } from "../types";
 import { formatBDT } from "@/lib/timezone";
+import { format } from "date-fns";
+
+interface InfertilityPatientReportPeriod {
+  dateRange?: string;
+  startDate?: Date | null;
+  endDate?: Date | null;
+}
 
 const formatDate = (dateStr: string | null): string => {
   if (!dateStr) return "N/A";
@@ -25,7 +32,8 @@ const loadImage = (src: string): Promise<HTMLImageElement> => {
 export async function generateInfertilitySummaryReport(
   patients: InfertilityPatientData[],
   staffName: string,
-  detailed: boolean = false
+  detailed: boolean = false,
+  period?: InfertilityPatientReportPeriod,
 ): Promise<void> {
   const doc = new jsPDF("landscape");
 
@@ -81,6 +89,17 @@ export async function generateInfertilitySummaryReport(
   doc.text(`Active: ${activeCount}`, 80, 40);
   doc.text(`Completed: ${completedCount}`, 130, 40);
 
+  const periodLabel =
+    period?.startDate && period?.endDate
+      ? `${format(period.startDate, "dd MMM yyyy")} - ${format(
+          period.endDate,
+          "dd MMM yyyy",
+        )}`
+      : "All Time";
+  doc.setFontSize(9);
+  doc.setTextColor(71, 85, 105);
+  doc.text(`Report Period: ${periodLabel}`, 20, 47);
+
   // Table data
   const tableHeaders = detailed
     ? [
@@ -133,7 +152,7 @@ export async function generateInfertilitySummaryReport(
   });
 
   autoTable(doc, {
-    startY: 50,
+    startY: 53,
     head: [tableHeaders],
     body: tableData,
     theme: "striped",

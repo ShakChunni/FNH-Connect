@@ -14,6 +14,7 @@ interface SalePackageApiResponse {
     code: string;
     name: string;
     operationName: string;
+    departmentId: number | null;
     departmentName: string;
     items: Array<{
       templateName: string;
@@ -40,6 +41,7 @@ export function useFetchSalePackage(code: string, enabled: boolean) {
       code: string;
       name: string;
       operationName: string;
+      departmentId: number | null;
       departmentName: string;
       items: ResolvedMedicinePackageItem[];
     } | null> => {

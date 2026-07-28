@@ -5,6 +5,7 @@ export interface SalePackageSummary {
   code: string;
   name: string;
   operationName: string;
+  departmentId: number | null;
   departmentName: string;
 }
 

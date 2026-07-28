@@ -234,6 +234,7 @@ export const createSaleBatchItemSchema = z.object({
   admissionId: z.number().int().positive().nullable().optional(),
   packageCode: z.string().trim().min(1).max(100).nullable().optional(),
   operationName: z.string().trim().min(1).max(100).nullable().optional(),
+  packageItemName: z.string().trim().min(1).max(200).nullable().optional(),
 });
 
 export const createSaleBatchSchema = z.object({
