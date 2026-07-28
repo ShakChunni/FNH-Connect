@@ -5,7 +5,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { RotateCcw, SlidersHorizontal, X } from "lucide-react";
 import { ClientPortal } from "@/components/ui/ClientPortal";
 import { useInfertilityFilterStore } from "../../stores/filterStore";
-import { DateRangeFilter } from "./components";
+import { DateRangeFilter, TestFilter } from "./components";
 
 export const PatientFilters: React.FC = () => {
   const isOpen = useInfertilityFilterStore((state) => state.panel.isOpen);
@@ -17,6 +17,7 @@ export const PatientFilters: React.FC = () => {
   );
   const search = useInfertilityFilterStore((state) => state.search);
   const dateRange = useInfertilityFilterStore((state) => state.dateRange);
+  const testNames = useInfertilityFilterStore((state) => state.testNames);
   const leadsFilter = useInfertilityFilterStore(
     (state) => state.filters.leadsFilter,
   );
@@ -24,6 +25,7 @@ export const PatientFilters: React.FC = () => {
     search.length >= 2,
     dateRange !== "all",
     leadsFilter !== "All",
+    testNames.length > 0,
   ].filter(Boolean).length;
 
   useEffect(() => {
@@ -112,6 +114,9 @@ export const PatientFilters: React.FC = () => {
               <div className="custom-scrollbar min-h-0 flex-1 overscroll-contain overflow-y-auto p-4 sm:p-6">
                 <div className="rounded-2xl border border-gray-100 bg-gray-50/50 p-4">
                   <DateRangeFilter scope="patients" />
+                </div>
+                <div className="mt-4 rounded-2xl border border-gray-100 bg-gray-50/50 p-4">
+                  <TestFilter scope="patients" />
                 </div>
               </div>
 

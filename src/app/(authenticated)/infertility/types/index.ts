@@ -182,6 +182,7 @@ export interface InfertilityPatient {
     tests: number;
   };
   financialSummary?: InfertilityFinancialSummary;
+  testBreakdown?: InfertilityTestBreakdownItem[];
   yearsMarried: number | null;
   yearsTrying: number | null;
   infertilityType: string | null;
@@ -220,6 +221,11 @@ export interface InfertilityFinancialSummary {
   dueAmount: number;
 }
 
+export interface InfertilityTestBreakdownItem {
+  name: string;
+  count: number;
+}
+
 // Filter options
 export interface InfertilityFilters {
   status?: string;
@@ -228,6 +234,7 @@ export interface InfertilityFilters {
   search?: string;
   startDate?: string; // ISO date string
   endDate?: string; // ISO date string
+  testNames?: string[];
   // Pagination params
   page?: number;
   limit?: number;
@@ -354,6 +361,7 @@ export interface InfertilityPatientData {
   notes: string | null;
   testCount?: number;
   financialSummary?: InfertilityFinancialSummary;
+  testBreakdown?: InfertilityTestBreakdownItem[];
   createdBy?: number | null;
   createdByName?: string | null;
   lastModifiedBy?: number | null;

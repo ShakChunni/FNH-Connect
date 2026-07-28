@@ -2,6 +2,7 @@ import { strict as assert } from "node:assert";
 import { buildBDTQueryDateRange } from "../src/lib/timezone";
 import { useInfertilityFilterStore } from "../src/app/(authenticated)/infertility/stores/filterStore";
 import { useInfertilityTestFilterStore } from "../src/app/(authenticated)/infertility/stores/testFilterStore";
+import { infertilityFiltersSchema } from "../src/app/(authenticated)/infertility/types/schemas";
 
 function run(): void {
   const patientStore = useInfertilityFilterStore.getState();
@@ -22,13 +23,27 @@ function run(): void {
   const customStart = new Date(2026, 6, 1);
   const customEnd = new Date(2026, 6, 2);
   patientStore.setCustomDateRange(customStart, customEnd);
+  patientStore.setTestNames(["CBC", "TSH"]);
   patientFilters = useInfertilityFilterStore.getState();
   assert.equal(patientFilters.dateRange, "custom");
+  assert.deepEqual(patientFilters.testNames, ["CBC", "TSH"]);
+  assert.equal(
+    patientFilters.getActiveFilterCount(),
+    2,
+    "patient report date and investigation filters must both be counted",
+  );
+  patientStore.toggleTestName("CBC");
+  assert.deepEqual(useInfertilityFilterStore.getState().testNames, ["TSH"]);
 
   assert.deepEqual(buildBDTQueryDateRange(customStart, customEnd), {
     startDate: "2026-06-30T18:00:00.000Z",
     endDate: "2026-07-02T18:00:00.000Z",
   });
+  assert.deepEqual(
+    infertilityFiltersSchema.parse({ testNames: "CBC|TSH" }).testNames,
+    ["CBC", "TSH"],
+    "the patient API must accept the pipe-delimited multi-test query",
+  );
 
   const investigationStore = useInfertilityTestFilterStore.getState();
   investigationStore.clearAllFilters();
@@ -52,6 +67,7 @@ function run(): void {
   assert.equal(patientFilters.dateRange, "all");
   assert.equal(patientFilters.startDate, null);
   assert.equal(patientFilters.endDate, null);
+  assert.deepEqual(patientFilters.testNames, []);
   assert.equal(
     patientFilters.panel.isOpen,
     true,

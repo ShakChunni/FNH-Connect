@@ -23,6 +23,12 @@ export const infertilityFiltersSchema = z.object({
   search: z.string().optional(),
   startDate: z.string().optional(), // ISO date string
   endDate: z.string().optional(), // ISO date string
+  testNames: z
+    .string()
+    .optional()
+    .transform((value) =>
+      value ? value.split("|").filter(Boolean) : undefined,
+    ),
   // Pagination params
   page: z.string().transform(Number).optional(),
   limit: z.string().transform(Number).optional(),

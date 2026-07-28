@@ -51,6 +51,10 @@ export function useFetchInfertilityReportData(
         params.append("endDate", filters.endDate);
       }
 
+      if (filters.testNames && filters.testNames.length > 0) {
+        params.append("testNames", filters.testNames.join("|"));
+      }
+
       // Fetch a large limit to get all records for report
       params.append("limit", "10000");
 

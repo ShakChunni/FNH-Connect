@@ -45,6 +45,10 @@ export const ExportActionBar: React.FC<ExportActionBarProps> = ({
         patientFilterValues.startDate,
         patientFilterValues.endDate
       ),
+      testNames:
+        patientFilterValues.testNames.length > 0
+          ? patientFilterValues.testNames
+          : undefined,
     }),
     [patientFilterValues]
   );

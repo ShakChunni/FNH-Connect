@@ -30,6 +30,7 @@ interface FilterStoreState {
   dateRange: string;
   startDate: Date | null;
   endDate: Date | null;
+  testNames: string[];
 }
 
 interface FilterActions {
@@ -52,6 +53,8 @@ interface FilterActions {
   setCustomDateRange: (start: Date | null, end: Date | null) => void;
   setStartDate: (date: Date | null) => void;
   setEndDate: (date: Date | null) => void;
+  setTestNames: (testNames: string[]) => void;
+  toggleTestName: (testName: string) => void;
   // Combined reset
   clearAllFilters: () => void;
   // Get active filter count
@@ -81,6 +84,7 @@ const initialState: FilterStoreState = {
   dateRange: "all",
   startDate: null,
   endDate: null,
+  testNames: [],
 };
 
 // ═══════════════════════════════════════════════════════════════
@@ -170,6 +174,20 @@ export const useInfertilityFilterStore = create<
           pagination: { ...state.pagination, page: 1 },
         })),
 
+      setTestNames: (testNames) =>
+        set((state) => ({
+          testNames,
+          pagination: { ...state.pagination, page: 1 },
+        })),
+
+      toggleTestName: (testName) =>
+        set((state) => ({
+          testNames: state.testNames.includes(testName)
+            ? state.testNames.filter((name) => name !== testName)
+            : [...state.testNames, testName],
+          pagination: { ...state.pagination, page: 1 },
+        })),
+
       clearAllFilters: () =>
         set((state) => ({
           ...initialState,
@@ -182,6 +200,7 @@ export const useInfertilityFilterStore = create<
         if (state.search && state.search.length >= 2) count++;
         if (state.dateRange !== "all") count++;
         if (state.filters.leadsFilter !== "All") count++;
+        if (state.testNames.length > 0) count++;
         return count;
       },
     }),
@@ -210,6 +229,7 @@ export const useFilterValues = () =>
       dateRange: state.dateRange,
       startDate: state.startDate,
       endDate: state.endDate,
+      testNames: state.testNames,
       page: state.pagination.page,
       limit: state.pagination.limit,
     }))
@@ -233,6 +253,8 @@ export const useFilterActions = () =>
       setCustomDateRange: state.setCustomDateRange,
       setStartDate: state.setStartDate,
       setEndDate: state.setEndDate,
+      setTestNames: state.setTestNames,
+      toggleTestName: state.toggleTestName,
       clearAllFilters: state.clearAllFilters,
       getActiveFilterCount: state.getActiveFilterCount,
     }))

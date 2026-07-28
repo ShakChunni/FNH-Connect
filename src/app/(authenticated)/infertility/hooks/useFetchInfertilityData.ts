@@ -44,6 +44,10 @@ export function useFetchInfertilityData(filters: InfertilityFilters = {}) {
         params.append("endDate", filters.endDate);
       }
 
+      if (filters.testNames && filters.testNames.length > 0) {
+        params.append("testNames", filters.testNames.join("|"));
+      }
+
       // Add pagination params
       if (filters.page) {
         params.append("page", filters.page.toString());

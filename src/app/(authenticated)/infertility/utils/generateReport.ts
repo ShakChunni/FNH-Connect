@@ -495,7 +495,60 @@ export const generateInfertilityReport = async (
     currentY += financeBoxHeight + 6;
   }
 
-  // === 6. CHIEF COMPLAINT BOX ===
+  // === 6. INDIVIDUAL TESTS BREAKDOWN ===
+  if (data.testBreakdown?.length) {
+    ensureSpace(35);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(9);
+    doc.setTextColor(COLORS.primary);
+    doc.text("INDIVIDUAL TESTS BREAKDOWN", margin + 5, currentY + 6);
+    autoTable(doc, {
+      startY: currentY + 9,
+      head: [["Investigation Name", "Times Conducted"]],
+      body: [
+        ...data.testBreakdown.map(({ name, count }) => [
+          name,
+          String(count),
+        ]),
+        [
+          { content: "TOTAL", styles: { fontStyle: "bold" } },
+          {
+            content: String(
+              data.testBreakdown.reduce(
+                (total, item) => total + item.count,
+                0,
+              ),
+            ),
+            styles: { fontStyle: "bold" },
+          },
+        ],
+      ],
+      theme: "striped",
+      headStyles: {
+        fillColor: COLORS.primary,
+        textColor: "#fbbf24",
+        fontStyle: "bold",
+        fontSize: 8,
+      },
+      styles: {
+        fontSize: 8.5,
+        textColor: COLORS.text,
+      },
+      columnStyles: {
+        1: { cellWidth: 35, halign: "center" },
+      },
+      margin: { left: margin, right: margin, bottom: 18 },
+    });
+    currentY =
+      (
+        doc as jsPDF & {
+          lastAutoTable?: { finalY: number };
+        }
+      ).lastAutoTable?.finalY ?? currentY + 35;
+    currentY += 6;
+  }
+
+  // === 7. CHIEF COMPLAINT BOX ===
   if (data.chiefComplaint) {
     const complaintBoxHeight = 22;
     ensureSpace(complaintBoxHeight);
@@ -522,7 +575,7 @@ export const generateInfertilityReport = async (
     currentY += complaintBoxHeight + 6;
   }
 
-  // === 7. MEDICAL HISTORY BOX ===
+  // === 8. MEDICAL HISTORY BOX ===
   const historyItems: [string, string][] = [];
   if (data.medicalHistory)
     historyItems.push(["Medical History", data.medicalHistory]);
@@ -579,7 +632,7 @@ export const generateInfertilityReport = async (
     currentY += historyBoxHeight + 6;
   }
 
-  // === 8. TREATMENT PLAN BOX ===
+  // === 9. TREATMENT PLAN BOX ===
   const treatmentBoxHeight = 48;
   ensureSpace(treatmentBoxHeight);
   const treatmentContentY = drawSectionBox(
@@ -639,7 +692,7 @@ export const generateInfertilityReport = async (
 
   currentY += treatmentBoxHeight + 6;
 
-  // === 9. CLINICAL NOTES BOX (if exists) ===
+  // === 10. CLINICAL NOTES BOX (if exists) ===
   if (data.notes) {
     const notesBoxHeight = 36;
     ensureSpace(notesBoxHeight);
@@ -666,7 +719,7 @@ export const generateInfertilityReport = async (
     currentY += notesBoxHeight + 6;
   }
 
-  // === 9. REFERRING HOSPITAL BOX (if exists) ===
+  // === 11. REFERRING HOSPITAL BOX (if exists) ===
   if (data.hospitalName) {
     const hospitalBoxHeight = 36;
     ensureSpace(hospitalBoxHeight);
