@@ -1,13 +1,8 @@
-/**
- * HSI Center Summary Report Generator
- * Generates PDF summary reports for multiple HSI Center patients
- */
-
 import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
+import autoTable, { type Table } from "jspdf-autotable";
+import { format } from "date-fns";
 import { InfertilityPatientData } from "../types";
 import { formatBDT } from "@/lib/timezone";
-import { format } from "date-fns";
 
 interface InfertilityPatientReportPeriod {
   dateRange?: string;
@@ -15,196 +10,435 @@ interface InfertilityPatientReportPeriod {
   endDate?: Date | null;
 }
 
-const formatDate = (dateStr: string | null): string => {
-  if (!dateStr) return "N/A";
-  return formatBDT(dateStr, "dd MMM yyyy");
+type AutoTableDocument = jsPDF & { lastAutoTable?: Table };
+
+const COLORS = {
+  primary: "#064e3b",
+  accent: "#059669",
+  success: "#059669",
+  warning: "#d97706",
+  danger: "#e11d48",
+  text: "#000000",
+  lightText: "#1a202c",
+  border: "#cbd5e1",
+  faint: "#ecfdf5",
 };
 
-const loadImage = (src: string): Promise<HTMLImageElement> => {
-  return new Promise((resolve, reject) => {
+const COMPANY_INFO = {
+  name: "HSI Center",
+  address:
+    "1257, Sholakia, Khorompatti Kishoreganj Sadar, Kishoreganj Dhaka, Bangladesh",
+  phone: "Mobile: +8801726219350, +8801701295016, +8801787993086",
+};
+
+const formatMoney = (value: number): string =>
+  `BDT ${Math.round(value).toLocaleString("en-US")}`;
+
+const formatDate = (value: string | null): string =>
+  value ? formatBDT(value, "dd MMM yyyy") : "N/A";
+
+const loadImage = (src: string): Promise<HTMLImageElement> =>
+  new Promise((resolve, reject) => {
     const img = new Image();
     img.src = src;
     img.onload = () => resolve(img);
-    img.onerror = (err) => reject(err);
+    img.onerror = reject;
   });
+
+const getLastTableFinalY = (doc: AutoTableDocument): number =>
+  doc.lastAutoTable?.finalY ?? 0;
+
+const drawHeader = async (
+  doc: jsPDF,
+  title: string,
+  periodLabel: string,
+  staffName: string,
+): Promise<number> => {
+  const pageWidth = doc.internal.pageSize.width;
+  const margin = 15;
+  let currentY = 10;
+
+  try {
+    const logo = await loadImage("/hsi-logo.png");
+    doc.addImage(logo, "PNG", pageWidth / 2 - 10, currentY, 20, 20);
+  } catch {
+    // The report remains printable if the optional logo is unavailable.
+  }
+
+  currentY = 35;
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(22);
+  doc.setTextColor(COLORS.primary);
+  doc.text(COMPANY_INFO.name, pageWidth / 2, currentY, { align: "center" });
+  currentY += 7;
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(9);
+  doc.setTextColor(COLORS.lightText);
+  doc.text(COMPANY_INFO.address, pageWidth / 2, currentY, { align: "center" });
+  currentY += 5;
+  doc.text(COMPANY_INFO.phone, pageWidth / 2, currentY, { align: "center" });
+  currentY += 8;
+
+  doc.setDrawColor(COLORS.border);
+  doc.setLineWidth(0.5);
+  doc.line(margin, currentY, pageWidth - margin, currentY);
+  currentY += 8;
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(16);
+  doc.setTextColor(COLORS.primary);
+  doc.text(title, pageWidth / 2, currentY, { align: "center" });
+  currentY += 7;
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(10);
+  doc.setTextColor(COLORS.lightText);
+  doc.text(`Report Period: ${periodLabel}`, pageWidth / 2, currentY, {
+    align: "center",
+  });
+  currentY += 5;
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(8);
+  doc.setTextColor(COLORS.text);
+  doc.text(
+    `Generated: ${formatBDT(new Date(), "PPpp")}  |  By: ${staffName}`,
+    pageWidth / 2,
+    currentY,
+    { align: "center" },
+  );
+
+  return currentY + 8;
+};
+
+const drawMetricBox = (
+  doc: jsPDF,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  label: string,
+  value: string,
+  valueColor: string = COLORS.primary,
+) => {
+  doc.setFillColor(248, 250, 252);
+  doc.roundedRect(x, y, width, height, 3, 3, "F");
+  doc.setDrawColor(COLORS.border);
+  doc.roundedRect(x, y, width, height, 3, 3, "S");
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(8);
+  doc.setTextColor(COLORS.lightText);
+  doc.text(label, x + 5, y + 8);
+  doc.setFontSize(11);
+  doc.setTextColor(valueColor);
+  doc.text(value, x + 5, y + 18);
+};
+
+const getPeriodLabel = (period?: InfertilityPatientReportPeriod): string => {
+  if (period?.startDate && period.endDate) {
+    const start = format(period.startDate, "MMMM dd, yyyy");
+    const end = format(period.endDate, "MMMM dd, yyyy");
+    return start === end
+      ? start
+      : `${format(period.startDate, "MMM dd, yyyy")} - ${format(
+          period.endDate,
+          "MMM dd, yyyy",
+        )}`;
+  }
+  return "All Time";
 };
 
 export async function generateInfertilitySummaryReport(
   patients: InfertilityPatientData[],
   staffName: string,
-  detailed: boolean = false,
+  detailed = false,
   period?: InfertilityPatientReportPeriod,
 ): Promise<void> {
-  const doc = new jsPDF("landscape");
-
-  // Colors
-  const primaryBlue = [17, 24, 39]; // FNH Navy
-  const accentYellow = [251, 191, 36]; // FNH Yellow
-  const lightGray = [248, 250, 252];
-
-  // Header
-  doc.setFillColor(primaryBlue[0], primaryBlue[1], primaryBlue[2]);
-  doc.rect(0, 0, 297, 30, "F");
-
-  // Header logo
-  try {
-    const logo = await loadImage("/hsi-logo.png");
-    const logoW = 18;
-    const logoH = 18;
-    doc.addImage(logo, "PNG", 10, 6, logoW, logoH);
-  } catch (e) {}
-
-  doc.setTextColor(255, 255, 255);
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(18);
-  doc.text("HSI Center", 36, 15);
-
-  doc.setFontSize(12);
-  doc.setFont("helvetica", "normal");
-  doc.text(
-      detailed
-      ? "Patients - Detailed Report"
-      : "Patients - Summary Report",
-    36,
-    23
+  const doc = new jsPDF();
+  const pageWidth = doc.internal.pageSize.width;
+  const margin = 15;
+  const title = detailed
+    ? "Detailed HSI Patient Report"
+    : "HSI Patient Summary Report";
+  let currentY = await drawHeader(
+    doc,
+    title,
+    getPeriodLabel(period),
+    staffName,
   );
 
-  // Report info on right
-  doc.setFontSize(10);
-  doc.text(`Generated: ${formatBDT(new Date(), "d MMM yyyy")}`, 220, 15);
-  doc.text(`By: ${staffName}`, 220, 22);
-
-  // Summary stats
-  doc.setTextColor(0, 0, 0);
-  doc.setFontSize(11);
-  doc.setFont("helvetica", "bold");
-  doc.text(`Total Patients: ${patients.length}`, 20, 40);
-
-  const activeCount = patients.filter((p) => p.status === "Active").length;
+  const financials = patients.map(
+    (patient) =>
+      patient.financialSummary ?? {
+        investigationCount: patient.testCount ?? 0,
+        grossAmount: 0,
+        discountAmount: 0,
+        netAmount: 0,
+        paidAmount: 0,
+        dueAmount: 0,
+      },
+  );
+  const totals = financials.reduce(
+    (sum, value) => ({
+      investigationCount:
+        sum.investigationCount + value.investigationCount,
+      grossAmount: sum.grossAmount + value.grossAmount,
+      discountAmount: sum.discountAmount + value.discountAmount,
+      netAmount: sum.netAmount + value.netAmount,
+      paidAmount: sum.paidAmount + value.paidAmount,
+      dueAmount: sum.dueAmount + value.dueAmount,
+    }),
+    {
+      investigationCount: 0,
+      grossAmount: 0,
+      discountAmount: 0,
+      netAmount: 0,
+      paidAmount: 0,
+      dueAmount: 0,
+    },
+  );
+  const activeCount = patients.filter((patient) => patient.status === "Active")
+    .length;
   const completedCount = patients.filter(
-    (p) => p.status === "Completed"
+    (patient) => patient.status === "Completed",
   ).length;
+  const collectionRate =
+    totals.netAmount > 0
+      ? Math.min(100, (totals.paidAmount / totals.netAmount) * 100).toFixed(1)
+      : "0";
 
-  doc.setFont("helvetica", "normal");
-  doc.text(`Active: ${activeCount}`, 80, 40);
-  doc.text(`Completed: ${completedCount}`, 130, 40);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(11);
+  doc.setTextColor(COLORS.primary);
+  doc.text("Key Performance Metrics", margin, currentY);
+  currentY += 2;
+  doc.setDrawColor(209, 250, 229);
+  doc.line(margin, currentY, margin + 45, currentY);
+  currentY += 6;
 
-  const periodLabel =
-    period?.startDate && period?.endDate
-      ? `${format(period.startDate, "dd MMM yyyy")} - ${format(
-          period.endDate,
-          "dd MMM yyyy",
-        )}`
-      : "All Time";
-  doc.setFontSize(9);
-  doc.setTextColor(71, 85, 105);
-  doc.text(`Report Period: ${periodLabel}`, 20, 47);
+  const boxGap = 4;
+  const boxHeight = 26;
+  const boxWidth = (pageWidth - margin * 2 - boxGap * 3) / 4;
+  const boxX = (index: number) => margin + (boxWidth + boxGap) * index;
 
-  // Table data
-  const tableHeaders = detailed
-    ? [
-        "S/N",
-        "Case #",
-        "Patient Name",
-        "Age",
-        "Spouse",
-        "Spouse Age",
-        "Type",
-        "Status",
-        "Years Trying",
-        "Phone",
-        "Created",
-      ]
-    : [
-        "S/N",
-        "Case #",
-        "Patient Name",
-        "Age",
-        "Spouse",
-        "Spouse Age",
-        "Type",
-        "Status",
-        "Phone",
-      ];
+  drawMetricBox(doc, boxX(0), currentY, boxWidth, boxHeight, "Total Patients", String(patients.length));
+  drawMetricBox(doc, boxX(1), currentY, boxWidth, boxHeight, "Active", String(activeCount), COLORS.success);
+  drawMetricBox(doc, boxX(2), currentY, boxWidth, boxHeight, "Completed", String(completedCount), COLORS.accent);
+  drawMetricBox(doc, boxX(3), currentY, boxWidth, boxHeight, "Investigations", String(totals.investigationCount), COLORS.primary);
+  currentY += boxHeight + 4;
 
-  const tableData = patients.map((patient, index) => {
-    const baseData = [
-      (index + 1).toString(),
-      patient.caseNumber || `INF-${patient.id}`,
-      patient.patientFullName,
-      patient.patientAge?.toString() || "N/A",
-      patient.husbandName || "N/A",
-      patient.husbandAge?.toString() || "N/A",
-      patient.infertilityType || "N/A",
-      patient.status || "Active",
-      patient.mobileNumber || "N/A",
-    ];
+  drawMetricBox(doc, boxX(0), currentY, boxWidth, boxHeight, "Gross Charges", formatMoney(totals.grossAmount));
+  drawMetricBox(doc, boxX(1), currentY, boxWidth, boxHeight, "Discount", `- ${formatMoney(totals.discountAmount)}`, COLORS.danger);
+  drawMetricBox(doc, boxX(2), currentY, boxWidth, boxHeight, "Net Revenue", formatMoney(totals.netAmount), COLORS.success);
+  drawMetricBox(doc, boxX(3), currentY, boxWidth, boxHeight, "Collection Rate", `${collectionRate}%`, COLORS.accent);
+  currentY += boxHeight + 4;
 
-    if (detailed) {
-      return [
-        ...baseData.slice(0, 9),
-        patient.yearsTrying?.toString() || "N/A",
-        formatDate(patient.createdAt),
-      ];
-    }
+  const wideBoxWidth = (pageWidth - margin * 2 - boxGap) / 2;
+  drawMetricBox(doc, margin, currentY, wideBoxWidth, boxHeight, "Amount Collected", formatMoney(totals.paidAmount), COLORS.success);
+  drawMetricBox(
+    doc,
+    margin + wideBoxWidth + boxGap,
+    currentY,
+    wideBoxWidth,
+    boxHeight,
+    "Amount Due",
+    formatMoney(totals.dueAmount),
+    totals.dueAmount > 0 ? COLORS.danger : COLORS.success,
+  );
+  currentY += boxHeight + 10;
 
-    return baseData;
-  });
-
+  const statusCounts = patients.reduce<Record<string, number>>(
+    (counts, patient) => {
+      const status = patient.status || "Active";
+      counts[status] = (counts[status] ?? 0) + 1;
+      return counts;
+    },
+    {},
+  );
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(11);
+  doc.setTextColor(COLORS.primary);
+  doc.text("Status Breakdown", margin, currentY);
+  currentY += 5;
   autoTable(doc, {
-    startY: 53,
-    head: [tableHeaders],
-    body: tableData,
+    startY: currentY,
+    head: [["Status", "Patients", "Percentage"]],
+    body: Object.entries(statusCounts).map(([status, count]) => [
+      status,
+      String(count),
+      `${patients.length > 0 ? ((count / patients.length) * 100).toFixed(1) : "0"}%`,
+    ]),
     theme: "striped",
     headStyles: {
-      fillColor: [17, 24, 39],
-      textColor: [255, 255, 255],
+      fillColor: COLORS.faint,
+      textColor: COLORS.primary,
+      lineColor: COLORS.primary,
+      lineWidth: 0.2,
       fontStyle: "bold",
       fontSize: 9,
     },
-    bodyStyles: {
-      fontSize: 8,
-      cellPadding: 2,
-    },
-    alternateRowStyles: {
-      fillColor: [248, 250, 252],
-    },
-    columnStyles: {
-      0: { cellWidth: 12 }, // S/N
-      1: { cellWidth: 28 }, // Case #
-      2: { cellWidth: detailed ? 40 : 50 }, // Patient Name
-      3: { cellWidth: 12 }, // Age
-      4: { cellWidth: detailed ? 35 : 45 }, // Spouse
-      5: { cellWidth: 12 }, // Spouse Age
-      6: { cellWidth: 20 }, // Type
-      7: { cellWidth: 18 }, // Status
-      8: { cellWidth: detailed ? 25 : 35 }, // Phone
-    },
-    margin: { left: 10, right: 10 },
+    styles: { fontSize: 9, textColor: COLORS.text },
+    margin: { left: margin, right: margin },
+    tableWidth: pageWidth / 2 - margin,
   });
 
-  // Footer
-  const pageCount = doc.internal.pages.length - 1;
-  for (let i = 1; i <= pageCount; i++) {
-    doc.setPage(i);
+  currentY = getLastTableFinalY(doc as AutoTableDocument) + 10;
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(11);
+  doc.setTextColor(COLORS.primary);
+  doc.text("Patient Financial Records", margin, currentY);
+  currentY += 5;
+  autoTable(doc, {
+    startY: currentY,
+    head: [
+      [
+        "#",
+        "Case #",
+        "Patient",
+        "Tests",
+        "Gross",
+        "Discount",
+        "Net",
+        "Paid",
+        "Due",
+        "Status",
+      ],
+    ],
+    body: patients.map((patient, index) => {
+      const finance = financials[index];
+      return [
+        String(index + 1),
+        patient.caseNumber || `INF-${patient.id}`,
+        patient.patientFullName || "N/A",
+        String(finance.investigationCount),
+        Math.round(finance.grossAmount).toLocaleString(),
+        Math.round(finance.discountAmount).toLocaleString(),
+        Math.round(finance.netAmount).toLocaleString(),
+        Math.round(finance.paidAmount).toLocaleString(),
+        Math.round(finance.dueAmount).toLocaleString(),
+        patient.status || "Active",
+      ];
+    }),
+    theme: "striped",
+    headStyles: {
+      fillColor: COLORS.faint,
+      textColor: COLORS.primary,
+      lineColor: COLORS.primary,
+      lineWidth: 0.2,
+      fontStyle: "bold",
+      fontSize: 6.5,
+      cellPadding: 1.5,
+    },
+    bodyStyles: {
+      fontSize: 6.5,
+      cellPadding: 1.5,
+      textColor: COLORS.text,
+      overflow: "linebreak",
+    },
+    columnStyles: {
+      0: { cellWidth: 7 },
+      1: { cellWidth: 21 },
+      2: { cellWidth: 28 },
+      3: { cellWidth: 10, halign: "center" },
+      4: { cellWidth: 20, halign: "right" },
+      5: { cellWidth: 18, halign: "right" },
+      6: { cellWidth: 20, halign: "right" },
+      7: { cellWidth: 20, halign: "right" },
+      8: { cellWidth: 18, halign: "right" },
+      9: { cellWidth: 18 },
+    },
+    margin: { left: margin, right: margin, bottom: 16 },
+  });
+
+  if (detailed) {
+    doc.addPage();
+    currentY = 20;
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(12);
+    doc.setTextColor(COLORS.primary);
+    doc.text("Detailed Patient Records", margin, currentY);
+    currentY += 8;
+    autoTable(doc, {
+      startY: currentY,
+      head: [
+        [
+          "#",
+          "Case #",
+          "Patient",
+          "Age",
+          "Spouse",
+          "Sp. Age",
+          "Type",
+          "Years",
+          "Phone",
+          "Created",
+        ],
+      ],
+      body: patients.map((patient, index) => [
+        String(index + 1),
+        patient.caseNumber || `INF-${patient.id}`,
+        patient.patientFullName || "N/A",
+        patient.patientAge?.toString() || "N/A",
+        patient.husbandName || "N/A",
+        patient.husbandAge?.toString() || "N/A",
+        patient.infertilityType || "N/A",
+        patient.yearsTrying?.toString() || "N/A",
+        patient.mobileNumber || "N/A",
+        formatDate(patient.createdAt),
+      ]),
+      theme: "striped",
+      headStyles: {
+        fillColor: COLORS.faint,
+        textColor: COLORS.primary,
+        lineColor: COLORS.primary,
+        lineWidth: 0.2,
+        fontStyle: "bold",
+        fontSize: 6.5,
+        cellPadding: 1.5,
+      },
+      bodyStyles: {
+        fontSize: 6.5,
+        cellPadding: 1.5,
+        textColor: COLORS.text,
+        overflow: "linebreak",
+      },
+      columnStyles: {
+        0: { cellWidth: 7 },
+        1: { cellWidth: 21 },
+        2: { cellWidth: 27 },
+        3: { cellWidth: 10 },
+        4: { cellWidth: 26 },
+        5: { cellWidth: 13 },
+        6: { cellWidth: 19 },
+        7: { cellWidth: 12 },
+        8: { cellWidth: 27 },
+        9: { cellWidth: 18 },
+      },
+      margin: { left: margin, right: margin, bottom: 16 },
+    });
+  }
+
+  const pageCount = doc.getNumberOfPages();
+  for (let page = 1; page <= pageCount; page += 1) {
+    doc.setPage(page);
+    doc.setFont("helvetica", "bold");
     doc.setFontSize(8);
-    doc.setTextColor(128, 128, 128);
+    doc.setTextColor(COLORS.text);
     doc.text(
-      `Page ${i} of ${pageCount}`,
-      doc.internal.pageSize.width / 2,
-      doc.internal.pageSize.height - 10,
-      { align: "center" }
+      `Page ${page} of ${pageCount}`,
+      pageWidth / 2,
+      doc.internal.pageSize.height - 8,
+      { align: "center" },
     );
     doc.text(
       "HSI Center Management System",
-      20,
-      doc.internal.pageSize.height - 10
+      margin,
+      doc.internal.pageSize.height - 8,
     );
   }
 
-  // Open in new tab for printing (like row-level printing)
   doc.autoPrint();
-  const pdfBlob = doc.output("blob");
-  const pdfUrl = URL.createObjectURL(pdfBlob);
+  const pdfUrl = URL.createObjectURL(doc.output("blob"));
   window.open(pdfUrl, "_blank");
+  window.setTimeout(() => URL.revokeObjectURL(pdfUrl), 60_000);
 }

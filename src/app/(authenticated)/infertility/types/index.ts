@@ -181,6 +181,7 @@ export interface InfertilityPatient {
   _count?: {
     tests: number;
   };
+  financialSummary?: InfertilityFinancialSummary;
   yearsMarried: number | null;
   yearsTrying: number | null;
   infertilityType: string | null;
@@ -208,6 +209,15 @@ export interface InfertilityPatient {
   lastModifiedByName?: string | null;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface InfertilityFinancialSummary {
+  investigationCount: number;
+  grossAmount: number;
+  discountAmount: number;
+  netAmount: number;
+  paidAmount: number;
+  dueAmount: number;
 }
 
 // Filter options
@@ -343,6 +353,7 @@ export interface InfertilityPatientData {
   status: string | null;
   notes: string | null;
   testCount?: number;
+  financialSummary?: InfertilityFinancialSummary;
   createdBy?: number | null;
   createdByName?: string | null;
   lastModifiedBy?: number | null;

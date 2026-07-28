@@ -495,7 +495,14 @@ export const generatePathologyReport = async (
       ],
     ],
     theme: "striped",
-    headStyles: { fillColor: COLORS.primary, fontSize: 9 },
+    headStyles: {
+      fillColor: COLORS.faint,
+      textColor: COLORS.primary,
+      lineColor: COLORS.primary,
+      lineWidth: 0.2,
+      fontStyle: "bold",
+      fontSize: 9,
+    },
     styles: { fontSize: 9 },
     margin: { left: margin, right: margin },
   });
@@ -533,7 +540,14 @@ export const generatePathologyReport = async (
         stats.revenue.toLocaleString(),
       ]),
     theme: "striped",
-    headStyles: { fillColor: COLORS.primary, fontSize: 9 },
+    headStyles: {
+      fillColor: COLORS.faint,
+      textColor: COLORS.primary,
+      lineColor: COLORS.primary,
+      lineWidth: 0.2,
+      fontStyle: "bold",
+      fontSize: 9,
+    },
     styles: { fontSize: 9 },
     margin: { left: margin, right: margin },
   });
@@ -597,7 +611,10 @@ export const generatePathologyReport = async (
       ]),
       theme: "striped",
       headStyles: {
-        fillColor: COLORS.primary,
+        fillColor: COLORS.faint,
+        textColor: COLORS.primary,
+        lineColor: COLORS.primary,
+        lineWidth: 0.2,
         fontSize: 7,
         cellPadding: 2,
         fontStyle: "bold",

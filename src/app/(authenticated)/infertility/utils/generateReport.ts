@@ -52,6 +52,9 @@ const calculateAge = (dob: string | null | undefined): string => {
   return `${age} Years`;
 };
 
+const formatMoney = (value: number): string =>
+  `BDT ${Math.round(value).toLocaleString("en-US")}`;
+
 /**
  * Draw a section box with title
  */
@@ -448,7 +451,51 @@ export const generateInfertilityReport = async (
 
   currentY += physicalBoxHeight + 6;
 
-  // === 5. CHIEF COMPLAINT BOX ===
+  // === 5. INVESTIGATION FINANCIAL SUMMARY ===
+  if (data.financialSummary) {
+    const financeBoxHeight = 30;
+    ensureSpace(financeBoxHeight);
+    const financeContentY = drawSectionBox(
+      doc,
+      "INVESTIGATION FINANCIAL SUMMARY",
+      currentY,
+      financeBoxHeight,
+      margin,
+      pageWidth,
+      [255, 251, 235],
+      "#92400e",
+    );
+    const finance = data.financialSummary;
+    const financeColumns = [
+      {
+        label: "Investigations",
+        value: String(finance.investigationCount),
+      },
+      { label: "Gross", value: formatMoney(finance.grossAmount) },
+      { label: "Discount", value: formatMoney(finance.discountAmount) },
+      { label: "Net", value: formatMoney(finance.netAmount) },
+      { label: "Collected", value: formatMoney(finance.paidAmount) },
+      { label: "Due", value: formatMoney(finance.dueAmount) },
+    ];
+    const financeColumnWidth = (pageWidth - margin * 2 - 10) / 3;
+
+    financeColumns.forEach((item, index) => {
+      const row = Math.floor(index / 3);
+      const column = index % 3;
+      const x = col1X + column * financeColumnWidth;
+      const y = financeContentY + 2 + row * 7;
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(8.5);
+      doc.setTextColor(COLORS.lightText);
+      doc.text(`${item.label}:`, x, y);
+      doc.setTextColor(COLORS.primary);
+      doc.text(item.value, x + 24, y);
+    });
+
+    currentY += financeBoxHeight + 6;
+  }
+
+  // === 6. CHIEF COMPLAINT BOX ===
   if (data.chiefComplaint) {
     const complaintBoxHeight = 22;
     ensureSpace(complaintBoxHeight);
@@ -475,7 +522,7 @@ export const generateInfertilityReport = async (
     currentY += complaintBoxHeight + 6;
   }
 
-  // === 6. MEDICAL HISTORY BOX ===
+  // === 7. MEDICAL HISTORY BOX ===
   const historyItems: [string, string][] = [];
   if (data.medicalHistory)
     historyItems.push(["Medical History", data.medicalHistory]);
@@ -532,7 +579,7 @@ export const generateInfertilityReport = async (
     currentY += historyBoxHeight + 6;
   }
 
-  // === 7. TREATMENT PLAN BOX ===
+  // === 8. TREATMENT PLAN BOX ===
   const treatmentBoxHeight = 48;
   ensureSpace(treatmentBoxHeight);
   const treatmentContentY = drawSectionBox(
@@ -592,7 +639,7 @@ export const generateInfertilityReport = async (
 
   currentY += treatmentBoxHeight + 6;
 
-  // === 8. CLINICAL NOTES BOX (if exists) ===
+  // === 9. CLINICAL NOTES BOX (if exists) ===
   if (data.notes) {
     const notesBoxHeight = 36;
     ensureSpace(notesBoxHeight);

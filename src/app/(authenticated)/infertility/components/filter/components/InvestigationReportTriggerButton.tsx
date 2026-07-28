@@ -3,7 +3,7 @@
 import React, { useRef, useState, useCallback } from "react";
 import { FileText, BarChart3, FileSpreadsheet, Loader2, DollarSign } from "lucide-react";
 import { DropdownPortal } from "@/components/ui/DropdownPortal";
-import { toast } from "sonner";
+import { useNotification } from "@/hooks/useNotification";
 import { useFetchInfertilityTestReport } from "../../../hooks/useFetchInfertilityTestReport";
 import { generateInfertilityInvestigationReport } from "../../../utils/generateInvestigationReport";
 import { exportInvestigationsToCSV } from "../../../utils/exportToCSV";
@@ -25,6 +25,7 @@ export const InvestigationReportTriggerButton: React.FC<ReportTriggerButtonProps
   recordCount = 0,
 }) => {
   const { user } = useAuth();
+  const { showNotification, hideNotification } = useNotification();
   const buttonRef = useRef<HTMLButtonElement>(null);
   const [isOpen, setIsOpen] = useState(false);
   
@@ -33,12 +34,12 @@ export const InvestigationReportTriggerButton: React.FC<ReportTriggerButtonProps
 
   const handleGenerateReport = async (type: "summary" | "detailed" | "financial" | "csv") => {
     if (recordCount === 0) {
-      toast.error("No records to export");
+      showNotification("No records to export", "error");
       return;
     }
 
     setIsOpen(false);
-    const loadingToast = toast.loading(`Preparing ${type} report...`);
+    const loadingId = showNotification(`Preparing ${type} report`, "loading");
 
     try {
       const dateRangeParams = buildBDTQueryDateRange(
@@ -56,7 +57,8 @@ export const InvestigationReportTriggerButton: React.FC<ReportTriggerButtonProps
       });
 
       if (!data || data.length === 0) {
-        toast.error("No data found for the selected filters", { id: loadingToast });
+        hideNotification(loadingId);
+        showNotification("No data found for the selected filters", "error");
         return;
       }
 
@@ -75,10 +77,17 @@ export const InvestigationReportTriggerButton: React.FC<ReportTriggerButtonProps
         );
       }
 
-      toast.success(`${type.charAt(0).toUpperCase() + type.slice(1)} report generated!`, { id: loadingToast });
+      hideNotification(loadingId);
+      showNotification(
+        `${
+          type.charAt(0).toUpperCase() + type.slice(1)
+        } report generated successfully`,
+        "success",
+      );
     } catch (error) {
       console.error("Report generation failed:", error);
-      toast.error("Failed to generate report. Please try again.", { id: loadingToast });
+      hideNotification(loadingId);
+      showNotification("Failed to generate report. Please try again.", "error");
     }
   };
 

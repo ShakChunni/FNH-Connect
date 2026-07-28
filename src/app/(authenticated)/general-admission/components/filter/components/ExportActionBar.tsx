@@ -16,7 +16,7 @@ import {
 import { useFetchAdmissionsReportData } from "../../../hooks/useFetchAdmissionsReportData";
 import { useFetchDepartments } from "../../../hooks/useFetchDepartments";
 import { useFetchDoctors } from "../../../hooks/useFetchDoctors";
-import { toast } from "sonner";
+import { useNotification } from "@/hooks/useNotification";
 import { buildBDTQueryDateRange } from "@/lib/timezone";
 
 interface ExportActionBarProps {
@@ -24,6 +24,7 @@ interface ExportActionBarProps {
 }
 
 export const ExportActionBar: React.FC<ExportActionBarProps> = ({ data }) => {
+  const { showNotification, hideNotification } = useNotification();
   const [isGenerating, setIsGenerating] = useState(false);
   const filters = useFilterStore((state) => state.filters);
   const clearAllFilters = useFilterStore((state) => state.clearAllFilters);
@@ -81,21 +82,21 @@ export const ExportActionBar: React.FC<ExportActionBarProps> = ({ data }) => {
   const handlePdfExport = useCallback(
     async (type: "summary" | "detailed") => {
       setIsGenerating(true);
+      let loadingId = showNotification(
+        "Fetching all data for report",
+        "loading",
+      );
       try {
-        toast.loading("Fetching all data for report...", {
-          id: "report-loading",
-        });
         const allData = await fetchAllDataForReport();
-        toast.dismiss("report-loading");
 
         if (allData.length === 0) {
-          toast.error("No data found for the current filters");
+          hideNotification(loadingId);
+          showNotification("No data found for the current filters", "error");
           return;
         }
 
-        toast.loading(`Generating ${type} report...`, {
-          id: "report-generating",
-        });
+        hideNotification(loadingId);
+        loadingId = showNotification(`Generating ${type} report`, "loading");
         await generateAdmissionsReport(allData, type, {
           dateRange: filters.dateRange,
           startDate: filters.startDate,
@@ -103,48 +104,63 @@ export const ExportActionBar: React.FC<ExportActionBarProps> = ({ data }) => {
           department: filters.departmentId?.toString(),
           status: filters.status,
         });
-        toast.dismiss("report-generating");
-        toast.success(
+        hideNotification(loadingId);
+        showNotification(
           `${
             type === "summary" ? "Summary" : "Detailed"
-          } report generated with ${allData.length} records`
+          } report generated with ${allData.length} records`,
+          "success",
         );
       } catch (error) {
-        toast.dismiss("report-loading");
-        toast.dismiss("report-generating");
-        toast.error("Failed to generate report");
+        hideNotification(loadingId);
+        showNotification("Failed to generate report", "error");
         console.error("Report generation failed:", error);
       } finally {
         setIsGenerating(false);
       }
     },
-    [fetchAllDataForReport, filters]
+    [
+      fetchAllDataForReport,
+      filters,
+      hideNotification,
+      showNotification,
+    ]
   );
 
   const handleExcelExport = useCallback(async () => {
     setIsGenerating(true);
+    const loadingId = showNotification(
+      "Fetching all data for export",
+      "loading",
+    );
     try {
-      toast.loading("Fetching all data for export...", {
-        id: "export-loading",
-      });
       const allData = await fetchAllDataForReport();
-      toast.dismiss("export-loading");
 
       if (allData.length === 0) {
-        toast.error("No data found for the current filters");
+        hideNotification(loadingId);
+        showNotification("No data found for the current filters", "error");
         return;
       }
 
       exportAdmissionsToExcel(allData, getFilterMeta());
-      toast.success(`Exported ${allData.length} records to Excel`);
+      hideNotification(loadingId);
+      showNotification(
+        `Exported ${allData.length} records to Excel`,
+        "success",
+      );
     } catch (error) {
-      toast.dismiss("export-loading");
-      toast.error("Failed to export data");
+      hideNotification(loadingId);
+      showNotification("Failed to export data", "error");
       console.error("Export failed:", error);
     } finally {
       setIsGenerating(false);
     }
-  }, [fetchAllDataForReport, getFilterMeta]);
+  }, [
+    fetchAllDataForReport,
+    getFilterMeta,
+    hideNotification,
+    showNotification,
+  ]);
 
   const actions: FloatingAction[] = useMemo(
     () => [

@@ -205,7 +205,14 @@ export const generateInfertilityInvestigationReport = async (
     head: [["Investigation Name", "Count", "Revenue (Estimated)"]],
     body: Array.from(testCountMap.values()).sort((a, b) => b.count - a.count).map((s) => [s.name, s.count.toString(), s.revenue.toLocaleString()]),
     theme: "striped",
-    headStyles: { fillColor: COLORS.primary, fontSize: 9 },
+    headStyles: {
+      fillColor: COLORS.faint,
+      textColor: COLORS.primary,
+      lineColor: COLORS.primary,
+      lineWidth: 0.2,
+      fontStyle: "bold",
+      fontSize: 9,
+    },
     styles: { fontSize: 8 },
     margin: { left: margin, right: margin },
   });
@@ -229,7 +236,14 @@ export const generateInfertilityInvestigationReport = async (
     head: [["Doctor Name", "Total Tests", "Total Revenue"]],
     body: Array.from(doctorMap.entries()).sort((a, b) => b[1].count - a[1].count).map(([n, s]) => [n, s.count.toString(), s.revenue.toLocaleString()]),
     theme: "striped",
-    headStyles: { fillColor: COLORS.primary, fontSize: 9 },
+    headStyles: {
+      fillColor: COLORS.faint,
+      textColor: COLORS.primary,
+      lineColor: COLORS.primary,
+      lineWidth: 0.2,
+      fontStyle: "bold",
+      fontSize: 9,
+    },
     styles: { fontSize: 8 },
     margin: { left: margin, right: margin },
   });
@@ -260,7 +274,14 @@ export const generateInfertilityInvestigationReport = async (
         getCalculatedDueAmount(item).toLocaleString(),
       ]),
       theme: "striped",
-      headStyles: { fillColor: COLORS.primary, fontSize: 6.5 },
+      headStyles: {
+        fillColor: COLORS.faint,
+        textColor: COLORS.primary,
+        lineColor: COLORS.primary,
+        lineWidth: 0.2,
+        fontStyle: "bold",
+        fontSize: 6.5,
+      },
       styles: { fontSize: 6.5 },
       margin: { left: margin, right: margin },
     });
