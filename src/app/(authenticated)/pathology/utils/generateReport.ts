@@ -466,7 +466,7 @@ export const generatePathologyReport = async (
   );
 
   // Catalogue prices are pre-discount charges, not recognized net revenue.
-  const totalTestCharges = sortedTests.reduce(
+  const individualTestChargesTotal = sortedTests.reduce(
     (sum, [, stats]) => sum + stats.totalCharge,
     0
   );
@@ -489,7 +489,7 @@ export const generatePathologyReport = async (
         { content: "TOTAL", styles: { fontStyle: "bold" } },
         { content: totalTestCount.toString(), styles: { fontStyle: "bold" } },
         {
-          content: totalTestCharges.toLocaleString(),
+          content: individualTestChargesTotal.toLocaleString(),
           styles: { fontStyle: "bold" },
         },
       ],
