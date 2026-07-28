@@ -28,11 +28,17 @@ export const FilterTriggerButton: React.FC<FilterTriggerButtonProps> = ({
   const patientLeadsFilter = useInfertilityFilterStore(
     (state) => state.filters.leadsFilter,
   );
+  const isPatientPanelOpen = useInfertilityFilterStore(
+    (state) => state.panel.isOpen,
+  );
   const openInvestigationFilterPanel = useInfertilityTestFilterStore(
     (state) => state.openFilterPanel
   );
   const investigationFilters = useInfertilityTestFilterStore(
     (state) => state.filters,
+  );
+  const isInvestigationPanelOpen = useInfertilityTestFilterStore(
+    (state) => state.panel.isOpen,
   );
 
   const isPatientScope = scope === "patients";
@@ -53,12 +59,21 @@ export const FilterTriggerButton: React.FC<FilterTriggerButtonProps> = ({
   const openFilterPanel = isPatientScope
     ? openPatientFilterPanel
     : openInvestigationFilterPanel;
+  const isOpen = isPatientScope
+    ? isPatientPanelOpen
+    : isInvestigationPanelOpen;
 
   return (
     <button
-      onClick={openFilterPanel}
+      onClick={(event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        openFilterPanel();
+      }}
       type="button"
       disabled={disabled}
+      aria-expanded={isOpen}
+      aria-haspopup="dialog"
       className={`
         relative flex h-full w-full items-center justify-center gap-2.5 px-5 sm:w-auto
         bg-white border rounded-full
