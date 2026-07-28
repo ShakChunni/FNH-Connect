@@ -10,7 +10,7 @@ import { generatePathologyReport } from "../utils/generateReport";
 import { exportPathologyToCSV } from "../utils/exportToCSV";
 import { useFetchPathologyReportData } from "../hooks/useFetchPathologyReportData";
 import { transformPathologyPatients } from "../utils/dataTransformers";
-import { toast } from "sonner";
+import { useNotification } from "@/hooks/useNotification";
 import { buildBDTQueryDateRange } from "@/lib/timezone";
 
 interface PathologySearchProps {
@@ -27,6 +27,7 @@ export const PathologySearch: React.FC<PathologySearchProps> = ({
   disabled = false,
   data = [],
 }) => {
+  const { showNotification, hideNotification } = useNotification();
   const [searchValue, setSearchValue] = useState("");
   const [isFocused, setIsFocused] = useState(false);
   const [isGeneratingReport, setIsGeneratingReport] = useState(false);
@@ -81,24 +82,30 @@ export const PathologySearch: React.FC<PathologySearchProps> = ({
     }
   }, [fetchReportData, filters]);
 
-  const handleGenerateSummary = useCallback(async () => {
+  const generateReport = useCallback(async (
+    type: "summary" | "detailed",
+    label: "Summary" | "Detailed" | "Financial",
+  ) => {
     setIsGeneratingReport(true);
+    let loadingId = showNotification(
+      "Fetching all data for report",
+      "loading",
+    );
     try {
-      toast.loading("Fetching all data for report...", {
-        id: "report-loading",
-      });
       const allData = await fetchAllDataForReport();
-      toast.dismiss("report-loading");
 
       if (allData.length === 0) {
-        toast.error("No data found for the current filters");
+        hideNotification(loadingId);
+        showNotification("No data found for the current filters", "error");
         return;
       }
 
-      toast.loading("Generating summary report...", {
-        id: "report-generating",
-      });
-      await generatePathologyReport(allData, "summary", {
+      hideNotification(loadingId);
+      loadingId = showNotification(
+        `Generating ${label.toLowerCase()} report`,
+        "loading",
+      );
+      await generatePathologyReport(allData, type, {
         dateRange: filters.dateRange,
         startDate: filters.startDate,
         endDate: filters.endDate,
@@ -106,119 +113,73 @@ export const PathologySearch: React.FC<PathologySearchProps> = ({
         orderedById: filters.orderedById,
         testNames: filters.testNames,
       });
-      toast.dismiss("report-generating");
-      toast.success(`Summary report generated with ${allData.length} records`);
-    } catch (error) {
-      toast.dismiss("report-loading");
-      toast.dismiss("report-generating");
-      toast.error("Failed to generate report");
-      console.error("Report generation failed:", error);
-    } finally {
-      setIsGeneratingReport(false);
-    }
-  }, [fetchAllDataForReport, filters]);
-
-  const handleGenerateDetailed = useCallback(async () => {
-    setIsGeneratingReport(true);
-    try {
-      toast.loading("Fetching all data for report...", {
-        id: "report-loading",
-      });
-      const allData = await fetchAllDataForReport();
-      toast.dismiss("report-loading");
-
-      if (allData.length === 0) {
-        toast.error("No data found for the current filters");
-        return;
-      }
-
-      toast.loading("Generating detailed report...", {
-        id: "report-generating",
-      });
-      await generatePathologyReport(allData, "detailed", {
-        dateRange: filters.dateRange,
-        startDate: filters.startDate,
-        endDate: filters.endDate,
-        status: filters.status,
-        orderedById: filters.orderedById,
-        testNames: filters.testNames,
-      });
-      toast.dismiss("report-generating");
-      toast.success(`Detailed report generated with ${allData.length} records`);
-    } catch (error) {
-      toast.dismiss("report-loading");
-      toast.dismiss("report-generating");
-      toast.error("Failed to generate report");
-      console.error("Report generation failed:", error);
-    } finally {
-      setIsGeneratingReport(false);
-    }
-  }, [fetchAllDataForReport, filters]);
-
-  const handleGenerateFinancial = useCallback(async () => {
-    setIsGeneratingReport(true);
-    try {
-      toast.loading("Fetching all data for report...", {
-        id: "report-loading",
-      });
-      const allData = await fetchAllDataForReport();
-      toast.dismiss("report-loading");
-
-      if (allData.length === 0) {
-        toast.error("No data found for the current filters");
-        return;
-      }
-
-      toast.loading("Generating financial report...", {
-        id: "report-generating",
-      });
-      // Financial uses the summary with financial focus
-      await generatePathologyReport(allData, "summary", {
-        dateRange: filters.dateRange,
-        startDate: filters.startDate,
-        endDate: filters.endDate,
-        status: filters.status,
-        orderedById: filters.orderedById,
-        testNames: filters.testNames,
-      });
-      toast.dismiss("report-generating");
-      toast.success(
-        `Financial report generated with ${allData.length} records`
+      hideNotification(loadingId);
+      showNotification(
+        `${label} report generated with ${allData.length} records`,
+        "success",
       );
     } catch (error) {
-      toast.dismiss("report-loading");
-      toast.dismiss("report-generating");
-      toast.error("Failed to generate report");
+      hideNotification(loadingId);
+      showNotification("Failed to generate report", "error");
       console.error("Report generation failed:", error);
     } finally {
       setIsGeneratingReport(false);
     }
-  }, [fetchAllDataForReport, filters]);
+  }, [
+    fetchAllDataForReport,
+    filters,
+    hideNotification,
+    showNotification,
+  ]);
+
+  const handleGenerateSummary = useCallback(
+    () => generateReport("summary", "Summary"),
+    [generateReport],
+  );
+
+  const handleGenerateDetailed = useCallback(
+    () => generateReport("detailed", "Detailed"),
+    [generateReport],
+  );
+
+  const handleGenerateFinancial = useCallback(
+    () => generateReport("summary", "Financial"),
+    [generateReport],
+  );
 
   const handleExportCSV = useCallback(async () => {
     setIsGeneratingReport(true);
+    const loadingId = showNotification(
+      "Fetching all data for export",
+      "loading",
+    );
     try {
-      toast.loading("Fetching all data for export...", {
-        id: "export-loading",
-      });
       const allData = await fetchAllDataForReport();
-      toast.dismiss("export-loading");
 
       if (allData.length === 0) {
-        toast.error("No data found for the current filters");
+        hideNotification(loadingId);
+        showNotification("No data found for the current filters", "error");
         return;
       }
 
       exportPathologyToCSV(allData);
-      toast.success(`Exported ${allData.length} records to CSV`);
+      hideNotification(loadingId);
+      showNotification(
+        `Exported ${allData.length} records to CSV`,
+        "success",
+      );
     } catch (error) {
-      toast.dismiss("export-loading");
-      toast.error("Failed to export data");
+      hideNotification(loadingId);
+      showNotification("Failed to export data", "error");
       console.error("Export failed:", error);
     } finally {
       setIsGeneratingReport(false);
     }
-  }, [fetchAllDataForReport]);
+  }, [
+    fetchAllDataForReport,
+    hideNotification,
+    showNotification,
+  ]);
 
   return (
     <div

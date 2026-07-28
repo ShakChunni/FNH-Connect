@@ -55,7 +55,7 @@ export function useFetchInfertilityReportData(
       params.append("limit", "10000");
 
       const response = await api.get<FetchInfertilityPatientsResponse>(
-        `/infertility-patients?${params.toString()}`
+        `/infertility-patients/report?${params.toString()}`
       );
 
       if (!response.data.success) {

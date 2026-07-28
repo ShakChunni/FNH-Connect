@@ -1,9 +1,9 @@
 "use client";
 
 import React, { useRef, useState, useCallback, useMemo } from "react";
-import { FileText, BarChart3, FileSpreadsheet, Loader2 } from "lucide-react";
+import { FileText, BarChart3, Loader2 } from "lucide-react";
 import { DropdownPortal } from "@/components/ui/DropdownPortal";
-import { toast } from "sonner";
+import { useNotification } from "@/hooks/useNotification";
 import { useFetchInfertilityReportData } from "../../hooks";
 import { generateInfertilityReport } from "../../utils/generateReport";
 import { generateInfertilitySummaryReport } from "../../utils/generateSummaryReport";
@@ -26,7 +26,9 @@ export const ReportTriggerButton: React.FC<ReportTriggerButtonProps> = ({
   recordCount = 0,
 }) => {
   const { user } = useAuth();
+  const { showNotification, hideNotification } = useNotification();
   const buttonRef = useRef<HTMLButtonElement>(null);
+  const loadingNotificationId = useRef<number | null>(null);
   const [isOpen, setIsOpen] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [shouldFetch, setShouldFetch] = useState(false);
@@ -64,9 +66,11 @@ export const ReportTriggerButton: React.FC<ReportTriggerButtonProps> = ({
     if (!shouldFetch) return;
 
     if (isError) {
-      toast.error("Failed to fetch patient data for report", {
-        id: "infertility-patient-report",
-      });
+      if (loadingNotificationId.current !== null) {
+        hideNotification(loadingNotificationId.current);
+        loadingNotificationId.current = null;
+      }
+      showNotification("Failed to fetch patient data for report", "error");
       setIsGenerating(false);
       setShouldFetch(false);
       setReportType(null);
@@ -78,9 +82,11 @@ export const ReportTriggerButton: React.FC<ReportTriggerButtonProps> = ({
     const normalizedData = normalizePatientData(reportData);
 
     if (normalizedData.length === 0) {
-      toast.error("No data found for the selected filters", {
-        id: "infertility-patient-report",
-      });
+      if (loadingNotificationId.current !== null) {
+        hideNotification(loadingNotificationId.current);
+        loadingNotificationId.current = null;
+      }
+      showNotification("No data found for the selected filters", "error");
       setIsGenerating(false);
       setShouldFetch(false);
       setReportType(null);
@@ -100,9 +106,11 @@ export const ReportTriggerButton: React.FC<ReportTriggerButtonProps> = ({
               endDate: patientFilterValues.endDate,
             },
           );
-          toast.success("Summary report generated successfully!", {
-            id: "infertility-patient-report",
-          });
+          if (loadingNotificationId.current !== null) {
+            hideNotification(loadingNotificationId.current);
+            loadingNotificationId.current = null;
+          }
+          showNotification("Summary report generated successfully", "success");
         } else if (reportType === "detailed") {
           if (normalizedData.length === 1) {
             await generateInfertilityReport(
@@ -121,16 +129,22 @@ export const ReportTriggerButton: React.FC<ReportTriggerButtonProps> = ({
               },
             );
           }
-          toast.success("Detailed report generated successfully!", {
-            id: "infertility-patient-report",
-          });
+          if (loadingNotificationId.current !== null) {
+            hideNotification(loadingNotificationId.current);
+            loadingNotificationId.current = null;
+          }
+          showNotification("Detailed report generated successfully", "success");
         }
       } catch (error) {
-        toast.error(
+        if (loadingNotificationId.current !== null) {
+          hideNotification(loadingNotificationId.current);
+          loadingNotificationId.current = null;
+        }
+        showNotification(
           reportType === "summary"
             ? "Failed to generate summary report"
             : "Failed to generate detailed report",
-          { id: "infertility-patient-report" },
+          "error",
         );
         console.error(error);
       } finally {
@@ -149,35 +163,39 @@ export const ReportTriggerButton: React.FC<ReportTriggerButtonProps> = ({
     reportType,
     user?.fullName,
     patientFilterValues,
+    hideNotification,
+    showNotification,
   ]);
 
   const handleSummaryReport = useCallback(() => {
     if (recordCount === 0) {
-      toast.error("No records to export");
+      showNotification("No records to export", "error");
       return;
     }
     setIsGenerating(true);
-    toast.loading("Fetching filtered patient data for report...", {
-      id: "infertility-patient-report",
-    });
+    loadingNotificationId.current = showNotification(
+      "Fetching filtered patient data for report",
+      "loading",
+    );
     setReportType("summary");
     setShouldFetch(true);
     setIsOpen(false);
-  }, [recordCount]);
+  }, [recordCount, showNotification]);
 
   const handleDetailedReport = useCallback(() => {
     if (recordCount === 0) {
-      toast.error("No records to export");
+      showNotification("No records to export", "error");
       return;
     }
     setIsGenerating(true);
-    toast.loading("Fetching filtered patient data for report...", {
-      id: "infertility-patient-report",
-    });
+    loadingNotificationId.current = showNotification(
+      "Fetching filtered patient data for report",
+      "loading",
+    );
     setReportType("detailed");
     setShouldFetch(true);
     setIsOpen(false);
-  }, [recordCount]);
+  }, [recordCount, showNotification]);
 
   const isLoading = isGenerating || isLoadingData;
 

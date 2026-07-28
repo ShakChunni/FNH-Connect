@@ -5,10 +5,10 @@
 
 "use client";
 
-import React, { useState, useCallback, useMemo } from "react";
+import React, { useState, useCallback, useMemo, useRef } from "react";
 import { FileText, Table2, Loader2, Download } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { toast } from "sonner";
+import { useNotification } from "@/hooks/useNotification";
 import { useFetchInfertilityReportData } from "../../hooks";
 import { generateInfertilityReport } from "../../utils/generateReport";
 import { generateInfertilitySummaryReport } from "../../utils/generateSummaryReport";
@@ -25,6 +25,8 @@ export const ExportActionBar: React.FC<ExportActionBarProps> = ({
   recordCount = 0,
 }) => {
   const { user } = useAuth();
+  const { showNotification, hideNotification } = useNotification();
+  const loadingNotificationId = useRef<number | null>(null);
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
   const [isGeneratingSummary, setIsGeneratingSummary] = useState(false);
   const [shouldFetch, setShouldFetch] = useState(false);
@@ -57,26 +59,34 @@ export const ExportActionBar: React.FC<ExportActionBarProps> = ({
   // Handle PDF Summary Report
   const handleSummaryReport = useCallback(async () => {
     if (recordCount === 0) {
-      toast.error("No records to export");
+      showNotification("No records to export", "error");
       return;
     }
 
+    loadingNotificationId.current = showNotification(
+      "Fetching patient data for summary report",
+      "loading",
+    );
     setIsGeneratingSummary(true);
     setReportType("summary");
     setShouldFetch(true);
-  }, [recordCount]);
+  }, [recordCount, showNotification]);
 
   // Handle PDF Detailed Report
   const handleDetailedReport = useCallback(async () => {
     if (recordCount === 0) {
-      toast.error("No records to export");
+      showNotification("No records to export", "error");
       return;
     }
 
+    loadingNotificationId.current = showNotification(
+      "Fetching patient data for detailed report",
+      "loading",
+    );
     setIsGeneratingPDF(true);
     setReportType("detailed");
     setShouldFetch(true);
-  }, [recordCount]);
+  }, [recordCount, showNotification]);
 
   // Generate report when data is loaded
   React.useEffect(() => {
@@ -89,9 +99,17 @@ export const ExportActionBar: React.FC<ExportActionBarProps> = ({
             normalizedData,
             user?.fullName || "Staff"
           );
-          toast.success("Summary report generated successfully!");
+          if (loadingNotificationId.current !== null) {
+            hideNotification(loadingNotificationId.current);
+            loadingNotificationId.current = null;
+          }
+          showNotification("Summary report generated successfully", "success");
         } catch (error) {
-          toast.error("Failed to generate summary report");
+          if (loadingNotificationId.current !== null) {
+            hideNotification(loadingNotificationId.current);
+            loadingNotificationId.current = null;
+          }
+          showNotification("Failed to generate summary report", "error");
           console.error(error);
         } finally {
           setIsGeneratingSummary(false);
@@ -114,9 +132,17 @@ export const ExportActionBar: React.FC<ExportActionBarProps> = ({
               true // detailed mode
             );
           }
-          toast.success("Detailed report generated successfully!");
+          if (loadingNotificationId.current !== null) {
+            hideNotification(loadingNotificationId.current);
+            loadingNotificationId.current = null;
+          }
+          showNotification("Detailed report generated successfully", "success");
         } catch (error) {
-          toast.error("Failed to generate detailed report");
+          if (loadingNotificationId.current !== null) {
+            hideNotification(loadingNotificationId.current);
+            loadingNotificationId.current = null;
+          }
+          showNotification("Failed to generate detailed report", "error");
           console.error(error);
         } finally {
           setIsGeneratingPDF(false);
@@ -125,7 +151,15 @@ export const ExportActionBar: React.FC<ExportActionBarProps> = ({
         }
       }
     }
-  }, [shouldFetch, reportData, isLoadingData, reportType, user?.fullName]);
+  }, [
+    shouldFetch,
+    reportData,
+    isLoadingData,
+    reportType,
+    user?.fullName,
+    hideNotification,
+    showNotification,
+  ]);
 
   // Don't show if no records
   if (recordCount === 0) {

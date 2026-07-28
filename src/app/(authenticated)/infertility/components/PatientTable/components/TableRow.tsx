@@ -309,8 +309,12 @@ const TableRow: React.FC<TableRowProps> = ({
           </div>
         );
 
-      default:
-        return row[header.key as keyof InfertilityPatientData] || "N/A";
+      default: {
+        const value = row[header.key as keyof InfertilityPatientData];
+        return typeof value === "string" || typeof value === "number"
+          ? value || "N/A"
+          : "N/A";
+      }
     }
   };
 

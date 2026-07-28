@@ -15,6 +15,10 @@ import {
 } from "@/lib/registrationNumber";
 import { SessionDeviceInfo } from "@/types/auth";
 import { infertilityShiftService } from "@/services/infertilityShiftService";
+import {
+  aggregateInfertilityPatientFinancials,
+  EMPTY_INFERTILITY_FINANCIAL_SUMMARY,
+} from "@/lib/infertilityReportFinancials";
 
 
 // ═══════════════════════════════════════════════════════════════
@@ -327,6 +331,57 @@ export async function getInfertilityPatients(filters: InfertilityFilters) {
       limit,
       totalPages,
     },
+  };
+}
+
+/**
+ * Fetches the filtered patient rows used by the patient PDF report and adds
+ * investigation finances without changing the normal paginated list query.
+ *
+ * Due is deliberately recalculated from grandTotal - paidAmount for every
+ * investigation. This keeps legacy rows with stale stored dueAmount values
+ * from leaking incorrect balances into reports.
+ */
+export async function getInfertilityPatientsForReport(
+  filters: Omit<InfertilityFilters, "page" | "limit">,
+) {
+  const result = await getInfertilityPatients({
+    ...filters,
+    page: 1,
+    limit: 10000,
+  });
+  const patientIds = result.data.map((row) => row.id);
+
+  if (patientIds.length === 0) {
+    return result;
+  }
+
+  const investigations = await prisma.infertilityTest.findMany({
+    where: {
+      infertilityPatientId: { in: patientIds },
+      isMigrationSuperseded: false,
+    },
+    select: {
+      infertilityPatientId: true,
+      testCharge: true,
+      discountAmount: true,
+      grandTotal: true,
+      paidAmount: true,
+    },
+  });
+
+  const financialsByPatient =
+    aggregateInfertilityPatientFinancials(investigations);
+
+  return {
+    ...result,
+    data: result.data.map((row) => ({
+      ...row,
+      financialSummary:
+        financialsByPatient.get(row.id) ?? {
+          ...EMPTY_INFERTILITY_FINANCIAL_SUMMARY,
+        },
+    })),
   };
 }
 

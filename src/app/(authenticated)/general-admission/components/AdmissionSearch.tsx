@@ -11,7 +11,7 @@ import { AdmissionPatientData } from "../types";
 import { generateAdmissionsReport } from "../utils/generateReport";
 import { exportAdmissionsToExcel } from "../utils/exportToExcel";
 import { useFetchAdmissionsReportData } from "../hooks/useFetchAdmissionsReportData";
-import { toast } from "sonner";
+import { useNotification } from "@/hooks/useNotification";
 import { buildBDTQueryDateRange } from "@/lib/timezone";
 
 interface AdmissionSearchProps {
@@ -29,6 +29,7 @@ export const AdmissionSearch: React.FC<AdmissionSearchProps> = ({
   disabled = false,
   data = [],
 }) => {
+  const { showNotification, hideNotification } = useNotification();
   const [searchValue, setSearchValue] = useState("");
   const [isDepartmentOpen, setIsDepartmentOpen] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
@@ -104,102 +105,98 @@ export const AdmissionSearch: React.FC<AdmissionSearchProps> = ({
     }
   }, [fetchReportData, filters]);
 
-  const handleGenerateSummary = useCallback(async () => {
+  const generateReport = useCallback(async (
+    type: "summary" | "detailed",
+    label: "Summary" | "Detailed",
+  ) => {
     setIsGeneratingReport(true);
+    let loadingId = showNotification(
+      "Fetching all data for report",
+      "loading",
+    );
     try {
-      toast.loading("Fetching all data for report...", {
-        id: "report-loading",
-      });
       const allData = await fetchAllDataForReport();
-      toast.dismiss("report-loading");
 
       if (allData.length === 0) {
-        toast.error("No data found for the current filters");
+        hideNotification(loadingId);
+        showNotification("No data found for the current filters", "error");
         return;
       }
 
-      toast.loading("Generating summary report...", {
-        id: "report-generating",
-      });
-      await generateAdmissionsReport(allData, "summary", {
+      hideNotification(loadingId);
+      loadingId = showNotification(
+        `Generating ${label.toLowerCase()} report`,
+        "loading",
+      );
+      await generateAdmissionsReport(allData, type, {
         dateRange: filters.dateRange,
         startDate: filters.startDate,
         endDate: filters.endDate,
         department: filters.departmentId?.toString(),
         status: filters.status,
       });
-      toast.dismiss("report-generating");
-      toast.success(`Summary report generated with ${allData.length} records`);
+      hideNotification(loadingId);
+      showNotification(
+        `${label} report generated with ${allData.length} records`,
+        "success",
+      );
     } catch (error) {
-      toast.dismiss("report-loading");
-      toast.dismiss("report-generating");
-      toast.error("Failed to generate report");
+      hideNotification(loadingId);
+      showNotification("Failed to generate report", "error");
       console.error("Report generation failed:", error);
     } finally {
       setIsGeneratingReport(false);
     }
-  }, [fetchAllDataForReport, filters]);
+  }, [
+    fetchAllDataForReport,
+    filters,
+    hideNotification,
+    showNotification,
+  ]);
 
-  const handleGenerateDetailed = useCallback(async () => {
-    setIsGeneratingReport(true);
-    try {
-      toast.loading("Fetching all data for report...", {
-        id: "report-loading",
-      });
-      const allData = await fetchAllDataForReport();
-      toast.dismiss("report-loading");
+  const handleGenerateSummary = useCallback(
+    () => generateReport("summary", "Summary"),
+    [generateReport],
+  );
 
-      if (allData.length === 0) {
-        toast.error("No data found for the current filters");
-        return;
-      }
-
-      toast.loading("Generating detailed report...", {
-        id: "report-generating",
-      });
-      await generateAdmissionsReport(allData, "detailed", {
-        dateRange: filters.dateRange,
-        startDate: filters.startDate,
-        endDate: filters.endDate,
-        department: filters.departmentId?.toString(),
-        status: filters.status,
-      });
-      toast.dismiss("report-generating");
-      toast.success(`Detailed report generated with ${allData.length} records`);
-    } catch (error) {
-      toast.dismiss("report-loading");
-      toast.dismiss("report-generating");
-      toast.error("Failed to generate report");
-      console.error("Report generation failed:", error);
-    } finally {
-      setIsGeneratingReport(false);
-    }
-  }, [fetchAllDataForReport, filters]);
+  const handleGenerateDetailed = useCallback(
+    () => generateReport("detailed", "Detailed"),
+    [generateReport],
+  );
 
   const handleExportExcel = useCallback(async () => {
     setIsGeneratingReport(true);
+    const loadingId = showNotification(
+      "Fetching all data for export",
+      "loading",
+    );
     try {
-      toast.loading("Fetching all data for export...", {
-        id: "export-loading",
-      });
       const allData = await fetchAllDataForReport();
-      toast.dismiss("export-loading");
 
       if (allData.length === 0) {
-        toast.error("No data found for the current filters");
+        hideNotification(loadingId);
+        showNotification("No data found for the current filters", "error");
         return;
       }
 
       exportAdmissionsToExcel(allData);
-      toast.success(`Exported ${allData.length} records to Excel`);
+      hideNotification(loadingId);
+      showNotification(
+        `Exported ${allData.length} records to Excel`,
+        "success",
+      );
     } catch (error) {
-      toast.dismiss("export-loading");
-      toast.error("Failed to export data");
+      hideNotification(loadingId);
+      showNotification("Failed to export data", "error");
       console.error("Export failed:", error);
     } finally {
       setIsGeneratingReport(false);
     }
-  }, [fetchAllDataForReport]);
+  }, [
+    fetchAllDataForReport,
+    hideNotification,
+    showNotification,
+  ]);
 
   return (
     <div

@@ -346,8 +346,10 @@ export const generateInfertilityTestReceipt = async (
       body: currentChunk,
       theme: "plain",
       headStyles: {
-        fillColor: COLORS.primary,
-        textColor: 255,
+        fillColor: COLORS.faint,
+        textColor: COLORS.primary,
+        lineColor: COLORS.primary,
+        lineWidth: 0.2,
         fontStyle: "bold",
         halign: "left",
         cellPadding: 5,
