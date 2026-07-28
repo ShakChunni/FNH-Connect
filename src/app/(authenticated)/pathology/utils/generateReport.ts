@@ -421,7 +421,7 @@ export const generatePathologyReport = async (
   // Count each individual test across all records
   const testCountMap = new Map<
     string,
-    { count: number; revenue: number; name: string }
+    { count: number; totalCharge: number; name: string }
   >();
 
   data.forEach((record) => {
@@ -443,12 +443,12 @@ export const generatePathologyReport = async (
 
       const current = testCountMap.get(code) || {
         count: 0,
-        revenue: 0,
+        totalCharge: 0,
         name: testName,
       };
       testCountMap.set(code, {
         count: current.count + 1,
-        revenue: current.revenue + testPrice,
+        totalCharge: current.totalCharge + testPrice,
         name: testName,
       });
     });
@@ -465,9 +465,9 @@ export const generatePathologyReport = async (
     (a, b) => b[1].count - a[1].count
   );
 
-  // Calculate total revenue from all individual tests
-  const totalTestRevenue = sortedTests.reduce(
-    (sum, [, stats]) => sum + stats.revenue,
+  // Catalogue prices are pre-discount charges, not recognized net revenue.
+  const totalTestCharges = sortedTests.reduce(
+    (sum, [, stats]) => sum + stats.totalCharge,
     0
   );
   const totalTestCount = sortedTests.reduce(
@@ -477,27 +477,27 @@ export const generatePathologyReport = async (
 
   autoTable(doc, {
     startY: currentY,
-    head: [["Test Name", "Times Conducted", "Revenue (BDT)"]],
+    head: [["Test Name", "Times Conducted", "Total Charge (BDT)"]],
     body: [
       ...sortedTests.map(([code, stats]) => [
         stats.name,
         stats.count.toString(),
-        stats.revenue.toLocaleString(),
+        stats.totalCharge.toLocaleString(),
       ]),
       // Total row at the bottom
       [
         { content: "TOTAL", styles: { fontStyle: "bold" } },
         { content: totalTestCount.toString(), styles: { fontStyle: "bold" } },
         {
-          content: totalTestRevenue.toLocaleString(),
+          content: totalTestCharges.toLocaleString(),
           styles: { fontStyle: "bold" },
         },
       ],
     ],
     theme: "striped",
     headStyles: {
-      fillColor: COLORS.faint,
-      textColor: COLORS.primary,
+      fillColor: COLORS.primary,
+      textColor: "#fbbf24",
       lineColor: COLORS.primary,
       lineWidth: 0.2,
       fontStyle: "bold",
@@ -531,7 +531,7 @@ export const generatePathologyReport = async (
 
   autoTable(doc, {
     startY: currentY,
-    head: [["Doctor", "Tests", "Revenue (BDT)"]],
+    head: [["Doctor", "Tests", "Net Revenue (BDT)"]],
     body: Array.from(doctorMap.entries())
       .sort((a, b) => b[1].count - a[1].count)
       .map(([name, stats]) => [
@@ -541,8 +541,8 @@ export const generatePathologyReport = async (
       ]),
     theme: "striped",
     headStyles: {
-      fillColor: COLORS.faint,
-      textColor: COLORS.primary,
+      fillColor: COLORS.primary,
+      textColor: "#fbbf24",
       lineColor: COLORS.primary,
       lineWidth: 0.2,
       fontStyle: "bold",
@@ -611,8 +611,8 @@ export const generatePathologyReport = async (
       ]),
       theme: "striped",
       headStyles: {
-        fillColor: COLORS.faint,
-        textColor: COLORS.primary,
+        fillColor: COLORS.primary,
+        textColor: "#fbbf24",
         lineColor: COLORS.primary,
         lineWidth: 0.2,
         fontSize: 7,

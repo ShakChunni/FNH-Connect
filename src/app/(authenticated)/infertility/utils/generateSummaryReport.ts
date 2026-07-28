@@ -13,15 +13,15 @@ interface InfertilityPatientReportPeriod {
 type AutoTableDocument = jsPDF & { lastAutoTable?: Table };
 
 const COLORS = {
-  primary: "#064e3b",
-  accent: "#059669",
+  primary: "#020617",
+  accent: "#1d4ed8",
   success: "#059669",
   warning: "#d97706",
   danger: "#e11d48",
   text: "#000000",
   lightText: "#1a202c",
   border: "#cbd5e1",
-  faint: "#ecfdf5",
+  faint: "#f1f5f9",
 };
 
 const COMPANY_INFO = {
@@ -212,7 +212,7 @@ export async function generateInfertilitySummaryReport(
   doc.setTextColor(COLORS.primary);
   doc.text("Key Performance Metrics", margin, currentY);
   currentY += 2;
-  doc.setDrawColor(209, 250, 229);
+  doc.setDrawColor(226, 232, 240);
   doc.line(margin, currentY, margin + 45, currentY);
   currentY += 6;
 
@@ -270,8 +270,8 @@ export async function generateInfertilitySummaryReport(
     ]),
     theme: "striped",
     headStyles: {
-      fillColor: COLORS.faint,
-      textColor: COLORS.primary,
+      fillColor: COLORS.primary,
+      textColor: "#fbbf24",
       lineColor: COLORS.primary,
       lineWidth: 0.2,
       fontStyle: "bold",
@@ -321,8 +321,8 @@ export async function generateInfertilitySummaryReport(
     }),
     theme: "striped",
     headStyles: {
-      fillColor: COLORS.faint,
-      textColor: COLORS.primary,
+      fillColor: COLORS.primary,
+      textColor: "#fbbf24",
       lineColor: COLORS.primary,
       lineWidth: 0.2,
       fontStyle: "bold",
@@ -388,8 +388,8 @@ export async function generateInfertilitySummaryReport(
       ]),
       theme: "striped",
       headStyles: {
-        fillColor: COLORS.faint,
-        textColor: COLORS.primary,
+        fillColor: COLORS.primary,
+        textColor: "#fbbf24",
         lineColor: COLORS.primary,
         lineWidth: 0.2,
         fontStyle: "bold",
