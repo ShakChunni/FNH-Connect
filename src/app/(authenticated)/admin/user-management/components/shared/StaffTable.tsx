@@ -6,7 +6,16 @@
 "use client";
 
 import React, { useRef, useState } from "react";
-import { Edit3, MoreVertical, Users, UserPlus, Search } from "lucide-react";
+import {
+  Edit3,
+  Archive,
+  ArchiveRestore,
+  Trash2,
+  MoreVertical,
+  Users,
+  UserPlus,
+  Search,
+} from "lucide-react";
 import { DropdownPortal } from "@/components/ui/DropdownPortal";
 import { useFetchStandaloneStaff } from "../../hooks";
 import { useUIStore } from "../../stores";
@@ -32,7 +41,7 @@ const ActionMenu: React.FC<{ staff: StaffRecord }> = ({ staff }) => {
         isOpen={isOpen}
         onClose={() => setIsOpen(false)}
         buttonRef={btnRef}
-        className="min-w-[140px]"
+        className="min-w-[150px]"
       >
         <div className="py-1">
           <button
@@ -43,6 +52,35 @@ const ActionMenu: React.FC<{ staff: StaffRecord }> = ({ staff }) => {
             className="w-full flex items-center gap-2 px-4 py-2.5 text-xs font-semibold text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer"
           >
             <Edit3 className="w-3.5 h-3.5 text-purple-500" /> Edit Staff
+          </button>
+          <hr className="my-1 border-gray-100" />
+          <button
+            onClick={() => {
+              openModal("archiveStaff", { staff });
+              setIsOpen(false);
+            }}
+            className={cn(
+              "w-full flex items-center gap-2 px-4 py-2.5 text-xs font-semibold transition-colors cursor-pointer",
+              staff.isActive
+                ? "text-red-600 hover:bg-red-50"
+                : "text-green-600 hover:bg-green-50",
+            )}
+          >
+            {staff.isActive ? (
+              <Archive className="w-3.5 h-3.5" />
+            ) : (
+              <ArchiveRestore className="w-3.5 h-3.5" />
+            )}
+            {staff.isActive ? "Archive" : "Unarchive"}
+          </button>
+          <button
+            onClick={() => {
+              openModal("deleteStaff", { staff });
+              setIsOpen(false);
+            }}
+            className="w-full flex items-center gap-2 px-4 py-2.5 text-xs font-semibold text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
+          >
+            <Trash2 className="w-3.5 h-3.5" /> Delete Staff
           </button>
         </div>
       </DropdownPortal>
