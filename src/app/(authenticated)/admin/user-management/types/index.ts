@@ -235,6 +235,8 @@ export type ModalType =
   | "resetPassword"
   | "addStaff"
   | "editStaff"
+  | "archiveStaff"
+  | "deleteStaff"
   | null;
 
 // ============================================

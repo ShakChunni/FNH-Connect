@@ -5,5 +5,9 @@ export { default as AddUserModal } from "./AddUserModal";
 export { default as AddStaffModal } from "./AddStaffModal";
 export { default as EditUserModal } from "./EditUserModal";
 export { default as EditStaffModal } from "./EditStaffModal";
+export { default as ArchiveStaffModal } from "./ArchiveStaffModal";
+export { default as DeleteStaffModal } from "./DeleteStaffModal";
 export { default as ArchiveUserModal } from "./ArchiveUserModal";
 export { default as ResetPasswordModal } from "./ResetPasswordModal";
+
+

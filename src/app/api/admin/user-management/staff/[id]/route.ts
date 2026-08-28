@@ -211,3 +211,178 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     );
   }
 }
+
+// ═══════════════════════════════════════════════════════════════
+// DELETE - Delete Standalone Staff
+// ═══════════════════════════════════════════════════════════════
+
+export async function DELETE(request: NextRequest, { params }: RouteParams) {
+  try {
+    if (!validateCSRFToken(request)) {
+      return NextResponse.json(
+        { success: false, error: "Invalid CSRF token" },
+        { status: 403 },
+      );
+    }
+
+    const authUser = await getAuthenticatedUserForAPI();
+    if (!authUser) {
+      return NextResponse.json(
+        { success: false, error: "Unauthorized" },
+        { status: 401 },
+      );
+    }
+
+    if (!isSystemAdminRole(authUser.role)) {
+      return NextResponse.json(
+        { success: false, error: "Forbidden: System admin access required" },
+        { status: 403 },
+      );
+    }
+
+    const { id } = await params;
+    const staffId = parseInt(id, 10);
+
+    if (isNaN(staffId)) {
+      return NextResponse.json(
+        { success: false, error: "Invalid staff ID" },
+        { status: 400 },
+      );
+    }
+
+    await prisma.$transaction(async (tx) => {
+      const existingStaff = await tx.staff.findUnique({
+        where: { id: staffId },
+        select: {
+          id: true,
+          fullName: true,
+          user: { select: { id: true } },
+        },
+      });
+
+      if (!existingStaff) {
+        throw new Error("Staff member not found");
+      }
+
+      if (existingStaff.user) {
+        throw new Error(
+          "Cannot delete a staff member with a linked user account",
+        );
+      }
+
+      // Check relation dependencies across the system
+      const [
+        admissionsCount,
+        chamberVisitsCount,
+        pathologyOrderedCount,
+        pathologyDoneCount,
+        paymentsCount,
+        shiftsCount,
+        infertilityCreatedCount,
+        infertilityModifiedCount,
+        infertilityTestOrderedCount,
+        infertilityTestDoneCount,
+        infertilityShiftsCount,
+        infertilityPaymentsCount,
+      ] = await Promise.all([
+        tx.admission.count({ where: { doctorId: staffId } }),
+        tx.doctorChamberVisit.count({ where: { doctorId: staffId } }),
+        tx.pathologyTest.count({ where: { orderedById: staffId } }),
+        tx.pathologyTest.count({ where: { doneById: staffId } }),
+        tx.payment.count({ where: { collectedById: staffId } }),
+        tx.shift.count({ where: { staffId } }),
+        tx.infertilityPatient.count({ where: { createdBy: staffId } }),
+        tx.infertilityPatient.count({ where: { lastModifiedBy: staffId } }),
+        tx.infertilityTest.count({ where: { orderedById: staffId } }),
+        tx.infertilityTest.count({ where: { doneById: staffId } }),
+        tx.infertilityShift.count({ where: { staffId } }),
+        tx.infertilityPayment.count({ where: { collectedById: staffId } }),
+      ]);
+
+      const totalReferences =
+        admissionsCount +
+        chamberVisitsCount +
+        pathologyOrderedCount +
+        pathologyDoneCount +
+        paymentsCount +
+        shiftsCount +
+        infertilityCreatedCount +
+        infertilityModifiedCount +
+        infertilityTestOrderedCount +
+        infertilityTestDoneCount +
+        infertilityShiftsCount +
+        infertilityPaymentsCount;
+
+      if (totalReferences > 0) {
+        throw new Error(
+          "Cannot delete staff member with associated admissions, chamber visits, pathology tests, shifts, or payment records. Please deactivate them instead.",
+        );
+      }
+
+      // Clean up department assignments junction records
+      await tx.staffDepartment.deleteMany({
+        where: { staffId },
+      });
+
+      // Delete the staff record
+      await tx.staff.delete({
+        where: { id: staffId },
+      });
+
+      // Log activity
+      await tx.activityLog.create({
+        data: {
+          userId: authUser.id,
+          action: "STAFF_DELETED",
+          description: `Deleted standalone staff member "${existingStaff.fullName}"`,
+          entityType: "Staff",
+          entityId: staffId,
+          ipAddress: authUser.sessionDeviceInfo.ipAddress,
+          sessionId: authUser.sessionId,
+          deviceFingerprint: authUser.sessionDeviceInfo.deviceFingerprint,
+          readableFingerprint: authUser.sessionDeviceInfo.readableFingerprint,
+          deviceType: authUser.sessionDeviceInfo.deviceType,
+          browserName: authUser.sessionDeviceInfo.browserName,
+          browserVersion: authUser.sessionDeviceInfo.browserVersion,
+          osType: authUser.sessionDeviceInfo.osType,
+        },
+      });
+    });
+
+    const response = NextResponse.json({
+      success: true,
+      message: "Staff member deleted successfully",
+    });
+
+    return addCSRFTokenToResponse(response);
+  } catch (error) {
+    console.error("DELETE /api/admin/user-management/staff/[id] error:", error);
+
+    if (error instanceof Error && error.message.includes("not found")) {
+      return NextResponse.json(
+        { success: false, error: error.message },
+        { status: 404 },
+      );
+    }
+
+    if (
+      error instanceof Error &&
+      (error.message.includes("linked user account") ||
+        error.message.includes("associated"))
+    ) {
+      return NextResponse.json(
+        { success: false, error: error.message },
+        { status: 409 },
+      );
+    }
+
+    return NextResponse.json(
+      {
+        success: false,
+        error: "Failed to delete staff member",
+      },
+      { status: 500 },
+    );
+  }
+}
+

@@ -28,6 +28,8 @@ import {
   AddStaffModal,
   EditUserModal,
   EditStaffModal,
+  ArchiveStaffModal,
+  DeleteStaffModal,
   ArchiveUserModal,
   ResetPasswordModal,
 } from "./components/modals";
@@ -395,6 +397,16 @@ const UserManagementPage = () => {
       />
       <EditStaffModal
         isOpen={activeModal === "editStaff"}
+        onClose={closeModal}
+        staff={(modalData?.staff as StaffRecord) || null}
+      />
+      <ArchiveStaffModal
+        isOpen={activeModal === "archiveStaff"}
+        onClose={closeModal}
+        staff={(modalData?.staff as StaffRecord) || null}
+      />
+      <DeleteStaffModal
+        isOpen={activeModal === "deleteStaff"}
         onClose={closeModal}
         staff={(modalData?.staff as StaffRecord) || null}
       />
