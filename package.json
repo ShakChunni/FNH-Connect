@@ -93,7 +93,9 @@
     "uuid": "^11.1.1",
     "postcss": "^8.5.12",
     "sharp": "^0.35.3",
-    "deepmerge-ts": "^8.0.2"
+    "deepmerge-ts": "^8.0.2",
+    "@humanfs/node": "^0.16.8",
+    "fflate": "^0.8.3"
   },
   "devDependencies": {
     "babel-plugin-react-compiler": "^19.1.0-rc.3",
