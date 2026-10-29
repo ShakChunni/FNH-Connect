@@ -70,7 +70,7 @@
     "next": "15.5.28",
     "node-cron": "^4.2.1",
     "node-device-detector": "^2.2.4",
-    "postmark": "^4.0.5",
+    "postmark": "^5.1.0",
     "prisma": "^6.16.2",
     "radix-ui": "^1.4.3",
     "react": "19.1.10",
