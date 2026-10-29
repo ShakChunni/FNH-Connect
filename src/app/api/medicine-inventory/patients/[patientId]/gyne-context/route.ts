@@ -1,3 +1,4 @@
+import { authorizeAPIRequest } from "@/lib/apiAuthorization";
 /**
  * Medicine Inventory — Patient Gynecology Context API
  *
@@ -27,13 +28,15 @@ interface RouteParams {
   params: Promise<{ patientId: string }>;
 }
 
-const patientIdSchema = z.string().regex(/^\d+$/).transform(Number).pipe(
-  z.number().int().positive(),
+const patientIdSchema = z.string().regex(/^[1-9]\d*$/).transform(Number).pipe(
+  z.number().int().positive().max(Number.MAX_SAFE_INTEGER),
 );
 
 export async function GET(_request: NextRequest, { params }: RouteParams) {
   try {
     const user = await getAuthenticatedUserForAPI();
+    const authorizationError = await authorizeAPIRequest(user, "/api/medicine-inventory/patients/[patientId]/gyne-context", "GET");
+    if (authorizationError) return authorizationError;
     if (!user) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },

@@ -1,3 +1,5 @@
+import { publicErrorMessage } from "@/lib/publicError";
+import { authorizeAPIRequest, parsePositiveIntegerId } from "@/lib/apiAuthorization";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import {
@@ -17,6 +19,8 @@ export async function GET(
 ) {
   try {
     const user = await getAuthenticatedUserForAPI();
+    const authorizationError = await authorizeAPIRequest(user, "/api/infertility-patients/[id]", "GET");
+    if (authorizationError) return authorizationError;
     if (!user) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
@@ -25,7 +29,7 @@ export async function GET(
     }
 
     const { id } = await params;
-    const patientId = parseInt(id);
+    const patientId = parsePositiveIntegerId(id);
     if (isNaN(patientId)) {
       return NextResponse.json(
         { success: false, error: "Invalid patient ID" },
@@ -55,7 +59,7 @@ export async function GET(
       {
         success: false,
         error: "Failed to fetch HSI Center patient",
-        message: error instanceof Error ? error.message : "Unknown error",
+        message: "Unable to process request",
       },
       { status: 500 }
     );
@@ -85,6 +89,8 @@ export async function PATCH(
     }
 
     const user = await getAuthenticatedUserForAPI();
+    const authorizationError = await authorizeAPIRequest(user, "/api/infertility-patients/[id]", "PATCH");
+    if (authorizationError) return authorizationError;
     if (!user) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
@@ -94,7 +100,7 @@ export async function PATCH(
     const { id: userId, staffId } = user;
 
     const { id } = await params;
-    const patientId = parseInt(id);
+    const patientId = parsePositiveIntegerId(id);
     if (isNaN(patientId)) {
       return NextResponse.json(
         { success: false, error: "Invalid patient ID" },
@@ -145,7 +151,7 @@ export async function PATCH(
 
     if (error instanceof Error && error.message.includes("not found")) {
       return NextResponse.json(
-        { success: false, error: error.message },
+        { success: false, error: publicErrorMessage(error) },
         { status: 404 }
       );
     }
@@ -154,7 +160,7 @@ export async function PATCH(
       {
         success: false,
         error: "Failed to update HSI Center patient record",
-        message: error instanceof Error ? error.message : "Unknown error",
+        message: "Unable to process request",
       },
       { status: 500 }
     );
@@ -178,6 +184,8 @@ export async function DELETE(
     }
 
     const user = await getAuthenticatedUserForAPI();
+    const authorizationError = await authorizeAPIRequest(user, "/api/infertility-patients/[id]", "DELETE");
+    if (authorizationError) return authorizationError;
     if (!user) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
@@ -187,7 +195,7 @@ export async function DELETE(
     const { id: userId } = user;
 
     const { id } = await params;
-    const patientId = parseInt(id);
+    const patientId = parsePositiveIntegerId(id);
     if (isNaN(patientId)) {
       return NextResponse.json(
         { success: false, error: "Invalid patient ID" },
@@ -216,7 +224,7 @@ export async function DELETE(
 
     if (error instanceof Error && error.message.includes("not found")) {
       return NextResponse.json(
-        { success: false, error: error.message },
+        { success: false, error: publicErrorMessage(error) },
         { status: 404 }
       );
     }
@@ -225,7 +233,7 @@ export async function DELETE(
       {
         success: false,
         error: "Failed to delete HSI Center patient record",
-        message: error instanceof Error ? error.message : "Unknown error",
+        message: "Unable to process request",
       },
       { status: 500 }
     );

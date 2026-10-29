@@ -1,3 +1,4 @@
+import { authorizeAPIRequest } from "@/lib/apiAuthorization";
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthenticatedUserForAPI } from "@/lib/auth-validation";
 import {
@@ -11,6 +12,8 @@ import { canViewActivityLogs } from "@/lib/roles";
 export async function GET(request: NextRequest) {
   try {
     const user = await getAuthenticatedUserForAPI();
+    const authorizationError = await authorizeAPIRequest(user, "/api/admin/activity-logs", "GET");
+    if (authorizationError) return authorizationError;
 
     if (!user || !canViewActivityLogs(user.role)) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

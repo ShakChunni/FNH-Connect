@@ -49,3 +49,22 @@ export function validatePassword(password: string): {
     errors,
   };
 }
+
+/** Generate a policy-compliant temporary password using browser cryptography. */
+export function generatePassword(length = 16): string {
+  const groups = ["abcdefghijkmnpqrstuvwxyz", "ABCDEFGHJKLMNPQRSTUVWXYZ", "23456789", "!@#$%"];
+  const randomIndex = (max: number) => {
+    const values = new Uint32Array(1);
+    const ceiling = Math.floor(0x100000000 / max) * max;
+    do { globalThis.crypto.getRandomValues(values); } while (values[0] >= ceiling);
+    return values[0] % max;
+  };
+  const all = groups.join("");
+  const chars = groups.map((group) => group[randomIndex(group.length)]);
+  while (chars.length < Math.max(length, PASSWORD_POLICY.MIN_LENGTH)) chars.push(all[randomIndex(all.length)]);
+  for (let i = chars.length - 1; i > 0; i--) {
+    const j = randomIndex(i + 1);
+    [chars[i], chars[j]] = [chars[j], chars[i]];
+  }
+  return chars.join("");
+}

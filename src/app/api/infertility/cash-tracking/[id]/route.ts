@@ -1,3 +1,4 @@
+import { authorizeAPIRequest, parsePositiveIntegerId } from "@/lib/apiAuthorization";
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthenticatedUserForAPI } from "@/lib/auth-validation";
 import { getInfertilityCashTrackingShiftDetails } from "@/services/infertilityCashTrackingService";
@@ -5,7 +6,7 @@ import { isAdminRole } from "@/lib/roles";
 import { z } from "zod";
 
 const paramsSchema = z.object({
-  id: z.coerce.number().min(1),
+  id: z.string().regex(/^[1-9]\d*$/).transform(Number).pipe(z.number().int().positive().max(Number.MAX_SAFE_INTEGER)),
 });
 
 export async function GET(
@@ -14,6 +15,8 @@ export async function GET(
 ) {
   try {
     const user = await getAuthenticatedUserForAPI();
+    const authorizationError = await authorizeAPIRequest(user, "/api/infertility/cash-tracking/[id]", "GET");
+    if (authorizationError) return authorizationError;
     if (!user) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },

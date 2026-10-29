@@ -1,4 +1,5 @@
 import crypto from "crypto";
+import { getSecurityHeaders } from "../../security-headers.mjs";
 export { PASSWORD_POLICY, validatePassword } from "@/lib/passwordPolicy";
 
 /**
@@ -57,25 +58,7 @@ export const GENERIC_ERRORS = {
 } as const;
 
 // Security Headers Configuration
-export const SECURITY_HEADERS = {
-  "X-Frame-Options": "DENY",
-  "X-Content-Type-Options": "nosniff",
-  "X-XSS-Protection": "1; mode=block",
-  "Referrer-Policy": "strict-origin-when-cross-origin",
-  "Permissions-Policy": "geolocation=(), microphone=(), camera=(), payment=()",
-  "Strict-Transport-Security": "max-age=31536000; includeSubDomains; preload",
-  "Content-Security-Policy": [
-    "default-src 'self'",
-    "script-src 'self' 'unsafe-inline' 'unsafe-eval'", // Next.js requires unsafe-inline/eval in dev
-    "style-src 'self' 'unsafe-inline'",
-    "img-src 'self' data: https:",
-    "font-src 'self' data:",
-    "connect-src 'self'",
-    "frame-ancestors 'none'",
-    "base-uri 'self'",
-    "form-action 'self'",
-  ].join("; "),
-} as const;
+export const SECURITY_HEADERS = getSecurityHeaders();
 
 /**
  * Constant-time string comparison to prevent timing attacks

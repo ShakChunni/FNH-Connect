@@ -1,5 +1,7 @@
 # FNH Connect — End-to-End Security Audit Report
 
+> Historical report. Its findings and remediation status predate the current controls; see [SECURITY.md](SECURITY.md) for the implementation, configuration and verification requirements. Do not treat the findings below as a current security assessment.
+
 > **Audit date:** 2026-06-16  
 > **Scope:** Next.js 15.5.18 App Router, Prisma 6.16.2, PostgreSQL, custom JWT/session auth  
 > **Methodology:** Static code review, route-handler inventory, middleware/auth/session flow analysis, Prisma schema review, Context7 latest-practice cross-check.

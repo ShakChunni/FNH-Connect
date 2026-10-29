@@ -1,3 +1,4 @@
+import { authorizeAPIRequest, parsePositiveIntegerId } from "@/lib/apiAuthorization";
 import { NextRequest, NextResponse } from "next/server";
 import {
   addCSRFTokenToResponse,
@@ -16,13 +17,15 @@ interface RouteContext {
 
 async function getId(context: RouteContext): Promise<number | null> {
   const { id } = await context.params;
-  const parsed = Number(id);
+  const parsed = parsePositiveIntegerId(id);
   return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
 }
 
 export async function GET(_request: NextRequest, context: RouteContext) {
   try {
     const user = await getAuthenticatedUserForAPI();
+    const authorizationError = await authorizeAPIRequest(user, "/api/doctor-chamber/[id]", "GET");
+    if (authorizationError) return authorizationError;
     if (!user) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
@@ -66,6 +69,8 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     }
 
     const user = await getAuthenticatedUserForAPI();
+    const authorizationError = await authorizeAPIRequest(user, "/api/doctor-chamber/[id]", "PATCH");
+    if (authorizationError) return authorizationError;
     if (!user) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },

@@ -1,3 +1,5 @@
+import { PublicError } from "@/lib/publicError";
+import { calculateInfertilityBill } from "@/lib/infertilityBilling";
 /**
  * Infertility Patient Service Layer
  * Business logic for infertility patient management
@@ -120,7 +122,7 @@ async function getNextInfertilityCaseNumber(
   const nextSequence = Number(sequenceRows[0]?.lastSequence);
 
   if (!Number.isInteger(nextSequence) || nextSequence < 1) {
-    throw new Error("Failed to allocate an infertility case number");
+    throw new PublicError("Failed to allocate an infertility case number");
   }
 
   return formatRegistrationNumber(
@@ -486,7 +488,7 @@ export async function createInfertilityPatient(
       hospital = await tx.hospital.findUnique({
         where: { id: hospitalData.id },
       });
-      if (!hospital) throw new Error("Hospital not found");
+      if (!hospital) throw new PublicError("Hospital not found");
     } else {
       hospital = await tx.hospital.findUnique({
         where: { name: hospitalData.name },
@@ -514,7 +516,7 @@ export async function createInfertilityPatient(
     );
 
     if (potentialSpouseCase) {
-      throw new Error(
+      throw new PublicError(
         `This person appears to be the spouse of the existing infertility patient in case ${potentialSpouseCase.caseNumber}. Edit that case and order a spouse investigation instead of creating another patient row.`,
       );
     }
@@ -583,7 +585,7 @@ export async function createInfertilityPatient(
     });
 
     if (existingInfertilityRecord) {
-      throw new Error(
+      throw new PublicError(
         `This patient already has an active HSI Center record at ${hospital.name}. Please edit the existing record instead of creating a new one.`,
       );
     }
@@ -686,11 +688,11 @@ export async function updateInfertilityPatient(
     });
 
     if (!existingRecord) {
-      throw new Error("HSI Center patient record not found");
+      throw new PublicError("HSI Center patient record not found");
     }
 
     if (existingRecord.mergedIntoId !== null) {
-      throw new Error(
+      throw new PublicError(
         "This HSI Center patient record has already been merged into another case.",
       );
     }
@@ -741,7 +743,7 @@ export async function updateInfertilityPatient(
       });
 
       if (collisionRecord) {
-        throw new Error(
+        throw new PublicError(
           `This patient already has an HSI Center record at ${hospital.name}. You cannot move this record to that hospital.`,
         );
       }
@@ -847,11 +849,11 @@ export async function deleteInfertilityPatient(
     });
 
     if (!existingRecord) {
-      throw new Error("HSI Center patient record not found");
+      throw new PublicError("HSI Center patient record not found");
     }
 
     if (existingRecord.mergedIntoId !== null) {
-      throw new Error(
+      throw new PublicError(
         "This HSI Center patient record has already been merged into another case.",
       );
     }
@@ -897,11 +899,11 @@ export async function updateInfertilityPatientStatus(
     });
 
     if (!existingRecord) {
-      throw new Error("HSI Center patient record not found");
+      throw new PublicError("HSI Center patient record not found");
     }
 
     if (existingRecord.mergedIntoId !== null) {
-      throw new Error(
+      throw new PublicError(
         "This HSI Center patient record has already been merged into another case.",
       );
     }
@@ -1465,7 +1467,6 @@ export async function createInfertilityTest(
   testData: InfertilityTestData,
   staffId: number,
   userId: number,
-  shiftId: number | null,
   activityLogContext?: ActivityLogContext,
 ) {
   return await prisma.$transaction(async (tx) => {
@@ -1476,18 +1477,11 @@ export async function createInfertilityTest(
     });
 
     if (!infertilityPatient) {
-      throw new Error("HSI Center patient record not found");
+      throw new PublicError("HSI Center patient record not found");
     }
 
-    // Financial values are derived on the server. The client may submit a
-    // stale dueAmount while a payment is being recorded, so never persist a
-    // due value that disagrees with the total and paid amount.
-    const grandTotal = Math.max(0, Number(testData.grandTotal));
-    const paidAmount = Math.max(
-      0,
-      Math.min(Number(testData.paidAmount), grandTotal),
-    );
-    const dueAmount = Math.max(0, grandTotal - paidAmount);
+    const bill = calculateInfertilityBill(testData);
+    const { grandTotal, paidAmount, dueAmount } = bill;
 
     // 2. Generate test number from the highest existing unique number.
     const testNumber = await getNextInfertilityTestNumber(tx);
@@ -1521,10 +1515,10 @@ export async function createInfertilityTest(
         },
         remarks: testData.remarks,
         isCompleted: testData.isCompleted || false,
-        testCharge: testData.testCharge,
-        discountType: testData.discountType,
-        discountValue: testData.discountValue,
-        discountAmount: testData.discountAmount,
+        testCharge: bill.testCharge,
+        discountType: bill.discountType,
+        discountValue: bill.discountValue,
+        discountAmount: bill.discountAmount,
         grandTotal,
         paidAmount,
         dueAmount,
@@ -1567,8 +1561,8 @@ export async function createInfertilityTest(
         serviceType: "INFERTILITY_TEST",
         serviceName: `HSI Center Investigation - ${testNumber}`,
         departmentId: department ? department.id : 1, // Fallback
-        originalAmount: testData.testCharge,
-        discountAmount: testData.discountAmount || 0,
+        originalAmount: bill.testCharge,
+        discountAmount: bill.discountAmount || 0,
         finalAmount: grandTotal,
         infertilityTestId: infertilityTest.id,
         createdBy: staffId,
@@ -1674,26 +1668,22 @@ export async function updateInfertilityTest(
     });
 
     if (!existingTest || existingTest.isMigrationSuperseded) {
-      throw new Error("HSI Center test not found");
+      throw new PublicError("HSI Center test not found");
     }
 
     const currentSelectedTests = parseSelectedTests(existingTest.testResults);
     const nextSelectedTests = testData.selectedTests ?? currentSelectedTests;
-    const nextTestCharge = testData.testCharge ?? Number(existingTest.testCharge);
-    const nextDiscountAmount =
-      testData.discountAmount ?? Number(existingTest.discountAmount ?? 0);
-    const nextGrandTotal = Math.max(
-      0,
-      testData.grandTotal ?? Number(existingTest.grandTotal),
-    );
-    const nextPaidAmount = Math.max(
-      0,
-      Math.min(
-        testData.paidAmount ?? Number(existingTest.paidAmount),
-        nextGrandTotal,
-      ),
-    );
-    const nextDueAmount = Math.max(0, nextGrandTotal - nextPaidAmount);
+    const bill = calculateInfertilityBill(testData, {
+      selectedTests: currentSelectedTests,
+      testCharge: Number(existingTest.testCharge),
+      discountType: existingTest.discountType,
+      discountValue: existingTest.discountValue === null ? null : Number(existingTest.discountValue),
+      discountAmount: Number(existingTest.discountAmount ?? 0),
+      grandTotal: Number(existingTest.grandTotal),
+      paidAmount: Number(existingTest.paidAmount),
+    });
+    const { testCharge: nextTestCharge, discountAmount: nextDiscountAmount,
+      grandTotal: nextGrandTotal, paidAmount: nextPaidAmount, dueAmount: nextDueAmount } = bill;
     const paidAmountDiff = nextPaidAmount - Number(existingTest.paidAmount);
     const grandTotalDiff = nextGrandTotal - Number(existingTest.grandTotal);
     const dueAmountDiff = nextDueAmount - Number(existingTest.dueAmount);
@@ -1731,18 +1721,10 @@ export async function updateInfertilityTest(
     if (testData.testDate !== undefined) {
       dataToUpdate.testDate = new Date(testData.testDate);
     }
-    if (testData.testCharge !== undefined) {
-      dataToUpdate.testCharge = testData.testCharge;
-    }
-    if (testData.discountType !== undefined) {
-      dataToUpdate.discountType = testData.discountType;
-    }
-    if (testData.discountValue !== undefined) {
-      dataToUpdate.discountValue = testData.discountValue;
-    }
-    if (testData.discountAmount !== undefined) {
-      dataToUpdate.discountAmount = testData.discountAmount;
-    }
+    dataToUpdate.testCharge = bill.testCharge;
+    dataToUpdate.discountType = bill.discountType;
+    dataToUpdate.discountValue = bill.discountValue;
+    dataToUpdate.discountAmount = bill.discountAmount;
     // Normalize both financial inputs to the values used for the server-side
     // due calculation. This also repairs legacy rows with an overpayment.
     dataToUpdate.grandTotal = nextGrandTotal;
@@ -1789,7 +1771,7 @@ export async function updateInfertilityTest(
           });
 
         if (!patientAccountForPayment) {
-          throw new Error("Patient account not found for payment recording");
+          throw new PublicError("Patient account not found for payment recording");
         }
 
         const paymentCount = await tx.infertilityPayment.count();
@@ -1938,7 +1920,7 @@ export async function updateInfertilityTest(
     });
 
     if (!refreshedTest) {
-      throw new Error("Failed to load updated HSI Center test");
+      throw new PublicError("Failed to load updated HSI Center test");
     }
 
     const refreshedStaffIds = Array.from(

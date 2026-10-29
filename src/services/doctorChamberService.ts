@@ -1,3 +1,4 @@
+import { PublicError } from "@/lib/publicError";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import {
@@ -127,7 +128,7 @@ async function findConfiguredDoctor(
   });
 
   if (!doctor) {
-    throw new Error(
+    throw new PublicError(
       `Configured doctor ${DOCTOR_CHAMBER_CONFIG.doctorDisplayName} was not found`,
     );
   }
@@ -668,16 +669,16 @@ export async function updateDoctorChamberVisit(
     });
 
     if (!existing) {
-      throw new Error("Doctor chamber visit not found");
+      throw new PublicError("Doctor chamber visit not found");
     }
 
     const doctor = await findConfiguredDoctor(tx);
     if (existing.doctorId !== doctor.id) {
-      throw new Error("This visit does not belong to the configured doctor");
+      throw new PublicError("This visit does not belong to the configured doctor");
     }
 
     if (input.patient.id !== null && input.patient.id !== existing.patientId) {
-      throw new Error("The patient cannot be changed while editing a visit");
+      throw new PublicError("The patient cannot be changed while editing a visit");
     }
 
     const department = await getOrCreateDepartment(tx);

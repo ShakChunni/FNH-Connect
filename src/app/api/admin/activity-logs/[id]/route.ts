@@ -1,3 +1,4 @@
+import { authorizeAPIRequest, parsePositiveIntegerId } from "@/lib/apiAuthorization";
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthenticatedUserForAPI } from "@/lib/auth-validation";
 import { getActivityLogDetails } from "@/services/activityLogService";
@@ -10,13 +11,15 @@ interface RouteParams {
 export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
     const user = await getAuthenticatedUserForAPI();
+    const authorizationError = await authorizeAPIRequest(user, "/api/admin/activity-logs/[id]", "GET");
+    if (authorizationError) return authorizationError;
 
     if (!user || !canViewActivityLogs(user.role)) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const { id } = await params;
-    const logId = parseInt(id);
+    const logId = parsePositiveIntegerId(id);
 
     if (isNaN(logId)) {
       return NextResponse.json({ error: "Invalid log ID" }, { status: 400 });

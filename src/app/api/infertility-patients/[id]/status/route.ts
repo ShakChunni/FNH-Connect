@@ -1,3 +1,6 @@
+import { publicErrorMessage } from "@/lib/publicError";
+import { infertilityStatusSchema } from "@/lib/securityInputs";
+import { authorizeAPIRequest, parsePositiveIntegerId } from "@/lib/apiAuthorization";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import {
@@ -8,11 +11,7 @@ import { getAuthenticatedUserForAPI } from "@/lib/auth-validation";
 import * as infertilityService from "@/services/infertilityService";
 
 const updateStatusSchema = z.object({
-  status: z
-    .string()
-    .trim()
-    .min(1, "Status is required")
-    .max(50, "Status is too long"),
+  status: infertilityStatusSchema,
 });
 
 export async function PATCH(
@@ -28,6 +27,8 @@ export async function PATCH(
     }
 
     const user = await getAuthenticatedUserForAPI();
+    const authorizationError = await authorizeAPIRequest(user, "/api/infertility-patients/[id]/status", "PATCH");
+    if (authorizationError) return authorizationError;
     if (!user) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
@@ -43,7 +44,7 @@ export async function PATCH(
     }
 
     const { id } = await params;
-    const patientId = parseInt(id, 10);
+    const patientId = parsePositiveIntegerId(id);
 
     if (isNaN(patientId)) {
       return NextResponse.json(
@@ -92,7 +93,7 @@ export async function PATCH(
       error.message.toLowerCase().includes("not found")
     ) {
       return NextResponse.json(
-        { success: false, error: error.message },
+        { success: false, error: publicErrorMessage(error) },
         { status: 404 }
       );
     }
@@ -101,7 +102,7 @@ export async function PATCH(
       {
         success: false,
         error: "Failed to update HSI Center patient status",
-        message: error instanceof Error ? error.message : "Unknown error",
+        message: "Unable to process request",
       },
       { status: 500 }
     );

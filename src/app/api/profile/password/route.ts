@@ -1,3 +1,5 @@
+import { PublicError } from "@/lib/publicError";
+import { authorizeAPIRequest } from "@/lib/apiAuthorization";
 /**
  * Profile Password API
  * PATCH: Change the authenticated user's own password
@@ -47,6 +49,8 @@ export async function PATCH(
     }
 
     const authUser = await getAuthenticatedUserForAPI();
+    const authorizationError = await authorizeAPIRequest(authUser, "/api/profile/password", "PATCH");
+    if (authorizationError) return authorizationError;
     if (!authUser) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
@@ -109,7 +113,7 @@ export async function PATCH(
       });
 
       if (!user) {
-        throw new Error("User not found");
+        throw new PublicError("User not found");
       }
 
       const isCurrentPasswordValid = await bcrypt.compare(
@@ -118,7 +122,7 @@ export async function PATCH(
       );
 
       if (!isCurrentPasswordValid) {
-        throw new Error("Current password is incorrect");
+        throw new PublicError("Current password is incorrect");
       }
 
       const hashedPassword = await bcrypt.hash(newPassword, 12);

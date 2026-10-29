@@ -1,3 +1,5 @@
+import { publicErrorMessage } from "@/lib/publicError";
+import { authorizeAPIRequest } from "@/lib/apiAuthorization";
 /**
  * Medicine Groups API Route
  * GET: List all medicine groups
@@ -40,6 +42,8 @@ const groupFiltersSchema = z.object({
 export async function GET(request: NextRequest) {
   try {
     const user = await getAuthenticatedUserForAPI();
+    const authorizationError = await authorizeAPIRequest(user, "/api/medicine-inventory/groups", "GET");
+    if (authorizationError) return authorizationError;
     if (!user) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
@@ -98,7 +102,7 @@ export async function GET(request: NextRequest) {
       {
         success: false,
         error: "Failed to fetch medicine groups",
-        message: error instanceof Error ? error.message : "Unknown error",
+        message: "Unable to process request",
       },
       { status: 500 },
     );
@@ -119,6 +123,8 @@ export async function POST(request: NextRequest) {
     }
 
     const user = await getAuthenticatedUserForAPI();
+    const authorizationError = await authorizeAPIRequest(user, "/api/medicine-inventory/groups", "POST");
+    if (authorizationError) return authorizationError;
     if (!user) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
@@ -153,7 +159,7 @@ export async function POST(request: NextRequest) {
 
     if (error instanceof Error && error.message.includes("already exists")) {
       return NextResponse.json(
-        { success: false, error: error.message },
+        { success: false, error: publicErrorMessage(error) },
         { status: 400 },
       );
     }
@@ -162,7 +168,7 @@ export async function POST(request: NextRequest) {
       {
         success: false,
         error: "Failed to create medicine group",
-        message: error instanceof Error ? error.message : "Unknown error",
+        message: "Unable to process request",
       },
       { status: 500 },
     );

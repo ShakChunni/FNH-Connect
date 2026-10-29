@@ -8,8 +8,9 @@ import React, {
   useCallback,
   useRef,
 } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import Cookies from "js-cookie";
+import { SessionManager } from "@/lib/sessionManager";
 import LoadingState from "./LoadingState";
 import { fetchWithCSRF } from "@/lib/fetchWithCSRF";
 import { getAvailablePortals, getDefaultRouteForRole } from "@/lib/roles";
@@ -18,6 +19,7 @@ import type { PortalType, SessionUser } from "@/types/auth";
 interface AuthContextType {
   user: SessionUser | null;
   loading: boolean;
+  canRedirectFromAuthPage: boolean;
   portal: import("@/types/auth").PortalType | null;
   availablePortals: PortalType[];
   isSwitchingPortal: boolean;
@@ -27,65 +29,6 @@ interface AuthContextType {
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
-// Session check manager to prevent race conditions
-class SessionManager {
-  private static instance: SessionManager;
-  private checkPromise: Promise<any> | null = null;
-  private lastCheckTime = 0;
-  private readonly CHECK_INTERVAL = 5000; // 5 seconds minimum between checks
-
-  static getInstance(): SessionManager {
-    if (!SessionManager.instance) {
-      SessionManager.instance = new SessionManager();
-    }
-    return SessionManager.instance;
-  }
-
-  async checkSession(force = false): Promise<any> {
-    const now = Date.now();
-
-    // If we have a check in progress and this isn't forced, return that promise
-    if (this.checkPromise && !force) {
-      return this.checkPromise;
-    }
-
-    // If we just checked recently and this isn't forced, skip
-    if (!force && now - this.lastCheckTime < this.CHECK_INTERVAL) {
-      return null;
-    }
-
-    // Create new check promise
-    this.checkPromise = this.performCheck();
-    this.lastCheckTime = now;
-
-    try {
-      const result = await this.checkPromise;
-      return result;
-    } finally {
-      // Clear the promise after completion
-      this.checkPromise = null;
-    }
-  }
-
-  private async performCheck() {
-    const res = await fetch("/api/auth/verify-session", {
-      credentials: "include",
-      cache: "no-cache", // Prevent caching
-    });
-
-    if (!res.ok) {
-      throw new Error(`Session check failed: ${res.status}`);
-    }
-
-    return res.json();
-  }
-
-  reset() {
-    this.checkPromise = null;
-    this.lastCheckTime = 0;
-  }
-}
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [initialLoad, setInitialLoad] = useState(true);
@@ -98,11 +41,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [portal, setPortal] = useState<import("@/types/auth").PortalType | null>(null);
 
   const router = useRouter();
+  const pathname = usePathname();
+  const isLoginPath = pathname === "/login";
+  const [checkedLoginPath, setCheckedLoginPath] = useState<string | null>(null);
+  const [loginPathVerified, setLoginPathVerified] = useState(false);
   const sessionManager = useRef(SessionManager.getInstance());
+  const authOperation = useRef(false);
+  const currentPath = useRef(pathname);
+  currentPath.current = pathname;
 
   // Improved session check with race condition prevention
   const checkSession = useCallback(
     async (force = false) => {
+      let completed = false;
       try {
         if (switchingPortal || loggingOut) {
           return;
@@ -115,7 +66,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         const data = await sessionManager.current.checkSession(force);
 
         // Skip if this was a rate-limited check
-        if (!data) return;
+        if (!data || authOperation.current || currentPath.current !== pathname) return;
+        completed = true;
+
+        if (isLoginPath) setLoginPathVerified(true);
 
         if (data.success && data.valid && data.user) {
           const validatedUser: SessionUser = {
@@ -148,28 +102,35 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
       } catch (error) {
         console.error("[AuthContext] Session check failed:", error);
-        // On error (401, network issue, etc.) - clear and redirect
-        setUser(null);
-        setPortal(null);
-        Cookies.remove("session");
-        Cookies.remove("portal");
-        sessionManager.current.reset();
-        router.replace("/login");
+        if (currentPath.current !== pathname) return;
+        completed = true;
+        if (isLoginPath) setLoginPathVerified(false);
+        // Preserve the last authenticated state on transient network/server errors.
+        // An initial unauthenticated load still finishes so the login screen can render.
       } finally {
         if (initialLoad) {
           setInitialLoad(false);
         }
+        if (completed && isLoginPath && currentPath.current === pathname) setCheckedLoginPath(pathname);
         setLoading(false);
       }
     },
-    [initialLoad, loggingOut, router, switchingPortal],
+    [initialLoad, loggingOut, router, switchingPortal, isLoginPath, pathname],
   );
 
-  // Initial session check - only run once on mount
+  // Entering login must revalidate cached context before MainContent redirects.
+  // One effect handles both initial load and login navigation, including StrictMode.
   useEffect(() => {
-    checkSession(true);
+    if (initialLoad || isLoginPath) {
+      sessionManager.current.reset();
+      checkSession(true);
+    }
+    if (!isLoginPath) {
+      setCheckedLoginPath(null);
+      setLoginPathVerified(false);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Only run on mount
+  }, [pathname]);
 
   // Periodic session validation (every 5 minutes) - only if user exists and not logging out
   useEffect(() => {
@@ -220,6 +181,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   );
 
   const logout = useCallback(async () => {
+    authOperation.current = true;
     setLoggingOut(true);
     try {
       await fetchWithCSRF("/api/auth/logout", {
@@ -242,6 +204,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       sessionManager.current.reset();
       router.replace("/login");
     } finally {
+      authOperation.current = false;
       setLoggingOut(false);
     }
   }, [router]);
@@ -252,6 +215,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         return;
       }
 
+      authOperation.current = true;
       setSwitchingPortalTarget(targetPortal);
       setSwitchingPortal(true);
 
@@ -278,6 +242,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         );
       } catch (error) {
         console.error("[AuthContext] Portal switch failed:", error);
+        authOperation.current = false;
         setSwitchingPortalTarget(null);
         setSwitchingPortal(false);
         throw error;
@@ -311,7 +276,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     <AuthContext.Provider
       value={{
         user,
-        loading,
+        loading: loading || (isLoginPath && checkedLoginPath !== pathname),
+        canRedirectFromAuthPage: !isLoginPath || (checkedLoginPath === pathname && loginPathVerified),
         portal,
         availablePortals,
         isSwitchingPortal: switchingPortal,

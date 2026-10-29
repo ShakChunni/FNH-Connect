@@ -1,3 +1,5 @@
+import { publicErrorMessage } from "@/lib/publicError";
+import { authorizeAPIRequest, parsePositiveIntegerId } from "@/lib/apiAuthorization";
 /**
  * Medicine Company by ID API Route
  * PATCH: Update medicine company
@@ -32,6 +34,8 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     }
 
     const user = await getAuthenticatedUserForAPI();
+    const authorizationError = await authorizeAPIRequest(user, "/api/medicine-inventory/companies/[id]", "PATCH");
+    if (authorizationError) return authorizationError;
     if (!user) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
@@ -40,7 +44,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     }
 
     const { id } = await params;
-    const companyId = parseInt(id, 10);
+    const companyId = parsePositiveIntegerId(id);
 
     if (isNaN(companyId) || companyId <= 0) {
       return NextResponse.json(
@@ -78,7 +82,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       const knownErrors = ["already exists", "Invalid or inactive company"];
       if (knownErrors.some((msg) => error.message.includes(msg))) {
         return NextResponse.json(
-          { success: false, error: error.message },
+          { success: false, error: publicErrorMessage(error) },
           { status: 400 },
         );
       }
@@ -88,7 +92,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       {
         success: false,
         error: "Failed to update medicine company",
-        message: error instanceof Error ? error.message : "Unknown error",
+        message: "Unable to process request",
       },
       { status: 500 },
     );

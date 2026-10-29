@@ -1,3 +1,4 @@
+import { PublicError } from "@/lib/publicError";
 /**
  * Medicine Package Resolver Service
  *
@@ -186,7 +187,7 @@ async function resolvePackageDepartment(
       : null;
 
   if (!department) {
-    throw new Error("Select a valid active department for this package");
+    throw new PublicError("Select a valid active department for this package");
   }
 
   return {
@@ -252,7 +253,7 @@ export async function createMedicinePackage(
   );
   const definitions = await getMedicinePackageDefinitions();
   if (definitions.some((item) => item.code === normalized.code)) {
-    throw new Error("A package with this code already exists");
+    throw new PublicError("A package with this code already exists");
   }
   await persistMedicinePackageDefinitions(
     [...definitions, normalized],
@@ -274,13 +275,13 @@ export async function updateMedicinePackage(
   const index = definitions.findIndex(
     (item) => item.code === code.trim().toUpperCase(),
   );
-  if (index < 0) throw new Error("Medicine package not found");
+  if (index < 0) throw new PublicError("Medicine package not found");
 
   const duplicate = definitions.some(
     (item, itemIndex) =>
       itemIndex !== index && item.code === normalized.code,
   );
-  if (duplicate) throw new Error("A package with this code already exists");
+  if (duplicate) throw new PublicError("A package with this code already exists");
 
   const next = [...definitions];
   next[index] = normalized;
@@ -295,10 +296,10 @@ export async function deleteMedicinePackage(
   const definitions = await getMedicinePackageDefinitions();
   const normalizedCode = code.trim().toUpperCase();
   if (!definitions.some((item) => item.code === normalizedCode)) {
-    throw new Error("Medicine package not found");
+    throw new PublicError("Medicine package not found");
   }
   if (definitions.length === 1) {
-    throw new Error("At least one medicine package must remain");
+    throw new PublicError("At least one medicine package must remain");
   }
   await persistMedicinePackageDefinitions(
     definitions.filter((item) => item.code !== normalizedCode),

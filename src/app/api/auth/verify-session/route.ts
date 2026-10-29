@@ -1,9 +1,9 @@
+import { verifySessionToken, isSessionExpired, sessionAbsoluteExpiry, sessionIdleMilliseconds } from "@/lib/sessionSecurity";
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
 import type { VerifySessionResponse } from "@/types/auth";
 import {
-  getPortalFromSessionToken,
   normalizePortal,
 } from "@/lib/sessionPortal";
 import {
@@ -16,13 +16,20 @@ export async function GET(request: NextRequest) {
     const sessionToken = cookieStore.get("session")?.value;
 
     if (!sessionToken) {
-      // Clear any stale session cookie that might exist
       const response = NextResponse.json<VerifySessionResponse>(
         { success: false, valid: false, error: "No active session" },
         { status: 401 }
       );
-      response.cookies.delete("session");
       return response;
+    }
+
+    let payload;
+    try {
+      payload = verifySessionToken(sessionToken);
+    } catch {
+      return NextResponse.json<VerifySessionResponse>(
+        { success: false, valid: false, error: "Invalid session" }, { status: 401 },
+      );
     }
 
     // Verify manually to get session object for expiry check
@@ -45,18 +52,16 @@ export async function GET(request: NextRequest) {
       !session.user.isActive ||
       !session.user.staff.isActive
     ) {
-      // Delete the session cookie server-side since client can't delete httpOnly cookies
       const response = NextResponse.json<VerifySessionResponse>(
         { success: false, valid: false, error: "Invalid session" },
         { status: 401 }
       );
-      response.cookies.delete("session");
       return response;
     }
 
     // Check expiry
     const now = new Date();
-    if (session.expiresAt < now) {
+    if (isSessionExpired(session, payload, now.getTime())) {
       // Session expiry is also a cash-session boundary. Close both portals
       // atomically before removing the expired session.
       await prisma.$transaction(async (tx) => {
@@ -74,21 +79,14 @@ export async function GET(request: NextRequest) {
         });
         await tx.session.delete({ where: { id: session.id } });
       });
-      // Delete the session cookie server-side since client can't delete httpOnly cookies
       const response = NextResponse.json<VerifySessionResponse>(
         { success: false, valid: false, error: "Session expired" },
         { status: 401 }
       );
-      response.cookies.delete("session");
       return response;
     }
 
-    // Extract portal from JWT payload via cookie fallback
-    const portalCookie = request.cookies.get("portal")?.value;
-    const portal = getPortalFromSessionToken(
-      sessionToken,
-      normalizePortal(session.portal, normalizePortal(portalCookie)),
-    );
+    const portal = normalizePortal(session.portal);
 
     const response = NextResponse.json<VerifySessionResponse>(
       {
@@ -114,51 +112,21 @@ export async function GET(request: NextRequest) {
       { status: 200 }
     );
 
-    // Auto-refresh logic: Extend if less than 2 hours remaining
-    const timeRemaining = session.expiresAt.getTime() - now.getTime();
-    const TWO_HOURS = 2 * 60 * 60 * 1000;
-
-    if (timeRemaining < TWO_HOURS) {
-      // Get configuration from env
-      const SESSION_EXPIRATION_HOURS = parseInt(
-        process.env.SESSION_EXPIRATION_HOURS || "24",
-        10
-      );
-      const EXPIRATION_TIME = 60 * 60 * SESSION_EXPIRATION_HOURS; // in seconds
-
-      const COOKIE_SECURE = process.env.SESSION_COOKIE_SECURE
-        ? process.env.SESSION_COOKIE_SECURE === "true"
-        : process.env.NODE_ENV === "production";
-
-      const COOKIE_HTTP_ONLY = process.env.SESSION_COOKIE_HTTP_ONLY
-        ? process.env.SESSION_COOKIE_HTTP_ONLY === "true"
-        : true;
-
-      const COOKIE_SAME_SITE = (process.env.SESSION_COOKIE_SAME_SITE ||
-        "strict") as "strict";
-
-      const newExpiresAt = new Date();
-      newExpiresAt.setSeconds(newExpiresAt.getSeconds() + EXPIRATION_TIME);
-
-      // Update DB
-      await prisma.session.update({
-        where: { id: session.id },
+    // Refresh only the idle deadline; the signed absolute expiry never changes.
+    // No Set-Cookie here: a delayed refresh response must not overwrite a portal switch.
+    // The browser cookie already expires at the signed absolute deadline.
+    const newExpiresAt = new Date(Math.min(
+      now.getTime() + sessionIdleMilliseconds(), sessionAbsoluteExpiry(session, payload),
+    ));
+    if (session.expiresAt.getTime() - now.getTime() < Math.min(2 * 3_600_000, sessionIdleMilliseconds() / 2)
+        && newExpiresAt.getTime() > session.expiresAt.getTime()) {
+      // Conditional update cannot resurrect a concurrently revoked session.
+      await prisma.session.updateMany({
+        where: { id: session.id, token: sessionToken, expiresAt: { gt: now, lt: newExpiresAt } },
         data: { expiresAt: newExpiresAt },
       });
-
-      // Update Cookie
-      response.cookies.set({
-        name: "session",
-        value: sessionToken,
-        httpOnly: COOKIE_HTTP_ONLY,
-        secure: COOKIE_SECURE,
-        expires: newExpiresAt,
-        sameSite: COOKIE_SAME_SITE,
-        path: "/",
-      });
-
-      console.log(`Session refreshed for user ${session.user.username}`);
     }
+    response.headers.set("Cache-Control", "no-store");
 
     return response;
   } catch (error) {
@@ -170,16 +138,15 @@ export async function GET(request: NextRequest) {
       stack: error instanceof Error ? error.stack : undefined,
     });
 
-    // Delete the session cookie on any error
+    // Transient server errors must not clear a valid browser session.
     const response = NextResponse.json<VerifySessionResponse>(
       {
         success: false,
         valid: false,
-        error: message,
+        error: "Session verification failed",
       },
-      { status: 401 }
+      { status: 500 }
     );
-    response.cookies.delete("session");
     return response;
   }
 }

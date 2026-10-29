@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import jwt from "jsonwebtoken";
+import { verifySessionToken, isSessionExpired, sessionAbsoluteExpiry, requireSessionSecret, sessionCookieOptions } from "@/lib/sessionSecurity";
+import { randomUUID } from "crypto";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { validateCSRFToken } from "@/lib/csrfProtection";
@@ -12,18 +14,7 @@ import {
 import { canAccessPortal } from "@/lib/roles";
 import type { LoginResponse, PortalType, SessionUser } from "@/types/auth";
 
-const SECRET_KEY = process.env.SECRET_KEY as string;
-
-const COOKIE_SECURE = process.env.SESSION_COOKIE_SECURE
-  ? process.env.SESSION_COOKIE_SECURE === "true"
-  : process.env.NODE_ENV === "production";
-
-const COOKIE_HTTP_ONLY = process.env.SESSION_COOKIE_HTTP_ONLY
-  ? process.env.SESSION_COOKIE_HTTP_ONLY === "true"
-  : true;
-
-const COOKIE_SAME_SITE = (process.env.SESSION_COOKIE_SAME_SITE ||
-  "strict") as "strict";
+class PortalSwitchConflict extends Error {}
 
 const switchPortalSchema = z.object({
   portal: z.enum(["general", "infertility"]),
@@ -102,6 +93,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    let payload;
+    try { payload = verifySessionToken(sessionToken); }
+    catch {
+      return NextResponse.json<LoginResponse>({ success: false, error: "Invalid session" }, { status: 401 });
+    }
+
     const currentSession = await prisma.session.findUnique({
       where: { token: sessionToken },
       include: {
@@ -139,18 +136,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (currentSession.portal === body.portal) {
-      return NextResponse.json<LoginResponse>({
-        success: true,
-        message: "Portal already active",
-        user: buildSessionUser(currentSession.user, body.portal),
-      });
-    }
-
-    const nowInSeconds = Math.floor(Date.now() / 1000);
-    const expInSeconds = Math.floor(currentSession.expiresAt.getTime() / 1000);
-
-    if (expInSeconds <= nowInSeconds) {
+    if (isSessionExpired(currentSession, payload)) {
       await prisma.$transaction(async (tx) => {
         const expiredAt = new Date();
         await closeActiveStaffCashShiftsIfNoUnexpiredSession({
@@ -174,6 +160,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    if (currentSession.portal === body.portal) {
+      return NextResponse.json<LoginResponse>({
+        success: true,
+        message: "Portal already active",
+        user: buildSessionUser(currentSession.user, body.portal),
+      });
+    }
+
     const newSessionToken = jwt.sign(
       {
         userId: currentSession.user.id,
@@ -182,18 +176,22 @@ export async function POST(request: NextRequest) {
         fullName: currentSession.user.staff.fullName,
         role: currentSession.user.role,
         portal: body.portal,
+        exp: Math.floor(sessionAbsoluteExpiry(currentSession, payload) / 1000),
       },
-      SECRET_KEY,
-      { expiresIn: expInSeconds - nowInSeconds },
+      requireSessionSecret(),
+      { algorithm: "HS256", jwtid: randomUUID() },
     );
 
     const updatedSession = await prisma.$transaction(async (tx) => {
-      const updated = await tx.session.update({
+      // Only one switch may replace this token. A delayed competing response
+      // must never install an already-revoked token in the browser.
+      const changed = await tx.session.updateMany({
+        where: { id: currentSession.id, token: sessionToken },
+        data: { token: newSessionToken, portal: body.portal },
+      });
+      if (changed.count !== 1) throw new PortalSwitchConflict();
+      const updated = await tx.session.findUniqueOrThrow({
         where: { id: currentSession.id },
-        data: {
-          token: newSessionToken,
-          portal: body.portal,
-        },
         include: {
           user: {
             include: {
@@ -246,26 +244,29 @@ export async function POST(request: NextRequest) {
     response.cookies.set({
       name: "session",
       value: newSessionToken,
-      httpOnly: COOKIE_HTTP_ONLY,
-      secure: COOKIE_SECURE,
-      expires: updatedSession.expiresAt,
-      sameSite: COOKIE_SAME_SITE,
-      path: "/",
+      ...sessionCookieOptions(),
+      expires: new Date(verifySessionToken(newSessionToken).exp! * 1000),
     });
 
     response.cookies.set({
       name: "portal",
       value: body.portal,
       httpOnly: false,
-      secure: COOKIE_SECURE,
-      expires: updatedSession.expiresAt,
-      sameSite: COOKIE_SAME_SITE,
+      secure: sessionCookieOptions().secure,
+      expires: new Date(verifySessionToken(newSessionToken).exp! * 1000),
+      sameSite: sessionCookieOptions().sameSite,
       path: "/",
     });
 
     return response;
   } catch (error) {
     console.error("Switch portal error:", error);
+
+    if (error instanceof PortalSwitchConflict) {
+      return NextResponse.json<LoginResponse>(
+        { success: false, error: "Session changed. Please try again." }, { status: 409 },
+      );
+    }
 
     if (error instanceof z.ZodError) {
       return NextResponse.json<LoginResponse>(
@@ -277,10 +278,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json<LoginResponse>(
       {
         success: false,
-        error:
-          error instanceof Error
-            ? error.message
-            : "Failed to switch portal",
+        error: "Failed to switch portal",
       },
       { status: 500 },
     );

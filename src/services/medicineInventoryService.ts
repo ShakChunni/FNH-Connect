@@ -1,3 +1,4 @@
+import { PublicError } from "@/lib/publicError";
 /**
  * Medicine Inventory Service Layer
  * Business logic for medicine inventory management
@@ -261,7 +262,7 @@ const toFiniteMoney = (value: number | Prisma.Decimal, fieldName: string) => {
   const amount = Number(value);
 
   if (!Number.isFinite(amount)) {
-    throw new Error(`Invalid medicine sale ${fieldName}.`);
+    throw new PublicError(`Invalid medicine sale ${fieldName}.`);
   }
 
   return amount;
@@ -877,7 +878,7 @@ export async function createMedicineGroup(name: string) {
   });
 
   if (existing) {
-    throw new Error("A group with this name already exists");
+    throw new PublicError("A group with this name already exists");
   }
 
   return prisma.medicineGroup.create({
@@ -897,7 +898,7 @@ export async function updateMedicineGroup(groupId: number, name: string) {
   });
 
   if (!group || !group.isActive) {
-    throw new Error("Invalid or inactive group");
+    throw new PublicError("Invalid or inactive group");
   }
 
   const duplicate = await prisma.medicineGroup.findFirst({
@@ -908,7 +909,7 @@ export async function updateMedicineGroup(groupId: number, name: string) {
   });
 
   if (duplicate) {
-    throw new Error("A group with this name already exists");
+    throw new PublicError("A group with this name already exists");
   }
 
   return prisma.medicineGroup.update({
@@ -976,7 +977,7 @@ export async function createMedicineCompany(data: {
   });
 
   if (existing) {
-    throw new Error("A company with this name already exists");
+    throw new PublicError("A company with this name already exists");
   }
 
   return prisma.medicineCompany.create({
@@ -1009,7 +1010,7 @@ export async function updateMedicineCompany(
   });
 
   if (!company || !company.isActive) {
-    throw new Error("Invalid or inactive company");
+    throw new PublicError("Invalid or inactive company");
   }
 
   const duplicate = await prisma.medicineCompany.findFirst({
@@ -1020,7 +1021,7 @@ export async function updateMedicineCompany(
   });
 
   if (duplicate) {
-    throw new Error("A company with this name already exists");
+    throw new PublicError("A company with this name already exists");
   }
 
   return prisma.medicineCompany.update({
@@ -1133,11 +1134,11 @@ export async function createMedicine(data: {
   const normalizedGenericName = normalizeText(data.genericName);
 
   if (!normalizedMedicineName) {
-    throw new Error("Medicine name is required");
+    throw new PublicError("Medicine name is required");
   }
 
   if (!normalizedGenericName) {
-    throw new Error("Generic name is required");
+    throw new PublicError("Generic name is required");
   }
 
   // Verify group exists
@@ -1146,7 +1147,7 @@ export async function createMedicine(data: {
   });
 
   if (!group) {
-    throw new Error("Invalid group ID");
+    throw new PublicError("Invalid group ID");
   }
 
   // Check for duplicate
@@ -1161,7 +1162,7 @@ export async function createMedicine(data: {
   });
 
   if (existing) {
-    throw new Error(
+    throw new PublicError(
       "A medicine with this medicine name already exists in this group",
     );
   }
@@ -1214,11 +1215,11 @@ export async function updateMedicine(
   const normalizedGenericName = normalizeText(data.genericName);
 
   if (!normalizedMedicineName) {
-    throw new Error("Medicine name is required");
+    throw new PublicError("Medicine name is required");
   }
 
   if (!normalizedGenericName) {
-    throw new Error("Generic name is required");
+    throw new PublicError("Generic name is required");
   }
 
   const existingMedicine = await prisma.medicine.findUnique({
@@ -1226,7 +1227,7 @@ export async function updateMedicine(
   });
 
   if (!existingMedicine || !existingMedicine.isActive) {
-    throw new Error("Invalid or inactive medicine");
+    throw new PublicError("Invalid or inactive medicine");
   }
 
   const group = await prisma.medicineGroup.findUnique({
@@ -1234,7 +1235,7 @@ export async function updateMedicine(
   });
 
   if (!group || !group.isActive) {
-    throw new Error("Invalid group ID");
+    throw new PublicError("Invalid group ID");
   }
 
   const duplicate = await prisma.medicine.findFirst({
@@ -1249,7 +1250,7 @@ export async function updateMedicine(
   });
 
   if (duplicate) {
-    throw new Error(
+    throw new PublicError(
       "A medicine with this medicine name already exists in this group",
     );
   }
@@ -1430,11 +1431,11 @@ export async function createPurchaseInvoice(
   const effectivePurchaseDate = data.purchaseDate || now;
 
   if (effectivePurchaseDate > now) {
-    throw new Error("Purchase date cannot be in the future");
+    throw new PublicError("Purchase date cannot be in the future");
   }
 
   if (data.items.length === 0) {
-    throw new Error("At least one medicine is required");
+    throw new PublicError("At least one medicine is required");
   }
 
   for (const item of data.items) {
@@ -1442,11 +1443,11 @@ export async function createPurchaseInvoice(
     const discountAmount = item.discountAmount ?? 0;
 
     if (!Number.isFinite(vatTax) || vatTax < 0) {
-      throw new Error("VAT + tax cannot be negative");
+      throw new PublicError("VAT + tax cannot be negative");
     }
 
     if (!Number.isFinite(discountAmount) || discountAmount < 0) {
-      throw new Error("Discount amount cannot be negative");
+      throw new PublicError("Discount amount cannot be negative");
     }
 
     const grossTotal = calculateMedicinePurchaseGrossTotal({
@@ -1456,13 +1457,13 @@ export async function createPurchaseInvoice(
     });
 
     if (discountAmount > grossTotal) {
-      throw new Error(
+      throw new PublicError(
         "Discount cannot exceed the purchase amount including VAT + tax",
       );
     }
 
     if (item.expiryDate && item.expiryDate < effectivePurchaseDate) {
-      throw new Error("Expiry date cannot be earlier than purchase date");
+      throw new PublicError("Expiry date cannot be earlier than purchase date");
     }
   }
 
@@ -1473,7 +1474,7 @@ export async function createPurchaseInvoice(
     });
 
     if (!company || !company.isActive) {
-      throw new Error("Invalid or inactive company");
+      throw new PublicError("Invalid or inactive company");
     }
 
     const requestedMedicineIds = Array.from(
@@ -1495,7 +1496,7 @@ export async function createPurchaseInvoice(
     });
 
     if (medicines.length !== requestedMedicineIds.length) {
-      throw new Error("Invalid or inactive medicine");
+      throw new PublicError("Invalid or inactive medicine");
     }
 
     const medicineById = new Map(
@@ -1925,11 +1926,11 @@ export async function createSaleWithTx(
   const effectiveSaleDate = data.saleDate || now;
 
   if (Number.isNaN(effectiveSaleDate.getTime())) {
-    throw new Error("Sale date is invalid");
+    throw new PublicError("Sale date is invalid");
   }
 
   if (effectiveSaleDate > now) {
-    throw new Error("Sale date cannot be in the future");
+    throw new PublicError("Sale date cannot be in the future");
   }
 
   // Verify patient exists (or trust prevalidated context)
@@ -1943,7 +1944,7 @@ export async function createSaleWithTx(
     : await tx.patient.findUnique({ where: { id: data.patientId } });
 
   if (!patient) {
-    throw new Error("Patient not found");
+    throw new PublicError("Patient not found");
   }
 
   // Verify medicine exists and has sufficient stock (or trust prevalidated context)
@@ -1971,24 +1972,24 @@ export async function createSaleWithTx(
       },
     });
     if (!found || !found.isActive) {
-      throw new Error("Invalid or inactive medicine");
+      throw new PublicError("Invalid or inactive medicine");
     }
     medicine = found;
   }
 
   if (!medicine.isActive) {
-    throw new Error("Invalid or inactive medicine");
+    throw new PublicError("Invalid or inactive medicine");
   }
 
   if (medicine.currentStock < data.quantity) {
-    throw new Error(
+    throw new PublicError(
       `Insufficient stock. Available: ${medicine.currentStock}, Requested: ${data.quantity}`,
     );
   }
 
   if (data.unitPrice !== undefined) {
     if (!Number.isFinite(data.unitPrice) || data.unitPrice <= 0) {
-      throw new Error("Unit price must be greater than zero.");
+      throw new PublicError("Unit price must be greater than zero.");
     }
   }
 
@@ -2005,11 +2006,11 @@ export async function createSaleWithTx(
   });
 
   if (!firstPurchase) {
-    throw new Error("No stock purchase history found for this medicine");
+    throw new PublicError("No stock purchase history found for this medicine");
   }
 
   if (effectiveSaleDate < firstPurchase.purchaseDate) {
-    throw new Error(
+    throw new PublicError(
       `Sale date cannot be before first stock purchase date (${firstPurchase.purchaseDate.toISOString()})`,
     );
   }
@@ -2028,7 +2029,7 @@ export async function createSaleWithTx(
   });
 
   if (availablePurchases.length === 0) {
-    throw new Error("No stock available from purchases");
+    throw new PublicError("No stock available from purchases");
   }
 
   // Calculate total available across all batches
@@ -2038,7 +2039,7 @@ export async function createSaleWithTx(
   );
 
   if (totalAvailable < data.quantity) {
-    throw new Error(
+    throw new PublicError(
       `Insufficient stock across all batches. Available: ${totalAvailable}, Requested: ${data.quantity}`,
     );
   }
@@ -2208,23 +2209,23 @@ export async function createSalesBatch(
   const effectiveSaleDate = data.saleDate || now;
 
   if (Number.isNaN(effectiveSaleDate.getTime())) {
-    throw new Error("Sale date is invalid");
+    throw new PublicError("Sale date is invalid");
   }
 
   if (effectiveSaleDate > now) {
-    throw new Error("Sale date cannot be in the future");
+    throw new PublicError("Sale date cannot be in the future");
   }
 
   if (!Number.isFinite(data.patientId) || data.patientId <= 0) {
-    throw new Error("Patient is required.");
+    throw new PublicError("Patient is required.");
   }
 
   if (!Array.isArray(data.items) || data.items.length === 0) {
-    throw new Error("At least one medicine is required.");
+    throw new PublicError("At least one medicine is required.");
   }
 
   if (data.items.length > 100) {
-    throw new Error("A single cart can contain up to 100 medicines.");
+    throw new PublicError("A single cart can contain up to 100 medicines.");
   }
 
   // Reject only duplicate logical rows. The same medicine can legitimately
@@ -2232,31 +2233,31 @@ export async function createSalesBatch(
   const seenLogicalItems = new Set<string>();
   for (const item of data.items) {
     if (!Number.isInteger(item.medicineId) || item.medicineId <= 0) {
-      throw new Error("Selected medicine is not available.");
+      throw new PublicError("Selected medicine is not available.");
     }
     if (!Number.isInteger(item.quantity) || item.quantity <= 0) {
-      throw new Error("Quantity must be a positive whole number.");
+      throw new PublicError("Quantity must be a positive whole number.");
     }
     if (!Number.isFinite(item.unitPrice) || item.unitPrice <= 0) {
-      throw new Error("Unit price must be greater than zero.");
+      throw new PublicError("Unit price must be greater than zero.");
     }
     const packageCode = item.packageCode?.trim().toUpperCase() || null;
     const packageItemName = item.packageItemName?.trim() || null;
     const admissionId = item.admissionId ?? null;
     if (item.packageCode && !packageCode) {
-      throw new Error("Invalid medicine package.");
+      throw new PublicError("Invalid medicine package.");
     }
     if (packageCode && !admissionId) {
-      throw new Error("Package admission context is required.");
+      throw new PublicError("Package admission context is required.");
     }
     if (packageCode && !packageItemName) {
-      throw new Error("Package item context is required.");
+      throw new PublicError("Package item context is required.");
     }
     if (admissionId && !packageCode) {
-      throw new Error("Package admission context is invalid.");
+      throw new PublicError("Package admission context is invalid.");
     }
     if (!packageCode && packageItemName) {
-      throw new Error("Package item context is invalid.");
+      throw new PublicError("Package item context is invalid.");
     }
     const logicalKey = [
       item.medicineId,
@@ -2265,7 +2266,7 @@ export async function createSalesBatch(
       packageItemName?.toLowerCase() ?? "manual",
     ].join(":");
     if (seenLogicalItems.has(logicalKey)) {
-      throw new Error(
+      throw new PublicError(
         `Duplicate medicine context in cart: ${item.medicineId}. Merge quantities before submitting.`,
       );
     }
@@ -2300,7 +2301,7 @@ export async function createSalesBatch(
     });
 
     if (!patient) {
-      throw new Error("Patient not found");
+      throw new PublicError("Patient not found");
     }
 
     const admissions = packageAdmissionIds.length
@@ -2325,20 +2326,20 @@ export async function createSalesBatch(
 
       const definition = packageByCode.get(packageCode);
       if (!definition) {
-        throw new Error("Invalid medicine package.");
+        throw new PublicError("Invalid medicine package.");
       }
       const packageItemName = item.packageItemName?.trim().toLowerCase();
       if (
         !packageItemName ||
         !packageTemplateNames.get(packageCode)?.has(packageItemName)
       ) {
-        throw new Error("Package item does not belong to the selected package.");
+        throw new PublicError("Package item does not belong to the selected package.");
       }
       const admission = item.admissionId
         ? admissionById.get(item.admissionId)
         : null;
       if (!admission) {
-        throw new Error("Package admission context is invalid.");
+        throw new PublicError("Package admission context is invalid.");
       }
       if (
         !isMedicinePackageForDepartment(
@@ -2348,13 +2349,13 @@ export async function createSalesBatch(
           admission.departmentId,
         )
       ) {
-        throw new Error("Medicine package does not match the admission department.");
+        throw new PublicError("Medicine package does not match the admission department.");
       }
       if (
         item.operationName?.trim().toLowerCase() !==
         definition.operationName.trim().toLowerCase()
       ) {
-        throw new Error("Invalid medicine package operation.");
+        throw new PublicError("Invalid medicine package operation.");
       }
     }
 
@@ -2376,7 +2377,7 @@ export async function createSalesBatch(
     if (medicines.length !== medicineIds.length) {
       const foundIds = new Set(medicines.map((m) => m.id));
       const missing = medicineIds.find((id) => !foundIds.has(id));
-      throw new Error(
+      throw new PublicError(
         `One or more medicines are missing or inactive (id: ${missing ?? "?"})`,
       );
     }
@@ -2393,7 +2394,7 @@ export async function createSalesBatch(
     for (const [medicineId, requiredQuantity] of requiredQuantityByMedicine) {
       const medicine = medicineById.get(medicineId);
       if (!medicine || medicine.currentStock < requiredQuantity) {
-        throw new Error(
+        throw new PublicError(
           `Insufficient stock. Available: ${medicine?.currentStock ?? 0}, Requested: ${requiredQuantity}`,
         );
       }
@@ -2408,7 +2409,7 @@ export async function createSalesBatch(
     for (const item of data.items) {
       const medicine = medicineById.get(item.medicineId);
       if (!medicine || !medicine.isActive) {
-        throw new Error(
+        throw new PublicError(
           `Selected medicine is not available (id: ${item.medicineId}).`,
         );
       }

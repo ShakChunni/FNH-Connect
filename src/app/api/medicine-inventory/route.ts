@@ -1,3 +1,4 @@
+import { authorizeAPIRequest } from "@/lib/apiAuthorization";
 /**
  * Medicine Inventory API Route
  * GET: Dashboard statistics for medicine inventory
@@ -14,6 +15,8 @@ import { getMedicineInventoryStats } from "@/services/medicineInventoryService";
 export async function GET(request: NextRequest) {
   try {
     const user = await getAuthenticatedUserForAPI();
+    const authorizationError = await authorizeAPIRequest(user, "/api/medicine-inventory", "GET");
+    if (authorizationError) return authorizationError;
     if (!user) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
@@ -46,7 +49,7 @@ export async function GET(request: NextRequest) {
       {
         success: false,
         error: "Failed to fetch medicine inventory stats",
-        message: error instanceof Error ? error.message : "Unknown error",
+        message: "Unable to process request",
       },
       { status: 500 },
     );

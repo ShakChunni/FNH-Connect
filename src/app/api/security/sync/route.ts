@@ -13,47 +13,12 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { validateCronSecret } from "@/lib/cronAuthentication";
 
 export const runtime = "nodejs"; // Must use Node runtime for Prisma
 export const dynamic = "force-dynamic";
 
-const CRON_SECRET = process.env.CRON_SECRET;
 
-// === HELPER FUNCTIONS ===
-function validateCronSecret(request: NextRequest): boolean {
-  const headerSecret = request.headers.get("x-cron-secret");
-
-  // In development without secret, allow all
-  if (!CRON_SECRET && process.env.NODE_ENV === "development") {
-    console.log("[Security Sync] Dev mode: No secret required");
-    return true;
-  }
-
-  // In production, secret is required
-  if (!CRON_SECRET) {
-    console.error("[Security Sync] CRON_SECRET not configured!");
-    return false;
-  }
-
-  if (!headerSecret) {
-    console.error("[Security Sync] No x-cron-secret header provided");
-    return false;
-  }
-
-  const isValid = headerSecret === CRON_SECRET;
-  if (!isValid) {
-    console.error(
-      "[Security Sync] Invalid secret. Header length:",
-      headerSecret.length,
-      "Expected length:",
-      CRON_SECRET.length
-    );
-  }
-
-  return isValid;
-}
-
-// === MAIN SYNC HANDLER ===
 export async function POST(request: NextRequest) {
   try {
     // Validate cron secret
@@ -219,13 +184,10 @@ export async function POST(request: NextRequest) {
       {
         success: false,
         error: "Internal server error",
-        message: error instanceof Error ? error.message : "Unknown error",
+        message: "Unable to process request",
       },
       { status: 500 }
     );
-  } finally {
-    // ✅ Always disconnect Prisma in serverless
-    await prisma.$disconnect();
   }
 }
 
@@ -276,12 +238,9 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(
       {
         status: "error",
-        error: error instanceof Error ? error.message : "Unknown error",
+        error: "Unable to process request",
       },
       { status: 500 }
     );
-  } finally {
-    // ✅ Always disconnect Prisma in serverless
-    await prisma.$disconnect();
   }
 }

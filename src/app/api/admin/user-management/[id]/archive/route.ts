@@ -1,3 +1,5 @@
+import { PublicError, publicErrorMessage } from "@/lib/publicError";
+import { authorizeAPIRequest, parsePositiveIntegerId } from "@/lib/apiAuthorization";
 /**
  * User Management API - Archive/Unarchive
  * PATCH: Toggle User.isActive (Staff stays active)
@@ -32,6 +34,8 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     }
 
     const authUser = await getAuthenticatedUserForAPI();
+    const authorizationError = await authorizeAPIRequest(authUser, "/api/admin/user-management/[id]/archive", "PATCH");
+    if (authorizationError) return authorizationError;
     if (!authUser) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
@@ -47,7 +51,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     }
 
     const { id } = await params;
-    const userId = parseInt(id, 10);
+    const userId = parsePositiveIntegerId(id);
 
     if (isNaN(userId)) {
       return NextResponse.json(
@@ -88,7 +92,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       });
 
       if (!existingUser) {
-        throw new Error("User not found");
+        throw new PublicError("User not found");
       }
 
       // Update User.isActive only (Staff stays active)
@@ -189,7 +193,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 
     if (error instanceof Error && error.message.includes("not found")) {
       return NextResponse.json(
-        { success: false, error: error.message },
+        { success: false, error: publicErrorMessage(error) },
         { status: 404 },
       );
     }

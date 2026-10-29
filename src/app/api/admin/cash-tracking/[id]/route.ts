@@ -1,3 +1,4 @@
+import { authorizeAPIRequest, parsePositiveIntegerId } from "@/lib/apiAuthorization";
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthenticatedUserForAPI } from "@/lib/auth-validation";
 import { getShiftDetails } from "@/services/adminShiftService";
@@ -9,12 +10,14 @@ export async function GET(
 ) {
   try {
     const user = await getAuthenticatedUserForAPI();
+    const authorizationError = await authorizeAPIRequest(user, "/api/admin/cash-tracking/[id]", "GET");
+    if (authorizationError) return authorizationError;
     if (!user || !isAdminRole(user.role)) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const { id } = await params;
-    const shiftId = parseInt(id);
+    const shiftId = parsePositiveIntegerId(id);
 
     if (isNaN(shiftId)) {
       return NextResponse.json({ error: "Invalid shift ID" }, { status: 400 });

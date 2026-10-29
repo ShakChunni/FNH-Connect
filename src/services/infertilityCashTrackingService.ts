@@ -1,3 +1,4 @@
+import { PublicError } from "@/lib/publicError";
 import { prisma } from "@/lib/prisma";
 import { BDT_OFFSET_MS } from "@/lib/timezone";
 import type { Prisma } from "@prisma/client";
@@ -63,7 +64,7 @@ export function getInfertilityCashTrackingDateBoundary(
 
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) {
-    throw new Error("Invalid infertility cash tracking date filter");
+    throw new PublicError("Invalid infertility cash tracking date filter");
   }
 
   return date;

@@ -1,3 +1,5 @@
+import { publicErrorMessage } from "@/lib/publicError";
+import { authorizeAPIRequest, parsePositiveIntegerId } from "@/lib/apiAuthorization";
 /**
  * Medicine by ID API Route
  * GET: Fetch a single medicine
@@ -34,6 +36,8 @@ const updateMedicineSchema = z.object({
 export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
     const user = await getAuthenticatedUserForAPI();
+    const authorizationError = await authorizeAPIRequest(user, "/api/medicine-inventory/medicines/[id]", "GET");
+    if (authorizationError) return authorizationError;
     if (!user) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
@@ -42,7 +46,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     }
 
     const { id } = await params;
-    const medicineId = parseInt(id, 10);
+    const medicineId = parsePositiveIntegerId(id);
 
     if (isNaN(medicineId) || medicineId <= 0) {
       return NextResponse.json(
@@ -93,7 +97,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       {
         success: false,
         error: "Failed to fetch medicine",
-        message: error instanceof Error ? error.message : "Unknown error",
+        message: "Unable to process request",
       },
       { status: 500 },
     );
@@ -110,6 +114,8 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     }
 
     const user = await getAuthenticatedUserForAPI();
+    const authorizationError = await authorizeAPIRequest(user, "/api/medicine-inventory/medicines/[id]", "PATCH");
+    if (authorizationError) return authorizationError;
     if (!user) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
@@ -118,7 +124,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     }
 
     const { id } = await params;
-    const medicineId = parseInt(id, 10);
+    const medicineId = parsePositiveIntegerId(id);
 
     if (isNaN(medicineId) || medicineId <= 0) {
       return NextResponse.json(
@@ -167,7 +173,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       ];
       if (knownErrors.some((msg) => error.message.includes(msg))) {
         return NextResponse.json(
-          { success: false, error: error.message },
+          { success: false, error: publicErrorMessage(error) },
           { status: 400 },
         );
       }
@@ -177,7 +183,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       {
         success: false,
         error: "Failed to update medicine",
-        message: error instanceof Error ? error.message : "Unknown error",
+        message: "Unable to process request",
       },
       { status: 500 },
     );

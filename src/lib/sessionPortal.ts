@@ -29,7 +29,7 @@ export function getPortalFromSessionToken(
   }
 
   try {
-    const payload = jwt.verify(sessionToken, secretKey);
+    const payload = jwt.verify(sessionToken, secretKey, { algorithms: ["HS256"] });
 
     if (typeof payload === "string") {
       return fallback;

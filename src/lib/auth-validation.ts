@@ -1,7 +1,7 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import jwt from "jsonwebtoken";
+import { verifySessionToken, isSessionExpired } from "@/lib/sessionSecurity";
 import { SessionUser, AuthenticatedUser } from "@/types/auth";
 import {
   getDefaultRouteForRole,
@@ -9,19 +9,11 @@ import {
   isSystemAdminRole,
 } from "@/lib/roles";
 import {
-  getPortalFromSessionToken,
   normalizePortal,
 } from "@/lib/sessionPortal";
 import {
   closeActiveStaffCashShiftsIfNoUnexpiredSession,
 } from "@/services/staffShiftClosureService";
-
-const SECRET_KEY = process.env.SECRET_KEY as string;
-
-// Just in case, though usually this is handled by env validation on start
-if (!SECRET_KEY) {
-  console.warn("SECRET_KEY is not defined in environment variables");
-}
 
 /**
  * Server-side session validation utility
@@ -42,9 +34,7 @@ export async function validateServerSession() {
 
   try {
     // Verify JWT token signature and expiration
-    if (SECRET_KEY) {
-      jwt.verify(sessionToken, SECRET_KEY);
-    }
+    const payload = verifySessionToken(sessionToken);
 
     // Check session exists and is valid in database
     const session = await prisma.session.findUnique({
@@ -64,7 +54,7 @@ export async function validateServerSession() {
     }
 
     // Check if session has expired
-    if (session.expiresAt < new Date()) {
+    if (isSessionExpired(session, payload)) {
       const expiredAt = new Date();
       await prisma.$transaction(async (tx) => {
         await closeActiveStaffCashShiftsIfNoUnexpiredSession({
@@ -95,11 +85,7 @@ export async function validateServerSession() {
     }
 
     // Map to SessionUser type
-    const portalCookie = cookieStore.get("portal")?.value;
-    const portal = getPortalFromSessionToken(
-      sessionToken,
-      normalizePortal(session.portal, normalizePortal(portalCookie)),
-    );
+    const portal = normalizePortal(session.portal);
     const user: SessionUser = {
       id: session.user.id,
       username: session.user.username,
@@ -175,9 +161,7 @@ export async function getAuthenticatedUserForAPI(): Promise<AuthenticatedUser | 
 
   try {
     // Verify JWT token signature and expiration
-    if (SECRET_KEY) {
-      jwt.verify(sessionToken, SECRET_KEY);
-    }
+    const payload = verifySessionToken(sessionToken);
 
     // Check session exists and is valid in database
     const session = await prisma.session.findUnique({
@@ -197,7 +181,7 @@ export async function getAuthenticatedUserForAPI(): Promise<AuthenticatedUser | 
     }
 
     // Check if session has expired (cleanup handled by cron or login usually, but check here too)
-    if (session.expiresAt < new Date()) {
+    if (isSessionExpired(session, payload)) {
       const expiredAt = new Date();
       await prisma
         .$transaction(async (tx) => {
@@ -230,11 +214,7 @@ export async function getAuthenticatedUserForAPI(): Promise<AuthenticatedUser | 
     }
 
     // Map to SessionUser type
-    const portalCookie = cookieStore.get("portal")?.value;
-    const portal = getPortalFromSessionToken(
-      sessionToken,
-      normalizePortal(session.portal, normalizePortal(portalCookie)),
-    );
+    const portal = normalizePortal(session.portal);
     const user: SessionUser = {
       id: session.user.id,
       username: session.user.username,

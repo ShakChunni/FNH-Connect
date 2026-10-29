@@ -1,3 +1,4 @@
+import { authorizeAPIRequest } from "@/lib/apiAuthorization";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { getAuthenticatedUserForAPI } from "@/lib/auth-validation";
@@ -41,6 +42,8 @@ async function parseEndShiftBody(req: NextRequest): Promise<ParsedEndShiftBody> 
 export async function POST(req: NextRequest) {
   try {
     const user = await getAuthenticatedUserForAPI();
+    const authorizationError = await authorizeAPIRequest(user, "/api/shifts/end", "POST");
+    if (authorizationError) return authorizationError;
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }

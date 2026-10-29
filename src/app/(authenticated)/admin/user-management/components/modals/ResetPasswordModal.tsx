@@ -5,6 +5,8 @@
 
 "use client";
 
+import { generatePassword, validatePassword } from "@/lib/passwordPolicy";
+
 import React, { useCallback, useRef, useEffect, useState } from "react";
 import { KeyRound, Copy, Check, RefreshCw } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -26,13 +28,6 @@ interface ResetPasswordModalProps {
   user: UserWithStaff | null;
 }
 
-function generatePassword(length = 12): string {
-  const chars = "abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789!@#$%";
-  let pw = "";
-  for (let i = 0; i < length; i++)
-    pw += chars.charAt(Math.floor(Math.random() * chars.length));
-  return pw;
-}
 
 const ResetPasswordModal: React.FC<ResetPasswordModalProps> = ({
   isOpen,
@@ -70,8 +65,9 @@ const ResetPasswordModal: React.FC<ResetPasswordModalProps> = ({
 
   const handleSubmit = useCallback(() => {
     if (isLoading || !user) return;
-    if (newPassword.length < 8) {
-      showNotification("Password must be at least 8 characters", "error");
+    const passwordValidation = validatePassword(newPassword);
+    if (!passwordValidation.valid) {
+      showNotification(passwordValidation.errors[0], "error");
       return;
     }
     resetPassword({ id: user.id, newPassword });
@@ -218,7 +214,7 @@ const ResetPasswordModal: React.FC<ResetPasswordModalProps> = ({
                       type="text"
                       value={newPassword}
                       onChange={(e) => setNewPassword(e.target.value)}
-                      placeholder="Min 8 characters"
+                      placeholder="12+ characters, upper/lowercase, number and symbol"
                       className={`flex-1 ${inputCls(newPassword.length >= 8)}`}
                     />
                     <button

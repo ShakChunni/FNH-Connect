@@ -1,3 +1,4 @@
+import { authorizeAPIRequest } from "@/lib/apiAuthorization";
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthenticatedUserForAPI } from "@/lib/auth-validation";
 import { prisma } from "@/lib/prisma";
@@ -6,6 +7,8 @@ import { serializeDateOfBirth } from "@/lib/dateOfBirth";
 export async function GET(request: NextRequest) {
   try {
     const user = await getAuthenticatedUserForAPI();
+    const authorizationError = await authorizeAPIRequest(user, "/api/doctor-chamber/patients", "GET");
+    if (authorizationError) return authorizationError;
     if (!user) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },

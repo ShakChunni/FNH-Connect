@@ -117,10 +117,7 @@ export function getReceptionistAllowedRoutes(
   const normalizedRole = normalizeRole(role);
 
   if (normalizedRole === SystemRole.RECEPTIONIST_INFERTILITY) {
-    return [
-      ...BASE_RECEPTIONIST_ALLOWED_ROUTES,
-      ...INFERTILITY_RECEPTIONIST_ALLOWED_ROUTES,
-    ];
+    return [...INFERTILITY_RECEPTIONIST_ALLOWED_ROUTES];
   }
 
   if (portal === "infertility") {
@@ -307,4 +304,47 @@ export function getDefaultRouteForRole(
   }
 
   return isPharmacistRole(userRole) ? "/medicine-inventory" : "/dashboard";
+}
+
+/** Shared coarse route policy. Resource ownership/filtering remains in handlers. */
+export function canAccessApplicationPath(
+  role: string,
+  portal: PortalAccessType,
+  pathname: string,
+  method = "GET",
+): boolean {
+  const normalized = normalizeRole(role);
+  if (!(Object.values(SystemRole) as string[]).includes(normalized)) return false;
+  if (!canAccessPortal(normalized, portal)) return false;
+  const path = pathname.replace(/\/+$/, "") || "/";
+  const matches = (prefix: string) => path === prefix || path.startsWith(prefix + "/");
+  if (matches("/api/auth") || path === "/api/shifts/end" || path === "/login" || path === "/") return true;
+
+  const infertility = ["/infertility", "/api/infertility", "/api/infertility-patients", "/admin/infertility-cash-tracking", "/api/admin/infertility-cash-tracking"];
+  const general = ["/dashboard", "/general-admission", "/pathology", "/doctor-chamber", "/medicine-inventory", "/patient-records", "/admin/cash-tracking", "/api/dashboard", "/api/general-admission", "/api/pathology", "/api/pathology-patients", "/api/admissions", "/api/doctor-chamber", "/api/medicine-inventory", "/api/admin/cash-tracking"];
+  if (portal === "general" && infertility.some(matches)) return false;
+  if (portal === "infertility" && general.some(matches)) return false;
+  if (matches("/admin/user-management") || matches("/api/admin/user-management")) {
+    return isSystemAdminRole(normalized);
+  }
+  if (matches("/admin") || matches("/api/admin") || matches("/infertility/cash-tracking") || matches("/api/dashboard/admin-shifts")) {
+    return isAdminRole(normalized);
+  }
+  if (isReceptionistRole(normalized)) {
+    return canReceptionistAccessPath(path, normalized, portal);
+  }
+  if (isPharmacistRole(normalized)) {
+    // Pharmacy uses the limited patient search projection, never full clinical records.
+    if (matches("/api/patient-records")) return path === "/api/patient-records" && method === "GET";
+    return canPharmacistAccessPath(path);
+  }
+  // Staff retain ordinary clinical workflows; administrative paths are denied above.
+  return true;
+}
+
+/** Return NaN for partial, signed, fractional, zero, or unsafe database IDs. */
+export function parsePositiveIntegerId(value: string): number {
+  if (!/^[1-9]\d*$/.test(value)) return NaN;
+  const parsed = Number(value);
+  return Number.isSafeInteger(parsed) && parsed <= 2147483647 ? parsed : NaN;
 }

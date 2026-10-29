@@ -9,45 +9,11 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { validateCronSecret } from "@/lib/cronAuthentication";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const CRON_SECRET = process.env.CRON_SECRET;
-
-// === VALIDATE CRON SECRET ===
-function validateCronSecret(request: NextRequest): boolean {
-  const headerSecret = request.headers.get("x-cron-secret");
-
-  // In development without secret, allow all
-  if (!CRON_SECRET && process.env.NODE_ENV === "development") {
-    console.log("[Blocked IPs] Dev mode: No secret required");
-    return true;
-  }
-
-  // In production, secret is required
-  if (!CRON_SECRET) {
-    console.error("[Blocked IPs] CRON_SECRET not configured!");
-    return false;
-  }
-
-  if (!headerSecret) {
-    console.error("[Blocked IPs] No x-cron-secret header provided");
-    return false;
-  }
-
-  const isValid = headerSecret === CRON_SECRET;
-  if (!isValid) {
-    console.error(
-      "[Blocked IPs] Invalid secret. Header length:",
-      headerSecret.length,
-      "Expected length:",
-      CRON_SECRET.length
-    );
-  }
-
-  return isValid;
-}
 
 export async function GET(request: NextRequest) {
   // Validate cron secret
@@ -96,8 +62,5 @@ export async function GET(request: NextRequest) {
       { error: "Failed to fetch blocked IPs" },
       { status: 500 }
     );
-  } finally {
-    // ✅ Always disconnect Prisma in serverless
-    await prisma.$disconnect();
   }
 }

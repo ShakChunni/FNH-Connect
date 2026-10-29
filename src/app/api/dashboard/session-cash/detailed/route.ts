@@ -1,3 +1,4 @@
+import { authorizeAPIRequest } from "@/lib/apiAuthorization";
 /**
  * Detailed Session Cash API Route
  * GET /api/dashboard/session-cash/detailed
@@ -84,6 +85,8 @@ export async function GET(request: NextRequest) {
   try {
     // 1. Authenticate
     const user = await getAuthenticatedUserForAPI();
+    const authorizationError = await authorizeAPIRequest(user, "/api/dashboard/session-cash/detailed", "GET");
+    if (authorizationError) return authorizationError;
     if (!user) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },

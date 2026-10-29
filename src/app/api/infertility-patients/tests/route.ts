@@ -1,3 +1,6 @@
+import { publicErrorMessage } from "@/lib/publicError";
+import { InfertilityBillingError } from "@/lib/infertilityBilling";
+import { authorizeAPIRequest } from "@/lib/apiAuthorization";
 import { NextRequest, NextResponse } from "next/server";
 import { validateCSRFToken, addCSRFTokenToResponse } from "@/lib/csrfProtection";
 import { getAuthenticatedUserForAPI } from "@/lib/auth-validation";
@@ -10,6 +13,8 @@ import {
 export async function GET(request: NextRequest) {
   try {
     const user = await getAuthenticatedUserForAPI();
+    const authorizationError = await authorizeAPIRequest(user, "/api/infertility-patients/tests", "GET");
+    if (authorizationError) return authorizationError;
     if (!user) {
       return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
     }
@@ -57,6 +62,9 @@ export async function GET(request: NextRequest) {
     const result = await infertilityService.getInfertilityTests(validation.data);
     return NextResponse.json({ success: true, ...result });
   } catch (error) {
+    if (error instanceof InfertilityBillingError) {
+      return NextResponse.json({ success: false, error: publicErrorMessage(error) }, { status: 400 });
+    }
     console.error("GET Infertility Tests error:", error);
     return NextResponse.json(
       { success: false, error: "Failed to fetch HSI Center tests" },
@@ -69,6 +77,8 @@ export async function POST(request: NextRequest) {
   try {
     // 1. Auth check
     const user = await getAuthenticatedUserForAPI();
+    const authorizationError = await authorizeAPIRequest(user, "/api/infertility-patients/tests", "POST");
+    if (authorizationError) return authorizationError;
     if (!user || !user.staffId) {
       return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
     }
@@ -96,15 +106,11 @@ export async function POST(request: NextRequest) {
     // Capture device info
     const ipAddress = request.headers.get("x-forwarded-for") || "Unknown IP";
 
-    // Extract shiftId if present
-    const shiftId = body.shiftId ? Number(body.shiftId) : null;
-
     // 4. Create via service
     const result = await infertilityService.createInfertilityTest(
       validation.data,
       user.staffId,
       user.id,
-      shiftId,
       {
         sessionId: user.sessionId,
         deviceInfo: {
@@ -122,8 +128,11 @@ export async function POST(request: NextRequest) {
     const response = NextResponse.json({ success: true, data: result }, { status: 201 });
     return addCSRFTokenToResponse(response);
   } catch (error) {
+    if (error instanceof InfertilityBillingError) {
+      return NextResponse.json({ success: false, error: publicErrorMessage(error) }, { status: 400 });
+    }
     console.error("POST Infertility Test error:", error);
-    const errorMessage = error instanceof Error ? error.message : "Failed to create HSI Center test";
+    const errorMessage = "Failed to create HSI Center test";
     return NextResponse.json({ success: false, error: errorMessage }, { status: 500 });
   }
 }

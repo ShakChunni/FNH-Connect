@@ -1,3 +1,4 @@
+import { authorizeAPIRequest, parsePositiveIntegerId } from "@/lib/apiAuthorization";
 /**
  * Medicine Oldest Purchase API Route
  * GET: Get the oldest purchase with remaining stock for a medicine (FIFO)
@@ -18,6 +19,8 @@ interface RouteParams {
 export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
     const user = await getAuthenticatedUserForAPI();
+    const authorizationError = await authorizeAPIRequest(user, "/api/medicine-inventory/medicines/[id]/oldest-purchase", "GET");
+    if (authorizationError) return authorizationError;
     if (!user) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
@@ -26,7 +29,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     }
 
     const { id } = await params;
-    const medicineId = parseInt(id, 10);
+    const medicineId = parsePositiveIntegerId(id);
 
     if (isNaN(medicineId) || medicineId <= 0) {
       return NextResponse.json(
@@ -50,7 +53,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       {
         success: false,
         error: "Failed to fetch oldest purchase",
-        message: error instanceof Error ? error.message : "Unknown error",
+        message: "Unable to process request",
       },
       { status: 500 },
     );

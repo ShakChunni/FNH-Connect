@@ -1,46 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { validateCronSecret } from "@/lib/cronAuthentication";
 
 export const runtime = "nodejs"; // Need Node.js for Prisma
 export const dynamic = "force-dynamic";
 
-const CRON_SECRET = process.env.CRON_SECRET;
 
-// === HELPER FUNCTIONS ===
-function validateCronSecret(request: NextRequest): boolean {
-  const headerSecret = request.headers.get("x-cron-secret");
-
-  // In development without secret, allow all
-  if (!CRON_SECRET && process.env.NODE_ENV === "development") {
-    console.log("[Middleware Sync] Dev mode: No secret required");
-    return true;
-  }
-
-  // In production, secret is required
-  if (!CRON_SECRET) {
-    console.error("[Middleware Sync] CRON_SECRET not configured!");
-    return false;
-  }
-
-  if (!headerSecret) {
-    console.error("[Middleware Sync] No x-cron-secret header provided");
-    return false;
-  }
-
-  const isValid = headerSecret === CRON_SECRET;
-  if (!isValid) {
-    console.error(
-      "[Middleware Sync] Invalid secret. Header length:",
-      headerSecret.length,
-      "Expected length:",
-      CRON_SECRET.length
-    );
-  }
-
-  return isValid;
-}
-
-// === MAIN SYNC HANDLER ===
 export async function GET(request: NextRequest) {
   try {
     // Validate cron secret
@@ -236,15 +201,11 @@ export async function GET(request: NextRequest) {
       {
         success: false,
         error: "Internal server error",
-        message: error instanceof Error ? error.message : "Unknown error",
+        message: "Unable to process request",
         timestamp: new Date().toISOString(),
       },
       { status: 500 }
     );
-  } finally {
-    // ✅ CRITICAL: Always disconnect Prisma in serverless context
-    // Prevents connection pool exhaustion in production
-    await prisma.$disconnect();
   }
 }
 

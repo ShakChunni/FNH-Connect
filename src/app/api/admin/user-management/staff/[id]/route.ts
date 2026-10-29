@@ -1,3 +1,5 @@
+import { PublicError, publicErrorMessage } from "@/lib/publicError";
+import { authorizeAPIRequest, parsePositiveIntegerId } from "@/lib/apiAuthorization";
 /**
  * User Management API - Single Staff
  * PATCH: Update standalone staff record (no linked User account)
@@ -41,6 +43,8 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     }
 
     const authUser = await getAuthenticatedUserForAPI();
+    const authorizationError = await authorizeAPIRequest(authUser, "/api/admin/user-management/staff/[id]", "PATCH");
+    if (authorizationError) return authorizationError;
     if (!authUser) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
@@ -56,7 +60,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     }
 
     const { id } = await params;
-    const staffId = parseInt(id, 10);
+    const staffId = parsePositiveIntegerId(id);
 
     if (isNaN(staffId)) {
       return NextResponse.json(
@@ -94,12 +98,12 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       });
 
       if (!existingStaff) {
-        throw new Error("Staff not found");
+        throw new PublicError("Staff not found");
       }
 
       // This endpoint is meant for standalone staff records only
       if (existingStaff.user) {
-        throw new Error("Staff has a linked user account");
+        throw new PublicError("Staff has a linked user account");
       }
 
       const staffUpdate: Record<string, unknown> = {};
@@ -187,7 +191,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 
     if (error instanceof Error && error.message.includes("not found")) {
       return NextResponse.json(
-        { success: false, error: error.message },
+        { success: false, error: publicErrorMessage(error) },
         { status: 404 },
       );
     }
@@ -197,7 +201,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       error.message.includes("linked user account")
     ) {
       return NextResponse.json(
-        { success: false, error: error.message },
+        { success: false, error: publicErrorMessage(error) },
         { status: 409 },
       );
     }
@@ -226,6 +230,8 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     }
 
     const authUser = await getAuthenticatedUserForAPI();
+    const authorizationError = await authorizeAPIRequest(authUser, "/api/admin/user-management/staff/[id]", "DELETE");
+    if (authorizationError) return authorizationError;
     if (!authUser) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
@@ -241,7 +247,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     }
 
     const { id } = await params;
-    const staffId = parseInt(id, 10);
+    const staffId = parsePositiveIntegerId(id);
 
     if (isNaN(staffId)) {
       return NextResponse.json(
@@ -261,11 +267,11 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
       });
 
       if (!existingStaff) {
-        throw new Error("Staff member not found");
+        throw new PublicError("Staff member not found");
       }
 
       if (existingStaff.user) {
-        throw new Error(
+        throw new PublicError(
           "Cannot delete a staff member with a linked user account",
         );
       }
@@ -314,7 +320,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
         infertilityPaymentsCount;
 
       if (totalReferences > 0) {
-        throw new Error(
+        throw new PublicError(
           "Cannot delete staff member with associated admissions, chamber visits, pathology tests, shifts, or payment records. Please deactivate them instead.",
         );
       }
@@ -360,7 +366,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
 
     if (error instanceof Error && error.message.includes("not found")) {
       return NextResponse.json(
-        { success: false, error: error.message },
+        { success: false, error: publicErrorMessage(error) },
         { status: 404 },
       );
     }
@@ -371,7 +377,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
         error.message.includes("associated"))
     ) {
       return NextResponse.json(
-        { success: false, error: error.message },
+        { success: false, error: publicErrorMessage(error) },
         { status: 409 },
       );
     }

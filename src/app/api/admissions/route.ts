@@ -1,3 +1,5 @@
+import { publicErrorMessage } from "@/lib/publicError";
+import { authorizeAPIRequest } from "@/lib/apiAuthorization";
 /**
  * Admissions API Route
  * GET: List admissions with filters
@@ -29,6 +31,8 @@ import {
 export async function GET(request: NextRequest) {
   try {
     const user = await getAuthenticatedUserForAPI();
+    const authorizationError = await authorizeAPIRequest(user, "/api/admissions", "GET");
+    if (authorizationError) return authorizationError;
     if (!user) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
@@ -107,6 +111,8 @@ export async function POST(request: NextRequest) {
     }
 
     const user = await getAuthenticatedUserForAPI();
+    const authorizationError = await authorizeAPIRequest(user, "/api/admissions", "POST");
+    if (authorizationError) return authorizationError;
     if (!user) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
@@ -220,7 +226,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           success: false,
-          error: error.message,
+          error: publicErrorMessage(error),
           details: error.fieldErrors,
         },
         { status: 400 }
@@ -240,7 +246,7 @@ export async function POST(request: NextRequest) {
         error.message.includes("No stock purchase history"))
     ) {
       return NextResponse.json(
-        { success: false, error: error.message },
+        { success: false, error: publicErrorMessage(error) },
         { status: 400 }
       );
     }

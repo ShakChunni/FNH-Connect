@@ -1,3 +1,4 @@
+import { PublicError } from "@/lib/publicError";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { shiftService } from "@/services/shiftService";
@@ -60,7 +61,7 @@ export const infertilityShiftService = {
       });
 
       if (!closed.infertilityShiftId) {
-        throw new Error("No active infertility shift found to close.");
+        throw new PublicError("No active infertility shift found to close.");
       }
 
       const infertilityShift = await tx.infertilityShift.findUniqueOrThrow({

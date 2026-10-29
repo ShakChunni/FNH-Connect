@@ -1,3 +1,4 @@
+import { sessionCookieOptions } from "@/lib/sessionSecurity";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { cookies } from "next/headers";
@@ -6,17 +7,6 @@ import type { LogoutResponse } from "@/types/auth";
 import {
   closeActiveStaffCashShiftsIfNoUnexpiredSession,
 } from "@/services/staffShiftClosureService";
-
-const COOKIE_SECURE = process.env.SESSION_COOKIE_SECURE
-  ? process.env.SESSION_COOKIE_SECURE === "true"
-  : process.env.NODE_ENV === "production";
-
-const COOKIE_HTTP_ONLY = process.env.SESSION_COOKIE_HTTP_ONLY
-  ? process.env.SESSION_COOKIE_HTTP_ONLY === "true"
-  : true;
-
-const COOKIE_SAME_SITE = (process.env.SESSION_COOKIE_SAME_SITE ||
-  "strict") as "strict";
 
 export async function POST(request: NextRequest) {
   try {
@@ -149,10 +139,8 @@ export async function POST(request: NextRequest) {
       name: "session",
       value: "",
       expires: new Date(0),
-      path: "/",
-      httpOnly: COOKIE_HTTP_ONLY,
-      secure: COOKIE_SECURE,
-      sameSite: COOKIE_SAME_SITE,
+      ...sessionCookieOptions(),
+      sameSite: sessionCookieOptions().sameSite,
     });
 
     // Clear the portal cookie
@@ -162,8 +150,8 @@ export async function POST(request: NextRequest) {
       expires: new Date(0),
       path: "/",
       httpOnly: false,
-      secure: COOKIE_SECURE,
-      sameSite: COOKIE_SAME_SITE,
+      secure: sessionCookieOptions().secure,
+      sameSite: sessionCookieOptions().sameSite,
     });
 
     return response;
@@ -177,9 +165,7 @@ export async function POST(request: NextRequest) {
       {
         success: false,
         error:
-          error instanceof Error
-            ? error.message
-            : "An error occurred during logout",
+          "An error occurred during logout",
       },
       { status: 500 }
     );

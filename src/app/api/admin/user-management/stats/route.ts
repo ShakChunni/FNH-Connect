@@ -1,3 +1,4 @@
+import { authorizeAPIRequest } from "@/lib/apiAuthorization";
 /**
  * User Management API - Stats
  * GET: Fetch user management statistics
@@ -11,6 +12,8 @@ import { prisma } from "@/lib/prisma";
 export async function GET() {
   try {
     const user = await getAuthenticatedUserForAPI();
+    const authorizationError = await authorizeAPIRequest(user, "/api/admin/user-management/stats", "GET");
+    if (authorizationError) return authorizationError;
     if (!user) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },

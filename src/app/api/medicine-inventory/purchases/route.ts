@@ -1,3 +1,5 @@
+import { publicErrorMessage } from "@/lib/publicError";
+import { authorizeAPIRequest } from "@/lib/apiAuthorization";
 /**
  * Medicine Purchases API Route
  * GET: List all purchase entries with filtering
@@ -77,6 +79,8 @@ const purchaseFiltersSchema = z.object({
 export async function GET(request: NextRequest) {
   try {
     const user = await getAuthenticatedUserForAPI();
+    const authorizationError = await authorizeAPIRequest(user, "/api/medicine-inventory/purchases", "GET");
+    if (authorizationError) return authorizationError;
     if (!user) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
@@ -138,6 +142,8 @@ export async function POST(request: NextRequest) {
     }
 
     const user = await getAuthenticatedUserForAPI();
+    const authorizationError = await authorizeAPIRequest(user, "/api/medicine-inventory/purchases", "POST");
+    if (authorizationError) return authorizationError;
     if (!user) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
@@ -213,7 +219,7 @@ export async function POST(request: NextRequest) {
       ];
       if (knownErrors.some((msg) => error.message.includes(msg))) {
         return NextResponse.json(
-          { success: false, error: error.message },
+          { success: false, error: publicErrorMessage(error) },
           { status: 400 },
         );
       }

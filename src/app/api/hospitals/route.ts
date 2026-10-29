@@ -1,3 +1,4 @@
+import { authorizeAPIRequest } from "@/lib/apiAuthorization";
 import { NextRequest, NextResponse } from "next/server";
 import {
   validateCSRFToken,
@@ -17,6 +18,8 @@ import {
 export async function GET(request: NextRequest) {
   try {
     const user = await getAuthenticatedUserForAPI();
+    const authorizationError = await authorizeAPIRequest(user, "/api/hospitals", "GET");
+    if (authorizationError) return authorizationError;
     if (!user) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
@@ -85,7 +88,7 @@ export async function GET(request: NextRequest) {
       {
         success: false,
         error: "Failed to fetch hospitals",
-        message: error instanceof Error ? error.message : "Unknown error",
+        message: "Unable to process request",
       },
       { status: 500 }
     );
@@ -106,6 +109,8 @@ export async function POST(request: NextRequest) {
     }
 
     const user = await getAuthenticatedUserForAPI();
+    const authorizationError = await authorizeAPIRequest(user, "/api/hospitals", "POST");
+    if (authorizationError) return authorizationError;
     if (!user) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
@@ -183,7 +188,7 @@ export async function POST(request: NextRequest) {
       {
         success: false,
         error: "Failed to create hospital",
-        message: error instanceof Error ? error.message : "Unknown error",
+        message: "Unable to process request",
       },
       { status: 500 }
     );

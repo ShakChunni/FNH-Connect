@@ -1,3 +1,4 @@
+import { PublicError } from "@/lib/publicError";
 import { Prisma, Shift } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { closeActiveStaffCashShifts } from "@/services/staffShiftClosureService";
@@ -147,7 +148,7 @@ export const shiftService = {
       });
 
       if (!closed.generalShiftId) {
-        throw new Error("No active shift found to close.");
+        throw new PublicError("No active shift found to close.");
       }
 
       const generalShift = await tx.shift.findUniqueOrThrow({

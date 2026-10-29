@@ -1,3 +1,4 @@
+import { authorizeAPIRequest } from "@/lib/apiAuthorization";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { getAuthenticatedUserForAPI } from "@/lib/auth-validation";
@@ -7,13 +8,15 @@ interface RouteParams {
   params: Promise<{ patientId: string }>;
 }
 
-const patientIdSchema = z.string().regex(/^\d+$/).transform(Number).pipe(
-  z.number().int().positive(),
+const patientIdSchema = z.string().regex(/^[1-9]\d*$/).transform(Number).pipe(
+  z.number().int().positive().max(Number.MAX_SAFE_INTEGER),
 );
 
 export async function GET(_request: NextRequest, { params }: RouteParams) {
   try {
     const user = await getAuthenticatedUserForAPI();
+    const authorizationError = await authorizeAPIRequest(user, "/api/medicine-inventory/patients/[patientId]/package-context", "GET");
+    if (authorizationError) return authorizationError;
     if (!user) {
       return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
     }

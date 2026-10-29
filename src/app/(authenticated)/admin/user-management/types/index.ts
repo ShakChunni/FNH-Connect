@@ -1,3 +1,4 @@
+import { newPasswordSchema } from "@/lib/passwordSchema";
 import { z } from "zod";
 
 // ============================================
@@ -80,10 +81,7 @@ export const createUserSchema = z
         /^[a-zA-Z0-9_-]+$/,
         "Username can only contain letters, numbers, hyphens and underscores",
       ),
-    password: z
-      .string()
-      .min(8, "Password must be at least 8 characters")
-      .max(128),
+    password: newPasswordSchema,
 
     // Roles
     role: z.enum([
@@ -181,10 +179,7 @@ export type UpdateUserInput = z.infer<typeof updateUserSchema>;
 // ============================================
 
 export const resetPasswordSchema = z.object({
-  newPassword: z
-    .string()
-    .min(8, "Password must be at least 8 characters")
-    .max(128),
+  newPassword: newPasswordSchema,
 });
 
 export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;

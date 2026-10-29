@@ -12,7 +12,7 @@
 
 # next.js
 /.next/
-/.github/
+/.github/copilot-instructions.md
 /out/
 
 # production
@@ -39,6 +39,7 @@ yarn-error.log*
 
 # local env files
 .env*
+!.env.example
 .env
 commit-message.txt
 
@@ -48,3 +49,10 @@ commit-message.txt
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Private operational data must never be tracked.
+/private-data/
+/docs/migration-mappings/*.json
+!/docs/migration-mappings/example.json
+/backups/
+/dumps/

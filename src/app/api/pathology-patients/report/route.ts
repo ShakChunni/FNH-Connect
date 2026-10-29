@@ -1,3 +1,4 @@
+import { authorizeAPIRequest } from "@/lib/apiAuthorization";
 /**
  * Pathology Report API Route
  * GET: Fetch all pathology data (no pagination) for report generation
@@ -15,6 +16,8 @@ const MAX_REPORT_RECORDS = 10000;
 export async function GET(request: NextRequest) {
   try {
     const user = await getAuthenticatedUserForAPI();
+    const authorizationError = await authorizeAPIRequest(user, "/api/pathology-patients/report", "GET");
+    if (authorizationError) return authorizationError;
     if (!user) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
@@ -69,7 +72,7 @@ export async function GET(request: NextRequest) {
       {
         success: false,
         error: "Failed to fetch pathology data for report",
-        message: error instanceof Error ? error.message : "Unknown error",
+        message: "Unable to process request",
       },
       { status: 500 }
     );

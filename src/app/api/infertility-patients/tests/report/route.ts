@@ -1,3 +1,4 @@
+import { authorizeAPIRequest } from "@/lib/apiAuthorization";
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthenticatedUserForAPI } from "@/lib/auth-validation";
 import * as infertilityService from "@/services/infertilityService";
@@ -6,6 +7,8 @@ import { infertilityTestFiltersSchema } from "@/app/(authenticated)/infertility/
 export async function GET(request: NextRequest) {
   try {
     const user = await getAuthenticatedUserForAPI();
+    const authorizationError = await authorizeAPIRequest(user, "/api/infertility-patients/tests/report", "GET");
+    if (authorizationError) return authorizationError;
     if (!user) {
       return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
     }

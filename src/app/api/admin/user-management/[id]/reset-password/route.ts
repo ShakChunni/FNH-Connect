@@ -1,3 +1,6 @@
+import { PublicError, publicErrorMessage } from "@/lib/publicError";
+import { authorizeAPIRequest, parsePositiveIntegerId } from "@/lib/apiAuthorization";
+import { newPasswordSchema } from "@/lib/passwordSchema";
 /**
  * User Management API - Reset Password
  * PATCH: Reset user password and invalidate all sessions
@@ -16,10 +19,7 @@ import { z } from "zod";
 import { closeActiveStaffCashShifts } from "@/services/staffShiftClosureService";
 
 const resetPasswordSchema = z.object({
-  newPassword: z
-    .string()
-    .min(8, "Password must be at least 8 characters")
-    .max(128),
+  newPassword: newPasswordSchema,
 });
 
 interface RouteParams {
@@ -36,6 +36,8 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     }
 
     const authUser = await getAuthenticatedUserForAPI();
+    const authorizationError = await authorizeAPIRequest(authUser, "/api/admin/user-management/[id]/reset-password", "PATCH");
+    if (authorizationError) return authorizationError;
     if (!authUser) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
@@ -51,7 +53,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     }
 
     const { id } = await params;
-    const userId = parseInt(id, 10);
+    const userId = parsePositiveIntegerId(id);
 
     if (isNaN(userId)) {
       return NextResponse.json(
@@ -89,7 +91,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       });
 
       if (!existingUser) {
-        throw new Error("User not found");
+        throw new PublicError("User not found");
       }
 
       // Update password
@@ -162,7 +164,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 
     if (error instanceof Error && error.message.includes("not found")) {
       return NextResponse.json(
-        { success: false, error: error.message },
+        { success: false, error: publicErrorMessage(error) },
         { status: 404 },
       );
     }

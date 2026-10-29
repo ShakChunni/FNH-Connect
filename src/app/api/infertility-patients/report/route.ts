@@ -1,3 +1,4 @@
+import { authorizeAPIRequest } from "@/lib/apiAuthorization";
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthenticatedUserForAPI } from "@/lib/auth-validation";
 import { getInfertilityPatientsForReport } from "@/services/infertilityService";
@@ -6,6 +7,8 @@ import { infertilityFiltersSchema } from "@/app/(authenticated)/infertility/type
 export async function GET(request: NextRequest) {
   try {
     const user = await getAuthenticatedUserForAPI();
+    const authorizationError = await authorizeAPIRequest(user, "/api/infertility-patients/report", "GET");
+    if (authorizationError) return authorizationError;
     if (!user) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
@@ -48,7 +51,7 @@ export async function GET(request: NextRequest) {
       {
         success: false,
         error: "Failed to fetch HSI Center patient report",
-        message: error instanceof Error ? error.message : "Unknown error",
+        message: "Unable to process request",
       },
       { status: 500 },
     );

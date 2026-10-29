@@ -1,3 +1,5 @@
+import { publicErrorMessage } from "@/lib/publicError";
+import { authorizeAPIRequest, parsePositiveIntegerId } from "@/lib/apiAuthorization";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import {
@@ -17,6 +19,8 @@ export async function GET(
 ) {
   try {
     const user = await getAuthenticatedUserForAPI();
+    const authorizationError = await authorizeAPIRequest(user, "/api/hospitals/[id]", "GET");
+    if (authorizationError) return authorizationError;
     if (!user) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
@@ -27,7 +31,7 @@ export async function GET(
     const { id } = await params;
 
     // Validate ID format
-    const hospitalId = parseInt(id);
+    const hospitalId = parsePositiveIntegerId(id);
     if (isNaN(hospitalId)) {
       return NextResponse.json(
         { success: false, error: "Invalid hospital ID" },
@@ -69,7 +73,7 @@ export async function GET(
       {
         success: false,
         error: "Failed to fetch hospital",
-        message: error instanceof Error ? error.message : "Unknown error",
+        message: "Unable to process request",
       },
       { status: 500 }
     );
@@ -102,6 +106,8 @@ export async function PATCH(
     }
 
     const user = await getAuthenticatedUserForAPI();
+    const authorizationError = await authorizeAPIRequest(user, "/api/hospitals/[id]", "PATCH");
+    if (authorizationError) return authorizationError;
     if (!user) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
@@ -110,7 +116,7 @@ export async function PATCH(
     }
 
     const { id } = await params;
-    const hospitalId = parseInt(id);
+    const hospitalId = parsePositiveIntegerId(id);
     if (isNaN(hospitalId)) {
       return NextResponse.json(
         { success: false, error: "Invalid hospital ID" },
@@ -211,7 +217,7 @@ export async function PATCH(
       {
         success: false,
         error: "Failed to update hospital",
-        message: error instanceof Error ? error.message : "Unknown error",
+        message: "Unable to process request",
       },
       { status: 500 }
     );
@@ -235,6 +241,8 @@ export async function DELETE(
     }
 
     const user = await getAuthenticatedUserForAPI();
+    const authorizationError = await authorizeAPIRequest(user, "/api/hospitals/[id]", "DELETE");
+    if (authorizationError) return authorizationError;
     if (!user) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
@@ -243,7 +251,7 @@ export async function DELETE(
     }
 
     const { id } = await params;
-    const hospitalId = parseInt(id);
+    const hospitalId = parsePositiveIntegerId(id);
     if (isNaN(hospitalId)) {
       return NextResponse.json(
         { success: false, error: "Invalid hospital ID" },
@@ -298,7 +306,7 @@ export async function DELETE(
 
     if (error instanceof Error && error.message.includes("Unauthorized")) {
       return NextResponse.json(
-        { success: false, error: error.message },
+        { success: false, error: publicErrorMessage(error) },
         { status: 401 }
       );
     }
@@ -307,7 +315,7 @@ export async function DELETE(
       {
         success: false,
         error: "Failed to delete hospital",
-        message: error instanceof Error ? error.message : "Unknown error",
+        message: "Unable to process request",
       },
       { status: 500 }
     );

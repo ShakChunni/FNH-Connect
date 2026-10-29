@@ -1,3 +1,4 @@
+import { authorizeAPIRequest } from "@/lib/apiAuthorization";
 /**
  * Profile API
  * PATCH: Update editable contact details for the authenticated user's staff profile.
@@ -57,6 +58,8 @@ export async function PATCH(
     }
 
     const authUser = await getAuthenticatedUserForAPI();
+    const authorizationError = await authorizeAPIRequest(authUser, "/api/profile", "PATCH");
+    if (authorizationError) return authorizationError;
     if (!authUser) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },

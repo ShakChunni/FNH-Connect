@@ -1,3 +1,5 @@
+import { PublicError } from "@/lib/publicError";
+import { authorizeAPIRequest, parsePositiveIntegerId } from "@/lib/apiAuthorization";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getAuthenticatedUserForAPI } from "@/lib/auth-validation";
@@ -29,6 +31,8 @@ export async function PATCH(
 
     // Authenticate user
     const user = await getAuthenticatedUserForAPI();
+    const authorizationError = await authorizeAPIRequest(user, "/api/pathology-patients/[id]/status", "PATCH");
+    if (authorizationError) return authorizationError;
     if (!user) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
@@ -37,7 +41,7 @@ export async function PATCH(
     }
 
     const { id } = await params;
-    const testId = parseInt(id);
+    const testId = parsePositiveIntegerId(id);
 
     if (isNaN(testId)) {
       return NextResponse.json(
@@ -71,7 +75,7 @@ export async function PATCH(
       });
 
       if (!existingTest) {
-        throw new Error("Pathology test not found");
+        throw new PublicError("Pathology test not found");
       }
 
       // Status changes are updates too. Keep the database modifier and the

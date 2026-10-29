@@ -1,3 +1,6 @@
+import { PublicError, publicErrorMessage } from "@/lib/publicError";
+import { authorizeAPIRequest } from "@/lib/apiAuthorization";
+import { newPasswordSchema } from "@/lib/passwordSchema";
 /**
  * User Management API - List & Create
  * GET: List users with filters and pagination
@@ -40,10 +43,7 @@ const createUserSchema = z
         /^[a-zA-Z0-9_-]+$/,
         "Username can only contain letters, numbers, hyphens and underscores",
       ),
-    password: z
-      .string()
-      .min(8, "Password must be at least 8 characters")
-      .max(128),
+    password: newPasswordSchema,
     role: z.enum([
       "system-admin",
       "admin",
@@ -77,6 +77,8 @@ const createUserSchema = z
 export async function GET(request: NextRequest) {
   try {
     const user = await getAuthenticatedUserForAPI();
+    const authorizationError = await authorizeAPIRequest(user, "/api/admin/user-management", "GET");
+    if (authorizationError) return authorizationError;
     if (!user) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
@@ -205,6 +207,8 @@ export async function POST(request: NextRequest) {
     }
 
     const authUser = await getAuthenticatedUserForAPI();
+    const authorizationError = await authorizeAPIRequest(authUser, "/api/admin/user-management", "POST");
+    if (authorizationError) return authorizationError;
     if (!authUser) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
@@ -261,11 +265,11 @@ export async function POST(request: NextRequest) {
         });
 
         if (!existingStaff) {
-          throw new Error("Staff member not found");
+          throw new PublicError("Staff member not found");
         }
 
         if (existingStaff.user) {
-          throw new Error("This staff member already has a user account");
+          throw new PublicError("This staff member already has a user account");
         }
 
         staffId = existingStaff.id;
@@ -375,7 +379,7 @@ export async function POST(request: NextRequest) {
       ];
       if (knownErrors.some((msg) => error.message.includes(msg))) {
         return NextResponse.json(
-          { success: false, error: error.message },
+          { success: false, error: publicErrorMessage(error) },
           { status: 400 },
         );
       }

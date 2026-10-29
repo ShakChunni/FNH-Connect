@@ -1,3 +1,4 @@
+import { authorizeAPIRequest, parsePositiveIntegerId } from "@/lib/apiAuthorization";
 import { NextRequest, NextResponse } from "next/server";
 import {
   validateCSRFToken,
@@ -25,6 +26,8 @@ export async function PATCH(
     }
 
     const user = await getAuthenticatedUserForAPI();
+    const authorizationError = await authorizeAPIRequest(user, "/api/pathology-patients/[id]", "PATCH");
+    if (authorizationError) return authorizationError;
     if (!user) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
@@ -34,7 +37,7 @@ export async function PATCH(
     const { id: userId, staffId } = user;
 
     const { id } = await params;
-    const pathologyId = parseInt(id, 10);
+    const pathologyId = parsePositiveIntegerId(id);
 
     if (isNaN(pathologyId)) {
       return NextResponse.json(
@@ -125,7 +128,7 @@ export async function PATCH(
       {
         success: false,
         error: "Failed to update pathology test record",
-        message: error instanceof Error ? error.message : "Unknown error",
+        message: "Unable to process request",
       },
       { status: 500 }
     );

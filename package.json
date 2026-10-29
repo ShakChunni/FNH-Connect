@@ -19,7 +19,10 @@
     "db:fix-payments": "tsx scripts/fix-payment-allocations.ts",
     "db:merge-infertility-cases": "tsx scripts/merge-infertility-cases.ts",
     "db:audit-shifts": "tsx scripts/reconcile-shifts.ts",
-    "db:repair-shifts": "tsx scripts/reconcile-shifts.ts --apply"
+    "db:repair-shifts": "tsx scripts/reconcile-shifts.ts --apply",
+    "test": "node tests/run-validation.mjs",
+    "typecheck": "tsc --noEmit",
+    "lint": "ESLINT_USE_FLAT_CONFIG=false eslint src tests --ext .ts,.tsx"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",

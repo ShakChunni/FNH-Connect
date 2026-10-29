@@ -1,3 +1,5 @@
+import { authorizeAPIRequest } from "@/lib/apiAuthorization";
+import { patientRecordsQuerySchema } from "@/lib/securityInputs";
 /**
  * Patient Records API Route
  * GET /api/patient-records
@@ -9,7 +11,7 @@ import { NextRequest, NextResponse } from "next/server";
 import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { getAuthenticatedUserForAPI } from "@/lib/auth-validation";
-import { isReceptionistRole, isReceptionistInfertilityRole } from "@/lib/roles";
+import { isReceptionistRole, isReceptionistInfertilityRole, isPharmacistRole } from "@/lib/roles";
 import { serializeDateOfBirth } from "@/lib/dateOfBirth";
 
 function getPatientAccessWhereByRole(userRole: string, portal?: string) {
@@ -36,6 +38,8 @@ export async function GET(request: NextRequest) {
   try {
     // 1. Authenticate user
     const user = await getAuthenticatedUserForAPI();
+    const authorizationError = await authorizeAPIRequest(user, "/api/patient-records", "GET");
+    if (authorizationError) return authorizationError;
     if (!user) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
@@ -45,14 +49,14 @@ export async function GET(request: NextRequest) {
 
     // 2. Get query params
     const { searchParams } = new URL(request.url);
-    const search = searchParams.get("search");
-    const gyneOnly = searchParams.get("gyneOnly") === "true";
-    const dischargedOnly = searchParams.get("dischargedOnly") === "true";
-    const infertilityOnly = searchParams.get("infertilityOnly") === "true";
-    const startDate = searchParams.get("startDate");
-    const endDate = searchParams.get("endDate");
-    const page = parseInt(searchParams.get("page") || "1", 10);
-    const limit = parseInt(searchParams.get("limit") || "15", 10);
+    const validation = patientRecordsQuerySchema.safeParse(Object.fromEntries(searchParams));
+    if (!validation.success) {
+      return NextResponse.json({ success: false, error: "Invalid query parameters", details: validation.error.flatten().fieldErrors }, { status: 400 });
+    }
+    const { search, startDate, endDate, page, limit } = validation.data;
+    const gyneOnly = validation.data.gyneOnly === "true";
+    const dischargedOnly = validation.data.dischargedOnly === "true";
+    const infertilityOnly = validation.data.infertilityOnly === "true";
 
     // 3. Build where clause
     const where: Record<string, unknown> = {};
@@ -179,6 +183,17 @@ export async function GET(request: NextRequest) {
         },
       }),
     ]);
+
+    if (isPharmacistRole(user.role)) {
+      return NextResponse.json({
+        success: true,
+        data: patients.map(({ id, fullName, phoneNumber, gender, guardianName, address, email, admissions }) => ({
+          id, fullName, phoneNumber, gender, guardianName, address, email, admissions,
+        })),
+        total,
+        pagination: { page, limit, totalPages: Math.ceil(total / limit) },
+      });
+    }
 
     const patientIds = patients.map((patient) => patient.id);
     const creatorIds = Array.from(

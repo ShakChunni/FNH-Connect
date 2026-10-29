@@ -13,6 +13,7 @@ import {
 
 export const patientAddressSchema = z
   .string()
+  .max(2000)
   .trim()
   .min(1, "Patient district is required")
   .refine(hasRequiredBangladeshDistrict, "Select a valid Bangladesh district")

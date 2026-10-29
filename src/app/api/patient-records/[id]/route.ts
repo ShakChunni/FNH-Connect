@@ -1,3 +1,4 @@
+import { authorizeAPIRequest, parsePositiveIntegerId } from "@/lib/apiAuthorization";
 /**
  * Patient Update API Route
  * PATCH /api/patient-records/[id]
@@ -72,6 +73,8 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 
     // 2. Authenticate user
     const user = await getAuthenticatedUserForAPI();
+    const authorizationError = await authorizeAPIRequest(user, "/api/patient-records/[id]", "PATCH");
+    if (authorizationError) return authorizationError;
     if (!user) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
@@ -81,7 +84,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 
     // 3. Get patient ID
     const { id } = await params;
-    const patientId = parseInt(id);
+    const patientId = parsePositiveIntegerId(id);
 
     if (isNaN(patientId)) {
       return NextResponse.json(
@@ -226,6 +229,8 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
     // 1. Authenticate user
     const user = await getAuthenticatedUserForAPI();
+    const authorizationError = await authorizeAPIRequest(user, "/api/patient-records/[id]", "GET");
+    if (authorizationError) return authorizationError;
     if (!user) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
@@ -235,7 +240,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
     // 2. Get patient ID
     const { id } = await params;
-    const patientId = parseInt(id);
+    const patientId = parsePositiveIntegerId(id);
 
     if (isNaN(patientId)) {
       return NextResponse.json(

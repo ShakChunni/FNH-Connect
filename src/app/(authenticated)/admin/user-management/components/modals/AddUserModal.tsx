@@ -5,6 +5,8 @@
 
 "use client";
 
+import { generatePassword, validatePassword } from "@/lib/passwordPolicy";
+
 import React, {
   useCallback,
   useMemo,
@@ -41,14 +43,6 @@ interface AddUserModalProps {
   onClose: () => void;
 }
 
-function generatePassword(length = 12): string {
-  const chars = "abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789!@#$%";
-  let password = "";
-  for (let i = 0; i < length; i++) {
-    password += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return password;
-}
 
 const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose }) => {
   const popupRef = useRef<HTMLDivElement>(null);
@@ -141,8 +135,7 @@ const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose }) => {
       errors.push(
         "Username can only contain letters, numbers, hyphens and underscores",
       );
-    if (!password || password.length < 8)
-      errors.push("Password must be at least 8 characters");
+    errors.push(...validatePassword(password).errors);
 
     return { isFormValid: errors.length === 0, validationErrors: errors };
   }, [linkExisting, selectedStaff, firstName, username, password]);
@@ -526,7 +519,7 @@ const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose }) => {
                           type="text"
                           value={password}
                           onChange={(e) => setPassword(e.target.value)}
-                          placeholder="Min 8 characters"
+                          placeholder="12+ characters, upper/lowercase, number and symbol"
                           className={`flex-1 ${getInputClass(password.length >= 8)}`}
                         />
                         <button

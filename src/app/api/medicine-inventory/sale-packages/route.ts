@@ -1,3 +1,5 @@
+import { publicErrorMessage } from "@/lib/publicError";
+import { authorizeAPIRequest } from "@/lib/apiAuthorization";
 /**
  * Medicine Inventory — Sale Package Resolver API
  *
@@ -60,7 +62,7 @@ function canManageMedicinePackages(role: string): boolean {
 }
 
 function packageError(error: unknown): string {
-  return error instanceof Error ? error.message : "Package operation failed";
+  return publicErrorMessage(error, "Package operation failed");
 }
 
 function packageErrorStatus(message: string): number {
@@ -68,7 +70,8 @@ function packageErrorStatus(message: string): number {
   if (message.includes("already exists")) return 409;
   if (
     message.includes("valid active department") ||
-    message.includes("Invalid package definition")
+    message.includes("Invalid package definition") ||
+    message === "At least one medicine package must remain"
   ) {
     return 400;
   }
@@ -78,6 +81,8 @@ function packageErrorStatus(message: string): number {
 export async function GET(request: NextRequest) {
   try {
     const user = await getAuthenticatedUserForAPI();
+    const authorizationError = await authorizeAPIRequest(user, "/api/medicine-inventory/sale-packages", "GET");
+    if (authorizationError) return authorizationError;
     if (!user) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
@@ -180,6 +185,8 @@ export async function POST(request: NextRequest) {
       );
     }
     const user = await getAuthenticatedUserForAPI();
+    const authorizationError = await authorizeAPIRequest(user, "/api/medicine-inventory/sale-packages", "POST");
+    if (authorizationError) return authorizationError;
     if (!user) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
@@ -217,7 +224,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     const message = packageError(error);
     const status = packageErrorStatus(message);
-    return NextResponse.json({ success: false, error: message }, { status });
+    return NextResponse.json({ success: false, error: status >= 500 ? "Package operation failed" : message }, { status });
   }
 }
 
@@ -230,6 +237,8 @@ export async function PATCH(request: NextRequest) {
       );
     }
     const user = await getAuthenticatedUserForAPI();
+    const authorizationError = await authorizeAPIRequest(user, "/api/medicine-inventory/sale-packages", "PATCH");
+    if (authorizationError) return authorizationError;
     if (!user) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
@@ -264,7 +273,7 @@ export async function PATCH(request: NextRequest) {
   } catch (error) {
     const message = packageError(error);
     const status = packageErrorStatus(message);
-    return NextResponse.json({ success: false, error: message }, { status });
+    return NextResponse.json({ success: false, error: status >= 500 ? "Package operation failed" : message }, { status });
   }
 }
 
@@ -277,6 +286,8 @@ export async function DELETE(request: NextRequest) {
       );
     }
     const user = await getAuthenticatedUserForAPI();
+    const authorizationError = await authorizeAPIRequest(user, "/api/medicine-inventory/sale-packages", "DELETE");
+    if (authorizationError) return authorizationError;
     if (!user) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
@@ -303,7 +314,7 @@ export async function DELETE(request: NextRequest) {
     );
   } catch (error) {
     const message = packageError(error);
-    const status = message.includes("not found") ? 404 : 400;
-    return NextResponse.json({ success: false, error: message }, { status });
+    const status = packageErrorStatus(message);
+    return NextResponse.json({ success: false, error: status >= 500 ? "Package operation failed" : message }, { status });
   }
 }

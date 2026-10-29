@@ -1,3 +1,4 @@
+import { authorizeAPIRequest } from "@/lib/apiAuthorization";
 /**
  * Departments API Route
  * GET: List active departments
@@ -10,6 +11,8 @@ import { getAuthenticatedUserForAPI } from "@/lib/auth-validation";
 export async function GET() {
   try {
     const user = await getAuthenticatedUserForAPI();
+    const authorizationError = await authorizeAPIRequest(user, "/api/departments", "GET");
+    if (authorizationError) return authorizationError;
     if (!user) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
@@ -32,7 +35,7 @@ export async function GET() {
       {
         success: false,
         error: "Failed to fetch departments",
-        message: error instanceof Error ? error.message : "Unknown error",
+        message: "Unable to process request",
       },
       { status: 500 }
     );

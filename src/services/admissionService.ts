@@ -1,3 +1,4 @@
+import { PublicError } from "@/lib/publicError";
 /**
  * Admission Service Layer
  * Business logic for patient admission management with payment tracking
@@ -144,7 +145,7 @@ interface NormalizedAdmissionMedicineChargeItem {
   totalAmount: number;
 }
 
-export class AdmissionMedicineValidationError extends Error {
+export class AdmissionMedicineValidationError extends PublicError {
   constructor(
     message: string,
     public readonly fieldErrors: Record<string, string[]> = {},
@@ -541,7 +542,7 @@ export async function createAdmission(
       where: { id: admissionData.departmentId },
     });
     if (!department) {
-      throw new Error("Department not found");
+      throw new PublicError("Department not found");
     }
 
     const departmentCode = getDepartmentCode(department.name);
@@ -958,7 +959,7 @@ export async function updateAdmission(
     });
 
     if (!existingAdmission) {
-      throw new Error("Admission record not found");
+      throw new PublicError("Admission record not found");
     }
 
     if (
@@ -967,7 +968,7 @@ export async function updateAdmission(
       updateData.patient.id !== undefined &&
       updateData.patient.id !== existingAdmission.patientId
     ) {
-      throw new Error(
+      throw new PublicError(
         "Cannot change the patient linked to an existing admission.",
       );
     }
@@ -1313,7 +1314,7 @@ export async function updateAdmission(
         });
 
         if (!patientAccountForPayment) {
-          throw new Error("Patient account not found for payment recording");
+          throw new PublicError("Patient account not found for payment recording");
         }
 
         const paymentCount = await tx.payment.count();
@@ -1451,7 +1452,7 @@ export async function deleteAdmission(
     });
 
     if (!existingAdmission) {
-      throw new Error("Admission record not found");
+      throw new PublicError("Admission record not found");
     }
 
     // ── Reverse financial records before deleting ──

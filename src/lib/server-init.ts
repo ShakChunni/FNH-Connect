@@ -132,6 +132,11 @@ export async function runMaintenanceJobs(
 
   const session = await runSessionCleanup(now);
 
+  // Shared API/login limiter windows are operational metadata, not permanent audit records.
+  await prisma.rateLimit.deleteMany({
+    where: { window_end: { lt: new Date(now.getTime() - 24 * 60 * 60 * 1000) } },
+  });
+
   if (!session.success) {
     console.error("[Session Cleanup] Maintenance failed; retrying next run", {
       source,

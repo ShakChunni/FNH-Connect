@@ -5,7 +5,8 @@ import {
   setCSRFCookie,
 } from "./lib/csrfProtection";
 import { jwtVerify } from "jose";
-import { getDefaultRouteForRole, getReceptionistAllowedRoutes } from "./lib/roles";
+import { getClientIP } from "./lib/clientIp";
+import { getDefaultRouteForRole, canAccessApplicationPath, normalizeRole, SystemRole } from "./lib/roles";
 
 // === CONFIGURATION ===
 const SECRET_ENV = process.env.SECRET_KEY;
@@ -130,11 +131,6 @@ const SUSPICIOUS_PATTERNS = [
 ];
 
 // === UTILITY FUNCTIONS ===
-function getClientIP(request: NextRequest): string {
-  const forwardedFor = request.headers.get("x-forwarded-for");
-  const realIP = request.headers.get("x-real-ip");
-  return forwardedFor?.split(",")[0].trim() || realIP || "unknown";
-}
 
 function isSuspiciousPath(pathname: string): boolean {
   const lowerPath = pathname.toLowerCase();
@@ -237,7 +233,7 @@ export async function middleware(request: NextRequest) {
     const trimmed = pathname.replace(/\/+$/, "");
     return trimmed.length === 0 ? "/" : trimmed;
   })();
-  const ip = getClientIP(request);
+  const ip = getClientIP(request.headers);
 
   // === EXEMPTIONS FOR INTERNAL/CRON ENDPOINTS ===
   // Skip all middleware checks for internal API routes used by cron jobs
@@ -257,12 +253,14 @@ export async function middleware(request: NextRequest) {
   cleanupMaps(now);
 
   // === 1. CHECK BLOCKED IPS ===
-  if (blockedIPs.has(ip)) {
+  if (ip !== "unknown" && blockedIPs.has(ip)) {
     return new NextResponse("Forbidden", { status: 403 });
   }
 
   // === 2. CHECK SUSPICIOUS PATHS ===
   if (isSuspiciousPath(pathname)) {
+    // An unidentified client must never poison a shared "unknown" IP bucket.
+    if (ip === "unknown") return new NextResponse("Not Found", { status: 404 });
     const entry = suspiciousIPs.get(ip) || { hits: 0, paths: [], lastHit: now };
     entry.hits++;
     entry.lastHit = now;
@@ -300,9 +298,10 @@ export async function middleware(request: NextRequest) {
   const isAPIRoute = pathname.startsWith("/api");
   const rateMap = isAPIRoute ? apiRateLimit : generalRateLimit;
   const windowMs = isAPIRoute ? API_RATE_LIMIT_WINDOW : RATE_LIMIT_WINDOW;
-  const maxRequests = isAPIRoute ? API_RATE_LIMIT_MAX : RATE_LIMIT_MAX;
+  const maxRequests = isAPIRoute ? Math.max(500, API_RATE_LIMIT_MAX * 5) : RATE_LIMIT_MAX;
 
-  const isRateLimited = recordRequest(rateMap, ip, windowMs, maxRequests, now);
+  // Authoritative API quotas are per-user in PostgreSQL; this is only coarse IP protection.
+  const isRateLimited = ip !== "unknown" && recordRequest(rateMap, ip, windowMs, maxRequests, now);
 
   if (isRateLimited) {
     securityEvents.push({
@@ -334,9 +333,9 @@ export async function middleware(request: NextRequest) {
 
   if (sessionToken && SECRET_KEY) {
     try {
-      const { payload } = await jwtVerify(sessionToken, SECRET_KEY);
-      hasValidSession = true;
-      userRole = (payload.role as string) || null;
+      const { payload } = await jwtVerify(sessionToken, SECRET_KEY, { algorithms: ["HS256"] });
+      userRole = typeof payload.role === "string" ? payload.role : null;
+      hasValidSession = !!userRole && (Object.values(SystemRole) as string[]).includes(normalizeRole(userRole));
       userPortal = (payload.portal as string) || "general";
     } catch (error) {
       hasValidSession = false;
@@ -353,54 +352,10 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  const isAdminRoute =
-    normalizedPath.startsWith("/admin") ||
-    normalizedPath.startsWith("/api/admin");
-  const isInfertilityCashTrackingRoute =
-    normalizedPath === "/infertility/cash-tracking" ||
-    normalizedPath.startsWith("/infertility/cash-tracking/");
-  const portalAccess =
-    userPortal === "infertility" ? "infertility" : "general";
-  const authenticatedHomeRoute = getDefaultRouteForRole(
-    userRole || "",
-    portalAccess,
-  );
-
-  // Only /login is public
+  const portalAccess = userPortal === "infertility" ? "infertility" : "general";
+  const authenticatedHomeRoute = getDefaultRouteForRole(userRole || "", portalAccess);
   const isLoginPage = normalizedPath === "/login";
   const isRootPath = normalizedPath === "/";
-
-  // Infertility-only routes
-  const infertilityRoutes = [
-    "/infertility",
-    "/api/infertility",
-    "/api/infertility-patients",
-    "/api/infertility/cash-tracking",
-    "/admin/infertility-cash-tracking",
-    "/api/admin/infertility-cash-tracking",
-   ];
-
-  // General-only routes (infertility users must NOT access)
-  // Note: /admin/activity-logs is shared; /admin/user-management is handled separately below.
-  // Note: /api/patient-records is intentionally NOT general-only. It is shared
-  // by the infertility portal's Patient Records page (/infertility/patient-records)
-  // and scoped to infertility patients via the `infertilityOnly` param + role.
-  // The general /patient-records *page* remains general-only.
-  const generalOnlyRoutes = [
-    "/dashboard",
-    "/general-admission",
-    "/pathology",
-    "/doctor-chamber",
-    "/medicine-inventory",
-    "/patient-records",
-    "/admin/cash-tracking",
-    "/api/dashboard",
-    "/api/general-admission",
-    "/api/pathology",
-    "/api/doctor-chamber",
-    "/api/medicine-inventory",
-    "/api/admin/cash-tracking",
-  ];
 
   // REDIRECT 1: Root path with valid session
   if (isRootPath && hasValidSession) {
@@ -412,222 +367,13 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
-  // REDIRECT 3: Login page with valid session
-  if (isLoginPage && hasValidSession) {
+  // Always allow login to render: only DB-backed client verification may redirect
+  // away. A signed JWT alone cannot establish that a session was not revoked.
+
+  // APIs authorize using current DB role and portal inside every handler. JWT
+  // claims can be stale after a portal switch or administrative role change.
+  if (!isAPIRoute && hasValidSession && !canAccessApplicationPath(userRole || "", portalAccess, normalizedPath, method)) {
     return NextResponse.redirect(new URL(authenticatedHomeRoute, request.url));
-  }
-
-  // REDIRECT 4: Admin routes without session → /login
-  if (isAdminRoute && !hasValidSession) {
-    if (isAPIRoute) {
-      return new NextResponse(JSON.stringify({ message: "Unauthorized" }), {
-        status: 401,
-        headers: { "Content-Type": "application/json" },
-      });
-    }
-    return NextResponse.redirect(new URL("/login", request.url));
-  }
-
-  // REDIRECT 5: Admin routes with session but insufficient privileges → authenticated home
-  if (isAdminRoute && hasValidSession) {
-    // Normalize role and check for admin access
-    // Handles: system-admin, SysAdmin, admin, Admin, etc.
-    const normalizedRole = userRole?.toLowerCase().replace(/[\s_-]/g, "") || "";
-    const isAdmin =
-      normalizedRole === "systemadmin" ||
-      normalizedRole === "sysadmin" ||
-      normalizedRole === "admin";
-
-    if (!isAdmin) {
-      if (isAPIRoute) {
-        return new NextResponse(
-          JSON.stringify({ message: "Forbidden - Admin access required" }),
-          {
-            status: 403,
-            headers: { "Content-Type": "application/json" },
-          },
-        );
-      }
-      return NextResponse.redirect(new URL(authenticatedHomeRoute, request.url));
-    }
-  }
-
-  // REDIRECT 5.0.1: HSI Center cash tracking is admin-only even under /infertility
-  if (isInfertilityCashTrackingRoute && hasValidSession) {
-    const normalizedRole = userRole?.toLowerCase().replace(/[\s_-]/g, "") || "";
-    const isAdmin =
-      normalizedRole === "systemadmin" ||
-      normalizedRole === "sysadmin" ||
-      normalizedRole === "admin";
-
-    if (!isAdmin) {
-      if (isAPIRoute) {
-        return new NextResponse(
-          JSON.stringify({ message: "Forbidden - Admin access required" }),
-          {
-            status: 403,
-            headers: { "Content-Type": "application/json" },
-          },
-        );
-      }
-      return NextResponse.redirect(new URL(authenticatedHomeRoute, request.url));
-    }
-  }
-
-  // REDIRECT 5.1: User Management requires system-admin only
-  // Normal admins cannot create/edit/reset/archive users or access user management UI
-  const isUserManagementRoute =
-    normalizedPath === "/admin/user-management" ||
-    normalizedPath.startsWith("/admin/user-management/") ||
-    normalizedPath.startsWith("/api/admin/user-management");
-
-  if (isUserManagementRoute && hasValidSession && userRole) {
-    const normalizedRole = userRole.toLowerCase().replace(/[\s_-]/g, "");
-    const isSystemAdmin =
-      normalizedRole === "systemadmin" || normalizedRole === "sysadmin";
-
-    if (!isSystemAdmin) {
-      if (isAPIRoute) {
-        return new NextResponse(
-          JSON.stringify({
-            message: "Forbidden - System admin access required",
-          }),
-          {
-            status: 403,
-            headers: { "Content-Type": "application/json" },
-          },
-        );
-      }
-      return NextResponse.redirect(new URL(authenticatedHomeRoute, request.url));
-    }
-  }
-
-  // REDIRECT 5.5: Receptionist role restrictions
-  // Receptionists can only access specific pages based on their role type
-  if (hasValidSession && userRole) {
-    const normalizedRole = userRole.toLowerCase().replace(/[\s_-]/g, "");
-    const isReceptionist = normalizedRole === "receptionist";
-    const isReceptionistInfertility =
-      normalizedRole === "receptionistinfertility";
-
-    if (isReceptionist || isReceptionistInfertility) {
-      const receptionistAllowedPaths = getReceptionistAllowedRoutes(
-        userRole,
-        userPortal === "infertility" ? "infertility" : "general",
-      );
-
-      // Check if current path is allowed
-      const isAllowed = receptionistAllowedPaths.some(
-        (allowedPath) =>
-          normalizedPath === allowedPath ||
-          normalizedPath.startsWith(allowedPath + "/"),
-      );
-
-      if (!isAllowed && !isAdminRoute) {
-        // Not allowed and not an admin route (admin routes already handled above)
-        if (isAPIRoute) {
-          return new NextResponse(
-            JSON.stringify({
-              message: "Forbidden - Access not allowed for your role",
-            }),
-            {
-              status: 403,
-              headers: { "Content-Type": "application/json" },
-            },
-          );
-        }
-        return NextResponse.redirect(new URL(authenticatedHomeRoute, request.url));
-      }
-    }
-
-    // REDIRECT 5.6: Pharmacist role restrictions
-    // Pharmacists can only access medicine-inventory and required APIs
-    const isPharmacist =
-      normalizedRole === "medicinepharmacist" ||
-      normalizedRole === "pharmacist";
-
-    if (isPharmacist) {
-      const pharmacistAllowedPaths = [
-        // Page routes
-        "/medicine-inventory",
-        "/profile",
-        "/login",
-        // API routes
-        "/api/medicine-inventory",
-        "/api/profile",
-        "/api/auth",
-        "/api/patients", // For patient lookup during sales
-        "/api/patient-records", // For patient search dropdown in medicine inventory
-      ];
-
-      const isAllowed = pharmacistAllowedPaths.some(
-        (allowedPath) =>
-          normalizedPath === allowedPath ||
-          normalizedPath.startsWith(allowedPath + "/"),
-      );
-
-      if (!isAllowed && !isAdminRoute) {
-        if (isAPIRoute) {
-          return new NextResponse(
-            JSON.stringify({
-              message: "Forbidden - Access not allowed for your role",
-            }),
-            {
-              status: 403,
-              headers: { "Content-Type": "application/json" },
-            },
-          );
-        }
-        return NextResponse.redirect(
-          new URL("/medicine-inventory", request.url),
-        );
-      }
-    }
-  }
-
-  // REDIRECT 5.7: Portal boundary enforcement
-  // Infertility portal users cannot access general-only routes
-  // General portal users cannot access infertility-only routes
-  if (hasValidSession && userPortal) {
-    const isInfertilityRoute = infertilityRoutes.some(
-      (route) =>
-        normalizedPath === route || normalizedPath.startsWith(route + "/"),
-    );
-
-    const isGeneralOnly = generalOnlyRoutes.some(
-      (route) =>
-        normalizedPath === route || normalizedPath.startsWith(route + "/"),
-    );
-
-    if (userPortal === "infertility" && isGeneralOnly) {
-      if (isAPIRoute) {
-        return new NextResponse(
-          JSON.stringify({
-            message: "Forbidden - Not accessible in HSI Center Portal",
-          }),
-          {
-            status: 403,
-            headers: { "Content-Type": "application/json" },
-          },
-        );
-      }
-      return NextResponse.redirect(new URL("/infertility", request.url));
-    }
-
-    if (userPortal === "general" && isInfertilityRoute) {
-      if (isAPIRoute) {
-        return new NextResponse(
-          JSON.stringify({
-            message: "Forbidden - Use the HSI Center Portal",
-          }),
-          {
-            status: 403,
-            headers: { "Content-Type": "application/json" },
-          },
-        );
-      }
-      return NextResponse.redirect(new URL(authenticatedHomeRoute, request.url));
-    }
   }
 
   // REDIRECT 6: Protected routes without session → /login
@@ -721,6 +467,7 @@ export function getMiddlewareMetrics() {
 // === MATCHER CONFIGURATION ===
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.*\\.ico|.*\\.svg|.*\\.jpg|.*\\.jpeg|.*\\.png|.*\\.webp|.*\\.gif|.*\\.json).*)",
+    "/api/:path*",
+    "/((?!api/|_next/static/|_next/image|favicon\\.ico$|fnh-logo\\.(?:png|svg)$|hsi-logo\\.png$|tests\\.(?:json|xlsx)$).*)",
   ],
 };

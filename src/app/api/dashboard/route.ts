@@ -1,3 +1,4 @@
+import { authorizeAPIRequest } from "@/lib/apiAuthorization";
 /**
  * Dashboard API Route (RESTful - Single endpoint for all dashboard data)
  * GET /api/dashboard
@@ -17,6 +18,8 @@ export async function GET(request: NextRequest) {
   try {
     // 1. Authenticate user
     const user = await getAuthenticatedUserForAPI();
+    const authorizationError = await authorizeAPIRequest(user, "/api/dashboard", "GET");
+    if (authorizationError) return authorizationError;
     if (!user) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },

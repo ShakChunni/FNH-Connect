@@ -1,0 +1,10 @@
+{
+  "entries": [
+    {
+      "pathologyTestId": 123,
+      "infertilityPatientId": 45,
+      "subjectType": "PATIENT",
+      "subjectNameSnapshot": null
+    }
+  ]
+}

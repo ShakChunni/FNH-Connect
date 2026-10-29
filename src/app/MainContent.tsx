@@ -11,7 +11,7 @@ export default function MainContent({
 }: {
   children: React.ReactNode;
 }) {
-  const { loading, user, portal, isSwitchingPortal } = useAuth();
+  const { loading, user, portal, isSwitchingPortal, canRedirectFromAuthPage } = useAuth();
   const pathname = usePathname();
   const router = useRouter();
   const loadingPortal: PortalType =
@@ -55,6 +55,7 @@ export default function MainContent({
       !loading &&
       !isSwitchingPortal &&
       user &&
+      canRedirectFromAuthPage &&
       isPublicAuthPage
     ) {
       router.replace(authenticatedHomePath);
@@ -65,6 +66,7 @@ export default function MainContent({
     isSwitchingPortal,
     user,
     isPublicAuthPage,
+    canRedirectFromAuthPage,
     router,
     authenticatedHomePath,
   ]);
@@ -99,7 +101,7 @@ export default function MainContent({
   }
 
   // Authenticated user on auth page - show loading while redirecting
-  if (isPublicAuthPage && user) {
+  if (isPublicAuthPage && user && canRedirectFromAuthPage) {
     return <LoadingState type="authenticating" portal={loadingPortal} />;
   }
 

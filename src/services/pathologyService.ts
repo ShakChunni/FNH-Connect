@@ -1,3 +1,4 @@
+import { PublicError } from "@/lib/publicError";
 /**
  * Pathology Service Layer
  * Business logic for pathology patient management with payment tracking
@@ -403,7 +404,7 @@ export async function createPathologyPatient(
 
     // 4. Validate orderedById - required field, must be provided from frontend
     if (!pathologyData.orderedById) {
-      throw new Error("Ordering doctor/self is required for pathology tests");
+      throw new PublicError("Ordering doctor/self is required for pathology tests");
     }
     const finalOrderedById = pathologyData.orderedById;
 
@@ -588,7 +589,7 @@ export async function updatePathologyPatient(
     });
 
     if (!existingRecord) {
-      throw new Error("Pathology test record not found");
+      throw new PublicError("Pathology test record not found");
     }
 
     // 1. Update patient
@@ -677,7 +678,7 @@ export async function updatePathologyPatient(
         });
 
         if (!patientAccountForPayment) {
-          throw new Error("Patient account not found for payment recording");
+          throw new PublicError("Patient account not found for payment recording");
         }
 
         // Generate receipt number
@@ -832,7 +833,7 @@ export async function deletePathologyPatient(
     });
 
     if (!existingRecord) {
-      throw new Error("Pathology test record not found");
+      throw new PublicError("Pathology test record not found");
     }
 
     // ── Reverse financial records before deleting ──

@@ -1,3 +1,6 @@
+import { publicErrorMessage } from "@/lib/publicError";
+import { InfertilityBillingError } from "@/lib/infertilityBilling";
+import { authorizeAPIRequest, parsePositiveIntegerId } from "@/lib/apiAuthorization";
 import { NextRequest, NextResponse } from "next/server";
 import {
   addCSRFTokenToResponse,
@@ -13,12 +16,14 @@ export async function GET(
 ) {
   try {
     const user = await getAuthenticatedUserForAPI();
+    const authorizationError = await authorizeAPIRequest(user, "/api/infertility-patients/tests/[id]", "GET");
+    if (authorizationError) return authorizationError;
     if (!user) {
       return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
     }
 
     const { id } = await params;
-    const testId = parseInt(id, 10);
+    const testId = parsePositiveIntegerId(id);
     if (isNaN(testId)) {
       return NextResponse.json({ success: false, error: "Invalid test ID" }, { status: 400 });
     }
@@ -30,6 +35,9 @@ export async function GET(
 
     return NextResponse.json({ success: true, data: test });
   } catch (error) {
+    if (error instanceof InfertilityBillingError) {
+      return NextResponse.json({ success: false, error: publicErrorMessage(error) }, { status: 400 });
+    }
     console.error("GET Infertility Test Detail error:", error);
     return NextResponse.json(
       { success: false, error: "Failed to fetch test details" },
@@ -51,12 +59,14 @@ export async function PUT(
     }
 
     const user = await getAuthenticatedUserForAPI();
+    const authorizationError = await authorizeAPIRequest(user, "/api/infertility-patients/tests/[id]", "PUT");
+    if (authorizationError) return authorizationError;
     if (!user || !user.staffId) {
       return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
     }
 
     const { id } = await params;
-    const testId = parseInt(id, 10);
+    const testId = parsePositiveIntegerId(id);
     if (isNaN(testId)) {
       return NextResponse.json({ success: false, error: "Invalid test ID" }, { status: 400 });
     }
@@ -103,12 +113,15 @@ export async function PUT(
       })
     );
   } catch (error) {
+    if (error instanceof InfertilityBillingError) {
+      return NextResponse.json({ success: false, error: publicErrorMessage(error) }, { status: 400 });
+    }
     console.error("PUT Infertility Test error:", error);
     return NextResponse.json(
       {
         success: false,
         error:
-          error instanceof Error ? error.message : "Failed to update test",
+          "Failed to update test",
       },
       { status: 500 }
     );

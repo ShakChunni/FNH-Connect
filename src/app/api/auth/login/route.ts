@@ -1,6 +1,8 @@
+import { getClientIP } from "@/lib/clientIp";
+import { consumeRateLimit } from "@/lib/rateLimit";
 import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcrypt";
-import jwt from "jsonwebtoken";
+import { createSessionToken, sessionIdleMilliseconds, sessionAbsoluteMilliseconds, sessionCookieOptions, requireSessionSecret, verifySessionToken } from "@/lib/sessionSecurity";
 import DeviceDetector from "node-device-detector";
 import { prisma } from "@/lib/prisma";
 import crypto from "crypto";
@@ -24,28 +26,14 @@ import {
 } from "@/services/staffShiftClosureService";
 import { canAccessPortal, normalizeRole, SystemRole } from "@/lib/roles";
 
-const SECRET_KEY = process.env.SECRET_KEY as string;
+// Precomputed bcrypt cost-12 hash; missing usernames still incur password work.
+// Its value grants no access because a persisted active user is always required.
+const DUMMY_PASSWORD_HASH = "$2b$12$auUb/4l5W6Jek9x3rT1I5ue0WBOenzalI/3EgqoyiEy9FTQtfGWui";
 
-// Session Configuration
-const SESSION_EXPIRATION_HOURS = parseInt(
-  process.env.SESSION_EXPIRATION_HOURS || "24",
-  10,
-);
-const EXPIRATION_TIME = 60 * 60 * SESSION_EXPIRATION_HOURS; // in seconds
-
-const COOKIE_SECURE = process.env.SESSION_COOKIE_SECURE
-  ? process.env.SESSION_COOKIE_SECURE === "true"
-  : process.env.NODE_ENV === "production";
-
-const COOKIE_HTTP_ONLY = process.env.SESSION_COOKIE_HTTP_ONLY
-  ? process.env.SESSION_COOKIE_HTTP_ONLY === "true"
-  : true;
-
-const COOKIE_SAME_SITE = (process.env.SESSION_COOKIE_SAME_SITE ||
-  "strict") as "strict";
-
-if (!SECRET_KEY) {
-  throw new Error("SECRET_KEY is not defined in environment variables");
+class LoginRejection extends Error {
+  constructor(message = "Invalid username or password", readonly status = 401) {
+    super(message);
+  }
 }
 
 // ✅ Zod schema for login validation
@@ -181,7 +169,7 @@ function getDeviceInfo(
 }
 
 export async function POST(request: NextRequest) {
-  let clientIp = "Unknown";
+  let clientIp = "unknown";
   let userAgent = "Unknown";
   let attemptedUsername = "";
 
@@ -195,24 +183,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    requireSessionSecret();
+
     // Get client IP and user agent early for security tracking
-    clientIp =
-      request.headers.get("x-forwarded-for")?.split(",")[0].trim() ||
-      request.headers.get("x-real-ip") ||
-      "Unknown";
-
-    if (clientIp.includes(",")) {
-      clientIp = clientIp.split(",")[0].trim();
-    }
-
-    if (clientIp === "::1" || clientIp === "127.0.0.1") {
-      clientIp = "localhost";
-    }
+    clientIp = getClientIP(request.headers);
 
     userAgent = request.headers.get("user-agent") || "Unknown";
 
     // ✅ Check if IP is blocked
-    const ipBlockCheck = await checkIPBlock(clientIp);
+    const ipBlockCheck = clientIp === "unknown" ? { isBlocked: false } : await checkIPBlock(clientIp);
     if (ipBlockCheck.isBlocked) {
       await trackSuspiciousActivity({
         ipAddress: clientIp,
@@ -252,8 +231,28 @@ export async function POST(request: NextRequest) {
     const { username, password } = validation.data;
     attemptedUsername = username;
 
+    // Count before password hashing; PostgreSQL makes limits shared across workers.
+    try {
+      const usernameKey = crypto.createHash("sha256").update(username.toLowerCase()).digest("hex");
+      const buckets = [{ key: `username:${usernameKey}`, bucket: "login-user", limit: 10, windowMs: 15 * 60_000 }];
+      if (clientIp !== "unknown") buckets.push({ key: `ip:${clientIp}`, bucket: "login-ip", limit: 30, windowMs: 15 * 60_000 });
+      for (const bucket of buckets) {
+        const limit = await consumeRateLimit(bucket);
+        if (!limit.allowed) return NextResponse.json<LoginResponse>(
+          { success: false, error: "Too many login attempts. Please try again later." },
+          { status: 429, headers: { "Retry-After": String(limit.retryAfter) } },
+        );
+      }
+    } catch (error) {
+      console.error("Login rate limit unavailable:", error);
+      return NextResponse.json<LoginResponse>(
+        { success: false, error: "Login is temporarily unavailable. Please try again." },
+        { status: 503 },
+      );
+    }
+
     // ✅ Check for excessive failed login attempts
-    const failedIPAttempts = await getFailedLoginAttempts(clientIp, 15);
+    const failedIPAttempts = clientIp === "unknown" ? 0 : await getFailedLoginAttempts(clientIp, 15);
     const failedUserAttempts = await getFailedLoginAttemptsForUser(
       username,
       15,
@@ -325,6 +324,10 @@ export async function POST(request: NextRequest) {
         },
       });
 
+      // Compare exactly once before user existence/status branches. Existing
+      // inactive users use their stored hash, just like active accounts.
+      const isValidPassword = await bcrypt.compare(password, user?.password ?? DUMMY_PASSWORD_HASH);
+
       if (!user) {
         // ✅ Track failed login attempt (invalid username)
         await trackLoginAttempt({
@@ -334,7 +337,19 @@ export async function POST(request: NextRequest) {
           userAgent,
           metadata: { reason: "Invalid username" },
         });
-        throw new Error("Invalid username or password");
+        throw new LoginRejection();
+      }
+
+      if (!isValidPassword) {
+        // ✅ Track failed login attempt (wrong password)
+        await trackLoginAttempt({
+          ipAddress: clientIp,
+          username,
+          success: false,
+          userAgent,
+          metadata: { reason: "Invalid password" },
+        });
+        throw new LoginRejection();
       }
 
       if (!user.isActive) {
@@ -346,9 +361,7 @@ export async function POST(request: NextRequest) {
           userAgent,
           metadata: { reason: "User account deactivated" },
         });
-        throw new Error(
-          "Your account has been deactivated. Please contact an administrator.",
-        );
+        throw new LoginRejection();
       }
 
       if (!user.staff.isActive) {
@@ -360,21 +373,7 @@ export async function POST(request: NextRequest) {
           userAgent,
           metadata: { reason: "Staff account inactive" },
         });
-        throw new Error("Staff account is inactive");
-      }
-
-      // Verify password
-      const isValidPassword = await bcrypt.compare(password, user.password);
-      if (!isValidPassword) {
-        // ✅ Track failed login attempt (wrong password)
-        await trackLoginAttempt({
-          ipAddress: clientIp,
-          username,
-          success: false,
-          userAgent,
-          metadata: { reason: "Invalid password" },
-        });
-        throw new Error("Invalid username or password");
+        throw new LoginRejection();
       }
 
       // ✅ Portal / Role enforcement
@@ -393,9 +392,7 @@ export async function POST(request: NextRequest) {
               attemptedPortal: body.portal,
             },
           });
-          throw new Error(
-            "Please use the HSI Center Portal to log in."
-          );
+          throw new LoginRejection("Please use the HSI Center Portal to log in.", 403);
         }
       }
 
@@ -410,15 +407,16 @@ export async function POST(request: NextRequest) {
             attemptedPortal: body.portal,
           },
         });
-        throw new Error(
+        throw new LoginRejection(
           body.portal === "infertility"
             ? "You are not authorized to access the HSI Center Portal."
             : "You are not authorized to access the Hospital Portal.",
+          403,
         );
       }
 
       // Generate JWT token
-      const sessionToken = jwt.sign(
+      const sessionToken = createSessionToken(
         {
           userId: user.id,
           username: user.username,
@@ -427,13 +425,10 @@ export async function POST(request: NextRequest) {
           role: user.role, // Use User.role (system role: admin, system-admin, staff) NOT staff.role (hospital role: Doctor, Nurse)
           portal: body.portal,
         },
-        SECRET_KEY,
-        { expiresIn: EXPIRATION_TIME },
       );
 
       // Calculate expiration time
-      const expiresAt = new Date();
-      expiresAt.setSeconds(expiresAt.getSeconds() + EXPIRATION_TIME);
+      const expiresAt = new Date(Date.now() + Math.min(sessionIdleMilliseconds(), sessionAbsoluteMilliseconds()));
 
       // Get device information
       const deviceInfo = getDeviceInfo(userAgent, clientIp, user.id);
@@ -577,6 +572,7 @@ export async function POST(request: NextRequest) {
         user: sessionUser,
         sessionToken,
         portal: body.portal as PortalType,
+        expiresAt,
       };
     });
 
@@ -590,17 +586,13 @@ export async function POST(request: NextRequest) {
     );
 
     // Set httpOnly session cookie
-    const cookieExpiry = new Date();
-    cookieExpiry.setSeconds(cookieExpiry.getSeconds() + EXPIRATION_TIME);
+    const cookieExpiry = new Date(verifySessionToken(result.sessionToken).exp! * 1000);
 
     response.cookies.set({
       name: "session",
       value: result.sessionToken,
-      httpOnly: COOKIE_HTTP_ONLY,
-      secure: COOKIE_SECURE,
+      ...sessionCookieOptions(),
       expires: cookieExpiry,
-      sameSite: COOKIE_SAME_SITE,
-      path: "/",
     });
 
     // Set portal cookie for middleware/client sync
@@ -608,9 +600,9 @@ export async function POST(request: NextRequest) {
       name: "portal",
       value: result.portal,
       httpOnly: false,
-      secure: COOKIE_SECURE,
+      secure: sessionCookieOptions().secure,
       expires: cookieExpiry,
-      sameSite: COOKIE_SAME_SITE,
+      sameSite: sessionCookieOptions().sameSite,
       path: "/",
     });
 
@@ -625,7 +617,7 @@ export async function POST(request: NextRequest) {
     });
 
     // ✅ Track failed login in catch block (for unexpected errors)
-    if (attemptedUsername && clientIp !== "Unknown") {
+    if (attemptedUsername && clientIp !== "unknown") {
       try {
         await trackLoginAttempt({
           ipAddress: clientIp,
@@ -643,21 +635,13 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const isAuthError =
-      error instanceof Error &&
-      (error.message.includes("Invalid") ||
-        error.message.includes("deactivated") ||
-        error.message.includes("inactive"));
-
     return NextResponse.json<LoginResponse>(
       {
         success: false,
         error:
-          error instanceof Error
-            ? error.message
-            : "An error occurred during login",
+          error instanceof LoginRejection ? error.message : "An error occurred during login",
       },
-      { status: isAuthError ? 401 : 500 },
+      { status: error instanceof LoginRejection ? error.status : 500 },
     );
   }
 }
