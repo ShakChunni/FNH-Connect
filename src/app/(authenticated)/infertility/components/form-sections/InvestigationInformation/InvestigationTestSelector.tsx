@@ -43,21 +43,21 @@ const TestItem = memo(
       <div style={style} className="px-2">
         <div
           onClick={(e) => onToggle(testName, e)}
-          className={`cursor-pointer px-3 py-2.5 transition-all duration-200 rounded-lg flex items-center justify-between ${
+          className={`cursor-pointer px-3 py-2.5 transition-colors duration-200 rounded-lg flex items-center justify-between ${
             disabled
               ? "cursor-not-allowed opacity-50"
               : isSelected
-              ? "bg-green-50 border border-green-300 shadow-sm"
+              ? "bg-emerald-50 border border-emerald-300 shadow-sm"
               : "hover:bg-blue-50 hover:border-blue-200 border border-transparent"
           }`}
         >
           <div className="flex items-center flex-1 min-w-0 gap-2.5">
             {/* Custom checkbox */}
             <div
-              className={`w-4 h-4 rounded border-2 flex items-center justify-center shrink-0 transition-all duration-200 ${
+              className={`w-4 h-4 rounded border-2 flex items-center justify-center shrink-0 transition-colors duration-200 ${
                 isSelected
-                  ? "bg-green-600 border-green-600 shadow-sm"
-                  : "border-gray-300 bg-white group-hover:border-blue-400"
+                  ? "bg-emerald-600 border-emerald-600 shadow-sm"
+                  : "border-slate-300 bg-white group-hover:border-blue-400"
               }`}
             >
               {isSelected && (
@@ -66,17 +66,17 @@ const TestItem = memo(
             </div>
             <span
               className={`text-sm flex-1 truncate transition-colors duration-200 ${
-                isSelected ? "font-semibold text-green-800" : "text-gray-700"
+                isSelected ? "font-semibold text-emerald-800" : "text-slate-700"
               }`}
             >
               {testName}
             </span>
           </div>
           <span
-            className={`text-xs font-bold ml-2 px-2.5 py-1 rounded-md shrink-0 transition-all duration-200 ${
+            className={`text-xs font-bold ml-2 px-2.5 py-1 rounded-md shrink-0 transition-colors duration-200 ${
               isSelected
-                ? "bg-green-100 text-green-700 shadow-sm"
-                : "bg-gray-100 text-gray-600"
+                ? "bg-emerald-100 text-emerald-700 shadow-sm"
+                : "bg-slate-100 text-slate-600"
             }`}
           >
             ৳{test.Price.toLocaleString()}
@@ -249,8 +249,8 @@ const InvestigationTestSelector: FC<InvestigationTestSelectorProps> = ({
 
   return (
     <div className="relative w-full">
-      <label className="block text-gray-700 text-sm sm:text-base font-semibold mb-2">
-        Select Tests<span className="text-red-500">*</span>
+      <label className="block text-slate-700 text-sm sm:text-base font-semibold mb-2">
+        Select Tests<span className="text-red-600">*</span>
       </label>
 
       {/* Main Button */}
@@ -259,27 +259,27 @@ const InvestigationTestSelector: FC<InvestigationTestSelectorProps> = ({
         onClick={toggleDropdown}
         disabled={disabled}
         type="button"
-        className={`text-gray-700 font-normal rounded-lg flex justify-between items-center w-full px-4 py-3 min-h-[56px] outline-none transition-all duration-200 border-2 ${
+        className={`text-slate-700 font-normal rounded-lg flex justify-between items-center w-full px-4 py-3 min-h-[56px] outline-none transition-colors duration-200 border-2 ${
           disabled
-            ? "bg-gray-200 border-gray-300 cursor-not-allowed"
+            ? "bg-slate-200 border-slate-300 cursor-not-allowed"
             : selectedTests.length > 0
-            ? "bg-white border-green-600 cursor-pointer focus:ring-2 focus:ring-green-100 shadow-sm hover:shadow-md"
-            : "bg-white border-gray-300 cursor-pointer focus:border-green-600 focus:ring-2 focus:ring-green-100 hover:border-gray-400"
+            ? "bg-white border-emerald-600 cursor-pointer focus:ring-2 focus:ring-emerald-100 shadow-sm "
+            : "bg-white border-slate-300 cursor-pointer focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100 hover:border-slate-400"
         }`}
       >
         <div className="flex-1 text-left">
           {selectedTests.length === 0 ? (
-            <span className="text-gray-400 text-sm">
+            <span className="text-slate-500 text-sm">
               Click to select tests...
             </span>
           ) : (
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-sm font-medium text-gray-800">
+              <span className="text-sm font-medium text-slate-800">
                 {selectedTests.length} test{selectedTests.length > 1 ? "s" : ""}{" "}
                 selected
               </span>
-              <span className="text-gray-300">•</span>
-              <span className="text-sm font-bold text-green-600">
+              <span className="text-slate-300">•</span>
+              <span className="text-sm font-bold text-emerald-700">
                 ৳{totalPrice.toLocaleString()}
               </span>
             </div>
@@ -290,13 +290,13 @@ const InvestigationTestSelector: FC<InvestigationTestSelectorProps> = ({
           {selectedTests.length > 0 && !disabled && (
             <span
               onClick={handleClearAll}
-              className="text-red-500 hover:text-red-600 text-xs font-medium px-2 py-1 rounded hover:bg-red-50 transition-colors cursor-pointer"
+              className="text-red-600 hover:text-red-600 text-xs font-medium px-2 py-1 rounded hover:bg-red-50 transition-colors cursor-pointer"
             >
               Clear
             </span>
           )}
           <ChevronDown
-            className={`transition-transform duration-200 text-gray-400 ${
+            className={`transition-transform duration-200 text-slate-500 ${
               isOpen ? "rotate-180" : ""
             }`}
             size={18}
@@ -312,16 +312,16 @@ const InvestigationTestSelector: FC<InvestigationTestSelectorProps> = ({
             return (
               <div
                 key={testName}
-                className="group inline-flex items-center gap-1.5 bg-green-50 text-green-800 text-xs font-medium pl-3 pr-1.5 py-1.5 rounded-lg border border-green-200 hover:border-green-300 transition-all duration-150"
+                className="group inline-flex items-center gap-1.5 bg-emerald-50 text-emerald-800 text-xs font-medium pl-3 pr-1.5 py-1.5 rounded-lg border border-emerald-200 hover:border-emerald-300 transition-colors duration-150"
               >
                 <span className="truncate max-w-[180px]">{testName}</span>
-                <span className="text-green-600 font-semibold">
+                <span className="text-emerald-700 font-semibold">
                   ৳{test.Price.toLocaleString()}
                 </span>
                 {!disabled && (
                   <button
                     onClick={(e) => handleRemoveTest(testName, e)}
-                    className="ml-1 p-1 rounded-full hover:bg-red-100 text-gray-400 hover:text-red-500 transition-all duration-150"
+                    aria-label="Remove test" className="-my-2 ml-1 flex h-9 w-9 items-center justify-center rounded-full text-slate-500 hover:bg-red-100 hover:text-red-600 transition-colors cursor-pointer"
                     type="button"
                     title="Remove test"
                   >
@@ -341,23 +341,23 @@ const InvestigationTestSelector: FC<InvestigationTestSelectorProps> = ({
         buttonRef={buttonRef}
         className="rounded-lg overflow-hidden"
       >
-        <div className="bg-white border border-gray-200 rounded-lg shadow-xl overflow-hidden w-full min-w-[320px]">
+        <div className="bg-white border border-slate-200 rounded-lg shadow-xl overflow-hidden w-full sm:min-w-[320px]">
           {/* Search Input */}
-          <div className="sticky top-0 bg-gray-50 z-10 p-3 border-b border-gray-200">
+          <div className="sticky top-0 bg-slate-50 z-10 p-3 border-b border-slate-200">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 w-4 h-4" />
               <input
                 type="text"
                 placeholder="Search tests..."
                 value={searchTerm}
                 onChange={handleSearchChange}
-                className="pathology-test-search-input w-full pl-10 pr-4 py-2 rounded-lg border border-gray-200 focus:border-green-500 focus:ring-1 focus:ring-green-200 focus:outline-none text-sm bg-white transition-all duration-150 placeholder:text-gray-400"
+                className="pathology-test-search-input w-full pl-10 pr-4 py-2 rounded-lg border border-slate-200 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-200 focus:outline-none text-sm bg-white transition-colors duration-150 placeholder:text-slate-400"
               />
             </div>
-            <div className="mt-2 text-xs text-gray-500 flex items-center justify-between">
+            <div className="mt-2 text-xs text-slate-500 flex items-center justify-between">
               <span>{filteredTests.length} tests</span>
               {selectedTests.length > 0 && (
-                <span className="text-green-600 font-medium">
+                <span className="text-emerald-700 font-medium">
                   {selectedTests.length} selected
                 </span>
               )}
@@ -373,19 +373,19 @@ const InvestigationTestSelector: FC<InvestigationTestSelectorProps> = ({
               itemCount={filteredTests.length}
               itemSize={48}
               overscanCount={5}
-              className="scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent"
+              className="scrollbar-thin scrollbar-thumb-slate-300 scrollbar-track-transparent"
             >
               {Row}
             </List>
           ) : (
             <div className="p-8 text-center">
-              <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gray-100 mb-3">
-                <Search className="w-6 h-6 text-gray-400" />
+              <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-slate-100 mb-3">
+                <Search className="w-6 h-6 text-slate-500" />
               </div>
-              <p className="text-sm text-gray-500 mb-2">No tests found</p>
+              <p className="text-sm text-slate-500 mb-2">No tests found</p>
               <button
                 onClick={() => setSearchTerm("")}
-                className="text-green-600 hover:text-green-700 text-sm font-medium hover:underline transition-colors"
+                className="text-emerald-700 hover:text-emerald-700 text-sm font-medium hover:underline transition-colors"
                 type="button"
               >
                 Clear search

@@ -43,7 +43,7 @@ const DoctorItem = memo(
         }}
         className={`cursor-pointer px-4 py-3 transition-colors duration-200 rounded-md mx-1 flex items-center gap-3 ${
           disabled
-            ? "cursor-not-allowed text-gray-400"
+            ? "cursor-not-allowed text-slate-500"
             : isSelected
             ? "bg-green-100 border-l-4 border-green-600"
             : "hover:bg-blue-900 hover:text-white"
@@ -58,7 +58,7 @@ const DoctorItem = memo(
           <span className="text-xs sm:text-sm font-semibold">
             {isSelf ? "Self" : doctor.fullName}
           </span>
-          <div className="text-xs text-gray-500">
+          <div className="text-xs text-slate-500">
             {isSelf
               ? "Patient (self-referred)"
               : doctor.specialization || "Doctor"}
@@ -180,8 +180,8 @@ const DoctorDropdown: React.FC<DoctorDropdownProps> = ({
         <span
           className={`flex items-center gap-2 ${
             value !== null
-              ? "text-gray-700 font-normal"
-              : "text-gray-400 font-light"
+              ? "text-slate-700 font-normal"
+              : "text-slate-500 font-light"
           } text-xs sm:text-sm`}
         >
           {isLoading ? (
@@ -189,7 +189,7 @@ const DoctorDropdown: React.FC<DoctorDropdownProps> = ({
           ) : selectedDoctorName ? (
             <>
               {selfEntry && value === selfEntry.id ? (
-                <UserCircle2 size={16} className="text-green-600" />
+                <UserCircle2 size={16} className="text-emerald-700" />
               ) : (
                 <Stethoscope size={16} className="text-blue-600" />
               )}
@@ -200,7 +200,7 @@ const DoctorDropdown: React.FC<DoctorDropdownProps> = ({
           )}
         </span>
         <ChevronDown
-          className={`transition-transform duration-200 text-gray-400 ${
+          className={`transition-transform duration-200 text-slate-500 ${
             isOpen ? "rotate-180" : ""
           }`}
           size={16}
@@ -214,22 +214,22 @@ const DoctorDropdown: React.FC<DoctorDropdownProps> = ({
         buttonRef={buttonRef}
         className="rounded-lg overflow-hidden"
       >
-        <div className="bg-white border border-gray-200 rounded-lg shadow-xl overflow-hidden w-full min-w-[280px]">
+        <div className="bg-white border border-slate-200 rounded-lg shadow-xl overflow-hidden w-full sm:min-w-[280px]">
           {/* Search Input - always show for doctors */}
           {doctors.length > 5 && (
-            <div className="sticky top-0 bg-gray-50 z-10 p-3 border-b border-gray-200">
+            <div className="sticky top-0 bg-slate-50 z-10 p-3 border-b border-slate-200">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 w-4 h-4" />
                 <input
                   type="text"
                   placeholder="Search doctors..."
                   value={searchTerm}
                   onChange={handleSearchChange}
                   onClick={(e) => e.stopPropagation()}
-                  className="doctor-search-input-admission w-full pl-10 pr-4 py-2 rounded-lg border border-gray-200 focus:border-blue-950 focus:ring-1 focus:ring-blue-200 focus:outline-none text-sm bg-white transition-all duration-150 placeholder:text-gray-400"
+                  className="doctor-search-input-admission w-full pl-10 pr-4 py-2 rounded-lg border border-slate-200 focus:border-blue-950 focus:ring-1 focus:ring-blue-200 focus:outline-none text-sm bg-white transition-colors placeholder:text-slate-400"
                 />
               </div>
-              <div className="mt-2 text-xs text-gray-500 flex items-center justify-between">
+              <div className="mt-2 text-xs text-slate-500 flex items-center justify-between">
                 <span>
                   {filteredDoctors.length + (selfEntry ? 1 : 0)} options
                 </span>
@@ -257,7 +257,7 @@ const DoctorDropdown: React.FC<DoctorDropdownProps> = ({
                   />
                   {/* Divider */}
                   {filteredDoctors.length > 0 && (
-                    <div className="border-t border-gray-200 my-1"></div>
+                    <div className="border-t border-slate-200 my-1"></div>
                   )}
                 </>
               )}
@@ -277,10 +277,10 @@ const DoctorDropdown: React.FC<DoctorDropdownProps> = ({
             {/* No Results */}
             {filteredDoctors.length === 0 && searchTerm && (
               <div className="p-8 text-center">
-                <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gray-100 mb-3">
-                  <Search className="w-6 h-6 text-gray-400" />
+                <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-slate-100 mb-3">
+                  <Search className="w-6 h-6 text-slate-500" />
                 </div>
-                <p className="text-sm text-gray-500 mb-2">No doctors found</p>
+                <p className="text-sm text-slate-500 mb-2">No doctors found</p>
                 <button
                   onClick={(e) => {
                     e.stopPropagation();

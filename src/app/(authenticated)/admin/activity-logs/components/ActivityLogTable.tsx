@@ -1,7 +1,11 @@
 "use client";
 
 import React from "react";
-import { ActivityLogEntry, getActionColor } from "../types";
+import {
+  ActivityLogEntry,
+  formatActionLabel,
+  getActionTone,
+} from "../types";
 import ActivityLogTableSkeleton from "./ActivityLogTableSkeleton";
 import {
   Clock,
@@ -14,16 +18,21 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useHorizontalDragScroll } from "@/hooks/useHorizontalDragScroll";
+import { StatusBadge } from "@/components/ui/StatusBadge";
 
 interface ActivityLogTableProps {
   logs: ActivityLogEntry[];
   isLoading: boolean;
+  isError?: boolean;
+  onRetry?: () => void;
   onSelectLog: (log: ActivityLogEntry) => void;
 }
 
 const ActivityLogTable: React.FC<ActivityLogTableProps> = ({
   logs,
   isLoading,
+  isError,
+  onRetry,
   onSelectLog,
 }) => {
   // Format: "Jan 4, 03:31 PM" - time with date
@@ -73,18 +82,31 @@ const ActivityLogTable: React.FC<ActivityLogTableProps> = ({
     return <ActivityLogTableSkeleton />;
   }
 
+  // A failed load must not read as "no results".
+  if (isError && logs.length === 0) {
+    return (
+      <div role="alert" className="p-8 text-center">
+        <p className="text-sm font-medium text-red-700">
+          Could not load activity logs.
+        </p>
+        <button
+          type="button"
+          onClick={onRetry}
+          className="mt-3 h-9 px-4 rounded-lg border border-slate-300 bg-white text-xs sm:text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer"
+        >
+          Try again
+        </button>
+      </div>
+    );
+  }
+
   const USER_COL_WIDTH = "w-[180px] min-w-[180px]";
 
   return (
-    <div className="bg-white rounded-xl sm:rounded-2xl border border-gray-100 shadow-sm overflow-hidden relative">
-      {/* Subtle overlay when re-fetching */}
-      {isLoading && (
-        <div className="absolute inset-0 bg-white/40 backdrop-blur-[1px] z-10 flex items-center justify-center animate-pulse" />
-      )}
-
+    <div className="bg-white rounded-xl sm:rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
       <div
         ref={dragScroll.ref}
-        className="overflow-x-auto w-full scrollbar-thin scrollbar-thumb-gray-200"
+        className="overflow-x-auto w-full scrollbar-thin scrollbar-thumb-slate-200"
         onMouseDown={dragScroll.onMouseDown}
         onMouseUp={dragScroll.onMouseUp}
         onMouseMove={dragScroll.onMouseMove}
@@ -95,148 +117,140 @@ const ActivityLogTable: React.FC<ActivityLogTableProps> = ({
             <tr className="bg-fnh-navy text-white">
               <th
                 className={cn(
-                  "px-4 py-3 sm:px-6 sm:py-4 text-[10px] sm:text-xs font-bold uppercase tracking-wider sm:sticky sm:left-0 sm:z-20 bg-fnh-navy sm:shadow-[2px_0_5px_rgba(0,0,0,0.1)]",
+                  "px-4 py-3 sm:px-6 sm:py-4 text-xs font-semibold uppercase tracking-wide sm:sticky sm:left-0 sm:z-20 bg-fnh-navy sm:shadow-[2px_0_5px_rgba(0,0,0,0.1)]",
                   USER_COL_WIDTH
                 )}
               >
                 User
               </th>
-              <th className="px-4 py-3 sm:px-6 sm:py-4 text-[10px] sm:text-xs font-bold uppercase tracking-wider whitespace-nowrap w-[140px]">
+              <th className="px-4 py-3 sm:px-6 sm:py-4 text-xs font-semibold uppercase tracking-wide whitespace-nowrap w-[140px]">
                 Action
               </th>
-              <th className="px-4 py-3 sm:px-6 sm:py-4 text-[10px] sm:text-xs font-bold uppercase tracking-wider">
+              <th className="px-4 py-3 sm:px-6 sm:py-4 text-xs font-semibold uppercase tracking-wide">
                 Description
               </th>
-              <th className="px-4 py-3 sm:px-6 sm:py-4 text-[10px] sm:text-xs font-bold uppercase tracking-wider whitespace-nowrap w-[120px]">
+              <th className="px-4 py-3 sm:px-6 sm:py-4 text-xs font-semibold uppercase tracking-wide whitespace-nowrap w-[120px]">
                 Entity
               </th>
-              <th className="px-4 py-3 sm:px-6 sm:py-4 text-[10px] sm:text-xs font-bold uppercase tracking-wider whitespace-nowrap w-[160px]">
+              <th className="px-4 py-3 sm:px-6 sm:py-4 text-xs font-semibold uppercase tracking-wide whitespace-nowrap w-[160px]">
                 Timestamp
               </th>
-              <th className="px-4 py-3 sm:px-6 sm:py-4 text-[10px] sm:text-xs font-bold uppercase tracking-wider w-[50px]" />
+              <th className="px-4 py-3 sm:px-6 sm:py-4 text-xs font-semibold uppercase tracking-wide w-[50px]" />
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100">
-            {logs.map((log) => {
-              const actionColor = getActionColor(log.action);
-              return (
-                <tr
-                  key={log.id}
-                  onClick={() => onSelectLog(log)}
-                  className="hover:bg-gray-50 transition-colors cursor-pointer group"
+          <tbody className="divide-y divide-slate-100">
+            {logs.map((log) => (
+              <tr
+                key={log.id}
+                onClick={() => onSelectLog(log)}
+                className="hover:bg-slate-50 transition-colors cursor-pointer group"
+              >
+                {/* User Column */}
+                <td
+                  className={cn(
+                    "px-3 py-2.5 sm:px-4 sm:py-3 sm:sticky sm:left-0 sm:z-10 bg-white group-hover:bg-slate-50 transition-colors sm:shadow-[2px_0_5px_rgba(0,0,0,0.02)]",
+                    USER_COL_WIDTH
+                  )}
                 >
-                  {/* User Column */}
-                  <td
-                    className={cn(
-                      "px-3 py-2.5 sm:px-4 sm:py-3 sm:sticky sm:left-0 sm:z-10 bg-white group-hover:bg-gray-50 transition-colors sm:shadow-[2px_0_5px_rgba(0,0,0,0.02)]",
-                      USER_COL_WIDTH
-                    )}
-                  >
-                    <div className="flex items-center gap-2">
-                      <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-fnh-navy/5 flex items-center justify-center text-fnh-navy shrink-0">
-                        {log.user?.staff?.photoUrl ? (
-                          <img
-                            src={log.user.staff.photoUrl}
-                            alt=""
-                            className="w-full h-full object-cover rounded-lg"
-                          />
-                        ) : (
-                          <User className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                        )}
-                      </div>
-                      <div className="min-w-0">
-                        <p className="font-bold text-gray-900 text-[10px] sm:text-xs truncate">
-                          {log.user?.staff?.fullName ||
-                            log.user?.username ||
-                            "Unknown"}
-                        </p>
-                        <p className="text-[8px] sm:text-[9px] text-gray-500 font-medium uppercase tracking-tight">
-                          {log.user?.role || "N/A"}
-                        </p>
-                      </div>
-                    </div>
-                  </td>
-
-                  {/* Action Column */}
-                  <td className="px-3 py-2.5 sm:px-4 sm:py-3">
-                    <span
-                      className={cn(
-                        "inline-flex items-center gap-1 px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-full text-[8px] sm:text-[9px] font-black uppercase tracking-wider",
-                        actionColor.bg,
-                        actionColor.text
+                  <div className="flex items-center gap-2">
+                    <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-fnh-navy/5 flex items-center justify-center text-fnh-navy shrink-0">
+                      {log.user?.staff?.photoUrl ? (
+                        <img
+                          src={log.user.staff.photoUrl}
+                          alt=""
+                          className="w-full h-full object-cover rounded-lg"
+                        />
+                      ) : (
+                        <User className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                       )}
-                    >
-                      <span>{actionColor.icon}</span>
-                      <span className="truncate max-w-[70px]">
-                        {log.action}
-                      </span>
-                    </span>
-                  </td>
-
-                  {/* Description Column */}
-                  <td className="px-3 py-2.5 sm:px-4 sm:py-3">
-                    <div className="max-w-[320px]">
-                      <p className="text-[10px] sm:text-xs text-gray-700 font-medium">
-                        {log.description || "No description"}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="font-bold text-slate-900 text-2xs sm:text-xs truncate">
+                        {log.user?.staff?.fullName ||
+                          log.user?.username ||
+                          "Unknown"}
                       </p>
-                      {log.deviceType && (
-                        <div className="flex items-center gap-1 mt-1 text-[9px] sm:text-[10px] text-gray-400">
-                          {getDeviceIcon(log.deviceType)}
-                          <span>
-                            {log.browserName || log.deviceType}
-                            {log.osType && ` • ${log.osType}`}
-                          </span>
-                        </div>
-                      )}
+                      <p className="text-2xs text-slate-500 font-medium uppercase tracking-tight">
+                        {log.user?.role || "N/A"}
+                      </p>
                     </div>
-                  </td>
+                  </div>
+                </td>
 
-                  {/* Entity Column */}
-                  <td className="px-3 py-2.5 sm:px-4 sm:py-3">
-                    {log.entityType ? (
-                      <div className="space-y-0.5">
-                        <p className="text-[10px] sm:text-xs font-bold text-gray-700 uppercase tracking-wide">
-                          {log.entityType}
-                        </p>
-                        {log.entityId && (
-                          <p className="text-[9px] sm:text-[10px] text-gray-400 font-medium">
-                            ID: {log.entityId}
-                          </p>
-                        )}
+                {/* Action Column: readable label, raw code kept in title */}
+                <td className="px-3 py-2.5 sm:px-4 sm:py-3">
+                  <span title={log.action} className="inline-flex">
+                    <StatusBadge
+                      status={log.action}
+                      label={formatActionLabel(log.action)}
+                      tone={getActionTone(log.action)}
+                    />
+                  </span>
+                </td>
+
+                {/* Description Column */}
+                <td className="px-3 py-2.5 sm:px-4 sm:py-3">
+                  <div className="max-w-[320px]">
+                    <p className="text-2xs sm:text-xs text-slate-700 font-medium">
+                      {log.description || "No description"}
+                    </p>
+                    {log.deviceType && (
+                      <div className="flex items-center gap-1 mt-1 text-2xs text-slate-500">
+                        {getDeviceIcon(log.deviceType)}
+                        <span>
+                          {log.browserName || log.deviceType}
+                          {log.osType && ` • ${log.osType}`}
+                        </span>
                       </div>
-                    ) : (
-                      <span className="text-[10px] sm:text-xs text-gray-400">
-                        —
-                      </span>
                     )}
-                  </td>
+                  </div>
+                </td>
 
-                  {/* Timestamp Column */}
-                  <td className="px-3 py-2.5 sm:px-4 sm:py-3">
+                {/* Entity Column */}
+                <td className="px-3 py-2.5 sm:px-4 sm:py-3">
+                  {log.entityType ? (
                     <div className="space-y-0.5">
-                      <div className="flex items-center gap-1 text-[10px] sm:text-xs font-bold text-gray-700 whitespace-nowrap">
-                        <Clock className="w-3 sm:w-3.5 h-3 sm:h-3.5 text-gray-400 shrink-0" />
-                        {formatDateTime(log.timestamp)}
-                      </div>
-                      <p className="text-[9px] sm:text-[10px] text-gray-400 font-medium ml-4 sm:ml-4.5">
-                        {formatYear(log.timestamp)}
+                      <p className="text-2xs sm:text-xs font-bold text-slate-700 uppercase tracking-wide">
+                        {log.entityType}
                       </p>
+                      {log.entityId && (
+                        <p className="text-2xs text-slate-500 font-medium">
+                          ID: {log.entityId}
+                        </p>
+                      )}
                     </div>
-                  </td>
+                  ) : (
+                    <span className="text-2xs sm:text-xs text-slate-500">
+                      —
+                    </span>
+                  )}
+                </td>
 
-                  {/* Arrow Column */}
-                  <td className="px-4 py-3 sm:px-6 sm:py-4">
-                    <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 text-gray-300 group-hover:text-fnh-navy transition-colors transform group-hover:translate-x-1" />
-                  </td>
-                </tr>
-              );
-            })}
+                {/* Timestamp Column */}
+                <td className="px-3 py-2.5 sm:px-4 sm:py-3">
+                  <div className="space-y-0.5">
+                    <div className="flex items-center gap-1 text-2xs sm:text-xs font-bold text-slate-700 whitespace-nowrap">
+                      <Clock className="w-3 sm:w-3.5 h-3 sm:h-3.5 text-slate-400 shrink-0" />
+                      {formatDateTime(log.timestamp)}
+                    </div>
+                    <p className="text-2xs text-slate-500 font-medium ml-4 sm:ml-4.5">
+                      {formatYear(log.timestamp)}
+                    </p>
+                  </div>
+                </td>
+
+                {/* Arrow Column */}
+                <td className="px-4 py-3 sm:px-6 sm:py-4">
+                  <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 text-slate-300 group-hover:text-fnh-navy transition-colors" />
+                </td>
+              </tr>
+            ))}
           </tbody>
         </table>
       </div>
 
       {logs.length === 0 && !isLoading && (
-        <div className="py-20 flex flex-col items-center text-gray-400">
+        <div className="py-20 flex flex-col items-center text-slate-500">
           <AlertCircle className="w-10 h-10 sm:w-12 sm:h-12 mb-3 opacity-20" />
           <p className="font-medium text-xs sm:text-sm text-center px-4">
             No activity logs found for the selected filters.

@@ -1,5 +1,4 @@
 import { Inter } from "next/font/google";
-import localFont from "next/font/local";
 import "./globals.css";
 import QueryClientProvider from "./QueryClientProvider";
 import { AuthProvider } from "./AuthContext";
@@ -9,26 +8,11 @@ import { metadata } from "./metadata";
 import PageTitle from "./PageTitle";
 import Maintenance from "./Maintenance"; // <-- Import the new component
 import { Toaster } from "sonner";
+import MotionProvider from "./MotionProvider";
 
 const inter = Inter({
   subsets: ["latin"],
   variable: "--font-inter",
-});
-
-const gotham = localFont({
-  src: [
-    {
-      path: "../fonts/fonts-gotham/Gotham.woff",
-      weight: "400",
-      style: "normal",
-    },
-    {
-      path: "../fonts/fonts-gotham/Gotham_bold.woff",
-      weight: "700",
-      style: "normal",
-    },
-  ],
-  variable: "--font-gotham",
 });
 
 import type { Viewport } from "next";
@@ -49,7 +33,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${inter.variable} ${gotham.variable}`}
+      className={inter.variable}
       suppressHydrationWarning
     >
       <head>
@@ -65,14 +49,16 @@ export default function RootLayout({
         ) : (
           <>
             <PageTitle />
-            <QueryClientProvider>
-              <AuthProvider>
-                <NotificationProvider>
-                  <MainContent>{children}</MainContent>
-                  <Toaster position="bottom-right" richColors closeButton />
-                </NotificationProvider>
-              </AuthProvider>
-            </QueryClientProvider>
+            <MotionProvider>
+              <QueryClientProvider>
+                <AuthProvider>
+                  <NotificationProvider>
+                    <MainContent>{children}</MainContent>
+                    <Toaster position="top-center" richColors closeButton />
+                  </NotificationProvider>
+                </AuthProvider>
+              </QueryClientProvider>
+            </MotionProvider>
           </>
         )}
       </body>

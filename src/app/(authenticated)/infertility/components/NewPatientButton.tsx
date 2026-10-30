@@ -21,13 +21,7 @@ export const NewPatientButton: React.FC<NewPatientButtonProps> = ({
     <button
       onClick={onClick}
       disabled={disabled}
-      className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 sm:px-6 py-3 
-        bg-linear-to-r from-emerald-950 to-emerald-900 
-        text-white rounded-xl font-semibold 
-        shadow-lg hover:shadow-xl 
-        hover:from-emerald-900 hover:to-emerald-950 
-        transition-all duration-300 transform hover:scale-105 
-        disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+      className="w-full sm:w-auto h-10 flex items-center justify-center gap-2 px-4 sm:px-6 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
     >
       <PlusIcon className="w-5 h-5" />
       <span>New Patient</span>

@@ -56,7 +56,8 @@ export const GroupSearch: React.FC<GroupSearchProps> = ({
   }, [displayValue, isOpen, searchQuery]);
 
   // Fetch groups
-  const { data: groups = [], isLoading } = useFetchMedicineGroups(true);
+  const { data: groups = [], isLoading, isError, refetch } =
+    useFetchMedicineGroups(true);
 
   const updateDropdownPosition = useCallback(() => {
     if (inputRef.current) {
@@ -152,10 +153,10 @@ export const GroupSearch: React.FC<GroupSearchProps> = ({
 
   const inputClassName = useMemo(() => {
     const base =
-      "text-gray-700 font-normal rounded-lg h-12 md:h-14 py-2 px-4 pr-10 w-full focus:border-blue-900 focus:ring-2 focus:ring-blue-950 outline-none shadow-sm hover:shadow-md transition-all duration-300 placeholder:text-gray-400 placeholder:font-light text-xs sm:text-sm";
+      "text-slate-700 font-normal rounded-lg h-12 md:h-14 py-2 px-4 pr-10 w-full focus:border-blue-900 focus:ring-2 focus:ring-blue-950 outline-none shadow-sm transition-colors placeholder:text-slate-400 placeholder:font-light text-xs sm:text-sm";
 
     if (disabled) {
-      return `${base} bg-gray-200 border-2 border-gray-300 cursor-not-allowed`;
+      return `${base} bg-slate-200 border-2 border-slate-300 cursor-not-allowed`;
     }
 
     if (error) {
@@ -163,10 +164,10 @@ export const GroupSearch: React.FC<GroupSearchProps> = ({
     }
 
     if (value) {
-      return `${base} bg-white border-2 border-green-600 cursor-pointer`;
+      return `${base} bg-white border-2 border-emerald-600 cursor-pointer`;
     }
 
-    return `${base} bg-white border-2 border-gray-300 cursor-pointer`;
+    return `${base} bg-white border-2 border-slate-300 cursor-pointer`;
   }, [disabled, error, value]);
 
   const showNoResults =
@@ -179,7 +180,7 @@ export const GroupSearch: React.FC<GroupSearchProps> = ({
   return (
     <div className="relative">
       <div className="relative">
-        <Layers className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+        <Layers className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
         <input
           ref={inputRef}
           type="text"
@@ -198,10 +199,10 @@ export const GroupSearch: React.FC<GroupSearchProps> = ({
         {value && !disabled && (
           <button
             onClick={handleClear}
-            className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-full hover:bg-gray-100 transition-colors cursor-pointer"
+            className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-full hover:bg-slate-100 transition-colors cursor-pointer"
             type="button"
           >
-            <X className="w-4 h-4 text-gray-400" />
+            <X className="w-4 h-4 text-slate-500" />
           </button>
         )}
         {!value && searchQuery && !disabled && (
@@ -221,7 +222,7 @@ export const GroupSearch: React.FC<GroupSearchProps> = ({
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8 }}
               transition={{ duration: 0.15 }}
-              className="fixed bg-white border border-gray-200 rounded-xl shadow-xl overflow-hidden z-[100001]"
+              className="fixed bg-white border border-slate-200 rounded-xl shadow-xl overflow-hidden z-[100001]"
               style={{
                 top: dropdownPosition.top,
                 left: dropdownPosition.left,
@@ -233,7 +234,7 @@ export const GroupSearch: React.FC<GroupSearchProps> = ({
               {isLoading && (
                 <div className="flex items-center justify-center py-6">
                   <Loader2 className="w-5 h-5 text-purple-500 animate-spin" />
-                  <span className="ml-2 text-sm text-gray-500">Loading...</span>
+                  <span className="ml-2 text-sm text-slate-500">Loading...</span>
                 </div>
               )}
 
@@ -252,11 +253,11 @@ export const GroupSearch: React.FC<GroupSearchProps> = ({
                         <Layers className="w-4 h-4 text-purple-600" />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="text-sm font-semibold text-gray-900 truncate">
+                        <p className="text-sm font-semibold text-slate-900 truncate">
                           {group.name}
                         </p>
                         {group._count?.medicines !== undefined && (
-                          <p className="text-xs text-gray-500">
+                          <p className="text-xs text-slate-500">
                             {group._count.medicines} medicines
                           </p>
                         )}
@@ -269,10 +270,26 @@ export const GroupSearch: React.FC<GroupSearchProps> = ({
                 </div>
               )}
 
+              {/* Load failed */}
+              {isError && (
+                <div role="alert" className="p-4 text-center">
+                  <p className="text-sm font-medium text-red-700">
+                    Could not load groups.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => refetch()}
+                    className="mt-3 h-9 rounded-lg border border-slate-300 bg-white px-4 text-xs font-semibold text-slate-700 transition-colors hover:bg-slate-50"
+                  >
+                    Try again
+                  </button>
+                </div>
+              )}
+
               {/* No Results + Add New */}
-              {showNoResults && (
+              {showNoResults && !isError && (
                 <div className="p-4">
-                  <p className="text-sm text-gray-500 mb-3 text-center">
+                  <p className="text-sm text-slate-500 mb-3 text-center">
                     No groups found for &quot;{searchQuery}&quot;
                   </p>
                   {onAddNew && (
@@ -291,7 +308,7 @@ export const GroupSearch: React.FC<GroupSearchProps> = ({
 
               {/* Quick Add Option at Bottom */}
               {showResults && onAddNew && searchQuery.trim() && (
-                <div className="border-t border-gray-100 p-2">
+                <div className="border-t border-slate-100 p-2">
                   <button
                     onClick={handleAddNew}
                     className="w-full flex items-center justify-center gap-2 px-3 py-2 hover:bg-purple-50 rounded-lg transition-colors cursor-pointer"

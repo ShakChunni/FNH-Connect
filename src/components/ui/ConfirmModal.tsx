@@ -45,7 +45,7 @@ const getIcon = (
 ) => {
   if (customIcon) {
     return (
-      <div className="flex items-center justify-center h-16 w-16 min-h-16 min-w-16 rounded-full bg-jd-porcelain shrink-0">
+      <div className="flex items-center justify-center h-16 w-16 min-h-16 min-w-16 rounded-full bg-slate-100 shrink-0">
         {customIcon}
       </div>
     );
@@ -81,7 +81,7 @@ const getIcon = (
     default:
       return (
         <div className="flex items-center justify-center h-16 w-16 min-h-16 min-w-16 rounded-full bg-amber-50 shrink-0">
-          <AlertTriangle className="h-8 w-8 text-amber-500" />
+          <AlertTriangle className="h-8 w-8 text-amber-600" />
         </div>
       );
   }
@@ -128,11 +128,11 @@ export function ConfirmModal({
       <AnimatePresence>
         {isOpen && (
           <div
-            className="fixed inset-0 z-9999 flex items-center justify-center p-4 overflow-hidden"
+            className="fixed inset-0 z-9999 flex items-center justify-center p-3 sm:p-4 overflow-hidden"
             style={zIndex !== undefined ? { zIndex } : undefined}
           >
             <motion.div
-              className="fixed inset-0 bg-[#09090b]/50"
+              className="fixed inset-0 bg-slate-950/50"
               variants={backdropVariants}
               initial="hidden"
               animate="visible"
@@ -141,10 +141,10 @@ export function ConfirmModal({
             />
 
             <motion.div
-              className="relative w-full max-w-[420px] shadow-2xl flex flex-col overflow-hidden bg-white"
-              style={{
-                borderRadius: "28px",
-              }}
+              role="alertdialog"
+              aria-modal="true"
+              className="relative w-full max-w-[420px] max-h-[calc(100dvh-1.5rem)] shadow-xl flex flex-col overflow-y-auto bg-white"
+              style={{ borderRadius: "28px" }}
               variants={modalVariants}
               initial="hidden"
               animate="visible"
@@ -156,9 +156,10 @@ export function ConfirmModal({
               <button
                 onClick={handleClose}
                 disabled={isLoading}
-                className="w-8 h-8 rounded-full bg-gray-50 hover:bg-gray-100 flex items-center justify-center transition-colors duration-200 cursor-pointer disabled:opacity-50"
+                aria-label="Close"
+                className="w-9 h-9 rounded-full hover:bg-slate-100 flex items-center justify-center transition-colors duration-150 cursor-pointer disabled:opacity-50"
               >
-                <X className="h-4 w-4 text-gray-400" />
+                <X className="h-5 w-5 text-slate-500" />
               </button>
             </div>
 
@@ -171,10 +172,10 @@ export function ConfirmModal({
 
               {/* Title & Children */}
               <div className="w-full space-y-2 mb-8">
-                <h3 className="text-base sm:text-lg font-bold text-[#231F20] tracking-tight font-sans">
+                <h3 className="text-lg font-semibold text-slate-900 tracking-tight">
                   {title}
                 </h3>
-                <div className="text-[#888888] leading-relaxed text-xs sm:text-[13px] max-w-[95%] mx-auto">
+                <div className="text-slate-600 leading-relaxed text-sm max-w-[95%] mx-auto">
                   {children}
                 </div>
               </div>
@@ -184,17 +185,17 @@ export function ConfirmModal({
                 <Button
                   onClick={handleClose}
                   disabled={isLoading}
-                  className="flex-1 bg-white border border-[#E0E0E0] hover:bg-gray-50 text-[#666666] font-semibold py-2.5 h-auto rounded-xl transition-all duration-200 text-xs shadow-sm"
+                  className="flex-1 h-11 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 font-medium rounded-xl transition-colors duration-150 text-sm"
                 >
                   {cancelLabel}
                 </Button>
                 <Button
                   onClick={onConfirm}
                   disabled={isLoading}
-                  className={`flex-1 font-bold py-2.5 h-auto rounded-xl shadow-md hover:shadow-lg transition-all duration-200 text-xs text-white border-none ${
+                  className={`flex-1 h-11 font-semibold rounded-xl transition-colors duration-150 text-sm text-white border-none ${
                     variant === "destructive" || variant === "delete"
                       ? "bg-red-600 hover:bg-red-700"
-                      : "bg-[#000000] hover:bg-[#231F20]"
+                      : "bg-fnh-navy hover:bg-fnh-navy-dark"
                   }`}
                 >
                   {isLoading ? "Processing..." : confirmLabel}

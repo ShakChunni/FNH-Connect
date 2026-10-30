@@ -103,14 +103,14 @@ const UserManagementPage = () => {
                 <div className="w-full flex flex-col sm:flex-row gap-2 sm:gap-3 justify-center sm:w-auto">
                   <button
                     onClick={() => openModal("addUser")}
-                    className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition-all shadow-sm text-xs sm:text-sm font-semibold cursor-pointer active:scale-95"
+                    className="flex items-center justify-center gap-2 h-10 px-3 sm:px-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl transition-colors shadow-sm text-xs sm:text-sm font-semibold cursor-pointer"
                   >
                     <UserPlus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                     <span>Add User</span>
                   </button>
                   <button
                     onClick={() => openModal("addStaff")}
-                    className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl transition-all shadow-sm text-xs sm:text-sm font-semibold cursor-pointer active:scale-95"
+                    className="flex items-center justify-center gap-2 h-10 px-3 sm:px-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl transition-colors shadow-sm text-xs sm:text-sm font-semibold cursor-pointer"
                   >
                     <Users className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                     <span>Add Staff</span>
@@ -123,104 +123,87 @@ const UserManagementPage = () => {
           {/* Stats Grid */}
           <div className="px-1 sm:px-2 lg:px-4">
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
-              {/* Total Users */}
-              <div className="bg-blue-50/50 rounded-2xl p-4 sm:p-5 border border-blue-100 shadow-sm relative overflow-hidden group hover:shadow-md transition-all duration-300">
-                <div className="absolute top-0 right-0 w-24 h-24 bg-blue-100/50 rounded-full -translate-y-1/2 translate-x-1/2 group-hover:scale-110 transition-transform duration-500" />
-                <div className="relative z-10">
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center shadow-sm">
-                      <Users className="w-4 h-4 text-blue-600" />
-                    </div>
-                    <span className="text-[10px] sm:text-xs font-black uppercase tracking-widest text-blue-900/60">
-                      Total Users
-                    </span>
+              <div className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200 shadow-sm">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-8 h-8 bg-slate-50 rounded-lg flex items-center justify-center">
+                    <Users className="w-4 h-4 text-blue-700" />
                   </div>
-                  {statsLoading ? (
-                    <div className="h-8 w-16 bg-blue-100/50 rounded animate-pulse mb-1" />
-                  ) : (
-                    <p className="text-xl sm:text-2xl lg:text-3xl font-black text-blue-950 truncate min-w-0">
-                      {stats?.totalUsers || 0}
-                    </p>
-                  )}
+                  <span className="text-2xs sm:text-xs font-black uppercase tracking-widest text-slate-500">
+                    Total Users
+                  </span>
                 </div>
+                {statsLoading ? (
+                  <div className="h-8 w-16 bg-slate-100 rounded animate-pulse mb-1" />
+                ) : (
+                  <p className="text-xl sm:text-2xl lg:text-3xl font-black text-slate-900 tabular-nums truncate min-w-0">
+                    {stats ? stats.totalUsers : "—"}
+                  </p>
+                )}
               </div>
-              {/* Active */}
-              <div className="bg-emerald-50/50 rounded-2xl p-4 sm:p-5 border border-emerald-100 shadow-sm relative overflow-hidden group hover:shadow-md transition-all duration-300">
-                <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-100/50 rounded-full -translate-y-1/2 translate-x-1/2 group-hover:scale-110 transition-transform duration-500" />
-                <div className="relative z-10">
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center shadow-sm">
-                      <UserCheck className="w-4 h-4 text-emerald-600" />
-                    </div>
-                    <span className="text-[10px] sm:text-xs font-black uppercase tracking-widest text-emerald-900/60">
-                      Active
-                    </span>
+              <div className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200 shadow-sm">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-8 h-8 bg-slate-50 rounded-lg flex items-center justify-center">
+                    <UserCheck className="w-4 h-4 text-emerald-700" />
                   </div>
-                  {statsLoading ? (
-                    <div className="h-8 w-16 bg-emerald-100/50 rounded animate-pulse mb-1" />
-                  ) : (
-                    <p className="text-xl sm:text-2xl lg:text-3xl font-black text-emerald-950 truncate min-w-0">
-                      {stats?.activeUsers || 0}
-                    </p>
-                  )}
+                  <span className="text-2xs sm:text-xs font-black uppercase tracking-widest text-slate-500">
+                    Active
+                  </span>
                 </div>
+                {statsLoading ? (
+                  <div className="h-8 w-16 bg-slate-100 rounded animate-pulse mb-1" />
+                ) : (
+                  <p className="text-xl sm:text-2xl lg:text-3xl font-black text-slate-900 tabular-nums truncate min-w-0">
+                    {stats ? stats.activeUsers : "—"}
+                  </p>
+                )}
               </div>
-              {/* Archived */}
-              <div className="bg-rose-50/50 rounded-2xl p-4 sm:p-5 border border-rose-100 shadow-sm relative overflow-hidden group hover:shadow-md transition-all duration-300">
-                <div className="absolute top-0 right-0 w-24 h-24 bg-rose-100/50 rounded-full -translate-y-1/2 translate-x-1/2 group-hover:scale-110 transition-transform duration-500" />
-                <div className="relative z-10">
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center shadow-sm">
-                      <UserX className="w-4 h-4 text-rose-600" />
-                    </div>
-                    <span className="text-[10px] sm:text-xs font-black uppercase tracking-widest text-rose-900/60">
-                      Archived
-                    </span>
+              <div className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200 shadow-sm">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-8 h-8 bg-slate-50 rounded-lg flex items-center justify-center">
+                    <UserX className="w-4 h-4 text-slate-600" />
                   </div>
-                  {statsLoading ? (
-                    <div className="h-8 w-16 bg-rose-100/50 rounded animate-pulse mb-1" />
-                  ) : (
-                    <p className="text-xl sm:text-2xl lg:text-3xl font-black text-rose-950 truncate min-w-0">
-                      {stats?.archivedUsers || 0}
-                    </p>
-                  )}
+                  <span className="text-2xs sm:text-xs font-black uppercase tracking-widest text-slate-500">
+                    Archived
+                  </span>
                 </div>
+                {statsLoading ? (
+                  <div className="h-8 w-16 bg-slate-100 rounded animate-pulse mb-1" />
+                ) : (
+                  <p className="text-xl sm:text-2xl lg:text-3xl font-black text-slate-900 tabular-nums truncate min-w-0">
+                    {stats ? stats.archivedUsers : "—"}
+                  </p>
+                )}
               </div>
-              {/* Admins */}
-              <div className="bg-violet-50/50 rounded-2xl p-4 sm:p-5 border border-violet-100 shadow-sm relative overflow-hidden group hover:shadow-md transition-all duration-300">
-                <div className="absolute top-0 right-0 w-24 h-24 bg-violet-100/50 rounded-full -translate-y-1/2 translate-x-1/2 group-hover:scale-110 transition-transform duration-500" />
-                <div className="relative z-10">
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center shadow-sm">
-                      <Shield className="w-4 h-4 text-violet-600" />
-                    </div>
-                    <span className="text-[10px] sm:text-xs font-black uppercase tracking-widest text-violet-900/60">
-                      Admins
-                    </span>
+              <div className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200 shadow-sm">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-8 h-8 bg-slate-50 rounded-lg flex items-center justify-center">
+                    <Shield className="w-4 h-4 text-violet-600" />
                   </div>
-                  {statsLoading ? (
-                    <div className="h-8 w-16 bg-violet-100/50 rounded animate-pulse mb-1" />
-                  ) : (
-                    <p className="text-xl sm:text-2xl lg:text-3xl font-black text-violet-950 truncate min-w-0">
-                      {(stats?.byRole?.["admin"] || 0) +
-                        (stats?.byRole?.["system-admin"] || 0)}
-                    </p>
-                  )}
+                  <span className="text-2xs sm:text-xs font-black uppercase tracking-widest text-slate-500">
+                    Admins
+                  </span>
                 </div>
+                {statsLoading ? (
+                  <div className="h-8 w-16 bg-slate-100 rounded animate-pulse mb-1" />
+                ) : (
+                  <p className="text-xl sm:text-2xl lg:text-3xl font-black text-slate-900 tabular-nums truncate min-w-0">
+                    {stats ? (stats.byRole?.["admin"] || 0) + (stats.byRole?.["system-admin"] || 0) : "—"}
+                  </p>
+                )}
               </div>
             </div>
           </div>
 
           {/* Section Tabs */}
           <div className="px-1 sm:px-2 lg:px-4">
-            <div className="inline-flex p-1 bg-white rounded-xl border border-gray-100 shadow-sm">
+            <div className="inline-flex p-1 bg-white rounded-xl border border-slate-200 shadow-sm">
               <button
                 onClick={() => setActiveSection("users")}
                 className={cn(
-                  "px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all cursor-pointer",
+                  "px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-colors cursor-pointer",
                   activeSection === "users"
                     ? "bg-fnh-navy text-white shadow-sm"
-                    : "text-gray-600 hover:bg-gray-50",
+                    : "text-slate-600 hover:bg-slate-50",
                 )}
               >
                 Users
@@ -228,10 +211,10 @@ const UserManagementPage = () => {
               <button
                 onClick={() => setActiveSection("staff")}
                 className={cn(
-                  "px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all cursor-pointer",
+                  "px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-colors cursor-pointer",
                   activeSection === "staff"
-                    ? "bg-indigo-600 text-white shadow-sm"
-                    : "text-gray-600 hover:bg-gray-50",
+                    ? "bg-fnh-navy text-white shadow-sm"
+                    : "text-slate-600 hover:bg-slate-50",
                 )}
               >
                 Staff without Accounts
@@ -242,16 +225,16 @@ const UserManagementPage = () => {
           {/* Filters */}
           {activeSection === "users" && (
             <div className="px-1 sm:px-2 lg:px-4">
-              <div className="p-3 sm:p-4 bg-white rounded-2xl border border-gray-100 shadow-sm flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-3 sm:gap-4">
+              <div className="p-3 sm:p-4 bg-white rounded-2xl border border-slate-200 shadow-sm flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-3 sm:gap-4">
                 {/* Search */}
                 <div className="flex-1 min-w-[180px] sm:min-w-[200px] relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                   <input
                     type="text"
                     placeholder="Search users..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2.5 bg-gray-50/50 border border-gray-100 rounded-xl text-xs sm:text-sm font-bold focus:outline-none focus:ring-2 focus:ring-fnh-blue/20 transition-all"
+                    className="w-full pl-10 pr-4 py-2.5 bg-slate-50/50 border border-slate-100 rounded-xl text-xs sm:text-sm font-bold focus:outline-none focus:ring-2 focus:ring-fnh-blue/20 transition-colors"
                   />
                 </div>
 
@@ -260,7 +243,7 @@ const UserManagementPage = () => {
                   <button
                     ref={roleFilterRef}
                     onClick={() => setRoleFilterOpen(!roleFilterOpen)}
-                    className="flex items-center justify-between gap-1.5 min-w-[160px] px-3 py-2.5 bg-gray-50 hover:bg-gray-100 rounded-xl text-xs font-semibold text-gray-700 transition-colors cursor-pointer border border-gray-100"
+                    className="flex items-center justify-between gap-1.5 min-w-[160px] px-3 py-2.5 bg-slate-50 hover:bg-slate-100 rounded-xl text-xs font-semibold text-slate-700 transition-colors cursor-pointer border border-slate-100"
                   >
                     <div className="flex items-center gap-1.5">
                       <Shield className="w-3.5 h-3.5 text-purple-500 shrink-0" />
@@ -268,7 +251,7 @@ const UserManagementPage = () => {
                     </div>
                     <ChevronDown
                       className={cn(
-                        "w-3.5 h-3.5 text-gray-400 transition-transform",
+                        "w-3.5 h-3.5 text-slate-400 transition-transform",
                         roleFilterOpen && "rotate-180",
                       )}
                     />
@@ -287,10 +270,10 @@ const UserManagementPage = () => {
                           setRoleFilterOpen(false);
                         }}
                         className={cn(
-                          "w-full px-3 py-2 text-left text-xs font-medium hover:bg-gray-50 transition-colors cursor-pointer",
+                          "w-full px-3 py-2 text-left text-xs font-medium hover:bg-slate-50 transition-colors cursor-pointer",
                           !filters.role
                             ? "text-fnh-navy bg-fnh-navy/5"
-                            : "text-gray-700",
+                            : "text-slate-700",
                         )}
                       >
                         All Roles
@@ -304,10 +287,10 @@ const UserManagementPage = () => {
                             setRoleFilterOpen(false);
                           }}
                           className={cn(
-                            "w-full px-3 py-2 text-left text-xs font-medium hover:bg-gray-50 transition-colors cursor-pointer",
+                            "w-full px-3 py-2 text-left text-xs font-medium hover:bg-slate-50 transition-colors cursor-pointer",
                             filters.role === r.value
                               ? "text-fnh-navy bg-fnh-navy/5"
-                              : "text-gray-700",
+                              : "text-slate-700",
                           )}
                         >
                           {r.label}
@@ -322,12 +305,12 @@ const UserManagementPage = () => {
                   <button
                     ref={statusFilterRef}
                     onClick={() => setStatusFilterOpen(!statusFilterOpen)}
-                    className="flex items-center justify-between gap-1.5 min-w-[140px] px-3 py-2.5 bg-gray-50 hover:bg-gray-100 rounded-xl text-xs font-semibold text-gray-700 transition-colors cursor-pointer border border-gray-100"
+                    className="flex items-center justify-between gap-1.5 min-w-[140px] px-3 py-2.5 bg-slate-50 hover:bg-slate-100 rounded-xl text-xs font-semibold text-slate-700 transition-colors cursor-pointer border border-slate-100"
                   >
                     <span>{selectedStatusLabel}</span>
                     <ChevronDown
                       className={cn(
-                        "w-3.5 h-3.5 text-gray-400 transition-transform",
+                        "w-3.5 h-3.5 text-slate-400 transition-transform",
                         statusFilterOpen && "rotate-180",
                       )}
                     />
@@ -348,10 +331,10 @@ const UserManagementPage = () => {
                             setStatusFilterOpen(false);
                           }}
                           className={cn(
-                            "w-full px-3 py-2 text-left text-xs font-medium hover:bg-gray-50 transition-colors cursor-pointer capitalize",
+                            "w-full px-3 py-2 text-left text-xs font-medium hover:bg-slate-50 transition-colors cursor-pointer capitalize",
                             filters.status === s
                               ? "text-fnh-navy bg-fnh-navy/5"
-                              : "text-gray-700",
+                              : "text-slate-700",
                           )}
                         >
                           {statusLabels[s]}
@@ -367,9 +350,9 @@ const UserManagementPage = () => {
                       resetFilters();
                       setSearchTerm("");
                     }}
-                    className="px-3 py-2 text-[10px] sm:text-xs font-black text-rose-500 uppercase tracking-widest hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                    className="h-9 px-3 text-xs font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
                   >
-                    Clear Filters
+                    Clear filters
                   </button>
                 )}
               </div>

@@ -21,8 +21,17 @@ export const ModalShell: React.FC<ModalShellProps> = ({
   isOpen,
   onClose,
   children,
-  className = "w-full max-w-5xl h-[80%] md:h-[90%] rounded-3xl", // Default consistent with confirm but larger
+  className = "w-full max-w-5xl h-[92dvh] sm:h-[90%] rounded-2xl sm:rounded-3xl",
 }) => {
+  useEffect(() => {
+    if (!isOpen) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [isOpen, onClose]);
+
   useEffect(() => {
     if (isOpen) {
       preserveLockBodyScroll();
@@ -40,10 +49,9 @@ export const ModalShell: React.FC<ModalShellProps> = ({
   return createPortal(
     <AnimatePresence mode="wait">
       {isOpen && (
-        <div className="fixed inset-0 z-9999 flex items-center justify-center p-4 overflow-hidden">
-          {/* Backdrop with blur - matching ConfirmModal variants */}
+        <div className="fixed inset-0 z-9999 flex items-center justify-center p-2 sm:p-4 overflow-hidden">
           <motion.div
-            className="fixed inset-0 bg-[#09090b]/50 backdrop-blur-sm"
+            className="fixed inset-0 bg-slate-950/50"
             variants={backdropVariants}
             initial="hidden"
             animate="visible"
@@ -53,7 +61,9 @@ export const ModalShell: React.FC<ModalShellProps> = ({
 
           {/* Modal Content */}
           <motion.div
-            className={`relative bg-white shadow-2xl flex flex-col overflow-hidden ${className}`}
+            role="dialog"
+            aria-modal="true"
+            className={`relative bg-white shadow-xl flex flex-col overflow-hidden ${className}`}
             onClick={(e) => e.stopPropagation()}
             variants={modalVariants}
             initial="hidden"

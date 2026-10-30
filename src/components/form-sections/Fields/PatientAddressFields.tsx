@@ -100,10 +100,10 @@ const PatientAddressFields: React.FC<PatientAddressFieldsProps> = ({
         <div>
           <label
             htmlFor={`${detailsId}-district`}
-            className="mb-1.5 block text-xs font-semibold text-gray-700 sm:mb-2 sm:text-sm"
+            className="mb-1.5 block text-xs font-semibold text-slate-700 sm:mb-2 sm:text-sm"
           >
             District / Zilla
-            <span className="text-red-500">*</span>
+            <span className="text-red-600">*</span>
           </label>
           <DistrictDropdown
             id={`${detailsId}-district`}
@@ -113,7 +113,7 @@ const PatientAddressFields: React.FC<PatientAddressFieldsProps> = ({
             isAutofilled={isAutofilled}
           />
           {!district ? (
-            <p className="mt-1.5 text-[11px] font-medium text-amber-700 sm:text-xs">
+            <p className="mt-1.5 text-xs font-medium text-amber-700">
               Select a district before saving this patient.
             </p>
           ) : null}
@@ -122,10 +122,10 @@ const PatientAddressFields: React.FC<PatientAddressFieldsProps> = ({
         <div>
           <label
             htmlFor={detailsId}
-            className="mb-1.5 block text-xs font-semibold text-gray-700 sm:mb-2 sm:text-sm"
+            className="mb-1.5 block text-xs font-semibold text-slate-700 sm:mb-2 sm:text-sm"
           >
             Other Address
-            <span className="ml-1 text-xs font-normal text-gray-400">
+            <span className="ml-1 text-xs font-normal text-slate-500">
               (optional)
             </span>
           </label>
@@ -136,13 +136,13 @@ const PatientAddressFields: React.FC<PatientAddressFieldsProps> = ({
             onChange={handleDetailsChange}
             disabled={disabled}
             placeholder="Village, union, upazila, road or house"
-            className={`h-12 w-full rounded-lg border-2 px-3 py-2 text-xs font-normal text-gray-700 outline-none transition-all duration-300 placeholder:font-light placeholder:text-gray-400 focus:border-blue-900 focus:ring-2 focus:ring-blue-950 hover:shadow-md disabled:cursor-not-allowed disabled:border-gray-300 disabled:bg-gray-200 sm:px-4 sm:text-sm md:h-14 ${
+            className={`h-12 w-full rounded-lg border-2 px-3 py-2 text-xs font-normal text-slate-700 outline-none transition-colors duration-200 placeholder:font-light placeholder:text-slate-400 focus:border-blue-900 focus:ring-2 focus:ring-blue-950 disabled:cursor-not-allowed disabled:border-slate-300 disabled:bg-slate-200 sm:px-4 sm:text-sm md:h-14 ${
               detailsDraft.trim()
                 ? "border-green-700 bg-white"
-                : "border-gray-300 bg-white"
+                : "border-slate-300 bg-white"
             }`}
           />
-          <p className="mt-1.5 rounded-md border border-indigo-100 bg-indigo-50 px-2 py-1.5 text-[11px] font-semibold leading-4 text-indigo-700 sm:text-xs">
+          <p className="mt-1.5 rounded-md border border-indigo-100 bg-indigo-50 px-2 py-1.5 text-xs font-semibold leading-4 text-indigo-700">
             Do not type the district here again. Select it once in the dropdown
             above, then enter only village, union, upazila, road or house
             details in this box.
@@ -151,11 +151,11 @@ const PatientAddressFields: React.FC<PatientAddressFieldsProps> = ({
 
         <div className="rounded-xl border border-indigo-200 bg-white px-3 py-2.5 shadow-sm sm:px-4 sm:py-3 lg:col-span-2">
           <div className="flex items-center justify-between gap-3">
-            <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-indigo-500 sm:text-xs">
+            <p className="text-2xs font-bold uppercase tracking-[0.12em] text-indigo-600 sm:text-xs">
               Exact address on report / receipt
             </p>
             {district ? (
-              <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-green-50 px-2 py-0.5 text-[10px] font-semibold text-green-700">
+              <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-green-50 px-2 py-0.5 text-2xs font-semibold text-green-700">
                 <Check className="h-3 w-3" /> Ready
               </span>
             ) : null}
@@ -163,8 +163,8 @@ const PatientAddressFields: React.FC<PatientAddressFieldsProps> = ({
           <p
             className={`mt-1.5 break-words text-xs leading-5 sm:text-sm ${
               exactAddress
-                ? "font-semibold text-gray-800"
-                : "font-medium text-gray-400"
+                ? "font-semibold text-slate-800"
+                : "font-medium text-slate-500"
             }`}
           >
             {exactAddress || "Select a district to complete the address"}
@@ -174,7 +174,7 @@ const PatientAddressFields: React.FC<PatientAddressFieldsProps> = ({
         {parsed.isLegacy && isAutofilled ? (
           <div
             role="status"
-            className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] text-amber-800 sm:text-xs lg:col-span-2"
+            className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800 lg:col-span-2"
           >
             <MapPin className="mt-0.5 h-4 w-4 shrink-0" />
             <p>

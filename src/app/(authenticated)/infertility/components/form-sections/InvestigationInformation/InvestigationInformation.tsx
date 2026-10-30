@@ -160,14 +160,14 @@ const InvestigationInformation: React.FC<InvestigationInformationProps> = ({
 
   const inputClassName = useMemo(() => {
     const baseStyle =
-      "text-gray-700 font-normal rounded-lg h-12 md:h-14 py-2 px-4 w-full focus:border-blue-900 focus:ring-2 focus:ring-blue-950 outline-none shadow-sm hover:shadow-md transition-all duration-300 placeholder:text-gray-400 placeholder:font-light text-xs sm:text-sm cursor-pointer";
+      "text-slate-700 font-normal rounded-lg h-12 md:h-14 py-2 px-4 w-full focus:border-blue-900 focus:ring-2 focus:ring-blue-950 outline-none shadow-sm  transition duration-200 placeholder:text-slate-400 placeholder:font-light text-xs sm:text-sm cursor-pointer";
     return (value: string | number, readonly: boolean = false) => {
       if (readonly) {
-        return `bg-gray-100 border-2 border-gray-200 cursor-not-allowed ${baseStyle}`;
+        return `bg-slate-100 border-2 border-slate-200 cursor-not-allowed ${baseStyle}`;
       }
       return value
-        ? `bg-white border-2 border-green-700 ${baseStyle}`
-        : `bg-white border-2 border-gray-300 ${baseStyle}`;
+        ? `bg-white border-2 border-emerald-700 ${baseStyle}`
+        : `bg-white border-2 border-slate-300 ${baseStyle}`;
     };
   }, []);
 
@@ -184,16 +184,16 @@ const InvestigationInformation: React.FC<InvestigationInformationProps> = ({
   return (
     <div id="pathology" className="mt-2 sm:mt-0 mb-6 sm:mb-8 md:mb-10">
       {/* Header */}
-      <div className="bg-linear-to-r from-green-50 to-green-100 border-green-200 rounded-lg sm:rounded-xl p-4 sm:p-5 md:p-6 mb-4 sm:mb-5 md:mb-6 shadow-sm border transition-colors duration-300">
+      <div className="bg-emerald-50 border-emerald-200 rounded-lg sm:rounded-xl p-4 sm:p-5 md:p-6 mb-4 sm:mb-5 md:mb-6 shadow-sm border transition-colors duration-200">
         <div className="flex items-center gap-3 sm:gap-4">
-          <div className="p-2 sm:p-2.5 md:p-3 bg-white rounded-lg sm:rounded-xl shadow-md shrink-0">
-            <Beaker className="text-green-600" size={28} />
+          <div className="p-2 sm:p-2.5 md:p-3 bg-white rounded-lg sm:rounded-xl shadow-sm shrink-0">
+            <Beaker className="text-emerald-700" size={28} />
           </div>
           <div className="flex flex-col">
-            <h3 className="text-base sm:text-lg md:text-xl font-bold text-gray-800 mb-0.5 sm:mb-1 leading-tight">
+            <h3 className="text-base sm:text-lg md:text-xl font-bold text-slate-800 mb-0.5 sm:mb-1 leading-tight">
               Investigation Information
             </h3>
-            <p className="text-green-700 text-[11px] sm:text-xs font-medium leading-tight">
+            <p className="text-emerald-700 text-2xs sm:text-xs font-medium leading-tight">
               Select tests and configure payment details
             </p>
           </div>
@@ -202,13 +202,13 @@ const InvestigationInformation: React.FC<InvestigationInformationProps> = ({
 
       {/* Ordered By Doctor - At the top */}
       <div className="mb-6">
-        <h4 className="text-sm font-bold text-gray-800 mb-4">
+        <h4 className="text-sm font-bold text-slate-800 mb-4">
           Ordering Context
         </h4>
         <div className="space-y-4">
           <div>
-            <label className="mb-1.5 block text-xs font-semibold text-gray-700 sm:text-sm">
-              Investigation Subject<span className="text-red-500">*</span>
+            <label className="mb-1.5 block text-xs font-semibold text-slate-700 sm:text-sm">
+              Investigation Subject<span className="text-red-600">*</span>
             </label>
             <InvestigationSubjectSelector
               value={testInfo.subjectType}
@@ -226,7 +226,7 @@ const InvestigationInformation: React.FC<InvestigationInformationProps> = ({
 
           <div className="grid gap-4 md:grid-cols-2">
             <div className="flex min-h-[104px] flex-col justify-center rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3">
-              <p className="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">
+              <p className="text-2xs font-black uppercase tracking-[0.18em] text-slate-500">
                 Current Investigation Subject
               </p>
               <p className="mt-1 text-sm font-bold text-slate-900">
@@ -241,7 +241,7 @@ const InvestigationInformation: React.FC<InvestigationInformationProps> = ({
               </p>
             </div>
             <div className="flex min-h-[104px] flex-col justify-center rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3">
-              <p className="mb-2 text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">
+              <p className="mb-2 text-2xs font-black uppercase tracking-[0.18em] text-slate-500">
                 Ordered By
               </p>
               <OrderingDoctorDropdown
@@ -258,7 +258,7 @@ const InvestigationInformation: React.FC<InvestigationInformationProps> = ({
                   true
                 )}
               />
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="text-xs text-slate-500 mt-1">
                 Locked to Prof. Dr. Sufia Khatun for infertility investigations.
               </p>
             </div>
@@ -275,12 +275,12 @@ const InvestigationInformation: React.FC<InvestigationInformationProps> = ({
       </div>
 
       {/* Test Date - Auto-filled, readonly */}
-      <div className="mb-6 pt-6 border-t border-gray-200">
-        <h4 className="text-sm font-bold text-gray-800 mb-4">Test Details</h4>
+      <div className="mb-6 pt-6 border-t border-slate-200">
+        <h4 className="text-sm font-bold text-slate-800 mb-4">Test Details</h4>
         <div>
-          <label className="block text-gray-700 text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2">
+          <label className="block text-slate-700 text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2">
             Test Date{" "}
-            <span className="text-[10px] font-normal text-gray-500">
+            <span className="text-2xs font-normal text-slate-500">
               (Auto-filled)
             </span>
           </label>
@@ -301,7 +301,7 @@ const InvestigationInformation: React.FC<InvestigationInformationProps> = ({
             readOnly
             placeholder="Auto-filled with current date"
           />
-          <p className="text-xs text-gray-500 mt-1">
+          <p className="text-xs text-slate-500 mt-1">
             Test date is automatically set to today&apos;s date (Bangladesh
             Time)
           </p>
@@ -309,22 +309,22 @@ const InvestigationInformation: React.FC<InvestigationInformationProps> = ({
       </div>
 
       {/* Financial Information - Simplified Layout */}
-      <div className="mt-6 pt-6 border-t border-gray-200">
-        <h4 className="text-sm font-bold text-gray-800 mb-4">
+      <div className="mt-6 pt-6 border-t border-slate-200">
+        <h4 className="text-sm font-bold text-slate-800 mb-4">
           Financial Information
         </h4>
 
         <div className="space-y-4">
           {/* Test Charge (Auto-calculated - Readonly) - Full Width */}
           <div>
-            <label className="block text-gray-700 text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2">
+            <label className="block text-slate-700 text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2">
               Test Charge (BDT){" "}
-              <span className="text-[10px] font-normal text-gray-500">
+              <span className="text-2xs font-normal text-slate-500">
                 (Auto-calculated)
               </span>
             </label>
             <div className="relative">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-semibold">
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 font-semibold">
                 ৳
               </span>
               <NumberInput
@@ -341,15 +341,15 @@ const InvestigationInformation: React.FC<InvestigationInformationProps> = ({
 
           {/* Discount with Integrated Type Switcher - Full Width */}
           <div>
-            <label className="block text-gray-700 text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2">
+            <label className="block text-slate-700 text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2">
               Discount
             </label>
 
             {/* Input with integrated switcher */}
-            <div className="relative flex items-stretch rounded-lg border-2 border-gray-300 bg-white overflow-hidden focus-within:border-green-600 focus-within:ring-2 focus-within:ring-green-100 transition-all duration-300 h-12 md:h-14">
+            <div className="relative flex items-stretch rounded-lg border-2 border-slate-300 bg-white overflow-hidden focus-within:border-emerald-600 focus-within:ring-2 focus-within:ring-emerald-100 transition duration-200 h-12 md:h-14">
               {/* Discount Input */}
               <NumberInput
-                className="flex-1 px-4 py-2 text-gray-700 font-normal outline-none text-xs sm:text-sm bg-transparent cursor-pointer"
+                className="flex-1 px-4 py-2 text-slate-700 font-normal outline-none text-xs sm:text-sm bg-transparent cursor-pointer"
                 value={discountInput}
                 onChange={handleDiscountInputChange}
                 placeholder="Enter discount amount"
@@ -362,14 +362,14 @@ const InvestigationInformation: React.FC<InvestigationInformationProps> = ({
               />
 
               {/* Integrated Type Switcher */}
-              <div className="flex items-center border-l border-gray-200 bg-gray-50">
+              <div className="flex items-center border-l border-slate-200 bg-slate-50">
                 <button
                   type="button"
                   onClick={() => handleDiscountTypeChange("percentage")}
-                  className={`px-3 sm:px-4 h-full text-xs sm:text-sm font-medium transition-all cursor-pointer ${
+                  className={`px-3 sm:px-4 h-full text-xs sm:text-sm font-medium transition-colors cursor-pointer ${
                     testInfo.discountType === "percentage"
-                      ? "bg-green-600 text-white"
-                      : "text-gray-600 hover:bg-gray-100"
+                      ? "bg-emerald-600 text-white"
+                      : "text-slate-600 hover:bg-slate-100"
                   }`}
                 >
                   %
@@ -377,10 +377,10 @@ const InvestigationInformation: React.FC<InvestigationInformationProps> = ({
                 <button
                   type="button"
                   onClick={() => handleDiscountTypeChange("value")}
-                  className={`px-3 sm:px-4 h-full text-xs sm:text-sm font-medium transition-all cursor-pointer ${
+                  className={`px-3 sm:px-4 h-full text-xs sm:text-sm font-medium transition-colors cursor-pointer ${
                     testInfo.discountType === "value"
-                      ? "bg-green-600 text-white"
-                      : "text-gray-600 hover:bg-gray-100"
+                      ? "bg-emerald-600 text-white"
+                      : "text-slate-600 hover:bg-slate-100"
                   }`}
                 >
                   ৳
@@ -390,15 +390,15 @@ const InvestigationInformation: React.FC<InvestigationInformationProps> = ({
 
             {/* Discount Summary - Always visible when there's a test charge */}
             {testInfo.testCharge > 0 && (
-              <div className="mt-2 p-2.5 bg-green-50 rounded-lg border border-green-200">
+              <div className="mt-2 p-2.5 bg-emerald-50 rounded-lg border border-emerald-200">
                 <div className="flex items-center justify-between text-xs">
-                  <span className="text-gray-600">Patient saves:</span>
-                  <span className="font-bold text-green-600">
+                  <span className="text-slate-600">Patient saves:</span>
+                  <span className="font-bold text-emerald-700">
                     ৳{(testInfo.discountAmount || 0).toLocaleString()}
                     {testInfo.discountType === "percentage" &&
                       discountInput !== "" &&
                       discountInput > 0 && (
-                        <span className="text-gray-500 font-normal ml-1">
+                        <span className="text-slate-500 font-normal ml-1">
                           ({discountInput}%)
                         </span>
                       )}
@@ -410,21 +410,21 @@ const InvestigationInformation: React.FC<InvestigationInformationProps> = ({
 
           {/* Grand Total (Auto-calculated - Readonly) - Full Width */}
           <div>
-            <label className="block text-gray-700 text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2">
+            <label className="block text-slate-700 text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2">
               Grand Total (BDT){" "}
-              <span className="text-[10px] font-normal text-gray-500">
+              <span className="text-2xs font-normal text-slate-500">
                 (After Discount)
               </span>
             </label>
             <div className="relative">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-semibold">
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 font-semibold">
                 ৳
               </span>
               <NumberInput
                 className={`${inputClassName(
                   testInfo.grandTotal,
                   true
-                )} pl-10 font-bold text-green-600`}
+                )} pl-10 font-bold text-emerald-700`}
                 value={testInfo.grandTotal}
                 readOnly
                 placeholder="0"
@@ -436,11 +436,11 @@ const InvestigationInformation: React.FC<InvestigationInformationProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Amount Paid (Editable) */}
             <div>
-              <label className="block text-gray-700 text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2">
+              <label className="block text-slate-700 text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2">
                 Amount Paid (BDT)
               </label>
               <div className="relative">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-semibold">
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 font-semibold">
                   ৳
                 </span>
                 <NumberInput
@@ -455,21 +455,21 @@ const InvestigationInformation: React.FC<InvestigationInformationProps> = ({
                   max={testInfo.grandTotal}
                 />
               </div>
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="text-xs text-slate-500 mt-1">
                 Amount collected from the patient
               </p>
             </div>
 
             {/* Due Amount (Auto-calculated - Readonly) */}
             <div>
-              <label className="block text-gray-700 text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2">
+              <label className="block text-slate-700 text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2">
                 Due Amount (BDT){" "}
-                <span className="text-[10px] font-normal text-gray-500">
+                <span className="text-2xs font-normal text-slate-500">
                   (Auto-calculated)
                 </span>
               </label>
               <div className="relative">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-semibold">
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 font-semibold">
                   ৳
                 </span>
                 <NumberInput
@@ -479,14 +479,14 @@ const InvestigationInformation: React.FC<InvestigationInformationProps> = ({
                   )} pl-10 ${
                     calculatedDueAmount > 0
                       ? "text-orange-600 font-bold"
-                      : "text-green-600 font-bold"
+                      : "text-emerald-700 font-bold"
                   }`}
                   value={calculatedDueAmount}
                   readOnly
                   placeholder="0"
                 />
               </div>
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="text-xs text-slate-500 mt-1">
                 {calculatedDueAmount > 0
                   ? "Remaining balance to be collected"
                   : "Fully paid ✓"}
@@ -497,15 +497,15 @@ const InvestigationInformation: React.FC<InvestigationInformationProps> = ({
       </div>
 
       {/* Additional Notes */}
-      <div className="mt-6 pt-6 border-t border-gray-200">
-        <h4 className="text-sm font-bold text-gray-800 mb-4">
+      <div className="mt-6 pt-6 border-t border-slate-200">
+        <h4 className="text-sm font-bold text-slate-800 mb-4">
           Additional Information
         </h4>
 
         <div className="grid grid-cols-1 gap-4">
           {/* Remarks */}
           <div>
-            <label className="block text-gray-700 text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2">
+            <label className="block text-slate-700 text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2">
               Remarks / Notes
             </label>
             <textarea

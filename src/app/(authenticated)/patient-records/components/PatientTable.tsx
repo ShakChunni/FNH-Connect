@@ -30,9 +30,21 @@ const FIRST_COL_WIDTH = "w-[60px] min-w-[60px]";
 const SECOND_COL_WIDTH = "w-[100px] min-w-[100px]";
 const THIRD_COL_WIDTH = "w-[250px] min-w-[250px]";
 
+const EDIT_BUTTON_CLASS =
+  "inline-flex h-9 items-center gap-1.5 px-3 rounded-lg border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 transition-colors text-xs font-bold uppercase tracking-wider cursor-pointer";
+
 const TableSkeleton: React.FC = () => (
-  <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-    <div className="overflow-x-auto">
+  <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+    <div className="md:hidden divide-y divide-slate-100">
+      {Array.from({ length: 6 }).map((_, i) => (
+        <div key={i} className="space-y-3 p-4 animate-pulse">
+          <div className="h-4 w-36 bg-slate-200 rounded" />
+          <div className="h-3 w-24 bg-slate-100 rounded" />
+          <div className="h-3 w-44 bg-slate-100 rounded" />
+        </div>
+      ))}
+    </div>
+    <div className="hidden md:block overflow-x-auto">
       <table className="w-full">
         <thead>
           <tr className="bg-fnh-navy text-white">
@@ -66,36 +78,36 @@ const TableSkeleton: React.FC = () => (
         </thead>
         <tbody>
           {Array.from({ length: 15 }).map((_, i) => (
-            <tr key={i} className="border-b border-gray-100 animate-pulse">
+            <tr key={i} className="border-b border-slate-100 animate-pulse">
               <td className="px-4 py-4">
-                <div className="h-4 w-4 bg-gray-200 rounded mx-auto" />
+                <div className="h-4 w-4 bg-slate-200 rounded mx-auto" />
               </td>
               <td className="px-4 py-4">
-                <div className="h-4 w-12 bg-gray-200 rounded" />
+                <div className="h-4 w-12 bg-slate-200 rounded" />
               </td>
               <td className="px-4 py-4">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-gray-200" />
+                  <div className="w-10 h-10 rounded-full bg-slate-200" />
                   <div className="space-y-2">
-                    <div className="h-4 w-32 bg-gray-200 rounded" />
-                    <div className="h-3 w-24 bg-gray-100 rounded" />
+                    <div className="h-4 w-32 bg-slate-200 rounded" />
+                    <div className="h-3 w-24 bg-slate-100 rounded" />
                   </div>
                 </div>
               </td>
               <td className="px-4 py-4 hidden sm:table-cell">
-                <div className="h-4 w-24 bg-gray-200 rounded" />
+                <div className="h-4 w-24 bg-slate-200 rounded" />
               </td>
               <td className="px-4 py-4 hidden md:table-cell">
-                <div className="h-6 w-16 bg-gray-200 rounded-full" />
+                <div className="h-6 w-16 bg-slate-200 rounded-full" />
               </td>
               <td className="px-4 py-4 hidden lg:table-cell">
-                <div className="h-4 w-36 bg-gray-200 rounded" />
+                <div className="h-4 w-36 bg-slate-200 rounded" />
               </td>
               <td className="px-4 py-4 hidden lg:table-cell">
-                <div className="h-4 w-20 bg-gray-200 rounded" />
+                <div className="h-4 w-20 bg-slate-200 rounded" />
               </td>
               <td className="px-4 py-4">
-                <div className="h-8 w-16 bg-gray-200 rounded mx-auto" />
+                <div className="h-8 w-16 bg-slate-200 rounded mx-auto" />
               </td>
             </tr>
           ))}
@@ -176,29 +188,29 @@ export const PatientTable: React.FC<PatientTableProps> = ({
 
   const getHeaderClasses = (index: number, sortableKey?: SortKey) => {
     const baseClasses = `
-      px-2 py-3 sm:px-4 sm:py-4 text-left text-[10px] sm:text-xs
-      font-semibold text-white uppercase tracking-wider
+      px-2 py-3 sm:px-4 sm:py-4 text-left text-xs
+      font-semibold text-white uppercase tracking-wide
       bg-fnh-navy transition-colors
       ${sortableKey ? "cursor-pointer hover:bg-fnh-navy-dark" : ""}
     `;
 
     if (index === 0)
-      return `${baseClasses} ${FIRST_COL_WIDTH} lg:sticky lg:left-0 lg:z-30 lg:bg-[#111827]`;
+      return `${baseClasses} ${FIRST_COL_WIDTH} lg:sticky lg:left-0 lg:z-30 lg:bg-fnh-navy`;
     if (index === 1)
-      return `${baseClasses} ${SECOND_COL_WIDTH} lg:sticky lg:left-[60px] lg:z-30 lg:bg-[#111827]`;
+      return `${baseClasses} ${SECOND_COL_WIDTH} lg:sticky lg:left-[60px] lg:z-30 lg:bg-fnh-navy`;
     if (index === 2)
-      return `${baseClasses} ${THIRD_COL_WIDTH} lg:sticky lg:left-[160px] lg:z-30 lg:bg-[#111827]`;
+      return `${baseClasses} ${THIRD_COL_WIDTH} lg:sticky lg:left-[160px] lg:z-30 lg:bg-fnh-navy`;
 
     return baseClasses;
   };
 
   const getCellClasses = (index: number) => {
     const baseClasses =
-      "px-2 py-3 sm:px-4 sm:py-4 transition-colors group-hover:bg-slate-50 text-[11px] sm:text-xs";
+      "px-2 py-3 sm:px-4 sm:py-4 transition-colors group-hover:bg-slate-50 text-xs";
     if (index === 0)
-      return `${baseClasses} ${FIRST_COL_WIDTH} lg:sticky lg:left-0 lg:z-10 lg:bg-white group-hover:lg:bg-slate-50 font-mono font-bold text-gray-400 text-center`;
+      return `${baseClasses} ${FIRST_COL_WIDTH} lg:sticky lg:left-0 lg:z-10 lg:bg-white group-hover:lg:bg-slate-50 font-mono font-bold text-slate-500 text-center`;
     if (index === 1)
-      return `${baseClasses} ${SECOND_COL_WIDTH} lg:sticky lg:left-[60px] lg:z-10 lg:bg-white group-hover:lg:bg-slate-50 font-mono font-bold text-fnh-blue`;
+      return `${baseClasses} ${SECOND_COL_WIDTH} lg:sticky lg:left-[60px] lg:z-10 lg:bg-white group-hover:lg:bg-slate-50 font-mono font-bold tabular-nums text-fnh-blue`;
     if (index === 2)
       return `${baseClasses} ${THIRD_COL_WIDTH} lg:sticky lg:left-[160px] lg:z-10 lg:bg-white group-hover:lg:bg-slate-50`;
     return baseClasses;
@@ -208,12 +220,12 @@ export const PatientTable: React.FC<PatientTableProps> = ({
 
   if (tableData.length === 0) {
     return (
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-12 text-center">
-        <Users className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-12 text-center">
+        <Users className="w-16 h-16 text-slate-300 mx-auto mb-4" />
         <h3 className="text-lg font-semibold text-fnh-navy-dark mb-2">
           No Patients Found
         </h3>
-        <p className="text-gray-500 text-sm">
+        <p className="text-slate-500 text-sm">
           Try adjusting your search criteria or check back later.
         </p>
       </div>
@@ -222,9 +234,96 @@ export const PatientTable: React.FC<PatientTableProps> = ({
 
   return (
     <>
-      <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+        {/* Phone: card list with every field. The table below is md and up. */}
+        <div className="md:hidden divide-y divide-slate-100">
+          {paginatedData.map((patient) => (
+            <div
+              key={patient.id}
+              className="space-y-3 p-4 cursor-pointer hover:bg-slate-50 transition-colors"
+              onClick={() => handlePatientClick(patient)}
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex min-w-0 items-center gap-3">
+                  <div
+                    className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
+                      patient.gender === "Female"
+                        ? "bg-pink-50 text-pink-500"
+                        : "bg-blue-50 text-blue-500"
+                    }`}
+                  >
+                    <span className="font-bold text-xs">
+                      {patient.firstName.charAt(0)}
+                    </span>
+                  </div>
+                  <div className="min-w-0">
+                    <p className="font-bold text-slate-800 truncate">
+                      {patient.fullName}
+                    </p>
+                    {patient.guardianName && (
+                      <p className="text-xs text-slate-500 font-medium truncate">
+                        G: {patient.guardianName}
+                      </p>
+                    )}
+                  </div>
+                </div>
+                <span className="shrink-0 font-mono font-bold text-xs text-fnh-blue tabular-nums">
+                  #{patient.id.toString().padStart(4, "0")}
+                </span>
+              </div>
+              <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-xs">
+                <div>
+                  <dt className="font-semibold text-slate-500">Phone</dt>
+                  <dd className="mt-0.5 font-medium text-slate-700">
+                    {patient.phoneNumber || "—"}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="font-semibold text-slate-500">Gender</dt>
+                  <dd className="mt-0.5">
+                    <span
+                      className={`inline-flex items-center px-2 py-0.5 rounded-md text-2xs font-bold ${
+                        patient.gender === "Female"
+                          ? "bg-pink-50 text-pink-600"
+                          : "bg-blue-50 text-blue-600"
+                      }`}
+                    >
+                      {patient.gender}
+                    </span>
+                  </dd>
+                </div>
+                <div className="col-span-2">
+                  <dt className="font-semibold text-slate-500">Address</dt>
+                  <dd className="mt-0.5 break-words text-slate-700">
+                    {patient.address || "—"}
+                  </dd>
+                </div>
+                <div className="col-span-2">
+                  <dt className="font-semibold text-slate-500">DOB</dt>
+                  <dd className="mt-0.5 text-slate-700">
+                    {formatDate(patient.dateOfBirth)}
+                  </dd>
+                </div>
+              </dl>
+              <div className="flex justify-end">
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onEdit(patient);
+                  }}
+                  className={EDIT_BUTTON_CLASS}
+                >
+                  <Edit3 className="w-3" />
+                  Edit
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+
         <div
-          className="overflow-x-auto overflow-y-auto w-full"
+          className="hidden md:block overflow-x-auto overflow-y-auto w-full"
           style={{ maxHeight: "600px" }}
           ref={dragScroll.ref}
           onMouseDown={dragScroll.onMouseDown}
@@ -232,7 +331,7 @@ export const PatientTable: React.FC<PatientTableProps> = ({
           onMouseMove={dragScroll.onMouseMove}
           onMouseLeave={dragScroll.onMouseLeave}
         >
-          <table className="min-w-full divide-y divide-gray-200 border-separate border-spacing-0">
+          <table className="min-w-full divide-y divide-slate-200 border-separate border-spacing-0">
             <thead className="bg-fnh-navy sticky top-0 z-20">
               <tr>
                 <th className={getHeaderClasses(0)}>#</th>
@@ -313,7 +412,7 @@ export const PatientTable: React.FC<PatientTableProps> = ({
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-100">
+            <tbody className="bg-white divide-y divide-slate-100">
               {paginatedData.map((patient, index) => (
                 <tr
                   key={patient.id}
@@ -344,7 +443,7 @@ export const PatientTable: React.FC<PatientTableProps> = ({
                           {patient.fullName}
                         </p>
                         {patient.guardianName && (
-                          <p className="text-[10px] text-slate-400 font-medium truncate">
+                          <p className="text-xs text-slate-500 font-medium truncate">
                             G: {patient.guardianName}
                           </p>
                         )}
@@ -359,7 +458,7 @@ export const PatientTable: React.FC<PatientTableProps> = ({
                   </td>
                   <td className={`${getCellClasses(4)} hidden md:table-cell`}>
                     <span
-                      className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold ${
+                      className={`inline-flex items-center px-2 py-0.5 rounded-md text-2xs font-bold ${
                         patient.gender === "Female"
                           ? "bg-pink-50 text-pink-600"
                           : "bg-blue-50 text-blue-600"
@@ -386,7 +485,7 @@ export const PatientTable: React.FC<PatientTableProps> = ({
                         e.stopPropagation();
                         onEdit(patient);
                       }}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 text-slate-600 hover:bg-fnh-blue hover:text-white transition-all duration-200 text-[10px] font-black uppercase tracking-wider cursor-pointer shadow-sm active:scale-95"
+                      className={EDIT_BUTTON_CLASS}
                     >
                       <Edit3 className="w-3" />
                       Edit

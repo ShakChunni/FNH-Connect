@@ -81,6 +81,7 @@ export const SessionCashTracker: React.FC<SessionCashTrackerProps> = ({
     staffOptions: fetchedStaffOptions,
     isLoading,
     isFetching,
+    isError,
     refetch,
   } = useSessionCashData({
     datePreset,
@@ -278,6 +279,29 @@ export const SessionCashTracker: React.FC<SessionCashTrackerProps> = ({
     return <CashTrackerSkeleton />;
   }
 
+  // Failed load: say so, rather than rendering zeros as if they were real figures
+  if (isError && !data) {
+    return (
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 sm:p-5 h-full flex flex-col">
+        <div
+          role="alert"
+          className="flex flex-1 flex-col items-center justify-center gap-3 p-8 text-center"
+        >
+          <p className="text-sm font-medium text-red-700">
+            Could not load cash data.
+          </p>
+          <button
+            type="button"
+            onClick={handleRefresh}
+            className="h-9 rounded-lg border border-slate-300 bg-white px-4 text-xs font-medium text-slate-700 transition-colors hover:bg-slate-50 cursor-pointer"
+          >
+            Try again
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   const cashData = data || {
     totalCollected: 0,
     totalRefunded: 0,
@@ -296,7 +320,7 @@ export const SessionCashTracker: React.FC<SessionCashTrackerProps> = ({
   };
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 sm:p-5 h-full hover:shadow-md transition-shadow duration-300 flex flex-col relative">
+    <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 sm:p-5 h-full flex flex-col relative">
       {/* Loading overlay when refetching */}
       {isFetching && (
         <div className="absolute inset-0 bg-white/60 rounded-2xl z-10 flex items-center justify-center">

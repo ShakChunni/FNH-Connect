@@ -34,11 +34,11 @@ const PatientInformation: React.FC = () => {
   // Input class helper
   const inputClassName = useMemo(() => {
     const baseStyle =
-      "text-gray-700 font-normal rounded-lg h-12 md:h-14 py-2 px-4 w-full focus:border-blue-900 focus:ring-2 focus:ring-blue-950 outline-none shadow-sm hover:shadow-md transition-all duration-300 placeholder:text-gray-400 placeholder:font-light text-xs sm:text-sm";
+      "text-slate-700 font-normal rounded-lg h-12 md:h-14 py-2 px-4 w-full focus:border-blue-900 focus:ring-2 focus:ring-blue-950 outline-none shadow-sm  transition duration-200 placeholder:text-slate-400 placeholder:font-light text-xs sm:text-sm";
     return (value: string) =>
       value
-        ? `bg-white border-2 border-green-700 ${baseStyle}`
-        : `bg-white border-2 border-gray-300 ${baseStyle}`;
+        ? `bg-white border-2 border-emerald-700 ${baseStyle}`
+        : `bg-white border-2 border-slate-300 ${baseStyle}`;
   }, []);
 
   // Derived logic for description using store only
@@ -78,19 +78,19 @@ const PatientInformation: React.FC = () => {
     <div id="patient" className="mt-2 sm:mt-0 mb-6 sm:mb-8 md:mb-10">
       {/* Header */}
       <div
-        className={`bg-linear-to-r from-indigo-50 to-indigo-100 border-indigo-200 rounded-lg sm:rounded-xl p-4 sm:p-5 md:p-6 mb-4 sm:mb-5 md:mb-6 shadow-sm border transition-colors duration-300`}
+        className={`bg-indigo-50 border-indigo-200 rounded-lg sm:rounded-xl p-4 sm:p-5 md:p-6 mb-4 sm:mb-5 md:mb-6 shadow-sm border transition-colors duration-200`}
       >
         <div className="flex items-center gap-3 sm:gap-4">
-          <div className="p-2 sm:p-2.5 md:p-3 bg-white rounded-lg sm:rounded-xl shadow-md shrink-0">
+          <div className="p-2 sm:p-2.5 md:p-3 bg-white rounded-lg sm:rounded-xl shadow-sm shrink-0">
             <User className={"text-indigo-600"} size={28} />
           </div>
           <div className="flex flex-col">
             <div className="flex items-center">
-              <h3 className="text-md sm:text-lg md:text-2xl font-bold text-gray-800 mb-0.5 sm:mb-1 leading-tight">
+              <h3 className="text-md sm:text-lg md:text-2xl font-bold text-slate-800 mb-0.5 sm:mb-1 leading-tight">
                 Patient Information
               </h3>
             </div>
-            <p className="text-indigo-700 text-xs sm:text-sm font-medium leading-tight transition-colors duration-300 mt-1">
+            <p className="text-indigo-700 text-xs sm:text-sm font-medium leading-tight transition-colors duration-200 mt-1">
               {getDescription()}
             </p>
           </div>
@@ -106,8 +106,8 @@ const PatientInformation: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Gender */}
           <div>
-            <label className="block text-gray-700 text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2">
-              Patient Gender<span className="text-red-500">*</span>
+            <label className="block text-slate-700 text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2">
+              Patient Gender<span className="text-red-600">*</span>
             </label>
             <GenderDropdown
               value={patientData.gender || "Female"}
@@ -120,7 +120,7 @@ const PatientInformation: React.FC = () => {
           {/* Date of Birth + Age Boxes */}
           <div>
             <div className="flex items-center justify-between mb-1.5 sm:mb-2">
-              <label className="block text-gray-700 text-xs sm:text-sm font-semibold">
+              <label className="block text-slate-700 text-xs sm:text-sm font-semibold">
                 Date of Birth
               </label>
               {isExisting && patientData.dateOfBirth && (
@@ -142,7 +142,7 @@ const PatientInformation: React.FC = () => {
           {/* Phone Number */}
           <div>
             <div className="flex items-center justify-between mb-1.5 sm:mb-2">
-              <label className="block text-gray-700 text-xs sm:text-sm font-semibold">
+              <label className="block text-slate-700 text-xs sm:text-sm font-semibold">
                 Patient Phone Number
               </label>
               {isExisting && patientData.phoneNumber && (
@@ -165,7 +165,7 @@ const PatientInformation: React.FC = () => {
           {/* Email */}
           <div>
             <div className="flex items-center justify-between mb-1.5 sm:mb-2">
-              <label className="block text-gray-700 text-xs sm:text-sm font-semibold">
+              <label className="block text-slate-700 text-xs sm:text-sm font-semibold">
                 Email
               </label>
               {isExisting && patientData.email && (
@@ -186,7 +186,7 @@ const PatientInformation: React.FC = () => {
 
         {/* Row 4: Patient Occupation (full width) */}
         <div className="mb-4">
-          <label className="block text-gray-700 text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2">
+          <label className="block text-slate-700 text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2">
             Patient Occupation
           </label>
           <input
@@ -201,8 +201,8 @@ const PatientInformation: React.FC = () => {
         </div>
 
         {/* Spouse Information Section */}
-        <div className="mt-6 pt-6 border-t border-gray-200">
-          <h4 className="text-md font-bold text-gray-800 mb-4 flex items-center gap-2">
+        <div className="mt-6 pt-6 border-t border-slate-200">
+          <h4 className="text-md font-bold text-slate-800 mb-4 flex items-center gap-2">
             <Heart className="text-rose-500 w-5 h-5" />
             Spouse Information
           </h4>
@@ -210,7 +210,7 @@ const PatientInformation: React.FC = () => {
           {/* Row 4: Spouse Name (full width) */}
           <div className="mb-4">
             <div className="flex items-center justify-between mb-1.5 sm:mb-2">
-              <label className="block text-gray-700 text-xs sm:text-sm font-semibold">
+              <label className="block text-slate-700 text-xs sm:text-sm font-semibold">
                 Husband / Spouse Name
               </label>
               {isExisting && spouseData.name && (
@@ -236,7 +236,7 @@ const PatientInformation: React.FC = () => {
           {/* Row 5: Spouse Date of Birth + Age Boxes (full width, calendar half + age boxes half) */}
           <div>
             <div className="flex items-center justify-between mb-1.5 sm:mb-2">
-              <label className="block text-gray-700 text-xs sm:text-sm font-semibold">
+              <label className="block text-slate-700 text-xs sm:text-sm font-semibold">
                 Spouse Date of Birth
               </label>
               {isExisting && spouseData.dateOfBirth && (
@@ -257,7 +257,7 @@ const PatientInformation: React.FC = () => {
             {/* Spouse Phone */}
             <div>
               <div className="flex items-center justify-between mb-1.5 sm:mb-2">
-                <label className="block text-gray-700 text-xs sm:text-sm font-semibold">
+                <label className="block text-slate-700 text-xs sm:text-sm font-semibold">
                   Husband / Spouse Phone Number
                 </label>
                 {isExisting && spouseData.phoneNumber && (
@@ -280,7 +280,7 @@ const PatientInformation: React.FC = () => {
             {/* Spouse Email */}
             <div>
               <div className="flex items-center justify-between mb-1.5 sm:mb-2">
-                <label className="block text-gray-700 text-xs sm:text-sm font-semibold">
+                <label className="block text-slate-700 text-xs sm:text-sm font-semibold">
                   Husband / Spouse Email
                 </label>
                 {isExisting && spouseData.email && (
@@ -302,7 +302,7 @@ const PatientInformation: React.FC = () => {
           {/* New Row: Spouse Occupation */}
           <div className="mt-4">
             <div className="flex items-center justify-between mb-1.5 sm:mb-2">
-              <label className="block text-gray-700 text-xs sm:text-sm font-semibold">
+              <label className="block text-slate-700 text-xs sm:text-sm font-semibold">
                 Husband / Spouse Occupation
               </label>
               {isExisting && spouseData.occupation && (
@@ -325,7 +325,7 @@ const PatientInformation: React.FC = () => {
         </div>
 
         {/* Additional Patient Details */}
-        <div className="mt-6 pt-6 border-t border-gray-200">
+        <div className="mt-6 pt-6 border-t border-slate-200">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Address */}
             <div className="md:col-span-2">

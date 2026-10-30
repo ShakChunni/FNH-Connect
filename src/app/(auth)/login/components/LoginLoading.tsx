@@ -14,7 +14,7 @@ export function LoginLoading({
 }: LoginLoadingProps) {
   return (
     <div className="flex items-center justify-center gap-2.5">
-      {/* Smooth animated spinner */}
+      {/* Real loading state: spinner is kept, the label stays still */}
       <motion.svg
         className="text-current"
         xmlns="http://www.w3.org/2000/svg"
@@ -43,21 +43,7 @@ export function LoginLoading({
           d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
         />
       </motion.svg>
-      {message && (
-        <motion.span
-          className="font-medium"
-          initial={{ opacity: 0.7 }}
-          animate={{ opacity: 1 }}
-          transition={{
-            duration: 0.8,
-            repeat: Infinity,
-            repeatType: "reverse",
-            ease: "easeInOut",
-          }}
-        >
-          {message}
-        </motion.span>
-      )}
+      {message && <span className="font-medium">{message}</span>}
     </div>
   );
 }

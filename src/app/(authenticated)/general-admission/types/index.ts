@@ -3,6 +3,8 @@
  * Type definitions for admission management
  */
 
+import type { StatusTone } from "@/lib/statusStyles";
+
 // ═══════════════════════════════════════════════════════════════
 // Status Types
 // ═══════════════════════════════════════════════════════════════
@@ -14,16 +16,20 @@ export type AdmissionStatus =
   | "Discharged"
   | "Canceled";
 
+/**
+ * `label` is the display text everywhere in this module (dropdowns, table,
+ * overview). `tone` is the shared status colour from `@/lib/statusStyles`.
+ */
 export const ADMISSION_STATUS_OPTIONS: {
   value: AdmissionStatus;
   label: string;
-  color: string;
+  tone: StatusTone;
 }[] = [
-  { value: "Admitted", label: "Currently Admitted", color: "blue" },
-  { value: "Under Treatment", label: "Under Active Care", color: "amber" },
-  { value: "Awaiting Discharge", label: "Pending Discharge", color: "purple" },
-  { value: "Discharged", label: "Discharged", color: "green" },
-  { value: "Canceled", label: "Canceled", color: "red" },
+  { value: "Admitted", label: "Currently Admitted", tone: "info" },
+  { value: "Under Treatment", label: "Under Active Care", tone: "warning" },
+  { value: "Awaiting Discharge", label: "Pending Discharge", tone: "warning" },
+  { value: "Discharged", label: "Discharged", tone: "success" },
+  { value: "Canceled", label: "Canceled", tone: "danger" },
 ];
 
 export type DiscountType = "percentage" | "value" | null;

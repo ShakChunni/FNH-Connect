@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
+import { DURATION, rowVariants, tween } from "@/lib/motion";
 import { api } from "@/lib/axios";
 import { useNotification } from "@/hooks/useNotification";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
@@ -116,11 +117,11 @@ const PackageManagerSkeleton: React.FC = () => (
     aria-busy="true"
     aria-label="Loading medicine packages"
   >
-    <aside className="border-b border-gray-100 bg-gray-50/70 p-3 md:border-b-0 md:border-r md:p-4">
+    <aside className="border-b border-slate-100 bg-slate-50/70 p-3 md:border-b-0 md:border-r md:p-4">
       <div className="mb-3 flex items-center justify-between">
         <div className="space-y-2">
-          <div className="h-3 w-20 rounded bg-gray-200" />
-          <div className="h-2.5 w-28 rounded bg-gray-200/80" />
+          <div className="h-3 w-20 rounded bg-slate-200" />
+          <div className="h-2.5 w-28 rounded bg-slate-200/80" />
         </div>
         <div className="h-8 w-14 rounded-lg bg-indigo-100" />
       </div>
@@ -128,11 +129,11 @@ const PackageManagerSkeleton: React.FC = () => (
         {[0, 1, 2].map((item) => (
           <div
             key={item}
-            className="min-w-[210px] space-y-2 rounded-xl border border-gray-200 bg-white p-3 md:min-w-0"
+            className="min-w-[210px] space-y-2 rounded-xl border border-slate-200 bg-white p-3 md:min-w-0"
           >
-            <div className="h-3 w-3/4 rounded bg-gray-200" />
-            <div className="h-2.5 w-1/2 rounded bg-gray-100" />
-            <div className="h-2.5 w-5/6 rounded bg-gray-100" />
+            <div className="h-3 w-3/4 rounded bg-slate-200" />
+            <div className="h-2.5 w-1/2 rounded bg-slate-100" />
+            <div className="h-2.5 w-5/6 rounded bg-slate-100" />
           </div>
         ))}
       </div>
@@ -140,22 +141,22 @@ const PackageManagerSkeleton: React.FC = () => (
 
     <section className="min-h-0 overflow-hidden p-3 sm:p-6">
       <div className="mb-5 space-y-2">
-        <div className="h-4 w-28 rounded bg-gray-200" />
-        <div className="h-3 w-72 max-w-full rounded bg-gray-100" />
+        <div className="h-4 w-28 rounded bg-slate-200" />
+        <div className="h-3 w-72 max-w-full rounded bg-slate-100" />
       </div>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {[0, 1, 2, 3].map((item) => (
           <div key={item} className="space-y-2">
-            <div className="h-2.5 w-20 rounded bg-gray-200" />
-            <div className="h-9 rounded-lg bg-gray-100" />
+            <div className="h-2.5 w-20 rounded bg-slate-200" />
+            <div className="h-9 rounded-lg bg-slate-100" />
           </div>
         ))}
       </div>
-      <div className="mt-6 overflow-hidden rounded-2xl border border-gray-200">
-        <div className="flex items-center justify-between border-b border-gray-200 bg-gray-50 p-4">
+      <div className="mt-6 overflow-hidden rounded-2xl border border-slate-200">
+        <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50 p-4">
           <div className="space-y-2">
-            <div className="h-3 w-32 rounded bg-gray-200" />
-            <div className="h-2.5 w-56 max-w-full rounded bg-gray-200/70" />
+            <div className="h-3 w-32 rounded bg-slate-200" />
+            <div className="h-2.5 w-56 max-w-full rounded bg-slate-200/70" />
           </div>
           <div className="h-8 w-20 rounded-lg bg-indigo-100" />
         </div>
@@ -163,11 +164,11 @@ const PackageManagerSkeleton: React.FC = () => (
           {[0, 1, 2].map((item) => (
             <div
               key={item}
-              className="grid gap-2 rounded-xl bg-gray-50 p-3 sm:grid-cols-[1fr_1.4fr_90px_38px]"
+              className="grid gap-2 rounded-xl bg-slate-50 p-3 sm:grid-cols-[1fr_1.4fr_90px_38px]"
             >
-              <div className="h-9 rounded-lg bg-gray-200/80" />
-              <div className="h-9 rounded-lg bg-gray-200/70" />
-              <div className="h-9 rounded-lg bg-gray-200/70" />
+              <div className="h-9 rounded-lg bg-slate-200/80" />
+              <div className="h-9 rounded-lg bg-slate-200/70" />
+              <div className="h-9 rounded-lg bg-slate-200/70" />
               <div className="h-9 rounded-lg bg-rose-100" />
             </div>
           ))}
@@ -435,7 +436,7 @@ const ManageMedicinePackagesModal: React.FC<ManageMedicinePackagesModalProps> = 
   };
 
   const inputClass =
-    "w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs text-gray-700 outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100";
+    "w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-700 outline-none transition-colors focus:border-blue-500 focus:ring-2 focus:ring-blue-100";
 
   return (
     <>
@@ -454,7 +455,7 @@ const ManageMedicinePackagesModal: React.FC<ManageMedicinePackagesModalProps> = 
         {isOpen && (
           <motion.div
             key="manage-medicine-packages-modal"
-            className="fixed inset-0 z-100000 flex items-center justify-center bg-slate-900/70 sm:p-6"
+            className="fixed inset-0 z-100000 flex items-center justify-center bg-slate-950/50 sm:p-6"
             variants={backdropVariants}
             initial="hidden"
             animate="visible"
@@ -471,7 +472,7 @@ const ManageMedicinePackagesModal: React.FC<ManageMedicinePackagesModalProps> = 
           >
             <motion.div
               ref={popupRef}
-              className="flex h-[100dvh] max-h-none w-full max-w-6xl flex-col overflow-hidden bg-white shadow-2xl sm:h-auto sm:max-h-[92vh] sm:rounded-3xl"
+              className="flex h-[100dvh] max-h-none w-full max-w-6xl flex-col overflow-hidden bg-white shadow-xl sm:h-auto sm:max-h-[92vh] sm:rounded-3xl"
               variants={modalVariants}
               initial="hidden"
               animate="visible"
@@ -480,7 +481,7 @@ const ManageMedicinePackagesModal: React.FC<ManageMedicinePackagesModalProps> = 
             >
               <ModalHeader
                 icon={Package}
-                iconColor="indigo"
+                iconColor="blue"
                 title="Manage medicine packages"
                 subtitle="Create, edit, or remove reusable medicine bundles"
                 onClose={onClose}
@@ -491,13 +492,11 @@ const ManageMedicinePackagesModal: React.FC<ManageMedicinePackagesModalProps> = 
               <PackageManagerSkeleton />
             ) : loadError ? (
               <div className="flex min-h-0 flex-1 items-center justify-center p-6">
-                <motion.div
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="w-full max-w-sm rounded-2xl border border-rose-100 bg-rose-50/60 p-5 text-center"
+                <div
+                  className="w-full max-w-sm rounded-2xl border border-red-100 bg-red-50 p-5 text-center"
                   role="alert"
                 >
-                  <span className="mx-auto grid h-11 w-11 place-items-center rounded-xl bg-white text-rose-600 shadow-sm">
+                  <span className="mx-auto grid h-11 w-11 place-items-center rounded-xl bg-white text-red-600 shadow-sm">
                     <CircleAlert className="h-5 w-5" />
                   </span>
                   <h3 className="mt-3 text-sm font-bold text-slate-900">
@@ -509,66 +508,58 @@ const ManageMedicinePackagesModal: React.FC<ManageMedicinePackagesModalProps> = 
                   <button
                     type="button"
                     onClick={() => void loadDefinitions()}
-                    className="mt-4 inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-xs font-bold text-white transition hover:bg-indigo-700"
+                    className="mt-4 inline-flex h-9 items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 text-xs font-semibold text-slate-700 transition-colors hover:bg-slate-50"
                   >
                     Try again
                   </button>
-                </motion.div>
+                </div>
               </div>
             ) : (
             <div className="grid min-h-0 flex-1 grid-cols-1 grid-rows-[auto_minmax(0,1fr)] overflow-hidden md:grid-cols-[260px_minmax(0,1fr)] md:grid-rows-1">
-              <aside className="shrink-0 border-b border-gray-100 bg-gray-50/70 p-3 md:min-h-0 md:border-b-0 md:border-r md:p-4">
+              <aside className="shrink-0 border-b border-slate-100 bg-slate-50/70 p-3 md:min-h-0 md:border-b-0 md:border-r md:p-4">
                 <div className="mb-3 flex items-center justify-between gap-2">
                   <div>
-                    <p className="text-xs font-bold text-gray-800">Packages</p>
-                    <p className="text-[11px] text-gray-500">Used by medicine sales</p>
+                    <p className="text-xs font-bold text-slate-800">Packages</p>
+                    <p className="text-2xs text-slate-500">Used by medicine sales</p>
                   </div>
-                  <motion.button
+                  <button
                     type="button"
                     onClick={startNew}
                     disabled={isLoading || isSaving || isDeleting}
-                    whileTap={{ scale: 0.96 }}
-                    className="inline-flex items-center gap-1 rounded-lg bg-indigo-600 px-2.5 py-2 text-[11px] font-semibold text-white transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="inline-flex h-9 items-center gap-1 rounded-lg bg-emerald-600 px-2.5 text-xs font-semibold text-white transition-colors hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     <Plus className="h-3.5 w-3.5" />
                     New
-                  </motion.button>
+                  </button>
                 </div>
 
                 {definitions.length ? (
                   <div className="flex gap-2 overflow-x-auto pb-1 md:block md:max-h-[calc(92vh-190px)] md:space-y-2 md:overflow-y-auto md:pb-0">
-                    <AnimatePresence initial={false}>
-                      {definitions.map((definition) => (
-                        <motion.button
-                          layout
+                    {definitions.map((definition) => (
+                        <button
                           key={definition.code}
                           type="button"
-                          initial={{ opacity: 0, x: -8 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          exit={{ opacity: 0, x: -8, height: 0 }}
-                          whileTap={{ scale: 0.98 }}
                           onClick={() => selectDefinition(definition)}
-                          className={`min-w-[210px] rounded-xl border px-3 py-3 text-left transition md:w-full md:min-w-0 ${
+                          className={`min-w-[210px] rounded-xl border px-3 py-3 text-left transition-colors md:w-full md:min-w-0 ${
                             editingCode === definition.code
-                              ? "border-indigo-300 bg-indigo-50 shadow-sm"
-                              : "border-gray-200 bg-white hover:border-indigo-200 hover:bg-indigo-50/50"
+                              ? "border-blue-300 bg-blue-50 shadow-sm"
+                              : "border-slate-200 bg-white hover:border-blue-200 hover:bg-blue-50"
                           }`}
                         >
-                          <span className="block truncate text-xs font-bold text-gray-800">
+                          <span className="block truncate text-xs font-bold text-slate-800">
                             {definition.name}
                           </span>
-                          <span className="mt-1 block truncate font-mono text-[10px] text-gray-500">
+                          <span className="mt-1 block truncate font-mono text-2xs text-slate-500">
                             {definition.code}
                           </span>
-                          <span className="mt-1 block text-[10px] text-gray-500">
+                          <span className="mt-1 block text-2xs text-slate-500">
                             {definition.items.length} medicine items · {definition.departmentName}
                           </span>
-                        </motion.button>
+                        </button>
                       ))}
-                    </AnimatePresence>
                   </div>
                 ) : (
-                  <p className="rounded-xl border border-dashed border-gray-300 bg-white p-4 text-center text-xs text-gray-500">
+                  <p className="rounded-xl border border-dashed border-slate-300 bg-white p-4 text-center text-xs text-slate-500">
                     No packages yet.
                   </p>
                 )}
@@ -578,17 +569,17 @@ const ManageMedicinePackagesModal: React.FC<ManageMedicinePackagesModalProps> = 
                 <AnimatePresence mode="wait" initial={false}>
                   <motion.div
                     key={editingCode ?? "new-package"}
-                    initial={{ opacity: 0, x: 10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: -8 }}
-                    transition={{ duration: 0.18, ease: "easeOut" }}
+                    variants={rowVariants}
+                    initial="hidden"
+                    animate="visible"
+                    exit="exit"
                   >
                 <div className="mb-5 flex items-start justify-between gap-3">
                   <div>
-                    <p className="text-sm font-bold text-gray-900">
+                    <p className="text-sm font-bold text-slate-900">
                       {editingCode ? "Edit package" : "Create package"}
                     </p>
-                    <p className="mt-1 text-xs text-gray-500">
+                    <p className="mt-1 text-xs text-slate-500">
                       Aliases help the system match each item to the live medicine catalog.
                     </p>
                   </div>
@@ -600,7 +591,7 @@ const ManageMedicinePackagesModal: React.FC<ManageMedicinePackagesModalProps> = 
                         if (target) setDeleteTarget(target);
                       }}
                       disabled={isSaving || isDeleting}
-                      className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-red-200 px-3 py-2 text-xs font-semibold text-red-600 transition hover:bg-red-50 disabled:opacity-50"
+                      className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-red-600 px-3 py-2 text-xs font-semibold text-white transition-colors hover:bg-red-700 disabled:opacity-50"
                     >
                       <Trash2 className="h-3.5 w-3.5" /> Delete
                     </button>
@@ -609,17 +600,17 @@ const ManageMedicinePackagesModal: React.FC<ManageMedicinePackagesModalProps> = 
 
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                   <label className="block">
-                    <span className="mb-1.5 block text-[11px] font-semibold text-gray-700">Package code *</span>
+                    <span className="mb-1.5 block text-2xs font-semibold text-slate-700">Package code *</span>
                     <input
                       value={draft.code}
                       onChange={(event) => updateDraft("code", event.target.value)}
                       disabled={Boolean(editingCode) || isSaving || isDeleting}
                       placeholder="LUCS_OT_MEDICINE"
-                      className={`${inputClass} font-mono disabled:bg-gray-100 disabled:text-gray-500`}
+                      className={`${inputClass} font-mono disabled:bg-slate-100 disabled:text-slate-500`}
                     />
                   </label>
                   <label className="block">
-                    <span className="mb-1.5 block text-[11px] font-semibold text-gray-700">Display name *</span>
+                    <span className="mb-1.5 block text-2xs font-semibold text-slate-700">Display name *</span>
                     <input
                       value={draft.name}
                       onChange={(event) => updateDraft("name", event.target.value)}
@@ -629,7 +620,7 @@ const ManageMedicinePackagesModal: React.FC<ManageMedicinePackagesModalProps> = 
                     />
                   </label>
                   <label className="block">
-                    <span className="mb-1.5 block text-[11px] font-semibold text-gray-700">Operation name *</span>
+                    <span className="mb-1.5 block text-2xs font-semibold text-slate-700">Operation name *</span>
                     <input
                       value={draft.operationName}
                       onChange={(event) => updateDraft("operationName", event.target.value)}
@@ -639,11 +630,11 @@ const ManageMedicinePackagesModal: React.FC<ManageMedicinePackagesModalProps> = 
                     />
                   </label>
                   <div className="block">
-                    <span className="mb-1.5 block text-[11px] font-semibold text-gray-700">
+                    <span className="mb-1.5 block text-2xs font-semibold text-slate-700">
                       Department *
                     </span>
                     <div className="relative">
-                      <Building2 className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-400" />
+                      <Building2 className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
                       <button
                         ref={departmentButtonRef}
                         type="button"
@@ -651,21 +642,21 @@ const ManageMedicinePackagesModal: React.FC<ManageMedicinePackagesModalProps> = 
                           setIsDepartmentOpen((current) => !current)
                         }
                         disabled={isLucsDraft || isSaving || isDeleting}
-                        className={`${inputClass} flex items-center justify-between gap-2 pl-9 text-left disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-500`}
+                        className={`${inputClass} flex items-center justify-between gap-2 pl-9 text-left disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500`}
                         aria-expanded={isDepartmentOpen}
                         aria-haspopup="listbox"
                       >
                         <span
                           className={
                             draft.departmentName
-                              ? "truncate font-medium text-gray-700"
-                              : "truncate text-gray-400"
+                              ? "truncate font-medium text-slate-700"
+                              : "truncate text-slate-400"
                           }
                         >
                           {draft.departmentName || "Select department"}
                         </span>
                         <ChevronDown
-                          className={`h-4 w-4 shrink-0 text-gray-400 transition-transform duration-200 ${
+                          className={`h-4 w-4 shrink-0 text-slate-400 transition-transform duration-200 ${
                             isDepartmentOpen ? "rotate-180" : ""
                           }`}
                         />
@@ -689,7 +680,7 @@ const ManageMedicinePackagesModal: React.FC<ManageMedicinePackagesModalProps> = 
                             (department) =>
                               department.id === draft.departmentId,
                           ) && (
-                            <div className="mb-1 rounded-lg bg-amber-50 px-3 py-2 text-[11px] font-medium text-amber-800">
+                            <div className="mb-1 rounded-lg bg-amber-50 px-3 py-2 text-2xs font-medium text-amber-800">
                               Current legacy department: {draft.departmentName}
                             </div>
                           )}
@@ -714,8 +705,8 @@ const ManageMedicinePackagesModal: React.FC<ManageMedicinePackagesModalProps> = 
                               }}
                               className={`flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2.5 text-left text-xs transition ${
                                 isSelected
-                                  ? "bg-indigo-600 font-semibold text-white"
-                                  : "text-gray-700 hover:bg-indigo-50 hover:text-indigo-800"
+                                  ? "bg-blue-600 font-semibold text-white"
+                                  : "text-slate-700 hover:bg-blue-50 hover:text-blue-800"
                               }`}
                             >
                               <span className="truncate">{department.name}</span>
@@ -724,7 +715,7 @@ const ManageMedicinePackagesModal: React.FC<ManageMedicinePackagesModalProps> = 
                           );
                         })}
 
-                        <div className="my-1.5 border-t border-gray-100" />
+                        <div className="my-1.5 border-t border-slate-100" />
                         <button
                           type="button"
                           role="option"
@@ -741,8 +732,8 @@ const ManageMedicinePackagesModal: React.FC<ManageMedicinePackagesModalProps> = 
                           }}
                           className={`flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2.5 text-left transition ${
                             draft.departmentName === "All Departments"
-                              ? "bg-indigo-600 text-white"
-                              : "text-gray-700 hover:bg-indigo-50 hover:text-indigo-800"
+                              ? "bg-blue-600 text-white"
+                              : "text-slate-700 hover:bg-blue-50 hover:text-blue-800"
                           }`}
                         >
                           <span>
@@ -750,10 +741,10 @@ const ManageMedicinePackagesModal: React.FC<ManageMedicinePackagesModalProps> = 
                               All Departments
                             </span>
                             <span
-                              className={`block text-[10px] ${
+                              className={`block text-2xs ${
                                 draft.departmentName === "All Departments"
-                                  ? "text-indigo-100"
-                                  : "text-gray-400"
+                                  ? "text-blue-100"
+                                  : "text-slate-400"
                               }`}
                             >
                               Make this preset available globally
@@ -768,37 +759,35 @@ const ManageMedicinePackagesModal: React.FC<ManageMedicinePackagesModalProps> = 
                   </div>
                 </div>
 
-                <div className="mt-6 rounded-2xl border border-gray-200">
-                  <div className="flex items-center justify-between gap-3 border-b border-gray-200 bg-gray-50 px-3 py-3 sm:px-4">
+                <div className="mt-6 rounded-2xl border border-slate-200">
+                  <div className="flex items-center justify-between gap-3 border-b border-slate-200 bg-slate-50 px-3 py-3 sm:px-4">
                     <div>
-                      <p className="text-xs font-bold text-gray-800">Package medicines</p>
-                      <p className="text-[11px] text-gray-500">Add the catalog spelling and optional alternate names.</p>
+                      <p className="text-xs font-bold text-slate-800">Package medicines</p>
+                      <p className="text-2xs text-slate-500">Add the catalog spelling and optional alternate names.</p>
                     </div>
-                    <motion.button
+                    <button
                       type="button"
                       onClick={addItem}
                       disabled={isSaving || isDeleting}
-                      whileTap={{ scale: 0.96 }}
-                      className="inline-flex items-center gap-1.5 rounded-lg border border-indigo-200 bg-white px-2.5 py-2 text-[11px] font-semibold text-indigo-700 transition hover:bg-indigo-50 disabled:opacity-50"
+                      className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-2.5 text-xs font-semibold text-slate-700 transition-colors hover:bg-slate-50 disabled:opacity-50"
                     >
                       <Plus className="h-3.5 w-3.5" /> Add item
-                    </motion.button>
+                    </button>
                   </div>
 
                   <div className="space-y-3 p-3 sm:p-4">
                     <AnimatePresence initial={false}>
                     {draft.items.map((item, index) => (
                       <motion.div
-                        layout
                         key={item.clientId}
-                        initial={{ opacity: 0, height: 0, y: -8 }}
-                        animate={{ opacity: 1, height: "auto", y: 0 }}
-                        exit={{ opacity: 0, height: 0, x: 12 }}
-                        transition={{ duration: 0.2, ease: "easeOut" }}
-                        className="grid overflow-hidden gap-2 rounded-xl border border-gray-100 bg-gray-50/70 p-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)_90px_auto] sm:items-end"
+                        variants={rowVariants}
+                        initial="hidden"
+                        animate="visible"
+                        exit="exit"
+                        className="grid overflow-hidden gap-2 rounded-xl border border-slate-100 bg-slate-50 p-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)_90px_auto] sm:items-end"
                       >
                         <label className="block">
-                          <span className="mb-1 block text-[10px] font-semibold text-gray-600">Template / catalog name *</span>
+                          <span className="mb-1 block text-2xs font-semibold text-slate-600">Template / catalog name *</span>
                           <input
                             value={item.templateName}
                             onChange={(event) => updateItem(index, "templateName", event.target.value)}
@@ -808,7 +797,7 @@ const ManageMedicinePackagesModal: React.FC<ManageMedicinePackagesModalProps> = 
                           />
                         </label>
                         <label className="block">
-                          <span className="mb-1 block text-[10px] font-semibold text-gray-600">Aliases (comma separated)</span>
+                          <span className="mb-1 block text-2xs font-semibold text-slate-600">Aliases (comma separated)</span>
                           <input
                             value={item.aliasesText}
                             onChange={(event) => updateItem(index, "aliasesText", event.target.value)}
@@ -818,7 +807,7 @@ const ManageMedicinePackagesModal: React.FC<ManageMedicinePackagesModalProps> = 
                           />
                         </label>
                         <label className="block">
-                          <span className="mb-1 block text-[10px] font-semibold text-gray-600">Quantity *</span>
+                          <span className="mb-1 block text-2xs font-semibold text-slate-600">Quantity *</span>
                           <input
                             type="number"
                             min={1}
@@ -851,7 +840,7 @@ const ManageMedicinePackagesModal: React.FC<ManageMedicinePackagesModalProps> = 
                       initial={{ opacity: 0, height: 0, y: -4 }}
                       animate={{ opacity: 1, height: "auto", y: 0 }}
                       exit={{ opacity: 0, height: 0, y: -4 }}
-                      transition={{ duration: 0.18, ease: "easeOut" }}
+                      transition={tween(DURATION.fast)}
                       className="mt-3 overflow-hidden rounded-lg bg-amber-50 px-3 py-2 text-xs font-medium text-amber-800"
                       role="status"
                     >
@@ -860,25 +849,24 @@ const ManageMedicinePackagesModal: React.FC<ManageMedicinePackagesModalProps> = 
                   )}
                 </AnimatePresence>
 
-                <div className="sticky bottom-0 z-10 -mx-3 mt-5 flex justify-end gap-2 border-t border-gray-100 bg-white/95 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 backdrop-blur sm:static sm:mx-0 sm:bg-transparent sm:px-0 sm:pb-0 sm:pt-4">
+                <div className="sticky bottom-0 z-10 -mx-3 mt-5 flex justify-end gap-2 border-t border-slate-100 bg-white px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 sm:static sm:mx-0 sm:bg-transparent sm:px-0 sm:pb-0 sm:pt-4">
                   <button
                     type="button"
                     onClick={onClose}
                     disabled={isSaving || isDeleting}
-                    className="rounded-lg border border-gray-200 px-4 py-2.5 text-xs font-semibold text-gray-600 transition hover:bg-gray-50 disabled:opacity-50"
+                    className="rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-xs font-semibold text-slate-700 transition-colors hover:bg-slate-50 disabled:opacity-50"
                   >
                     Close
                   </button>
-                  <motion.button
+                  <button
                     type="button"
                     onClick={() => void handleSave()}
                     disabled={Boolean(validationError) || isLoading || isSaving || isDeleting}
-                    whileTap={{ scale: 0.97 }}
-                    className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2.5 text-xs font-semibold text-white transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-4 py-2.5 text-xs font-semibold text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {isSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
-                    {isSaving ? "Saving..." : editingCode ? "Save changes" : "Create package"}
-                  </motion.button>
+                    {isSaving ? "Saving..." : editingCode ? "Save Changes" : "Save package"}
+                  </button>
                 </div>
                   </motion.div>
                 </AnimatePresence>

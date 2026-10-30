@@ -163,7 +163,7 @@ export default function ViewSwitcher({
           <div className="p-3">
             {portalViews.length > 1 && (
               <div className="mb-2">
-                <p className="px-2 pb-2 text-[10px] font-semibold uppercase tracking-[0.22em] text-white/45">
+                <p className="px-2 pb-2 text-2xs font-semibold uppercase tracking-[0.22em] text-white/45">
                   Switch Portal
                 </p>
                 <div className="space-y-1">
@@ -176,7 +176,7 @@ export default function ViewSwitcher({
                         key={view.id}
                         onClick={() => handleViewSwitch(view.id)}
                         disabled={isSwitchingPortal || isActive}
-                        className={`w-full flex items-center gap-3 px-2 py-2 sm:p-3 rounded-xl transition-all duration-200 ${
+                        className={`w-full flex items-center gap-3 px-2 py-2 sm:p-3 rounded-xl min-h-10 transition-colors duration-200 ${
                           isActive
                             ? "bg-white/12 text-white"
                             : "text-white/75 hover:bg-white/10 hover:text-white"
@@ -195,7 +195,7 @@ export default function ViewSwitcher({
                           <p className="font-semibold text-xs sm:text-sm">
                             {view.label}
                           </p>
-                          <p className="text-[9px] sm:text-[10px] opacity-75">
+                          <p className="text-xs opacity-75">
                             {view.subtitle}
                           </p>
                         </div>
@@ -211,21 +211,21 @@ export default function ViewSwitcher({
             <Link
               href="/profile"
               onClick={handleClose}
-              className="mb-1 w-full flex items-center gap-3 px-2 py-2 sm:p-3 rounded-xl transition-all duration-200 hover:cursor-pointer hover:bg-white/15 text-white/80 hover:text-white"
+              className="mb-1 w-full flex items-center gap-3 px-2 py-2 sm:p-3 min-h-10 rounded-xl transition-colors duration-200 hover:cursor-pointer hover:bg-white/15 text-white/80 hover:text-white"
             >
               <div className="w-7 h-7 sm:w-9 sm:h-9 rounded-lg flex items-center justify-center bg-blue-500/20 text-blue-300">
                 <UserCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               </div>
               <div className="flex-1 text-left">
                 <p className="font-semibold text-xs sm:text-sm">Profile</p>
-                <p className="text-[9px] sm:text-[10px] opacity-75">
+                <p className="text-xs opacity-75">
                   Account details and password
                 </p>
               </div>
             </Link>
             <button
               onClick={() => handleViewSwitch("logout")}
-              className="w-full flex items-center gap-3 px-2 py-2 sm:p-3 rounded-xl transition-all duration-200 hover:cursor-pointer hover:bg-white/15 text-red-400 hover:text-red-300"
+              className="w-full flex items-center gap-3 px-2 py-2 sm:p-3 min-h-10 rounded-xl transition-colors duration-200 hover:cursor-pointer hover:bg-white/15 text-red-400 hover:text-red-300"
             >
               <div className="w-7 h-7 sm:w-9 sm:h-9 rounded-lg flex items-center justify-center bg-red-500/20">
                 <LogOut className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
@@ -234,7 +234,7 @@ export default function ViewSwitcher({
                 <p className="font-semibold text-xs sm:text-sm">
                   Logout
                 </p>
-                <p className="text-[9px] sm:text-[10px] opacity-75">
+                <p className="text-xs opacity-75">
                   Sign out of your account
                 </p>
               </div>

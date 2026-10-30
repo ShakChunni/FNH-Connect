@@ -98,10 +98,10 @@ export function Pagination({
     onNext || (() => onPageChange(Math.min(totalPages, currentPage + 1)));
 
   return (
-    <div className="flex flex-col gap-2 md:gap-3 px-4 md:px-6 py-3 md:py-4 text-sm font-medium text-gray-500">
+    <div className="flex flex-col gap-2 md:gap-3 px-4 md:px-6 py-3 md:py-4 text-sm font-medium text-slate-500">
       {showResultsText &&
         (totalResults !== undefined || startIndex !== undefined) && (
-          <p className="text-xs text-gray-500">
+          <p className="text-xs text-slate-500">
             {totalResults !== undefined &&
             startIndex !== undefined &&
             endIndex !== undefined
@@ -116,7 +116,7 @@ export function Pagination({
           </p>
         )}
       <nav
-        className="flex items-center justify-center md:justify-end gap-1.5"
+        className="flex items-center justify-between sm:justify-center md:justify-end gap-1.5"
         aria-label="Pagination"
       >
         {/* Previous Button */}
@@ -128,17 +128,22 @@ export function Pagination({
           }}
           disabled={currentPage === 1}
           className={cn(
-            "flex h-9 items-center rounded-xl border px-3 md:px-4 text-xs md:text-sm font-medium transition-all duration-200 cursor-pointer whitespace-nowrap",
+            "flex h-10 sm:h-9 items-center rounded-xl border px-4 text-sm font-medium transition-colors duration-150 cursor-pointer whitespace-nowrap",
             currentPage === 1
-              ? "cursor-not-allowed bg-gray-100 text-gray-400 border-gray-200"
-              : "bg-white border-gray-200 text-fnh-navy hover:bg-fnh-navy hover:text-white hover:border-fnh-navy"
+              ? "cursor-not-allowed bg-slate-100 text-slate-400 border-slate-200"
+              : "bg-white border-slate-200 text-fnh-navy hover:bg-fnh-navy hover:text-white hover:border-fnh-navy"
           )}
         >
-          <span className="hidden sm:inline">Previous</span>
-          <span className="sm:hidden">←</span>
+          Previous
         </button>
 
+        {/* Phones: compact position instead of a row of page numbers */}
+        <span className="sm:hidden px-2 text-sm text-slate-700 tabular-nums">
+          Page {currentPage} of {Math.max(totalPages, 1)}
+        </span>
+
         {/* Page Numbers */}
+        <div className="hidden sm:flex items-center gap-1.5">
         {visiblePages.map((page, index) =>
           typeof page === "number" ? (
             <button
@@ -149,10 +154,10 @@ export function Pagination({
                 scrollToTop();
               }}
               className={cn(
-                "flex h-9 w-9 items-center justify-center rounded-full border text-xs md:text-sm font-semibold transition-all duration-200 cursor-pointer",
+                "flex h-9 w-9 items-center justify-center rounded-full border text-sm font-semibold tabular-nums transition-colors duration-150 cursor-pointer",
                 page === currentPage
-                  ? "border-fnh-navy bg-fnh-navy text-white shadow-md"
-                  : "border-gray-200 bg-white text-fnh-navy-dark hover:bg-fnh-navy/10 hover:border-fnh-navy"
+                  ? "border-fnh-navy bg-fnh-navy text-white"
+                  : "border-slate-200 bg-white text-fnh-navy-dark hover:bg-fnh-navy/10 hover:border-fnh-navy"
               )}
             >
               {page}
@@ -160,12 +165,13 @@ export function Pagination({
           ) : (
             <span
               key={`ellipsis-${index}`}
-              className="flex h-9 w-9 items-center justify-center text-xs md:text-sm font-semibold text-gray-400"
+              className="flex h-9 w-9 items-center justify-center text-xs md:text-sm font-semibold text-slate-400"
             >
               {page}
             </span>
           )
         )}
+        </div>
 
         {/* Next Button */}
         <button
@@ -176,14 +182,13 @@ export function Pagination({
           }}
           disabled={currentPage === totalPages || totalResults === 0}
           className={cn(
-            "flex h-9 items-center rounded-xl border px-3 md:px-4 text-xs md:text-sm font-medium transition-all duration-200 cursor-pointer whitespace-nowrap",
+            "flex h-10 sm:h-9 items-center rounded-xl border px-4 text-sm font-medium transition-colors duration-150 cursor-pointer whitespace-nowrap",
             currentPage === totalPages || totalResults === 0
-              ? "cursor-not-allowed bg-gray-100 text-gray-400 border-gray-200"
-              : "bg-white border-gray-200 text-fnh-navy hover:bg-fnh-navy hover:text-white hover:border-fnh-navy"
+              ? "cursor-not-allowed bg-slate-100 text-slate-400 border-slate-200"
+              : "bg-white border-slate-200 text-fnh-navy hover:bg-fnh-navy hover:text-white hover:border-fnh-navy"
           )}
         >
-          <span className="hidden sm:inline">Next</span>
-          <span className="sm:hidden">→</span>
+          Next
         </button>
       </nav>
     </div>

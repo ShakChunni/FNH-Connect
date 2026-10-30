@@ -1,4 +1,14 @@
 import type { PathologyPatientData } from "../../types";
+import { formatBDT } from "@/lib/timezone";
+
+export function formatPatientAmount(amount: number): string {
+  return `৳${amount.toLocaleString("en-BD")}`;
+}
+
+export function formatPatientDate(dateStr: string | null): string {
+  if (!dateStr) return "N/A";
+  return formatBDT(dateStr, "MMM dd, yyyy");
+}
 
 export interface TableHeader {
   key: string;

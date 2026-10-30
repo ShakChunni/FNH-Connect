@@ -245,15 +245,15 @@ export function DateRangePicker({
             disabled={disabled}
             onClick={() => !disabled && setIsOpen(true)}
             className={cn(
-              "w-full justify-between text-left h-[42px] px-4 py-0 bg-white border border-gray-100 hover:border-gray-200 hover:bg-gray-50/50 focus:outline-none focus:ring-2 focus:ring-fnh-blue/20 focus:border-fnh-blue/30 cursor-pointer text-sm font-semibold transition-all duration-200 rounded-xl shadow-sm text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed",
+              "w-full justify-between text-left h-[42px] px-4 py-0 bg-white border border-slate-100 hover:border-slate-200 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-fnh-blue/20 focus:border-fnh-blue/30 cursor-pointer text-sm font-semibold transition-colors duration-200 rounded-xl shadow-sm text-slate-700 disabled:opacity-50 disabled:cursor-not-allowed",
               className,
             )}
           >
             <div className="flex items-center gap-2">
-              <CalendarIcon className="h-3.5 w-3.5 shrink-0 text-gray-500" />
+              <CalendarIcon className="h-3.5 w-3.5 shrink-0 text-slate-500" />
               <span
                 className={cn(
-                  !range.from ? "text-gray-500" : "text-gray-700",
+                  !range.from ? "text-slate-500" : "text-slate-700",
                 )}
               >
                 {formatDateRange()}
@@ -263,7 +263,7 @@ export function DateRangePicker({
         </PopoverTrigger>
         <PopoverContent
           className={cn(
-            "w-[min(24rem,calc(100vw-1rem))] p-0 overflow-hidden rounded-2xl border border-gray-200 shadow-2xl shadow-fnh-navy/10 data-[state=open]:duration-200 data-[state=closed]:duration-150",
+            "w-[min(24rem,calc(100vw-1rem))] p-0 overflow-hidden rounded-2xl border border-slate-200 shadow-xl",
             popoverClassName,
           )}
           align="start"
@@ -277,7 +277,7 @@ export function DateRangePicker({
                     <p className="text-xs font-bold text-fnh-navy-dark">
                       Quick Date Range
                     </p>
-                    <p className="text-[10px] text-gray-500">
+                    <p className="text-2xs text-slate-500">
                       Apply a common reporting period.
                     </p>
                   </div>
@@ -290,7 +290,7 @@ export function DateRangePicker({
                       type="button"
                       onClick={() => handlePresetSelect(preset)}
                       disabled={disabled}
-                      className="rounded-lg border border-gray-100 bg-gray-50 px-3 py-2 text-left text-[11px] font-bold text-gray-700 transition-colors hover:border-fnh-navy/20 hover:bg-fnh-navy/5 hover:text-fnh-navy disabled:cursor-not-allowed disabled:opacity-50"
+                      className="h-9 rounded-lg border border-slate-100 bg-slate-50 px-3 text-left text-xs font-bold text-slate-700 transition-colors hover:border-fnh-navy/20 hover:bg-fnh-navy/5 hover:text-fnh-navy disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       {preset.label}
                     </button>
@@ -310,13 +310,13 @@ export function DateRangePicker({
             />
 
             {(tempRange.from || tempRange.to) && (
-              <div className="space-y-3 border-t border-gray-100 pt-4">
-                <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
+              <div className="space-y-3 border-t border-slate-100 pt-4">
+                <div className="text-2xs font-black text-slate-500 uppercase tracking-widest">
                   Selected Range
                 </div>
                 <div className="grid grid-cols-2 gap-2 text-xs">
                   <div className="flex flex-col gap-1">
-                    <span className="text-gray-400 font-bold text-[9px] uppercase tracking-wider">
+                    <span className="text-slate-500 font-bold text-2xs uppercase tracking-wider">
                       From
                     </span>
                     <span className="font-bold text-fnh-navy">
@@ -326,7 +326,7 @@ export function DateRangePicker({
                     </span>
                   </div>
                   <div className="flex flex-col gap-1">
-                    <span className="text-gray-400 font-bold text-[9px] uppercase tracking-wider">
+                    <span className="text-slate-500 font-bold text-2xs uppercase tracking-wider">
                       To
                     </span>
                     <span className="font-bold text-fnh-navy">
@@ -341,7 +341,7 @@ export function DateRangePicker({
                   <button
                     type="button"
                     onClick={handleClear}
-                    className="flex-1 px-3 py-2 text-xs font-bold text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors cursor-pointer"
+                    className="flex-1 h-9 px-3 text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors cursor-pointer"
                   >
                     Clear
                   </button>
@@ -349,7 +349,7 @@ export function DateRangePicker({
                     type="button"
                     onClick={handleConfirm}
                     disabled={!tempRange.from || !tempRange.to}
-                    className="flex-1 px-3 py-2 text-xs font-bold text-white bg-fnh-navy hover:bg-fnh-navy-dark rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                    className="flex-1 h-9 px-3 text-xs font-bold text-white bg-fnh-navy hover:bg-fnh-navy-dark rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                   >
                     Confirm
                   </button>
@@ -361,7 +361,7 @@ export function DateRangePicker({
       </Popover>
 
       {!hideSelectedSummary && range.from && range.to && (
-        <div className="text-xs text-jd-sandstone pt-1 font-medium">
+        <div className="text-xs text-slate-500 pt-1 font-medium">
           Selected range: {format(range.from, "MMM dd, yyyy")} to{" "}
           {format(range.to, "MMM dd, yyyy")}
         </div>

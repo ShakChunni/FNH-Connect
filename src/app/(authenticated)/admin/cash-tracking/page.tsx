@@ -26,6 +26,7 @@ import { DateRangePicker } from "@/components/ui/date-range-picker";
 import { DateRangePresets, DateRangePresetValue } from "@/components/ui/DateRangePresets";
 import { StaffFilter } from "@/components/ui/StaffFilter";
 import { cn } from "@/lib/utils";
+import { TONE_BADGE, StatusTone } from "@/lib/statusStyles";
 
 const formatCurrency = (amount: number) => {
   return new Intl.NumberFormat("en-BD", {
@@ -54,7 +55,7 @@ interface StatCardProps {
   value: React.ReactNode;
   subtitle: string;
   icon: React.ElementType;
-  color: "emerald" | "blue" | "rose" | "violet" | "amber" | "indigo";
+  tone: StatusTone;
   isLoading: boolean;
 }
 
@@ -63,101 +64,34 @@ const StatCard: React.FC<StatCardProps> = ({
   value,
   subtitle,
   icon: Icon,
-  color,
+  tone,
   isLoading,
 }) => {
-  const colorStyles = {
-    emerald: {
-      bg: "bg-emerald-50/50",
-      border: "border-emerald-100",
-      blob: "bg-emerald-100/50",
-      icon: "text-emerald-600",
-      title: "text-emerald-900/60",
-      subtitle: "text-emerald-700/80",
-    },
-    blue: {
-      bg: "bg-blue-50/50",
-      border: "border-blue-100",
-      blob: "bg-blue-100/50",
-      icon: "text-blue-600",
-      title: "text-blue-900/60",
-      subtitle: "text-blue-700/80",
-    },
-    rose: {
-      bg: "bg-rose-50/50",
-      border: "border-rose-100",
-      blob: "bg-rose-100/50",
-      icon: "text-rose-600",
-      title: "text-rose-900/60",
-      subtitle: "text-rose-700/80",
-    },
-    violet: {
-      bg: "bg-violet-50/50",
-      border: "border-violet-100",
-      blob: "bg-violet-100/50",
-      icon: "text-violet-600",
-      title: "text-violet-900/60",
-      subtitle: "text-violet-700/80",
-    },
-    amber: {
-      bg: "bg-amber-50/50",
-      border: "border-amber-100",
-      blob: "bg-amber-100/50",
-      icon: "text-amber-600",
-      title: "text-amber-900/60",
-      subtitle: "text-amber-700/80",
-    },
-    indigo: {
-      bg: "bg-indigo-50/50",
-      border: "border-indigo-100",
-      blob: "bg-indigo-100/50",
-      icon: "text-indigo-600",
-      title: "text-indigo-900/60",
-      subtitle: "text-indigo-700/80",
-    },
-  };
-
-  const style = colorStyles[color];
-
   return (
-    <div
-      className={cn(
-        "rounded-2xl p-4 sm:p-5 lg:p-6 border shadow-sm relative overflow-hidden group hover:shadow-md transition-all duration-300",
-        style.bg,
-        style.border
-      )}
-    >
-      <div
-        className={cn(
-          "absolute top-0 right-0 w-24 h-24 rounded-full -translate-y-1/2 translate-x-1/2 group-hover:scale-110 transition-transform duration-500",
-          style.blob
-        )}
-      />
-      <div className="relative z-10">
-        <div className="flex items-center gap-3 mb-3">
-          <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center shadow-sm">
-            <Icon className={cn("w-4 h-4", style.icon)} />
-          </div>
-          <span
-            className={cn(
-              "text-[10px] sm:text-xs font-black uppercase tracking-widest",
-              style.title
-            )}
-          >
-            {title}
-          </span>
+    <div className="rounded-2xl p-4 sm:p-5 lg:p-6 border border-slate-200 bg-white shadow-sm">
+      <div className="flex items-center gap-3 mb-3">
+        <div
+          className={cn(
+            "w-8 h-8 rounded-lg flex items-center justify-center ring-1 ring-inset",
+            TONE_BADGE[tone]
+          )}
+        >
+          <Icon className="w-4 h-4" />
         </div>
-        {isLoading ? (
-          <div className="h-8 w-32 bg-white/50 rounded animate-pulse mb-1" />
-        ) : (
-          <div className="text-xl sm:text-2xl xl:text-3xl font-black text-gray-950 truncate">
-            {value}
-          </div>
-        )}
-        <p className={cn("text-[10px] sm:text-xs font-medium mt-1", style.subtitle)}>
-          {subtitle}
-        </p>
+        <span className="text-2xs sm:text-xs font-black uppercase tracking-widest text-slate-500">
+          {title}
+        </span>
       </div>
+      {isLoading ? (
+        <div className="h-8 w-32 bg-slate-100 rounded animate-pulse mb-1" />
+      ) : (
+        <div className="text-xl sm:text-2xl xl:text-3xl font-black text-slate-900 tabular-nums truncate">
+          {value}
+        </div>
+      )}
+      <p className="text-2xs sm:text-xs font-medium mt-1 text-slate-500">
+        {subtitle}
+      </p>
     </div>
   );
 };
@@ -176,7 +110,8 @@ const CashTrackingPage = () => {
     setFilter("search", debouncedSearch);
   }, [debouncedSearch, setFilter]);
 
-  const { data, isLoading, refetch, isFetching } = useAdminShifts(filters);
+  const { data, isLoading, isError, refetch, isFetching } = useAdminShifts(filters);
+  const hasData = !!data;
 
   const shifts = data?.shifts || [];
   const summary = data?.summary || {
@@ -234,7 +169,7 @@ const CashTrackingPage = () => {
                 <div className="w-full flex justify-center sm:w-auto">
                   <button
                     onClick={() => refetch()}
-                    className="flex items-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-all shadow-sm text-xs sm:text-sm font-semibold cursor-pointer active:scale-95"
+                    className="flex items-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 bg-white border border-slate-300 text-slate-700 rounded-xl hover:bg-slate-50 transition-colors shadow-sm text-xs sm:text-sm font-semibold cursor-pointer"
                   >
                     <RefreshCw
                       className={cn("w-3.5 h-3.5 sm:w-4 sm:h-4", {
@@ -253,70 +188,74 @@ const CashTrackingPage = () => {
             <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 lg:gap-5">
               <StatCard
                 title="Net Cash Flow"
-                value={formatCurrency(netCashFlow)}
+                value={hasData ? formatCurrency(netCashFlow) : "—"}
                 subtitle="Collections minus refunds"
                 icon={DollarSign}
-                color="emerald"
+                tone="success"
                 isLoading={isLoading && !data}
               />
               <StatCard
                 title="Total Collected"
-                value={formatCurrency(summary.totalCollected)}
+                value={hasData ? formatCurrency(summary.totalCollected) : "—"}
                 subtitle="Gross incoming payments"
                 icon={TrendingUp}
-                color="blue"
+                tone="info"
                 isLoading={isLoading && !data}
               />
               <StatCard
                 title="Total Refunded"
-                value={formatCurrency(summary.totalRefunded)}
+                value={hasData ? formatCurrency(summary.totalRefunded) : "—"}
                 subtitle="Total returned to patients"
                 icon={TrendingDown}
-                color="rose"
+                tone="danger"
                 isLoading={isLoading && !data}
               />
               <StatCard
                 title="Active Shifts"
-                value={summary.activeShiftsCount}
+                value={hasData ? summary.activeShiftsCount : "—"}
                 subtitle="Staff currently on shift"
                 icon={Users}
-                color="violet"
+                tone="info"
                 isLoading={isLoading && !data}
               />
               <StatCard
                 title="Total Transactions"
-                value={totalTransactions.toLocaleString("en-BD")}
+                value={hasData ? totalTransactions.toLocaleString("en-BD") : "—"}
                 subtitle="Payments & cash movements"
                 icon={CreditCard}
-                color="indigo"
+                tone="neutral"
                 isLoading={isLoading && !data}
               />
               <StatCard
                 title="Total Variance"
                 value={
-                  <span
-                    className={cn(
-                      totalVariance === 0
-                        ? "text-emerald-600"
-                        : totalVariance > 0
-                        ? "text-blue-600"
-                        : "text-rose-600"
-                    )}
-                  >
-                    {totalVariance > 0 ? "+" : ""}
-                    {formatCurrency(totalVariance)}
-                  </span>
+                  hasData ? (
+                    <span
+                      className={cn(
+                        totalVariance === 0
+                          ? "text-emerald-700"
+                          : totalVariance > 0
+                          ? "text-blue-700"
+                          : "text-red-700"
+                      )}
+                    >
+                      {totalVariance > 0 ? "+" : ""}
+                      {formatCurrency(totalVariance)}
+                    </span>
+                  ) : (
+                    "—"
+                  )
                 }
                 subtitle="Cash vs system difference"
                 icon={Scale}
-                color="amber"
+                tone="warning"
                 isLoading={isLoading && !data}
               />
             </div>
 
             {/* Variance Explanation */}
             {showVarianceHelp && (
-              <div className="mt-4 p-4 bg-indigo-50 border border-indigo-100 rounded-xl animate-in fade-in slide-in-from-top-2 duration-200">
+              <div className="mt-4 p-4 bg-indigo-50 border border-indigo-100 rounded-xl animate-in fade-in slide-in-from-top-2 duration-150">
                 <div className="flex items-start gap-3">
                   <div className="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center shrink-0">
                     <HelpCircle className="w-4 h-4 text-indigo-600" />
@@ -347,7 +286,7 @@ const CashTrackingPage = () => {
                         </span>
                       </li>
                       <li className="flex items-center gap-2">
-                        <span className="w-2 h-2 bg-rose-500 rounded-full" />
+                        <span className="w-2 h-2 bg-red-500 rounded-full" />
                         <span>
                           <strong>Negative Variance:</strong> Less cash than
                           expected (shortage).
@@ -356,7 +295,7 @@ const CashTrackingPage = () => {
                     </ul>
                     <button
                       onClick={() => setShowVarianceHelp(false)}
-                      className="mt-3 text-[10px] font-black text-indigo-600 uppercase tracking-widest hover:text-indigo-800 cursor-pointer"
+                      className="mt-3 text-2xs font-black text-indigo-600 uppercase tracking-widest hover:text-indigo-800 cursor-pointer"
                     >
                       Got it, close
                     </button>
@@ -368,20 +307,20 @@ const CashTrackingPage = () => {
 
           {/* Filters */}
           <div className="px-1 sm:px-2 lg:px-4">
-            <div className="p-3 sm:p-4 bg-white rounded-2xl border border-gray-100 shadow-sm relative group space-y-3 sm:space-y-4">
+            <div className="p-3 sm:p-4 bg-white rounded-2xl border border-slate-200 shadow-sm space-y-3 sm:space-y-4">
               {/* Top Row: Search + Primary Filters */}
               <div className="flex flex-col lg:flex-row gap-3">
                 {/* Search */}
                 <div className="relative flex-1 min-w-0">
                   <div className="absolute left-3 top-1/2 -translate-y-1/2 flex items-center gap-2 pointer-events-none">
-                    <Search className="w-4 h-4 text-gray-400" />
+                    <Search className="w-4 h-4 text-slate-400" />
                   </div>
                   <input
                     type="text"
                     placeholder="Search by staff name..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full h-[42px] pl-10 pr-4 bg-gray-50/50 border border-gray-100 rounded-xl text-sm font-semibold text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-fnh-blue/20 focus:border-fnh-blue/30 transition-all"
+                    className="w-full h-[42px] pl-10 pr-4 bg-slate-50/50 border border-slate-100 rounded-xl text-sm font-semibold text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-fnh-blue/20 focus:border-fnh-blue/30 transition-colors"
                   />
                 </div>
 
@@ -420,9 +359,9 @@ const CashTrackingPage = () => {
               </div>
 
               {/* Bottom Row: Quick Date Presets + Clear */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 border-t border-gray-50">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 border-t border-slate-50">
                 <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
-                  <span className="flex items-center gap-1.5 text-[10px] font-black text-gray-400 uppercase tracking-widest shrink-0">
+                  <span className="flex items-center gap-1.5 text-2xs font-black text-slate-500 uppercase tracking-widest shrink-0">
                     <Calendar className="w-3 h-3" />
                     Quick Date
                   </span>
@@ -438,28 +377,23 @@ const CashTrackingPage = () => {
                   <button
                     onClick={handleReset}
                     disabled={isLoading && !data}
-                    className="self-start sm:self-center px-3 py-2 text-[10px] sm:text-xs font-black text-rose-500 uppercase tracking-widest hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
+                    className="self-start sm:self-center h-9 px-3 text-xs font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
                   >
-                    Clear Filters
+                    Clear filters
                   </button>
                 )}
               </div>
-
-              {/* Loading Overlay */}
-              {isLoading && !data && (
-                <div className="absolute inset-0 bg-white/40 backdrop-blur-[1px] rounded-2xl z-10 pointer-events-none transition-opacity" />
-              )}
             </div>
           </div>
 
           {/* Cash Flow Breakdown */}
           <div className="px-1 sm:px-2 lg:px-4">
-            <div className="p-4 sm:p-5 bg-gradient-to-r from-fnh-navy to-slate-800 rounded-2xl text-white">
+            <div className="p-4 sm:p-5 bg-fnh-navy rounded-2xl text-white">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-[10px] sm:text-xs font-black uppercase tracking-widest opacity-80">
+                <h3 className="text-2xs sm:text-xs font-black uppercase tracking-widest opacity-80">
                   Cash Flow Breakdown
                 </h3>
-                <span className="text-[10px] font-bold text-white/60">
+                <span className="text-2xs font-bold text-white/60">
                   {totalShifts} shift{totalShifts !== 1 ? "s" : ""} shown
                 </span>
               </div>
@@ -467,11 +401,11 @@ const CashTrackingPage = () => {
                 <div className="flex items-center gap-3 p-3 bg-white/10 rounded-xl border border-white/5">
                   <TrendingUp className="w-5 h-5 text-emerald-400 shrink-0" />
                   <div className="min-w-0">
-                    <p className="text-[10px] font-bold uppercase tracking-wide opacity-70 truncate">
+                    <p className="text-2xs font-bold uppercase tracking-wide opacity-70 truncate">
                       Collected
                     </p>
                     <p
-                      className="text-base sm:text-lg font-black truncate"
+                      className="text-base sm:text-lg font-black tabular-nums truncate"
                       title={formatCurrency(summary.totalCollected)}
                     >
                       {formatCurrency(summary.totalCollected)}
@@ -482,11 +416,11 @@ const CashTrackingPage = () => {
                 <div className="flex items-center gap-3 p-3 bg-white/10 rounded-xl border border-white/5">
                   <TrendingDown className="w-5 h-5 text-rose-400 shrink-0" />
                   <div className="min-w-0">
-                    <p className="text-[10px] font-bold uppercase tracking-wide opacity-70 truncate">
+                    <p className="text-2xs font-bold uppercase tracking-wide opacity-70 truncate">
                       Refunded
                     </p>
                     <p
-                      className="text-base sm:text-lg font-black truncate"
+                      className="text-base sm:text-lg font-black tabular-nums truncate"
                       title={formatCurrency(summary.totalRefunded)}
                     >
                       {formatCurrency(summary.totalRefunded)}
@@ -497,11 +431,11 @@ const CashTrackingPage = () => {
                 <div className="flex items-center gap-3 p-3 bg-emerald-500/20 border border-emerald-400/30 rounded-xl">
                   <Wallet className="w-5 h-5 text-emerald-300 shrink-0" />
                   <div className="min-w-0">
-                    <p className="text-[10px] font-bold uppercase tracking-wide opacity-90 truncate">
+                    <p className="text-2xs font-bold uppercase tracking-wide opacity-90 truncate">
                       Net Cash
                     </p>
                     <p
-                      className="text-base sm:text-lg font-black text-emerald-300 truncate"
+                      className="text-base sm:text-lg font-black tabular-nums text-emerald-300 truncate"
                       title={formatCurrency(netCashFlow)}
                     >
                       {formatCurrency(netCashFlow)}
@@ -525,6 +459,8 @@ const CashTrackingPage = () => {
             <ShiftTable
               shifts={shifts}
               isLoading={isLoading && !data}
+              isError={isError && !data}
+              onRetry={() => refetch()}
               onSelectShift={(shift) => setSelectedShiftId(shift.id)}
             />
           </div>

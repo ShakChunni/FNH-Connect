@@ -10,7 +10,6 @@
  */
 
 import React, { useEffect, useMemo, useState } from "react";
-import { AnimatePresence, motion, type Variants } from "framer-motion";
 import {
   AlertTriangle,
   Boxes,
@@ -26,6 +25,7 @@ import {
 } from "lucide-react";
 import { api } from "@/lib/axios";
 import { cn } from "@/lib/utils";
+import { TONE_BADGE, statusBadgeClass } from "@/lib/statusStyles";
 import NumberInput from "@/components/form-sections/Fields/NumberInput";
 import { getMedicineDisplayName } from "../../utils/medicineDisplay";
 import type { Medicine } from "../../types";
@@ -39,47 +39,6 @@ const currency = (value: number) =>
 
 const roundToTwoDecimals = (value: number): number => {
   return Math.round(value * 100) / 100;
-};
-
-const tableContentVariants: Variants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: { staggerChildren: 0.04, delayChildren: 0.05 },
-  },
-  exit: { opacity: 0, transition: { duration: 0.25, ease: [0.4, 0, 1, 1] } },
-};
-
-const rowVariants: Variants = {
-  hidden: { opacity: 0, y: 14, scale: 0.96 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    scale: 1,
-    transition: { type: "spring", damping: 18, stiffness: 340, mass: 0.8 },
-  },
-  exit: {
-    opacity: 0,
-    x: 12,
-    scale: 0.97,
-    transition: { duration: 0.22, ease: [0.4, 0, 1, 1] },
-  },
-};
-
-const cardVariants: Variants = {
-  hidden: { opacity: 0, y: 16, scale: 0.92 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    scale: 1,
-    transition: { type: "spring", damping: 16, stiffness: 320, mass: 0.8 },
-  },
-  exit: {
-    opacity: 0,
-    scale: 0.95,
-    y: -6,
-    transition: { duration: 0.22, ease: [0.4, 0, 1, 1] },
-  },
 };
 
 interface MedicineListApiResponse {
@@ -102,6 +61,7 @@ function MedicineLookupInput({ item, onSelect, disabled }: MedicineLookupProps) 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [options, setOptions] = useState<Medicine[]>([]);
+  const [retryKey, setRetryKey] = useState(0);
 
   useEffect(() => {
     setQuery(item.requestedMedicineName || item.medicineName || "");
@@ -140,7 +100,7 @@ function MedicineLookupInput({ item, onSelect, disabled }: MedicineLookupProps) 
       controller.abort();
       clearTimeout(timer);
     };
-  }, [disabled, isOpen, query]);
+  }, [disabled, isOpen, query, retryKey]);
 
   const isMatched = item.medicineId !== null;
   const needsMatch = !isMatched && item.requestedMedicineName;
@@ -148,7 +108,7 @@ function MedicineLookupInput({ item, onSelect, disabled }: MedicineLookupProps) 
   return (
     <div className="relative min-w-0">
       <div className="relative">
-        <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-400" />
+        <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-500" />
         <input
           type="text"
           value={query}
@@ -161,31 +121,42 @@ function MedicineLookupInput({ item, onSelect, disabled }: MedicineLookupProps) 
           onBlur={() => setTimeout(() => setIsOpen(false), 150)}
           placeholder="Search pharmacy"
           className={cn(
-            "h-9 w-full rounded-lg border bg-white pl-8 pr-8 text-xs font-medium outline-none transition focus:ring-2 disabled:cursor-not-allowed disabled:bg-gray-100",
+            "h-9 w-full rounded-lg border bg-white pl-8 pr-8 text-xs font-medium outline-none transition-colors focus:ring-2 disabled:cursor-not-allowed disabled:bg-slate-100",
             isMatched
               ? "border-emerald-300 text-emerald-900 focus:border-emerald-500 focus:ring-emerald-100"
               : needsMatch
                 ? "border-amber-300 text-amber-900 focus:border-amber-500 focus:ring-amber-100"
-                : "border-gray-300 text-gray-800 focus:border-blue-500 focus:ring-blue-100"
+                : "border-slate-300 text-slate-800 focus:border-blue-500 focus:ring-blue-100"
           )}
         />
         {isLoading ? (
           <Loader2 className="absolute right-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 animate-spin text-blue-600" />
         ) : isMatched ? (
-          <CheckCircle2 className="pointer-events-none absolute right-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-emerald-600" />
+          <CheckCircle2 className="pointer-events-none absolute right-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-emerald-700" />
         ) : needsMatch ? (
-          <AlertTriangle className="pointer-events-none absolute right-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-amber-500" />
+          <AlertTriangle className="pointer-events-none absolute right-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-amber-700" />
         ) : null}
       </div>
       {isOpen && !disabled ? (
-        <div className="absolute z-30 mt-1 max-h-72 w-full min-w-[240px] overflow-y-auto rounded-lg border border-gray-200 bg-white shadow-xl">
+        <div className="absolute z-30 mt-1 max-h-72 w-full overflow-y-auto rounded-lg border border-slate-200 bg-white shadow-xl sm:min-w-[240px]">
           {error ? (
-            <p className="px-3 py-2 text-xs font-semibold text-red-600">
-              {error}
-            </p>
+            <div
+              role="alert"
+              className="flex items-center justify-between gap-2 px-3 py-2"
+            >
+              <p className="text-xs font-medium text-red-700">{error}</p>
+              <button
+                type="button"
+                onMouseDown={(event) => event.preventDefault()}
+                onClick={() => setRetryKey((key) => key + 1)}
+                className="h-9 shrink-0 rounded-lg border border-slate-300 bg-white px-3 text-xs font-semibold text-slate-700 transition-colors hover:bg-slate-50"
+              >
+                Try again
+              </button>
+            </div>
           ) : null}
           {!error && options.length === 0 && !isLoading ? (
-            <p className="px-3 py-3 text-xs text-gray-500">
+            <p className="px-3 py-3 text-xs text-slate-500">
               No matching medicines found.
             </p>
           ) : null}
@@ -202,16 +173,16 @@ function MedicineLookupInput({ item, onSelect, disabled }: MedicineLookupProps) 
                   setQuery(displayName);
                   setIsOpen(false);
                 }}
-                className={`w-full border-b border-gray-100 px-3 py-2 text-left transition last:border-b-0 hover:bg-blue-50 ${
+                className={`w-full border-b border-slate-100 px-3 py-2 text-left transition-colors last:border-b-0 hover:bg-blue-50 ${
                   isSelected ? "bg-blue-50" : "bg-white"
                 }`}
               >
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
-                    <p className="truncate text-xs font-bold text-gray-900">
+                    <p className="truncate text-xs font-bold text-slate-900">
                       {displayName}
                     </p>
-                    <p className="truncate text-[11px] text-gray-500">
+                    <p className="truncate text-2xs text-slate-500">
                       {medicine.genericName}
                       {medicine.strength ? ` · ${medicine.strength}` : ""}
                       {medicine.dosageForm
@@ -220,7 +191,7 @@ function MedicineLookupInput({ item, onSelect, disabled }: MedicineLookupProps) 
                     </p>
                   </div>
                   <div className="shrink-0 text-right">
-                    <p className="text-xs font-bold text-blue-700">
+                    <p className="text-xs font-bold tabular-nums text-blue-700">
                       ৳
                       {Number(medicine.defaultSalePrice || 0).toLocaleString(
                         undefined,
@@ -232,10 +203,10 @@ function MedicineLookupInput({ item, onSelect, disabled }: MedicineLookupProps) 
                       /unit
                     </p>
                     <p
-                      className={`text-[11px] font-semibold ${
+                      className={`text-xs font-semibold tabular-nums ${
                         medicine.currentStock > 0
-                          ? "text-gray-400"
-                          : "text-red-600"
+                          ? "text-slate-500"
+                          : "text-red-700"
                       }`}
                     >
                       Stock {medicine.currentStock}
@@ -258,18 +229,16 @@ interface StockBadgeProps {
 }
 
 function StockBadge({ stock, isOutOfStock, isShort }: StockBadgeProps) {
-  const colorClass = isOutOfStock
-    ? "border-red-200 bg-red-50 text-red-700"
-    : isShort
-      ? "border-amber-200 bg-amber-50 text-amber-700"
-      : "border-emerald-200 bg-emerald-50 text-emerald-700";
+  const toneClass = statusBadgeClass(
+    isOutOfStock ? "Out of Stock" : isShort ? "Low Stock" : "In Stock",
+  );
 
   return (
     <div
-      className={`flex h-9 w-full items-center justify-between rounded-lg border px-2.5 ${colorClass}`}
+      className={`flex h-9 w-full items-center justify-between rounded-lg px-2.5 ring-1 ring-inset ${toneClass}`}
     >
       <Boxes className="h-3.5 w-3.5 shrink-0" />
-      <span className="text-xs font-bold">{stock}</span>
+      <span className="text-xs font-bold tabular-nums">{stock}</span>
     </div>
   );
 }
@@ -298,7 +267,7 @@ function RowWarning({ item }: RowWarningProps) {
       {messages.map((message) => (
         <span
           key={message}
-          className="inline-flex items-center gap-0.5 rounded bg-amber-50 px-1.5 py-0.5 text-[11px] font-semibold text-amber-700"
+          className={`inline-flex items-center gap-0.5 rounded-md px-1.5 py-0.5 text-2xs font-semibold ring-1 ring-inset ${TONE_BADGE.warning}`}
         >
           <AlertTriangle className="h-2.5 w-2.5" />
           {message}
@@ -342,11 +311,7 @@ export const SaleItemsTable: React.FC<SaleItemsTableProps> = ({
   );
 
   return (
-    <motion.div
-      layout
-      transition={{ type: "spring", damping: 24, stiffness: 260, mass: 0.8 }}
-      className="overflow-visible rounded-xl border border-blue-200 bg-white shadow-sm"
-    >
+    <div className="overflow-visible rounded-xl border border-blue-200 bg-white shadow-sm">
       <div className="border-b border-blue-100 bg-blue-50 px-4 py-3">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3 min-w-0">
@@ -354,18 +319,22 @@ export const SaleItemsTable: React.FC<SaleItemsTableProps> = ({
               <Pill className="h-4 w-4" />
             </div>
             <div className="min-w-0">
-              <h4 className="text-sm font-bold text-gray-800">Cart</h4>
+              <h4 className="text-sm font-bold text-slate-800">Cart</h4>
               <div className="mt-1 flex flex-wrap items-center gap-1.5">
-                <span className="text-[11px] text-gray-500">
+                <span className="text-2xs text-slate-500">
                   {items.length} item{items.length !== 1 ? "s" : ""} ·{" "}
                   {totalUnits} unit{totalUnits !== 1 ? "s" : ""}
                 </span>
-                <span className="inline-flex items-center gap-0.5 rounded-md bg-emerald-100 px-1.5 py-0.5 text-[11px] font-semibold text-emerald-700">
+                <span
+                  className={`inline-flex items-center gap-0.5 rounded-md px-1.5 py-0.5 text-2xs font-semibold ring-1 ring-inset ${TONE_BADGE.success}`}
+                >
                   <CheckCircle2 className="h-2.5 w-2.5" />
                   {matchedCount} matched
                 </span>
                 {unmatchedCount > 0 && (
-                  <span className="inline-flex items-center gap-0.5 rounded-md bg-amber-100 px-1.5 py-0.5 text-[11px] font-semibold text-amber-700">
+                  <span
+                    className={`inline-flex items-center gap-0.5 rounded-md px-1.5 py-0.5 text-2xs font-semibold ring-1 ring-inset ${TONE_BADGE.warning}`}
+                  >
                     <AlertTriangle className="h-2.5 w-2.5" />
                     {unmatchedCount} need selection
                   </span>
@@ -376,237 +345,40 @@ export const SaleItemsTable: React.FC<SaleItemsTableProps> = ({
         </div>
       </div>
 
-      <AnimatePresence mode="wait" initial={false}>
-        {items.length === 0 ? null : (
-          <motion.div
-            key="content"
-            layout
-            variants={tableContentVariants}
-            initial="hidden"
-            animate="visible"
-            exit="exit"
-          >
-            <div className="hidden lg:block overflow-x-auto">
-                <table className="w-full min-w-[820px] table-fixed text-xs">
-                <thead>
-                  <tr className="border-b border-gray-200 bg-gray-50 text-gray-500">
-                    <th className="w-8 px-3 py-2.5 text-left font-semibold uppercase tracking-wider">
-                      #
-                    </th>
-                    <th className="w-[18%] px-3 py-2.5 text-left font-semibold uppercase tracking-wider">
-                      Medicine
-                    </th>
-                    <th className="px-3 py-2.5 text-left font-semibold uppercase tracking-wider">
-                      Stock
-                    </th>
-                    <th className="w-28 px-3 py-2.5 text-left font-semibold uppercase tracking-wider">
-                      Group
-                    </th>
-                    <th className="w-32 px-3 py-2.5 text-left font-semibold uppercase tracking-wider">
-                      FIFO Company
-                    </th>
-                    <th className="w-28 px-3 py-2.5 text-center font-semibold uppercase tracking-wider">
-                      Qty
-                    </th>
-                    <th className="w-32 px-3 py-2.5 text-right font-semibold uppercase tracking-wider">
-                      Unit Price
-                    </th>
-                    <th className="w-28 px-3 py-2.5 text-right font-semibold uppercase tracking-wider">
-                      Total
-                    </th>
-                    <th className="w-10 px-2 py-2.5" />
-                  </tr>
-                </thead>
-                <motion.tbody>
-                  <AnimatePresence initial={false}>
-                    {items.map((item, index) => {
-                      const isMatched = item.medicineId !== null;
-                      const stock = item.currentStock;
-                      const outOfStock = isMatched && stock === 0;
-                      const stockShort = isMatched && item.quantity > stock;
-                      const lineTotal = roundToTwoDecimals(
-                        item.unitPrice * item.quantity,
-                      );
-
-                      return (
-                        <motion.tr
-                          key={item.clientId}
-                          layout
-                          variants={rowVariants}
-                          className="border-b border-gray-100 align-top last:border-b-0 hover:bg-gray-50/60"
-                        >
-                          <td className="px-3 py-3 text-[11px] font-bold text-gray-400">
-                            {index + 1}
-                          </td>
-                          <td className="px-3 py-3">
-                            <MedicineLookupInput
-                              item={item}
-                              disabled={isSubmitting}
-                              onSelect={(medicine) =>
-                                onSelectMedicine(item.clientId, medicine)
-                              }
-                            />
-                            <RowWarning item={item} />
-                          </td>
-                          <td className="px-3 py-3">
-                            {isMatched ? (
-                              <StockBadge
-                                stock={stock}
-                                isOutOfStock={outOfStock}
-                                isShort={stockShort}
-                              />
-                            ) : (
-                              <div className="flex h-9 w-full items-center justify-between rounded-lg border border-gray-200 bg-gray-100 px-2.5 text-gray-300">
-                                <Boxes className="h-3.5 w-3.5 shrink-0" />
-                                <span className="text-xs font-bold">—</span>
-                              </div>
-                            )}
-                          </td>
-                          <td className="px-3 py-3">
-                            {item.groupName ? (
-                              <span className="inline-flex h-9 w-full items-center gap-1.5 rounded-lg border border-blue-100 bg-blue-50 px-2.5 text-[11px] font-semibold text-blue-700">
-                                <Layers className="h-3.5 w-3.5 shrink-0" />
-                                <span className="truncate">{item.groupName}</span>
-                              </span>
-                            ) : (
-                              <div className="flex h-9 w-full items-center rounded-lg border border-gray-200 bg-gray-100 px-2.5 text-gray-300">
-                                <span className="text-xs font-bold">—</span>
-                              </div>
-                            )}
-                          </td>
-                          <td className="px-3 py-3 text-[11px] text-gray-700 font-semibold">
-                            {item.companyName || "—"}
-                          </td>
-                          <td className="px-3 py-3">
-                            <div className="flex items-center overflow-hidden rounded-lg border border-gray-300 bg-white shadow-sm h-9">
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  onUpdateRow(item.clientId, {
-                                    quantity: Math.max(1, item.quantity - 1),
-                                  })
-                                }
-                                disabled={isSubmitting || item.quantity <= 1}
-                                className="grid h-9 w-8 shrink-0 place-items-center text-gray-600 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
-                                aria-label="Decrease quantity"
-                              >
-                                <Minus className="h-3 w-3" />
-                              </button>
-                              <NumberInput
-                                min={1}
-                                max={isMatched ? stock : undefined}
-                                value={item.quantity}
-                                onChange={(event) =>
-                                  onUpdateRow(item.clientId, {
-                                    quantity: Math.max(
-                                      1,
-                                      Math.trunc(
-                                        Number(event.target.value) || 1,
-                                      ),
-                                    ),
-                                  })
-                                }
-                                disabled={isSubmitting}
-                                className="h-9 min-w-0 flex-1 border-x border-gray-200 text-center text-sm font-bold text-gray-900 outline-none disabled:bg-gray-100"
-                                aria-label="Quantity"
-                              />
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  onUpdateRow(item.clientId, {
-                                    quantity: item.quantity + 1,
-                                  })
-                                }
-                                disabled={
-                                  isSubmitting ||
-                                  (isMatched && item.quantity >= stock)
-                                }
-                                className="grid h-9 w-8 shrink-0 place-items-center text-gray-600 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
-                                aria-label="Increase quantity"
-                              >
-                                <Plus className="h-3 w-3" />
-                              </button>
-                            </div>
-                          </td>
-                          <td className="px-3 py-3">
-                            <div className="relative">
-                              <span className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-[11px] font-bold text-gray-400">
-                                ৳
-                              </span>
-                              <NumberInput
-                                min={0}
-                                step="0.01"
-                                value={item.unitPrice}
-                                onChange={(event) =>
-                                  onUpdateRow(item.clientId, {
-                                    unitPrice: Math.max(
-                                      0,
-                                      Number(event.target.value) || 0,
-                                    ),
-                                  })
-                                }
-                                disabled={isSubmitting}
-                                aria-label="Unit price"
-                                className="h-9 w-full rounded-lg border border-gray-200 bg-white pl-6 pr-2 text-right text-xs font-bold text-gray-800 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 disabled:cursor-not-allowed disabled:bg-gray-100"
-                              />
-                            </div>
-                          </td>
-                          <td className="px-3 py-3 text-right">
-                            <div className="relative">
-                              <span className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-[11px] font-bold text-blue-500">
-                                ৳
-                              </span>
-                              <div className="h-9 w-full rounded-lg border border-blue-200 bg-blue-50 pl-6 pr-2 text-right text-xs font-extrabold text-blue-700 leading-9">
-                                {lineTotal.toLocaleString(undefined, {
-                                  minimumFractionDigits: 2,
-                                  maximumFractionDigits: 2,
-                                })}
-                              </div>
-                            </div>
-                          </td>
-                          <td className="px-2 py-3 text-center">
-                            <motion.button
-                              type="button"
-                              onClick={() => onRemove(item.clientId)}
-                              disabled={isSubmitting}
-                              whileTap={
-                                isSubmitting ? undefined : { scale: 0.82 }
-                              }
-                              transition={{
-                                type: "spring",
-                                stiffness: 400,
-                                damping: 17,
-                              }}
-                              className="rounded-md p-1 text-gray-400 transition hover:bg-red-50 hover:text-red-500 disabled:cursor-not-allowed disabled:opacity-40"
-                              aria-label="Remove medicine row"
-                            >
-                              <XIcon className="h-3.5 w-3.5" />
-                            </motion.button>
-                          </td>
-                        </motion.tr>
-                      );
-                    })}
-                  </AnimatePresence>
-                </motion.tbody>
-                <tfoot>
-                  <tr className="border-t-2 border-blue-200 bg-blue-50/60">
-                    <td
-                      colSpan={7}
-                      className="px-3 py-2.5 text-right text-xs font-bold text-gray-600 uppercase tracking-wider"
-                    >
-                      Cart total
-                    </td>
-                    <td className="px-3 py-2.5 text-right text-xs font-extrabold text-blue-700">
-                      {currency(totalAmount)}
-                    </td>
-                    <td />
-                  </tr>
-                </tfoot>
-              </table>
-            </div>
-
-            <div className="grid grid-cols-1 gap-3 p-3 lg:hidden">
-              <AnimatePresence initial={false}>
+      {items.length === 0 ? null : (
+        <div>
+          <div className="hidden lg:block overflow-x-auto">
+            <table className="w-full min-w-[820px] table-fixed text-xs">
+              <thead>
+                <tr className="bg-fnh-navy text-white">
+                  <th className="w-8 px-3 py-2.5 text-left text-xs font-semibold uppercase tracking-wide">
+                    #
+                  </th>
+                  <th className="w-[18%] px-3 py-2.5 text-left text-xs font-semibold uppercase tracking-wide">
+                    Medicine
+                  </th>
+                  <th className="px-3 py-2.5 text-left text-xs font-semibold uppercase tracking-wide">
+                    Stock
+                  </th>
+                  <th className="w-28 px-3 py-2.5 text-left text-xs font-semibold uppercase tracking-wide">
+                    Group
+                  </th>
+                  <th className="w-32 px-3 py-2.5 text-left text-xs font-semibold uppercase tracking-wide">
+                    FIFO Company
+                  </th>
+                  <th className="w-32 px-3 py-2.5 text-center text-xs font-semibold uppercase tracking-wide">
+                    Qty
+                  </th>
+                  <th className="w-32 px-3 py-2.5 text-right text-xs font-semibold uppercase tracking-wide">
+                    Unit Price
+                  </th>
+                  <th className="w-28 px-3 py-2.5 text-right text-xs font-semibold uppercase tracking-wide">
+                    Total
+                  </th>
+                  <th className="w-12 px-1 py-2.5" />
+                </tr>
+              </thead>
+              <tbody>
                 {items.map((item, index) => {
                   const isMatched = item.medicineId !== null;
                   const stock = item.currentStock;
@@ -617,181 +389,340 @@ export const SaleItemsTable: React.FC<SaleItemsTableProps> = ({
                   );
 
                   return (
-                    <motion.div
+                    <tr
                       key={item.clientId}
-                      layout
-                      variants={cardVariants}
-                      className="rounded-xl border border-gray-200 bg-white p-3 shadow-sm"
+                      className="border-b border-slate-100 align-top last:border-b-0 hover:bg-slate-50"
                     >
-                      <div className="mb-2.5 flex items-start justify-between gap-2">
-                        <div className="min-w-0">
-                          <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400">
-                            #{index + 1}
-                          </p>
-                          <p className="truncate text-sm font-bold text-gray-800">
-                            {item.medicineName ||
-                              item.requestedMedicineName ||
-                              "Select medicine"}
-                          </p>
-                        </div>
-                        <motion.button
-                          type="button"
-                          onClick={() => onRemove(item.clientId)}
+                      <td className="px-3 py-3 text-2xs font-bold text-slate-500">
+                        {index + 1}
+                      </td>
+                      <td className="px-3 py-3">
+                        <MedicineLookupInput
+                          item={item}
                           disabled={isSubmitting}
-                          whileTap={
-                            isSubmitting ? undefined : { scale: 0.82 }
+                          onSelect={(medicine) =>
+                            onSelectMedicine(item.clientId, medicine)
                           }
-                          transition={{
-                            type: "spring",
-                            stiffness: 400,
-                            damping: 17,
-                          }}
-                          className="rounded-md p-1 text-gray-400 transition hover:bg-red-50 hover:text-red-500 disabled:opacity-40"
-                          aria-label="Remove medicine row"
-                        >
-                          <XIcon className="h-3.5 w-3.5" />
-                        </motion.button>
-                      </div>
-                      <MedicineLookupInput
-                        item={item}
-                        disabled={isSubmitting}
-                        onSelect={(medicine) =>
-                          onSelectMedicine(item.clientId, medicine)
-                        }
-                      />
-                      <RowWarning item={item} />
-                      <div className="mt-2.5 flex flex-wrap gap-1.5">
+                        />
+                        <RowWarning item={item} />
+                      </td>
+                      <td className="px-3 py-3">
                         {isMatched ? (
                           <StockBadge
                             stock={stock}
                             isOutOfStock={outOfStock}
                             isShort={stockShort}
                           />
-                        ) : null}
+                        ) : (
+                          <div className="flex h-9 w-full items-center justify-between rounded-lg border border-slate-200 bg-slate-100 px-2.5 text-slate-300">
+                            <Boxes className="h-3.5 w-3.5 shrink-0" />
+                            <span className="text-xs font-bold">—</span>
+                          </div>
+                        )}
+                      </td>
+                      <td className="px-3 py-3">
                         {item.groupName ? (
-                          <span className="inline-flex max-w-full items-center gap-1 rounded-md border border-blue-100 bg-blue-50 px-2 py-1 text-[11px] font-semibold text-blue-700">
-                            <Layers className="h-3 w-3 shrink-0" />
+                          <span className="inline-flex h-9 w-full items-center gap-1.5 rounded-lg border border-blue-100 bg-blue-50 px-2.5 text-2xs font-semibold text-blue-700">
+                            <Layers className="h-3.5 w-3.5 shrink-0" />
                             <span className="truncate">{item.groupName}</span>
                           </span>
-                        ) : null}
-                      </div>
-                      <div className="mt-3 grid grid-cols-3 gap-2">
-                        <div>
-                          <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-gray-400">
-                            Qty
-                          </p>
-                          <div className="flex items-center overflow-hidden rounded-lg border border-gray-300 bg-white shadow-sm h-9">
-                            <button
-                              type="button"
-                              onClick={() =>
-                                onUpdateRow(item.clientId, {
-                                  quantity: Math.max(1, item.quantity - 1),
-                                })
-                              }
-                              disabled={isSubmitting || item.quantity <= 1}
-                              className="grid h-9 w-8 shrink-0 place-items-center text-gray-600 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
-                              aria-label="Decrease quantity"
-                            >
-                              <Minus className="h-3 w-3" />
-                            </button>
-                            <NumberInput
-                              min={1}
-                              max={isMatched ? stock : undefined}
-                              value={item.quantity}
-                              onChange={(event) =>
-                                onUpdateRow(item.clientId, {
-                                  quantity: Math.max(
-                                    1,
-                                    Math.trunc(
-                                      Number(event.target.value) || 1,
-                                    ),
-                                  ),
-                                })
-                              }
-                              disabled={isSubmitting}
-                              className="h-9 min-w-0 flex-1 border-x border-gray-200 text-center text-sm font-bold text-gray-900 outline-none disabled:bg-gray-100"
-                              aria-label="Quantity"
-                            />
-                            <button
-                              type="button"
-                              onClick={() =>
-                                onUpdateRow(item.clientId, {
-                                  quantity: item.quantity + 1,
-                                })
-                              }
-                              disabled={
-                                isSubmitting ||
-                                (isMatched && item.quantity >= stock)
-                              }
-                              className="grid h-9 w-8 shrink-0 place-items-center text-gray-600 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
-                              aria-label="Increase quantity"
-                            >
-                              <Plus className="h-3 w-3" />
-                            </button>
+                        ) : (
+                          <div className="flex h-9 w-full items-center rounded-lg border border-slate-200 bg-slate-100 px-2.5 text-slate-300">
+                            <span className="text-xs font-bold">—</span>
                           </div>
-                        </div>
-                        <div>
-                          <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-gray-400">
-                            Unit Price
-                          </p>
-                          <div className="relative">
-                            <span className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-[11px] font-bold text-gray-400">
-                              ৳
-                            </span>
-                            <NumberInput
-                              min={0}
-                              step="0.01"
-                              value={item.unitPrice}
-                              onChange={(event) =>
-                                onUpdateRow(item.clientId, {
-                                  unitPrice: Math.max(
-                                    0,
-                                    Number(event.target.value) || 0,
+                        )}
+                      </td>
+                      <td className="px-3 py-3 text-xs text-slate-700 font-semibold">
+                        {item.companyName || "—"}
+                      </td>
+                      <td className="px-3 py-3">
+                        <div className="flex items-center overflow-hidden rounded-lg border border-slate-300 bg-white shadow-sm h-9">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              onUpdateRow(item.clientId, {
+                                quantity: Math.max(1, item.quantity - 1),
+                              })
+                            }
+                            disabled={isSubmitting || item.quantity <= 1}
+                            className="flex h-9 w-9 shrink-0 items-center justify-center text-slate-600 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+                            aria-label="Decrease quantity"
+                          >
+                            <Minus className="h-3 w-3" />
+                          </button>
+                          <NumberInput
+                            min={1}
+                            max={isMatched ? stock : undefined}
+                            value={item.quantity}
+                            onChange={(event) =>
+                              onUpdateRow(item.clientId, {
+                                quantity: Math.max(
+                                  1,
+                                  Math.trunc(
+                                    Number(event.target.value) || 1,
                                   ),
-                                })
-                              }
-                              disabled={isSubmitting}
-                              aria-label="Unit price"
-                              className="h-9 w-full rounded-lg border border-gray-200 bg-white pl-6 pr-2 text-right text-xs font-bold text-gray-800 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 disabled:cursor-not-allowed disabled:bg-gray-100"
-                            />
-                          </div>
+                                ),
+                              })
+                            }
+                            disabled={isSubmitting}
+                            className="h-9 min-w-0 flex-1 border-x border-slate-200 text-center text-sm font-bold tabular-nums text-slate-900 outline-none disabled:bg-slate-100"
+                            aria-label="Quantity"
+                          />
+                          <button
+                            type="button"
+                            onClick={() =>
+                              onUpdateRow(item.clientId, {
+                                quantity: item.quantity + 1,
+                              })
+                            }
+                            disabled={
+                              isSubmitting ||
+                              (isMatched && item.quantity >= stock)
+                            }
+                            className="flex h-9 w-9 shrink-0 items-center justify-center text-slate-600 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+                            aria-label="Increase quantity"
+                          >
+                            <Plus className="h-3 w-3" />
+                          </button>
                         </div>
-                        <div>
-                          <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-gray-400">
-                            Total
-                          </p>
-                          <div className="h-9 w-full rounded-lg border border-blue-200 bg-blue-50 pl-2 pr-2 text-right text-xs font-extrabold text-blue-700 leading-9">
+                      </td>
+                      <td className="px-3 py-3">
+                        <div className="relative">
+                          <span className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-2xs font-bold text-slate-500">
                             ৳
+                          </span>
+                          <NumberInput
+                            min={0}
+                            step="0.01"
+                            value={item.unitPrice}
+                            onChange={(event) =>
+                              onUpdateRow(item.clientId, {
+                                unitPrice: Math.max(
+                                  0,
+                                  Number(event.target.value) || 0,
+                                ),
+                              })
+                            }
+                            disabled={isSubmitting}
+                            aria-label="Unit price"
+                            className="h-9 w-full rounded-lg border border-slate-200 bg-white pl-6 pr-2 text-right text-xs font-bold tabular-nums text-slate-800 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 disabled:cursor-not-allowed disabled:bg-slate-100"
+                          />
+                        </div>
+                      </td>
+                      <td className="px-3 py-3 text-right">
+                        <div className="relative">
+                          <span className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-2xs font-bold text-blue-700">
+                            ৳
+                          </span>
+                          <div className="h-9 w-full rounded-lg border border-blue-200 bg-blue-50 pl-6 pr-2 text-right text-xs font-extrabold tabular-nums text-blue-700 leading-9">
                             {lineTotal.toLocaleString(undefined, {
                               minimumFractionDigits: 2,
                               maximumFractionDigits: 2,
                             })}
                           </div>
                         </div>
-                      </div>
-                    </motion.div>
+                      </td>
+                      <td className="px-1 py-3 text-center">
+                        <button
+                          type="button"
+                          onClick={() => onRemove(item.clientId)}
+                          disabled={isSubmitting}
+                          className="mx-auto flex h-9 w-9 items-center justify-center rounded-md text-slate-500 transition-colors hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-40"
+                          aria-label="Remove medicine row"
+                        >
+                          <XIcon className="h-3.5 w-3.5" />
+                        </button>
+                      </td>
+                    </tr>
                   );
                 })}
-              </AnimatePresence>
-              <motion.div
-                layout
-                className="flex items-center justify-between rounded-xl border-2 border-blue-200 bg-blue-50 px-4 py-3"
-              >
-                <p className="text-sm font-bold text-gray-700">
-                  Cart total ({items.length} item
-                  {items.length !== 1 ? "s" : ""} · {totalUnits} unit
-                  {totalUnits !== 1 ? "s" : ""})
-                </p>
-                <p className="text-lg font-extrabold text-blue-700">
-                  {currency(totalAmount)}
-                </p>
-              </motion.div>
+              </tbody>
+              <tfoot>
+                <tr className="border-t-2 border-blue-200 bg-blue-50/60">
+                  <td
+                    colSpan={7}
+                    className="px-3 py-2.5 text-right text-xs font-bold text-slate-600 uppercase tracking-wider"
+                  >
+                    Cart total
+                  </td>
+                  <td className="px-3 py-2.5 text-right text-xs font-extrabold tabular-nums text-blue-700">
+                    {currency(totalAmount)}
+                  </td>
+                  <td />
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+
+          <div className="grid grid-cols-1 gap-3 p-3 lg:hidden">
+            {items.map((item, index) => {
+              const isMatched = item.medicineId !== null;
+              const stock = item.currentStock;
+              const outOfStock = isMatched && stock === 0;
+              const stockShort = isMatched && item.quantity > stock;
+              const lineTotal = roundToTwoDecimals(
+                item.unitPrice * item.quantity,
+              );
+
+              return (
+                <div
+                  key={item.clientId}
+                  className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm"
+                >
+                  <div className="mb-2.5 flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className="text-2xs font-bold uppercase tracking-wider text-slate-500">
+                        #{index + 1}
+                      </p>
+                      <p className="truncate text-sm font-bold text-slate-800">
+                        {item.medicineName ||
+                          item.requestedMedicineName ||
+                          "Select medicine"}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => onRemove(item.clientId)}
+                      disabled={isSubmitting}
+                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-slate-500 transition-colors hover:bg-red-50 hover:text-red-600 disabled:opacity-40"
+                      aria-label="Remove medicine row"
+                    >
+                      <XIcon className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                  <MedicineLookupInput
+                    item={item}
+                    disabled={isSubmitting}
+                    onSelect={(medicine) =>
+                      onSelectMedicine(item.clientId, medicine)
+                    }
+                  />
+                  <RowWarning item={item} />
+                  <div className="mt-2.5 flex flex-wrap gap-1.5">
+                    {isMatched ? (
+                      <StockBadge
+                        stock={stock}
+                        isOutOfStock={outOfStock}
+                        isShort={stockShort}
+                      />
+                    ) : null}
+                    {item.groupName ? (
+                      <span className="inline-flex max-w-full items-center gap-1 rounded-md border border-blue-100 bg-blue-50 px-2 py-1 text-2xs font-semibold text-blue-700">
+                        <Layers className="h-3 w-3 shrink-0" />
+                        <span className="truncate">{item.groupName}</span>
+                      </span>
+                    ) : null}
+                  </div>
+                  <div className="mt-3 grid grid-cols-3 gap-2">
+                    <div>
+                      <p className="mb-1 text-2xs font-bold uppercase tracking-wider text-slate-500">
+                        Qty
+                      </p>
+                      <div className="flex items-center overflow-hidden rounded-lg border border-slate-300 bg-white shadow-sm h-9">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            onUpdateRow(item.clientId, {
+                              quantity: Math.max(1, item.quantity - 1),
+                            })
+                          }
+                          disabled={isSubmitting || item.quantity <= 1}
+                          className="flex h-9 w-9 shrink-0 items-center justify-center text-slate-600 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+                          aria-label="Decrease quantity"
+                        >
+                          <Minus className="h-3 w-3" />
+                        </button>
+                        <NumberInput
+                          min={1}
+                          max={isMatched ? stock : undefined}
+                          value={item.quantity}
+                          onChange={(event) =>
+                            onUpdateRow(item.clientId, {
+                              quantity: Math.max(
+                                1,
+                                Math.trunc(
+                                  Number(event.target.value) || 1,
+                                ),
+                              ),
+                            })
+                          }
+                          disabled={isSubmitting}
+                          className="h-9 min-w-0 flex-1 border-x border-slate-200 text-center text-sm font-bold tabular-nums text-slate-900 outline-none disabled:bg-slate-100"
+                          aria-label="Quantity"
+                        />
+                        <button
+                          type="button"
+                          onClick={() =>
+                            onUpdateRow(item.clientId, {
+                              quantity: item.quantity + 1,
+                            })
+                          }
+                          disabled={
+                            isSubmitting ||
+                            (isMatched && item.quantity >= stock)
+                          }
+                          className="flex h-9 w-9 shrink-0 items-center justify-center text-slate-600 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+                          aria-label="Increase quantity"
+                        >
+                          <Plus className="h-3 w-3" />
+                        </button>
+                      </div>
+                    </div>
+                    <div>
+                      <p className="mb-1 text-2xs font-bold uppercase tracking-wider text-slate-500">
+                        Unit Price
+                      </p>
+                      <div className="relative">
+                        <span className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-2xs font-bold text-slate-500">
+                          ৳
+                        </span>
+                        <NumberInput
+                          min={0}
+                          step="0.01"
+                          value={item.unitPrice}
+                          onChange={(event) =>
+                            onUpdateRow(item.clientId, {
+                              unitPrice: Math.max(
+                                0,
+                                Number(event.target.value) || 0,
+                              ),
+                            })
+                          }
+                          disabled={isSubmitting}
+                          aria-label="Unit price"
+                          className="h-9 w-full rounded-lg border border-slate-200 bg-white pl-6 pr-2 text-right text-xs font-bold tabular-nums text-slate-800 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 disabled:cursor-not-allowed disabled:bg-slate-100"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <p className="mb-1 text-2xs font-bold uppercase tracking-wider text-slate-500">
+                        Total
+                      </p>
+                      <div className="h-9 w-full rounded-lg border border-blue-200 bg-blue-50 pl-2 pr-2 text-right text-xs font-extrabold tabular-nums text-blue-700 leading-9">
+                        ৳
+                        {lineTotal.toLocaleString(undefined, {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+            <div className="flex items-center justify-between rounded-xl border-2 border-blue-200 bg-blue-50 px-4 py-3">
+              <p className="text-sm font-bold text-slate-700">
+                Cart total ({items.length} item
+                {items.length !== 1 ? "s" : ""} · {totalUnits} unit
+                {totalUnits !== 1 ? "s" : ""})
+              </p>
+              <p className="text-lg font-extrabold tabular-nums text-blue-700">
+                {currency(totalAmount)}
+              </p>
             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </motion.div>
+          </div>
+        </div>
+      )}
+    </div>
   );
 };
-
-

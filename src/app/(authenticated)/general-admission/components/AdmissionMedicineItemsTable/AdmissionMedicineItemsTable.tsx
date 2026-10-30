@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { AnimatePresence, motion, type Variants } from "framer-motion";
 import {
   Boxes,
   CheckCircle2,
@@ -18,6 +17,7 @@ import {
 } from "lucide-react";
 import NumberInput from "@/components/form-sections/Fields/NumberInput";
 import { api } from "@/lib/axios";
+import { TONE_BADGE } from "@/lib/statusStyles";
 import { AdmissionMedicineChargeItem } from "../../types";
 
 export interface PharmacyMedicineOption {
@@ -80,81 +80,6 @@ const roundToTwoDecimals = (value: number): number => {
 const getMedicineDisplayName = (medicine: PharmacyMedicineOption) =>
   medicine.brandName?.trim() || medicine.genericName;
 
-const tableContentVariants: Variants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.04,
-      delayChildren: 0.05,
-    },
-  },
-  exit: {
-    opacity: 0,
-    transition: { duration: 0.25, ease: [0.4, 0, 1, 1] },
-  },
-};
-
-const rowVariants: Variants = {
-  hidden: { opacity: 0, y: 14, scale: 0.96 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    scale: 1,
-    transition: {
-      type: "spring",
-      damping: 18,
-      stiffness: 340,
-      mass: 0.8,
-    },
-  },
-  exit: {
-    opacity: 0,
-    x: 12,
-    scale: 0.97,
-    transition: { duration: 0.22, ease: [0.4, 0, 1, 1] },
-  },
-};
-
-const cardVariants: Variants = {
-  hidden: { opacity: 0, y: 16, scale: 0.92 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    scale: 1,
-    transition: {
-      type: "spring",
-      damping: 16,
-      stiffness: 320,
-      mass: 0.8,
-    },
-  },
-  exit: {
-    opacity: 0,
-    scale: 0.95,
-    y: -6,
-    transition: { duration: 0.22, ease: [0.4, 0, 1, 1] },
-  },
-};
-
-const emptyStateVariants: Variants = {
-  hidden: { opacity: 0, scale: 0.95 },
-  visible: {
-    opacity: 1,
-    scale: 1,
-    transition: {
-      type: "spring",
-      damping: 22,
-      stiffness: 280,
-    },
-  },
-  exit: {
-    opacity: 0,
-    scale: 0.95,
-    transition: { duration: 0.22, ease: [0.4, 0, 1, 1] },
-  },
-};
-
 function StockBadge({
   stock,
   isOutOfStock,
@@ -164,18 +89,18 @@ function StockBadge({
   isOutOfStock: boolean;
   isShort: boolean;
 }) {
-  const colorClass = isOutOfStock
-    ? "border-red-200 bg-red-50 text-red-700"
+  const toneClass = isOutOfStock
+    ? TONE_BADGE.danger
     : isShort
-      ? "border-amber-200 bg-amber-50 text-amber-700"
-      : "border-emerald-200 bg-emerald-50 text-emerald-700";
+      ? TONE_BADGE.warning
+      : TONE_BADGE.success;
 
   return (
     <div
-      className={`flex h-9 w-full items-center justify-between rounded-lg border px-2.5 ${colorClass}`}
+      className={`flex h-9 w-full items-center justify-between rounded-lg px-2.5 ring-1 ring-inset ${toneClass}`}
     >
       <Boxes className="h-3.5 w-3.5 shrink-0" />
-      <span className="text-xs font-bold">{stock}</span>
+      <span className="text-xs font-bold tabular-nums">{stock}</span>
     </div>
   );
 }
@@ -203,12 +128,12 @@ function QuantityStepper({
   };
 
   return (
-    <div className="flex h-9 w-full max-w-[140px] items-center overflow-hidden rounded-lg border border-gray-300 bg-white shadow-sm">
+    <div className="flex h-9 w-full max-w-[140px] items-center overflow-hidden rounded-lg border border-slate-300 bg-white shadow-sm">
       <button
         type="button"
         onClick={() => setQuantity(value - 1)}
         disabled={disabled || value <= 1}
-        className="grid h-9 w-8 shrink-0 place-items-center text-gray-600 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
+        className="grid h-9 w-9 shrink-0 place-items-center text-slate-600 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
         aria-label="Decrease quantity"
       >
         <Minus className="h-3 w-3" />
@@ -219,7 +144,7 @@ function QuantityStepper({
         value={value}
         onChange={(event) => setQuantity(Number(event.target.value))}
         disabled={disabled}
-        className="h-9 min-w-0 flex-1 border-x border-gray-200 text-center text-sm font-bold text-gray-900 outline-none disabled:bg-gray-100"
+        className="h-9 min-w-0 flex-1 border-x border-slate-200 text-center text-sm font-bold tabular-nums text-slate-900 outline-none disabled:bg-slate-100"
         aria-label="Quantity"
       />
       <button
@@ -229,7 +154,7 @@ function QuantityStepper({
           disabled ||
           (normalizedMax !== undefined && value >= normalizedMax)
         }
-        className="grid h-9 w-8 shrink-0 place-items-center text-gray-600 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
+        className="grid h-9 w-9 shrink-0 place-items-center text-slate-600 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
         aria-label="Increase quantity"
       >
         <Plus className="h-3 w-3" />
@@ -308,18 +233,18 @@ function MedicineLookupInput({
 
   return (
     <div className="relative min-w-0">
-      <div className="mb-1 flex min-w-0 items-center gap-1 text-[11px]">
+      <div className="mb-1 flex min-w-0 items-center gap-1 text-2xs">
         {item.medicineId ? (
           <>
-            <CheckCircle2 className="h-3 w-3 shrink-0 text-emerald-600" />
+            <CheckCircle2 className="h-3 w-3 shrink-0 text-emerald-700" />
             <span className="truncate font-semibold text-emerald-700">
               {item.medicineName}
             </span>
           </>
         ) : (
           <>
-            <TriangleAlert className="h-3 w-3 shrink-0 text-amber-500" />
-            <span className="font-semibold text-amber-600">
+            <TriangleAlert className="h-3 w-3 shrink-0 text-amber-700" />
+            <span className="font-semibold text-amber-700">
               Select medicine
             </span>
           </>
@@ -327,7 +252,7 @@ function MedicineLookupInput({
       </div>
 
       <div className="relative">
-        <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-400" />
+        <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-500" />
         <input
           type="text"
           value={query}
@@ -347,22 +272,22 @@ function MedicineLookupInput({
             closeTimerRef.current = setTimeout(() => setIsOpen(false), 150);
           }}
           placeholder="Search pharmacy"
-          className="h-9 w-full rounded-lg border border-gray-300 bg-white pl-8 pr-7 text-xs font-medium text-gray-800 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 disabled:cursor-not-allowed disabled:bg-gray-100"
+          className="h-9 w-full rounded-lg border border-slate-300 bg-white pl-8 pr-7 text-xs font-medium text-slate-800 outline-none transition-colors focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 disabled:cursor-not-allowed disabled:bg-slate-100"
         />
         {isLoading ? (
-          <Loader2 className="absolute right-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 animate-spin text-emerald-600" />
+          <Loader2 className="absolute right-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 animate-spin text-emerald-700" />
         ) : null}
       </div>
 
       {isOpen && !disabled ? (
-        <div className="absolute z-30 mt-1 max-h-72 w-full min-w-[220px] overflow-y-auto rounded-lg border border-gray-200 bg-white shadow-xl">
+        <div className="absolute z-30 mt-1 max-h-72 w-full min-w-[220px] overflow-y-auto rounded-lg border border-slate-200 bg-white shadow-xl">
           {error ? (
             <p className="px-3 py-2 text-xs font-semibold text-red-600">
               {error}
             </p>
           ) : null}
           {!error && options.length === 0 && !isLoading ? (
-            <p className="px-3 py-3 text-xs text-gray-500">
+            <p className="px-3 py-3 text-xs text-slate-500">
               No matching medicines found.
             </p>
           ) : null}
@@ -380,29 +305,29 @@ function MedicineLookupInput({
                   setQuery(displayName);
                   setIsOpen(false);
                 }}
-                className={`w-full border-b border-gray-100 px-3 py-2 text-left transition last:border-b-0 hover:bg-emerald-50 ${
+                className={`w-full border-b border-slate-100 px-3 py-2 text-left transition-colors last:border-b-0 hover:bg-emerald-50 ${
                   isSelected ? "bg-emerald-50" : "bg-white"
                 }`}
               >
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
-                    <p className="truncate text-xs font-bold text-gray-900">
+                    <p className="truncate text-xs font-bold text-slate-900">
                       {displayName}
                     </p>
-                    <p className="truncate text-[11px] text-gray-500">
+                    <p className="truncate text-2xs text-slate-500">
                       {medicine.genericName}
                       {medicine.strength ? ` · ${medicine.strength}` : ""}
                       {medicine.dosageForm ? ` · ${medicine.dosageForm}` : ""}
                     </p>
                   </div>
                   <div className="shrink-0 text-right">
-                    <p className="text-xs font-bold text-emerald-700">
+                    <p className="text-xs font-bold tabular-nums text-emerald-700">
                       {currency(Number(medicine.defaultSalePrice))}/unit
                     </p>
                     <p
-                      className={`text-[11px] font-semibold ${
+                      className={`text-2xs font-semibold ${
                         medicine.currentStock > 0
-                          ? "text-gray-400"
+                          ? "text-slate-500"
                           : "text-red-600"
                       }`}
                     >
@@ -440,7 +365,7 @@ function RowWarning({ item }: { item: AdmissionMedicineChargeItem }) {
       {messages.map((message) => (
         <span
           key={message}
-          className="inline-flex items-center gap-0.5 rounded bg-amber-50 px-1.5 py-0.5 text-[11px] font-semibold text-amber-700"
+          className="inline-flex items-center gap-0.5 rounded bg-amber-50 px-1.5 py-0.5 text-2xs font-semibold text-amber-700"
         >
           <TriangleAlert className="h-2.5 w-2.5" />
           {message}
@@ -459,17 +384,17 @@ function UnitPriceField({
 }) {
   return (
     <div className="relative">
-      <span className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-[11px] font-bold text-gray-400">
+      <span className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-2xs font-bold text-slate-500">
         ৳
       </span>
       <NumberInput
         value={roundToTwoDecimals(value)}
         readOnly
         aria-label="Unit price"
-        className={`h-9 w-full rounded-lg border pl-6 pr-2 text-right text-xs font-bold outline-none ${
+        className={`h-9 w-full rounded-lg border pl-6 pr-2 text-right text-xs font-bold tabular-nums outline-none ${
           hasMedicine
-            ? "border-gray-200 bg-gray-50 text-gray-800"
-            : "border-gray-200 bg-gray-100 text-gray-400"
+            ? "border-slate-200 bg-slate-50 text-slate-800"
+            : "border-slate-200 bg-slate-100 text-slate-500"
         }`}
       />
     </div>
@@ -485,17 +410,17 @@ function TotalField({
 }) {
   return (
     <div className="relative">
-      <span className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-[11px] font-bold text-emerald-500">
+      <span className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-2xs font-bold text-emerald-700">
         ৳
       </span>
       <NumberInput
         value={roundToTwoDecimals(value)}
         readOnly
         aria-label="Total"
-        className={`h-9 w-full rounded-lg border pl-6 pr-2 text-right text-xs font-extrabold outline-none ${
+        className={`h-9 w-full rounded-lg border pl-6 pr-2 text-right text-xs font-extrabold tabular-nums outline-none ${
           hasMedicine
             ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-            : "border-gray-200 bg-gray-100 text-gray-400"
+            : "border-slate-200 bg-slate-100 text-slate-500"
         }`}
       />
     </div>
@@ -527,11 +452,7 @@ export const AdmissionMedicineItemsTable: React.FC<
   );
 
   return (
-    <motion.div
-      layout
-      transition={{ type: "spring", damping: 24, stiffness: 260, mass: 0.8 }}
-      className="mb-5 overflow-visible rounded-xl border border-emerald-200 bg-white shadow-sm"
-    >
+    <div className="mb-5 overflow-visible rounded-xl border border-emerald-200 bg-white shadow-sm">
 
       {/* Header */}
       <div className="border-b border-emerald-100 bg-emerald-50 px-4 py-3">
@@ -541,31 +462,31 @@ export const AdmissionMedicineItemsTable: React.FC<
               <Pill className="h-4 w-4" />
             </div>
             <div className="min-w-0">
-              <h4 className="text-sm font-bold text-gray-800">
+              <h4 className="text-sm font-bold text-slate-800">
                 {inventoryOnly
                   ? "Dispensed medicines (inventory only)"
                   : "Gynecology medicines"}
               </h4>
               <div className="mt-1 flex flex-wrap items-center gap-1.5">
-                <span className="text-[11px] text-gray-500">
+                <span className="text-2xs text-slate-500">
                   {items.length} item{items.length !== 1 ? "s" : ""} ·{" "}
                   {items.reduce((sum, i) => sum + i.quantity, 0)} unit
                   {items.reduce((sum, i) => sum + i.quantity, 0) !== 1
                     ? "s"
                     : ""}
                 </span>
-                <span className="inline-flex items-center gap-0.5 rounded-md bg-emerald-100 px-1.5 py-0.5 text-[11px] font-semibold text-emerald-700">
+                <span className="inline-flex items-center gap-0.5 rounded-md bg-emerald-100 px-1.5 py-0.5 text-2xs font-semibold text-emerald-700">
                   <CheckCircle2 className="h-2.5 w-2.5" />
                   {matchedCount} matched
                 </span>
                 {unmatchedCount > 0 && (
-                  <span className="inline-flex items-center gap-0.5 rounded-md bg-amber-100 px-1.5 py-0.5 text-[11px] font-semibold text-amber-700">
+                  <span className="inline-flex items-center gap-0.5 rounded-md bg-amber-100 px-1.5 py-0.5 text-2xs font-semibold text-amber-700">
                     <TriangleAlert className="h-2.5 w-2.5" />
                     {unmatchedCount} need selection
                   </span>
                 )}
                 {inventoryOnly && (
-                  <span className="inline-flex items-center gap-0.5 rounded-md bg-slate-100 px-1.5 py-0.5 text-[11px] font-semibold text-slate-700">
+                  <span className="inline-flex items-center gap-0.5 rounded-md bg-slate-100 px-1.5 py-0.5 text-2xs font-semibold text-slate-700">
                     Not billed
                   </span>
                 )}
@@ -574,219 +495,185 @@ export const AdmissionMedicineItemsTable: React.FC<
           </div>
 
           <div className="flex flex-wrap items-center gap-2 shrink-0">
-            <motion.button
+            <button
               type="button"
               onClick={onRefresh}
               disabled={isCanceled || refreshing || items.length === 0}
-              whileTap={
-                isCanceled || refreshing || items.length === 0
-                  ? undefined
-                  : { scale: 0.94 }
-              }
-              transition={{ type: "spring", stiffness: 400, damping: 17 }}
-              className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-blue-200 bg-white px-2.5 text-xs font-semibold text-blue-700 transition hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-40"
+              className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-blue-200 bg-white px-2.5 text-xs font-semibold text-blue-700 transition-colors hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-40"
             >
               <RefreshCw
                 className={`h-3 w-3 ${refreshing ? "animate-spin" : ""}`}
               />
               Refresh
-            </motion.button>
-            <motion.button
+            </button>
+            <button
               type="button"
               onClick={onAddRow}
               disabled={isCanceled}
-              whileTap={isCanceled ? undefined : { scale: 0.94 }}
-              transition={{ type: "spring", stiffness: 400, damping: 17 }}
-              className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-emerald-300 bg-white px-2.5 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-40"
+              className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-emerald-300 bg-white px-2.5 text-xs font-semibold text-emerald-700 transition-colors hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-40"
             >
               <Plus className="h-3 w-3" />
               Add row
-            </motion.button>
-            <motion.button
+            </button>
+            <button
               type="button"
               onClick={onClearAll}
               disabled={isCanceled || items.length === 0}
-              whileTap={
-                isCanceled || items.length === 0 ? undefined : { scale: 0.9 }
-              }
-              transition={{ type: "spring", stiffness: 400, damping: 15 }}
-              className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-red-200 bg-white px-2.5 text-xs font-semibold text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-40"
+              className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-red-200 bg-white px-2.5 text-xs font-semibold text-red-600 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-40"
             >
               <Trash2 className="h-3 w-3" />
               Clear
-            </motion.button>
+            </button>
           </div>
         </div>
       </div>
 
-      <AnimatePresence mode="wait" initial={false}>
-        {items.length === 0 ? (
-          <motion.div
-            key="empty"
-            layout
-            variants={emptyStateVariants}
-            initial="hidden"
-            animate="visible"
-            exit="exit"
-            className="px-4 py-8 text-center"
-          >
-            <Pill className="mx-auto mb-2 h-8 w-8 text-emerald-200" />
-            <p className="text-sm font-medium text-gray-400">No medicines added yet</p>
-            <p className="mt-0.5 text-xs text-gray-400">
-              Use the package button above or add a single medicine.
-            </p>
-          </motion.div>
-        ) : (
-          <motion.div
-            key="content"
-            layout
-            variants={tableContentVariants}
-            initial="hidden"
-            animate="visible"
-            exit="exit"
-          >
+      {items.length === 0 ? (
+        <div className="px-4 py-8 text-center">
+          <Pill className="mx-auto mb-2 h-8 w-8 text-emerald-200" />
+          <p className="text-sm font-medium text-slate-500">No medicines added yet</p>
+          <p className="mt-0.5 text-xs text-slate-500">
+            Use the package button above or add a single medicine.
+          </p>
+        </div>
+      ) : (
+        <>
           {/* Desktop table — visible from lg up */}
           <div className="hidden lg:block overflow-x-auto">
             <table className="w-full min-w-[760px] table-fixed text-xs">
               <thead>
-                <tr className="border-b border-gray-200 bg-gray-50 text-gray-500">
-                  <th className="w-8 px-3 py-2.5 text-left font-semibold uppercase tracking-wider">#</th>
-                  <th className="w-[18%] px-3 py-2.5 text-left font-semibold uppercase tracking-wider">PDF name</th>
-                  <th className="px-3 py-2.5 text-left font-semibold uppercase tracking-wider">Pharmacy match</th>
-                  <th className="w-28 px-3 py-2.5 text-left font-semibold uppercase tracking-wider">Stock</th>
-                  <th className="w-28 px-3 py-2.5 text-left font-semibold uppercase tracking-wider">Group</th>
-                  <th className="w-32 px-3 py-2.5 text-center font-semibold uppercase tracking-wider">Qty</th>
+                <tr className="bg-fnh-navy text-white">
+                  <th className="w-8 px-3 py-2.5 text-left text-xs font-semibold uppercase tracking-wide">#</th>
+                  <th className="w-[18%] px-3 py-2.5 text-left text-xs font-semibold uppercase tracking-wide">PDF name</th>
+                  <th className="px-3 py-2.5 text-left text-xs font-semibold uppercase tracking-wide">Pharmacy match</th>
+                  <th className="w-28 px-3 py-2.5 text-left text-xs font-semibold uppercase tracking-wide">Stock</th>
+                  <th className="w-28 px-3 py-2.5 text-left text-xs font-semibold uppercase tracking-wide">Group</th>
+                  <th className="w-32 px-3 py-2.5 text-center text-xs font-semibold uppercase tracking-wide">Qty</th>
                   {!inventoryOnly && (
                     <>
-                      <th className="w-28 px-3 py-2.5 text-right font-semibold uppercase tracking-wider">Unit price</th>
-                      <th className="w-28 px-3 py-2.5 text-right font-semibold uppercase tracking-wider">Total</th>
+                      <th className="w-28 px-3 py-2.5 text-right text-xs font-semibold uppercase tracking-wide">Unit price</th>
+                      <th className="w-28 px-3 py-2.5 text-right text-xs font-semibold uppercase tracking-wide">Total</th>
                     </>
                   )}
                   <th className="w-10 px-2 py-2.5" />
                 </tr>
               </thead>
-              <motion.tbody>
-                <AnimatePresence initial={false}>
-                  {items.map((item, index) => {
-                    const isMatched = item.medicineId !== null;
-                    const stock = item.currentStock ?? 0;
-                    const outOfStock = isMatched && stock === 0;
-                    const stockShort = isMatched && item.quantity > stock;
-                    const rowKey = item.clientId
-                      ? item.clientId
-                      : item.id
-                        ? `saved-${item.id}`
-                        : `${item.packageCode ?? "row"}-${item.requestedMedicineName ?? item.medicineName}-${index}`;
+              <tbody>
+                {items.map((item, index) => {
+                  const isMatched = item.medicineId !== null;
+                  const stock = item.currentStock ?? 0;
+                  const outOfStock = isMatched && stock === 0;
+                  const stockShort = isMatched && item.quantity > stock;
+                  const rowKey = item.clientId
+                    ? item.clientId
+                    : item.id
+                      ? `saved-${item.id}`
+                      : `${item.packageCode ?? "row"}-${item.requestedMedicineName ?? item.medicineName}-${index}`;
 
-                    return (
-                      <motion.tr
-                        key={rowKey}
-                        layout
-                        variants={rowVariants}
-                        className="border-b border-gray-100 align-top last:border-b-0 hover:bg-gray-50/60"
-                      >
-                        <td className="px-3 py-3 text-[11px] font-bold text-gray-400">
-                          {index + 1}
-                        </td>
-                        <td className="px-3 py-3">
-                          <p className="truncate font-semibold text-gray-700">
-                            {item.requestedMedicineName ||
-                              item.medicineName ||
-                              "Manual"}
-                          </p>
-                          <RowWarning item={item} />
-                        </td>
-                        <td className="px-3 py-3">
-                          <MedicineLookupInput
-                            item={item}
-                            index={index}
-                            disabled={isCanceled}
-                            onSelectMedicine={onSelectMedicine}
+                  return (
+                    <tr
+                      key={rowKey}
+                      className="border-b border-slate-100 align-top last:border-b-0 hover:bg-slate-50/60"
+                    >
+                      <td className="px-3 py-3 text-2xs font-bold tabular-nums text-slate-500">
+                        {index + 1}
+                      </td>
+                      <td className="px-3 py-3">
+                        <p className="truncate font-semibold text-slate-700">
+                          {item.requestedMedicineName ||
+                            item.medicineName ||
+                            "Manual"}
+                        </p>
+                        <RowWarning item={item} />
+                      </td>
+                      <td className="px-3 py-3">
+                        <MedicineLookupInput
+                          item={item}
+                          index={index}
+                          disabled={isCanceled}
+                          onSelectMedicine={onSelectMedicine}
+                        />
+                      </td>
+                      <td className="px-3 py-3">
+                        {isMatched ? (
+                          <StockBadge
+                            stock={stock}
+                            isOutOfStock={outOfStock}
+                            isShort={stockShort}
                           />
-                        </td>
-                        <td className="px-3 py-3">
-                          {isMatched ? (
-                            <StockBadge
-                              stock={stock}
-                              isOutOfStock={outOfStock}
-                              isShort={stockShort}
-                            />
-                          ) : (
-                            <div className="flex h-9 w-full items-center justify-between rounded-lg border border-gray-200 bg-gray-100 px-2.5 text-gray-300">
-                              <Boxes className="h-3.5 w-3.5 shrink-0" />
-                              <span className="text-xs font-bold">—</span>
-                            </div>
-                          )}
-                        </td>
-                        <td className="px-3 py-3">
-                          {item.groupName ? (
-                            <span className="inline-flex h-9 w-full items-center gap-1.5 rounded-lg border border-blue-100 bg-blue-50 px-2.5 text-[11px] font-semibold text-blue-700">
-                              <Layers className="h-3.5 w-3.5 shrink-0" />
-                              <span className="truncate">{item.groupName}</span>
-                            </span>
-                          ) : (
-                            <div className="flex h-9 w-full items-center rounded-lg border border-gray-200 bg-gray-100 px-2.5 text-gray-300">
-                              <span className="text-xs font-bold">—</span>
-                            </div>
-                          )}
-                        </td>
-                        <td className="px-3 py-3">
-                          <div className="flex justify-center">
-                            <QuantityStepper
-                              value={item.quantity}
-                              max={isMatched ? stock : undefined}
-                              disabled={isCanceled || !isMatched}
-                              onChange={(value) =>
-                                onUpdate(index, { quantity: value })
-                              }
-                            />
+                        ) : (
+                          <div className="flex h-9 w-full items-center justify-between rounded-lg border border-slate-200 bg-slate-100 px-2.5 text-slate-300">
+                            <Boxes className="h-3.5 w-3.5 shrink-0" />
+                            <span className="text-xs font-bold">—</span>
                           </div>
-                        </td>
-                        {!inventoryOnly && (
-                          <>
-                            <td className="px-3 py-3">
-                              <UnitPriceField
-                                value={item.unitPrice}
-                                hasMedicine={isMatched}
-                              />
-                            </td>
-                            <td className="px-3 py-3">
-                              <TotalField
-                                value={item.totalAmount}
-                                hasMedicine={isMatched}
-                              />
-                            </td>
-                          </>
                         )}
-                        <td className="px-2 py-3 text-center">
-                          <motion.button
-                            type="button"
-                            onClick={() => onRemove(index)}
-                            disabled={isCanceled}
-                            whileTap={isCanceled ? undefined : { scale: 0.82 }}
-                            transition={{ type: "spring", stiffness: 400, damping: 17 }}
-                            className="rounded-md p-1 text-gray-400 transition hover:bg-red-50 hover:text-red-500 disabled:cursor-not-allowed disabled:opacity-40"
-                            aria-label="Remove medicine row"
-                          >
-                            <XIcon className="h-3.5 w-3.5" />
-                          </motion.button>
-                        </td>
-                      </motion.tr>
-                    );
-                  })}
-                </AnimatePresence>
-              </motion.tbody>
+                      </td>
+                      <td className="px-3 py-3">
+                        {item.groupName ? (
+                          <span className="inline-flex h-9 w-full items-center gap-1.5 rounded-lg border border-blue-100 bg-blue-50 px-2.5 text-2xs font-semibold text-blue-700">
+                            <Layers className="h-3.5 w-3.5 shrink-0" />
+                            <span className="truncate">{item.groupName}</span>
+                          </span>
+                        ) : (
+                          <div className="flex h-9 w-full items-center rounded-lg border border-slate-200 bg-slate-100 px-2.5 text-slate-300">
+                            <span className="text-xs font-bold">—</span>
+                          </div>
+                        )}
+                      </td>
+                      <td className="px-3 py-3">
+                        <div className="flex justify-center">
+                          <QuantityStepper
+                            value={item.quantity}
+                            max={isMatched ? stock : undefined}
+                            disabled={isCanceled || !isMatched}
+                            onChange={(value) =>
+                              onUpdate(index, { quantity: value })
+                            }
+                          />
+                        </div>
+                      </td>
+                      {!inventoryOnly && (
+                        <>
+                          <td className="px-3 py-3">
+                            <UnitPriceField
+                              value={item.unitPrice}
+                              hasMedicine={isMatched}
+                            />
+                          </td>
+                          <td className="px-3 py-3">
+                            <TotalField
+                              value={item.totalAmount}
+                              hasMedicine={isMatched}
+                            />
+                          </td>
+                        </>
+                      )}
+                      <td className="px-2 py-3 text-center">
+                        <button
+                          type="button"
+                          onClick={() => onRemove(index)}
+                          disabled={isCanceled}
+                          className="mx-auto flex h-9 w-9 items-center justify-center rounded-md text-slate-500 transition-colors hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-40"
+                          aria-label="Remove medicine row"
+                        >
+                          <XIcon className="h-3.5 w-3.5" />
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
               <tfoot>
                 <tr className="border-t-2 border-emerald-200 bg-emerald-50/60">
                   {inventoryOnly ? (
                     <>
                       <td
                         colSpan={6}
-                        className="px-3 py-2.5 text-right text-xs font-bold text-gray-600 uppercase tracking-wider"
+                        className="px-3 py-2.5 text-right text-xs font-bold text-slate-600 uppercase tracking-wider"
                       >
                         Total units dispensed
                       </td>
-                      <td className="px-3 py-2.5 text-right text-xs font-extrabold text-emerald-700">
+                      <td className="px-3 py-2.5 text-right text-xs font-extrabold tabular-nums text-emerald-700">
                         {items.reduce((sum, i) => sum + i.quantity, 0)}
                       </td>
                       <td />
@@ -795,7 +682,7 @@ export const AdmissionMedicineItemsTable: React.FC<
                     <>
                       <td
                         colSpan={7}
-                        className="px-3 py-2.5 text-right text-xs font-bold text-gray-600 uppercase tracking-wider"
+                        className="px-3 py-2.5 text-right text-xs font-bold text-slate-600 uppercase tracking-wider"
                       >
                         Total — {items.length} item{items.length !== 1 ? "s" : ""}
                       </td>
@@ -815,126 +702,117 @@ export const AdmissionMedicineItemsTable: React.FC<
 
           {/* Mobile / tablet cards — visible below lg */}
           <div className="grid grid-cols-1 gap-3 p-3 lg:hidden">
-            <AnimatePresence initial={false}>
-              {items.map((item, index) => {
-                const isMatched = item.medicineId !== null;
-                const stock = item.currentStock ?? 0;
-                const outOfStock = isMatched && stock === 0;
-                const stockShort = isMatched && item.quantity > stock;
-                const cardKey = item.clientId
-                  ? `mobile-${item.clientId}`
-                  : item.id
-                    ? `mobile-saved-${item.id}`
-                    : `mobile-${item.packageCode ?? "row"}-${item.requestedMedicineName ?? item.medicineName}-${index}`;
+            {items.map((item, index) => {
+              const isMatched = item.medicineId !== null;
+              const stock = item.currentStock ?? 0;
+              const outOfStock = isMatched && stock === 0;
+              const stockShort = isMatched && item.quantity > stock;
+              const cardKey = item.clientId
+                ? `mobile-${item.clientId}`
+                : item.id
+                  ? `mobile-saved-${item.id}`
+                  : `mobile-${item.packageCode ?? "row"}-${item.requestedMedicineName ?? item.medicineName}-${index}`;
 
-                return (
-                  <motion.div
-                    key={cardKey}
-                    layout
-                    variants={cardVariants}
-                    className="rounded-xl border border-gray-200 bg-white p-3 shadow-sm"
-                  >
-                    <div className="mb-2.5 flex items-start justify-between gap-2">
-                      <div className="min-w-0">
-                        <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400">
-                          #{index + 1}
-                        </p>
-                        <p className="truncate text-sm font-bold text-gray-800">
-                          {item.requestedMedicineName ||
-                            item.medicineName ||
-                            "Manual medicine"}
-                        </p>
-                      </div>
-                      <motion.button
-                        type="button"
-                        onClick={() => onRemove(index)}
-                        disabled={isCanceled}
-                        whileTap={isCanceled ? undefined : { scale: 0.82 }}
-                        transition={{ type: "spring", stiffness: 400, damping: 17 }}
-                        className="rounded-md p-1 text-gray-400 transition hover:bg-red-50 hover:text-red-500 disabled:opacity-40"
-                        aria-label="Remove medicine row"
-                      >
-                        <XIcon className="h-3.5 w-3.5" />
-                      </motion.button>
+              return (
+                <div
+                  key={cardKey}
+                  className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm"
+                >
+                  <div className="mb-2.5 flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className="text-2xs font-bold uppercase tracking-wider tabular-nums text-slate-500">
+                        #{index + 1}
+                      </p>
+                      <p className="truncate text-sm font-bold text-slate-800">
+                        {item.requestedMedicineName ||
+                          item.medicineName ||
+                          "Manual medicine"}
+                      </p>
                     </div>
-
-                    <MedicineLookupInput
-                      item={item}
-                      index={index}
+                    <button
+                      type="button"
+                      onClick={() => onRemove(index)}
                       disabled={isCanceled}
-                      onSelectMedicine={onSelectMedicine}
-                    />
-
-                    <RowWarning item={item} />
-
-                    <div className="mt-2.5 flex flex-wrap gap-1.5">
-                      {isMatched ? (
-                        <StockBadge
-                          stock={stock}
-                          isOutOfStock={outOfStock}
-                          isShort={stockShort}
-                        />
-                      ) : null}
-                      {item.groupName ? (
-                        <span className="inline-flex max-w-full items-center gap-1 rounded-md border border-blue-100 bg-blue-50 px-2 py-1 text-[11px] font-semibold text-blue-700">
-                          <Layers className="h-3 w-3 shrink-0" />
-                          <span className="truncate">{item.groupName}</span>
-                        </span>
-                      ) : null}
-                    </div>
-
-                    <div
-                      className={`mt-3 gap-2 ${
-                        inventoryOnly ? "grid grid-cols-1" : "grid grid-cols-3"
-                      }`}
+                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-slate-500 transition-colors hover:bg-red-50 hover:text-red-600 disabled:opacity-40"
+                      aria-label="Remove medicine row"
                     >
-                      <div>
-                        <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-gray-400">
-                          Qty
-                        </p>
-                        <QuantityStepper
-                          value={item.quantity}
-                          max={isMatched ? stock : undefined}
-                          disabled={isCanceled || !isMatched}
-                          onChange={(value) =>
-                            onUpdate(index, { quantity: value })
-                          }
-                        />
-                      </div>
-                      {!inventoryOnly && (
-                        <>
-                          <div>
-                            <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-gray-400">
-                              Unit price
-                            </p>
-                            <UnitPriceField
-                              value={item.unitPrice}
-                              hasMedicine={isMatched}
-                            />
-                          </div>
-                          <div>
-                            <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-gray-400">
-                              Total
-                            </p>
-                            <TotalField
-                              value={item.totalAmount}
-                              hasMedicine={isMatched}
-                            />
-                          </div>
-                        </>
-                      )}
+                      <XIcon className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+
+                  <MedicineLookupInput
+                    item={item}
+                    index={index}
+                    disabled={isCanceled}
+                    onSelectMedicine={onSelectMedicine}
+                  />
+
+                  <RowWarning item={item} />
+
+                  <div className="mt-2.5 flex flex-wrap gap-1.5">
+                    {isMatched ? (
+                      <StockBadge
+                        stock={stock}
+                        isOutOfStock={outOfStock}
+                        isShort={stockShort}
+                      />
+                    ) : null}
+                    {item.groupName ? (
+                      <span className="inline-flex max-w-full items-center gap-1 rounded-md border border-blue-100 bg-blue-50 px-2 py-1 text-2xs font-semibold text-blue-700">
+                        <Layers className="h-3 w-3 shrink-0" />
+                        <span className="truncate">{item.groupName}</span>
+                      </span>
+                    ) : null}
+                  </div>
+
+                  <div
+                    className={`mt-3 gap-2 ${
+                      inventoryOnly ? "grid grid-cols-1" : "grid grid-cols-3"
+                    }`}
+                  >
+                    <div>
+                      <p className="mb-1 text-2xs font-bold uppercase tracking-wider text-slate-500">
+                        Qty
+                      </p>
+                      <QuantityStepper
+                        value={item.quantity}
+                        max={isMatched ? stock : undefined}
+                        disabled={isCanceled || !isMatched}
+                        onChange={(value) =>
+                          onUpdate(index, { quantity: value })
+                        }
+                      />
                     </div>
-                  </motion.div>
-                );
-              })}
-            </AnimatePresence>
+                    {!inventoryOnly && (
+                      <>
+                        <div>
+                          <p className="mb-1 text-2xs font-bold uppercase tracking-wider text-slate-500">
+                            Unit price
+                          </p>
+                          <UnitPriceField
+                            value={item.unitPrice}
+                            hasMedicine={isMatched}
+                          />
+                        </div>
+                        <div>
+                          <p className="mb-1 text-2xs font-bold uppercase tracking-wider text-slate-500">
+                            Total
+                          </p>
+                          <TotalField
+                            value={item.totalAmount}
+                            hasMedicine={isMatched}
+                          />
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
 
             {/* Mobile total bar */}
-            <motion.div
-              layout
-              className="flex items-center justify-between rounded-xl border-2 border-emerald-200 bg-emerald-50 px-4 py-3"
-            >
-              <p className="text-sm font-bold text-gray-700">
+            <div className="flex items-center justify-between rounded-xl border-2 border-emerald-200 bg-emerald-50 px-4 py-3">
+              <p className="text-sm font-bold text-slate-700">
                 {inventoryOnly
                   ? `Total units dispensed (${items.length} item${
                       items.length !== 1 ? "s" : ""
@@ -943,24 +821,23 @@ export const AdmissionMedicineItemsTable: React.FC<
                       items.length !== 1 ? "s" : ""
                     })`}
               </p>
-              <p className="text-lg font-extrabold text-emerald-700">
+              <p className="text-lg font-extrabold tabular-nums text-emerald-700">
                 {inventoryOnly
                   ? items.reduce((sum, i) => sum + i.quantity, 0)
                   : currency(totalAmount)}
               </p>
-            </motion.div>
+            </div>
           </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+        </>
+      )}
 
       {/* Footer note */}
       <div className="border-t border-emerald-100 bg-emerald-50/40 px-4 py-2">
-        <p className="text-[11px] text-gray-500">
+        <p className="text-2xs text-slate-500">
           Quantity can be adjusted; unit price is locked from pharmacy inventory and totals update automatically.
         </p>
       </div>
-    </motion.div>
+    </div>
   );
 };
 

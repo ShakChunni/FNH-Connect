@@ -54,10 +54,10 @@ export default function UserAvatar({ user }: UserAvatarProps) {
     <div className="relative" ref={dropdownRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-3 border border-fnh-grey-light bg-fnh-white/90 px-3 py-2.5 text-left shadow-[0_6px_16px_rgba(0,0,0,0.05)] transition-colors hover:border-fnh-blue/60 hover:text-fnh-navy"
+        className="flex items-center gap-3 border border-fnh-grey-light bg-fnh-white px-3 py-2.5 text-left shadow-sm transition-colors hover:border-fnh-blue/60 hover:text-fnh-navy"
         aria-label="User menu"
       >
-        <div className="flex h-12 w-12 items-center justify-center bg-gradient-to-br from-fnh-blue to-fnh-blue-light text-sm font-semibold text-fnh-white">
+        <div className="flex h-12 w-12 items-center justify-center bg-fnh-blue text-sm font-semibold text-fnh-white">
           {initials}
         </div>
         <div className="hidden min-w-[8rem] flex-col text-left md:flex">
@@ -75,10 +75,10 @@ export default function UserAvatar({ user }: UserAvatarProps) {
 
       {/* Dropdown Menu */}
       {isOpen && (
-        <div className="absolute right-0 z-50 mt-3 w-80 overflow-hidden border border-fnh-grey-light bg-fnh-white shadow-[0_24px_60px_rgba(0,0,0,0.2)]">
-          <div className="bg-gradient-to-br from-fnh-navy to-fnh-navy-dark p-5 text-fnh-white">
+        <div className="absolute right-0 z-50 mt-3 w-80 max-w-[calc(100vw-2rem)] overflow-hidden border border-fnh-grey-light bg-fnh-white shadow-xl">
+          <div className="bg-fnh-navy p-5 text-fnh-white">
             <div className="flex items-center gap-3">
-              <div className="flex h-12 w-12 items-center justify-center bg-gradient-to-br from-fnh-blue to-fnh-blue-light text-base font-semibold text-fnh-white">
+              <div className="flex h-12 w-12 items-center justify-center bg-fnh-blue text-base font-semibold text-fnh-white">
                 {initials}
               </div>
               <div className="min-w-0">

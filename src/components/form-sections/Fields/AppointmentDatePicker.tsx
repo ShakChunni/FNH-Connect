@@ -78,18 +78,18 @@ const AppointmentDatePicker: React.FC<AppointmentDatePickerProps> = ({
   // Input styling function matching PatientInformation
   const inputClassName = useMemo(() => {
     const baseStyle =
-      "text-gray-700 font-normal rounded-lg h-12 md:h-14 py-2 px-4 w-full focus:border-blue-900 focus:ring-2 focus:ring-blue-950 outline-none shadow-sm hover:shadow-md transition-all duration-300 placeholder:text-gray-400 placeholder:font-light text-xs sm:text-sm";
+      "text-slate-700 font-normal rounded-lg h-12 md:h-14 py-2 px-4 w-full focus:border-blue-900 focus:ring-2 focus:ring-blue-950 outline-none shadow-sm transition-colors duration-200 placeholder:text-slate-400 placeholder:font-light text-xs sm:text-sm";
 
     return selectedDate
       ? `bg-white border-2 border-green-700 ${baseStyle}`
-      : `bg-gray-50 border-2 border-gray-300 ${baseStyle}`;
+      : `bg-slate-50 border-2 border-slate-300 ${baseStyle}`;
   }, [selectedDate]);
 
   return (
     <div style={style} className="w-full">
       <div className="relative">
         <Calendar
-          className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none z-10"
+          className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-500 pointer-events-none z-10"
           size={18}
         />
         <Flatpickr
@@ -104,7 +104,8 @@ const AppointmentDatePicker: React.FC<AppointmentDatePickerProps> = ({
           <button
             type="button"
             onClick={clearDate}
-            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-red-500 transition-colors cursor-pointer"
+            aria-label="Clear date"
+            className="absolute right-1 top-1/2 flex h-9 w-9 transform -translate-y-1/2 items-center justify-center text-slate-500 hover:text-red-600 transition-colors cursor-pointer"
           >
             <X size={16} />
           </button>

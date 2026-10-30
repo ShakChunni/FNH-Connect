@@ -8,6 +8,8 @@ import React, {
 } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ClientPortal } from "@/components/ui/ClientPortal";
+import { DURATION, tween } from "@/lib/motion";
+import { TONE_BADGE } from "@/lib/statusStyles";
 import { Building2, PlusCircle, Loader2, X } from "lucide-react";
 import { useAdmissionHospitalData, useAdmissionActions } from "../../../stores";
 import { useFetchHospitalInformation } from "../../../hooks";
@@ -57,14 +59,14 @@ const AdmissionHospitalSearch: React.FC = () => {
 
   const inputClassName = useMemo(() => {
     const baseStyle =
-      "text-gray-700 font-normal rounded-lg h-12 md:h-14 py-2 px-4 w-full focus:border-blue-900 focus:ring-2 focus:ring-blue-950 outline-none shadow-sm hover:shadow-md transition-all duration-300 placeholder:text-gray-400 placeholder:font-light text-xs sm:text-sm";
+      "text-slate-700 font-normal rounded-lg h-12 md:h-14 py-2 px-4 w-full focus:border-blue-900 focus:ring-2 focus:ring-blue-950 outline-none shadow-sm transition-colors placeholder:text-slate-400 placeholder:font-light text-xs sm:text-sm";
     return (
       value: string,
       isValid: boolean = true,
       disabled: boolean = false
     ) => {
       let style = disabled
-        ? `bg-gray-200 border-2 border-gray-300 cursor-not-allowed ${baseStyle}`
+        ? `bg-slate-200 border-2 border-slate-300 cursor-not-allowed ${baseStyle}`
         : baseStyle;
       if (!disabled) {
         if (!isValid && value) {
@@ -72,7 +74,7 @@ const AdmissionHospitalSearch: React.FC = () => {
         } else {
           style += value
             ? ` bg-white border-2 border-green-700`
-            : ` bg-gray-50 border-2 border-gray-300`;
+            : ` bg-slate-50 border-2 border-slate-300`;
         }
       }
       return style;
@@ -189,11 +191,11 @@ const AdmissionHospitalSearch: React.FC = () => {
         {isDropdownOpen && !isHospitalSelected && (
           <motion.div
             ref={dropdownRef}
-            initial={{ opacity: 0, y: -10, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -10, scale: 0.98 }}
-            transition={{ duration: 0.2, ease: "easeOut" }}
-            className="bg-white border border-gray-300 rounded-lg shadow-2xl z-100000 overflow-hidden"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={tween(DURATION.fast)}
+            className="bg-white border border-slate-300 rounded-lg shadow-lg z-100000 overflow-hidden"
             style={{
               position: "absolute",
               top: dropdownPosition.top,
@@ -206,7 +208,7 @@ const AdmissionHospitalSearch: React.FC = () => {
           >
             <div className="max-h-[300px] overflow-y-auto scrollbar-thin">
               {loading && (
-                <div className="flex items-center justify-center p-4 text-gray-500">
+                <div className="flex items-center justify-center p-4 text-slate-500">
                   <Loader2 className="w-5 h-5 animate-spin mr-2" />
                   Searching...
                 </div>
@@ -220,14 +222,14 @@ const AdmissionHospitalSearch: React.FC = () => {
                       e.preventDefault();
                       handleSelectHospital(hospital);
                     }}
-                    className="px-4 py-3 cursor-pointer hover:bg-blue-50 flex items-center gap-3 border-b border-gray-100 last:border-b-0"
+                    className="px-4 py-3 cursor-pointer hover:bg-blue-50 flex items-center gap-3 border-b border-slate-100 last:border-b-0"
                   >
-                    <Building2 className="w-5 h-5 text-gray-400 shrink-0" />
+                    <Building2 className="w-5 h-5 text-slate-500 shrink-0" />
                     <div className="min-w-0 flex-1">
-                      <p className="font-medium text-gray-800 text-sm truncate">
+                      <p className="font-medium text-slate-800 text-sm truncate">
                         {hospital.name}
                       </p>
-                      <p className="text-xs text-gray-500 truncate">
+                      <p className="text-xs text-slate-500 truncate">
                         {hospital.type || "No type"} •{" "}
                         {hospital.address || "No address"}
                       </p>
@@ -244,7 +246,7 @@ const AdmissionHospitalSearch: React.FC = () => {
                       e.preventDefault();
                       handleAddNew();
                     }}
-                    className="px-4 py-3 cursor-pointer hover:bg-blue-50 flex items-center gap-3 border-t border-gray-200"
+                    className="px-4 py-3 cursor-pointer hover:bg-blue-50 flex items-center gap-3 border-t border-slate-200"
                   >
                     <PlusCircle className="w-5 h-5 text-blue-600 shrink-0" />
                     <p className="font-medium text-blue-700 text-sm">
@@ -272,17 +274,17 @@ const AdmissionHospitalSearch: React.FC = () => {
   return (
     <>
       <div className="flex items-center justify-between mb-1.5 sm:mb-2">
-        <label className="block text-gray-700 text-sm sm:text-base font-semibold">
-          Hospital Name<span className="text-red-500">*</span>
+        <label className="block text-slate-700 text-sm sm:text-base font-semibold">
+          Hospital Name<span className="text-red-600">*</span>
         </label>
         {hospitalStatus === "new" && (
-          <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded-full bg-green-100 text-green-700 text-xs font-semibold border border-green-200 shadow-sm">
-            <PlusCircle className="w-3 h-3 mr-1 text-green-500" />
+          <span className={`hidden sm:inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ring-1 ring-inset ${TONE_BADGE.info}`}>
+            <PlusCircle className="w-3 h-3 mr-1 text-blue-600" />
             New
           </span>
         )}
         {hospitalStatus === "existing" && (
-          <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 text-xs font-semibold border border-blue-200 shadow-sm">
+          <span className={`hidden sm:inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ring-1 ring-inset ${TONE_BADGE.info}`}>
             <Building2 className="w-3 h-3 mr-1 text-blue-500" />
             Auto-filled
           </span>
@@ -295,7 +297,7 @@ const AdmissionHospitalSearch: React.FC = () => {
           type="text"
           className={
             inputClassName(hospitalData.name, hospitalData.name.trim() !== "") +
-            " pr-10"
+            " pr-12"
           }
           value={searchQuery}
           onChange={handleInputChange}
@@ -311,7 +313,7 @@ const AdmissionHospitalSearch: React.FC = () => {
         {isHospitalSelected && (
           <button
             onClick={handleClearSelection}
-            className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-full bg-gray-200 hover:bg-red-100 text-gray-500 hover:text-red-600 transition-all duration-200 flex items-center justify-center"
+            className="absolute right-1.5 top-1/2 -translate-y-1/2 flex h-9 w-9 items-center justify-center rounded-full bg-slate-200 text-slate-500 transition-colors hover:bg-red-100 hover:text-red-600"
             aria-label="Clear selection"
           >
             <X size={16} />

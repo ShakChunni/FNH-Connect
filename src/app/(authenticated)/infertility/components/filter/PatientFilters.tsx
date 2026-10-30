@@ -4,6 +4,7 @@ import React, { useCallback, useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { RotateCcw, SlidersHorizontal, X } from "lucide-react";
 import { ClientPortal } from "@/components/ui/ClientPortal";
+import { DRAWER_TRANSITION } from "@/lib/motion";
 import { useInfertilityFilterStore } from "../../stores/filterStore";
 import { DateRangeFilter, TestFilter } from "./components";
 
@@ -61,7 +62,7 @@ export const PatientFilters: React.FC = () => {
               exit={{ opacity: 0 }}
               transition={{ duration: 0.2 }}
               onClick={handleBackdropClick}
-              className="fixed inset-0 z-[100000] bg-black/40 backdrop-blur-sm"
+              className="fixed inset-0 z-[100000] bg-slate-950/50 "
               aria-hidden="true"
             />
 
@@ -69,19 +70,15 @@ export const PatientFilters: React.FC = () => {
               initial={{ x: "100%" }}
               animate={{ x: 0 }}
               exit={{ x: "100%" }}
-              transition={{
-                type: "tween",
-                duration: 0.4,
-                ease: [0.25, 0.1, 0.25, 1],
-              }}
-              className="fixed inset-y-0 right-0 z-[100001] flex h-dvh max-h-dvh w-full max-w-full transform-gpu flex-col overflow-hidden bg-white shadow-none will-change-transform sm:w-[min(400px,calc(100vw-1rem))] sm:rounded-l-[2rem] sm:shadow-[-8px_0_30px_rgba(0,0,0,0.15)]"
+              transition={DRAWER_TRANSITION}
+              className="fixed inset-y-0 right-0 z-[100001] flex h-dvh max-h-dvh w-full max-w-full transform-gpu flex-col overflow-hidden bg-white shadow-none will-change-transform sm:w-[min(400px,calc(100vw-1rem))] sm:rounded-l-[2rem] sm:shadow-xl"
               role="dialog"
               aria-modal="true"
               aria-labelledby="patient-filter-panel-title"
             >
-              <header className="flex shrink-0 items-center justify-between bg-linear-to-r from-emerald-950 to-emerald-900 px-5 py-4 sm:px-6 sm:py-5">
+              <header className="flex shrink-0 items-center justify-between bg-fnh-navy px-5 py-4 sm:px-6 sm:py-5">
                 <div className="flex items-center gap-3">
-                  <div className="rounded-xl bg-white/15 p-2.5 backdrop-blur-sm">
+                  <div className="rounded-xl bg-white/15 p-2.5 ">
                     <SlidersHorizontal className="h-5 w-5 text-white" />
                   </div>
                   <div>
@@ -112,29 +109,29 @@ export const PatientFilters: React.FC = () => {
               </header>
 
               <div className="custom-scrollbar min-h-0 flex-1 overscroll-contain overflow-y-auto p-4 sm:p-6">
-                <div className="rounded-2xl border border-gray-100 bg-gray-50/50 p-4">
+                <div className="rounded-2xl border border-slate-100 bg-slate-50/50 p-4">
                   <DateRangeFilter scope="patients" />
                 </div>
-                <div className="mt-4 rounded-2xl border border-gray-100 bg-gray-50/50 p-4">
+                <div className="mt-4 rounded-2xl border border-slate-100 bg-slate-50/50 p-4">
                   <TestFilter scope="patients" />
                 </div>
               </div>
 
-              <footer className="shrink-0 border-t border-gray-100 bg-gray-50/50 px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-4 sm:px-6">
+              <footer className="shrink-0 border-t border-slate-100 bg-slate-50/50 px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-4 sm:px-6">
                 <div className="flex items-center gap-3">
                   <button
                     type="button"
                     onClick={clearAllFilters}
                     disabled={activeCount === 0}
-                    className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm font-medium text-gray-600 transition hover:border-gray-300 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-600 transition-colors hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     <RotateCcw className="h-4 w-4" />
-                    Clear All
+                    Clear filters
                   </button>
                   <button
                     type="button"
                     onClick={closeFilterPanel}
-                    className="flex-1 rounded-xl bg-linear-to-r from-emerald-950 to-emerald-900 px-4 py-3 text-sm font-semibold text-white shadow-lg transition hover:from-emerald-900 hover:to-emerald-800 hover:shadow-xl"
+                    className="flex-1 rounded-xl bg-fnh-blue px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-fnh-blue-dark"
                   >
                     Apply Filters
                   </button>

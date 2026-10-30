@@ -57,11 +57,11 @@ export const PatientRecordsSearch: React.FC<PatientRecordsSearchProps> = ({
             flex items-center w-full
             bg-white border rounded-full 
             h-11
-            transition-all duration-300 ease-out
+            transition-colors duration-200
             ${
               isFocused
-                ? "border-blue-600 shadow-[0_0_0_3px_rgba(59,130,246,0.12),0_0_16px_rgba(59,130,246,0.08)] ring-1 ring-blue-600/20"
-                : "border-gray-200 shadow-sm hover:shadow-md hover:border-gray-300"
+                ? "border-blue-600 ring-1 ring-blue-600/20"
+                : "border-slate-200 shadow-sm hover:border-slate-300"
             }
           `}
         >
@@ -69,7 +69,7 @@ export const PatientRecordsSearch: React.FC<PatientRecordsSearchProps> = ({
             <div className="relative flex items-center h-full">
               <Search
                 className={`absolute left-3 w-4 h-4 pointer-events-none transition-colors duration-200 ${
-                  isFocused ? "text-blue-600" : "text-gray-400"
+                  isFocused ? "text-blue-600" : "text-slate-500"
                 }`}
               />
               <input
@@ -81,8 +81,8 @@ export const PatientRecordsSearch: React.FC<PatientRecordsSearchProps> = ({
                 placeholder="Search patient name, phone or address..."
                 className="w-full h-full pl-10 pr-4 bg-transparent border-0 
                   focus:ring-0 focus:outline-none 
-                  text-gray-700 text-xs 
-                  placeholder:text-gray-400 placeholder:text-xs
+                  text-slate-700 text-xs 
+                  placeholder:text-slate-400 placeholder:text-xs
                   rounded-full"
               />
             </div>
@@ -91,7 +91,7 @@ export const PatientRecordsSearch: React.FC<PatientRecordsSearchProps> = ({
 
         {/* Record Count */}
         {recordCount > 0 && (
-          <div className="text-xs text-gray-500 text-center">
+          <div className="text-xs text-slate-500 text-center">
             {recordCount} patient{recordCount !== 1 ? "s" : ""} found
           </div>
         )}
@@ -105,11 +105,11 @@ export const PatientRecordsSearch: React.FC<PatientRecordsSearchProps> = ({
             flex items-center flex-1 min-w-0
             bg-white border rounded-full 
             h-14
-            transition-all duration-300 ease-out
+            transition-colors duration-200
             ${
               isFocused
-                ? "border-blue-600 shadow-[0_0_0_3px_rgba(59,130,246,0.12),0_0_16px_rgba(59,130,246,0.08)] ring-1 ring-blue-600/20"
-                : "border-gray-200 shadow-sm hover:shadow-md hover:border-gray-300"
+                ? "border-blue-600 ring-1 ring-blue-600/20"
+                : "border-slate-200 shadow-sm hover:border-slate-300"
             }
           `}
         >
@@ -118,7 +118,7 @@ export const PatientRecordsSearch: React.FC<PatientRecordsSearchProps> = ({
             <div className="relative flex items-center h-full">
               <Search
                 className={`absolute left-4 w-5 h-5 pointer-events-none transition-colors duration-200 ${
-                  isFocused ? "text-blue-600" : "text-gray-400"
+                  isFocused ? "text-blue-600" : "text-slate-500"
                 }`}
               />
               <input
@@ -130,8 +130,8 @@ export const PatientRecordsSearch: React.FC<PatientRecordsSearchProps> = ({
                 placeholder="Search by patient name, phone or address..."
                 className="w-full h-full pl-12 pr-4 bg-transparent border-0 
                   focus:ring-0 focus:outline-none 
-                  text-gray-700 text-base 
-                  placeholder:text-gray-400 placeholder:text-sm
+                  text-slate-700 text-base 
+                  placeholder:text-slate-400 placeholder:text-sm
                   rounded-full"
               />
             </div>

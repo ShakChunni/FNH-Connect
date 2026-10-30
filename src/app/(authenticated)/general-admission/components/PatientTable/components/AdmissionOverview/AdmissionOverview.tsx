@@ -7,6 +7,7 @@ import {
 } from "../../../../types";
 import { ModalHeader } from "@/components/ui/ModalHeader";
 import { ModalShell } from "@/components/ui/ModalShell";
+import { StatusBadge } from "@/components/ui/StatusBadge";
 import { ProfileCard } from "./components/ProfileCard";
 import { FinancialOverview } from "./components/FinancialOverview";
 import { AdmissionDetails } from "./components/AdmissionDetails";
@@ -70,17 +71,6 @@ const AdmissionOverview: React.FC<AdmissionOverviewProps> = ({
     (o) => o.value === patient.status,
   );
 
-  const getStatusBgColor = (color: string) => {
-    const colors: Record<string, string> = {
-      blue: "bg-blue-50 text-blue-600 border-blue-100",
-      amber: "bg-amber-50 text-amber-600 border-amber-100",
-      purple: "bg-purple-50 text-purple-600 border-purple-100",
-      green: "bg-emerald-50 text-emerald-600 border-emerald-100",
-      red: "bg-red-50 text-red-600 border-red-100",
-    };
-    return colors[color] || colors.blue;
-  };
-
   return (
     <ModalShell
       isOpen={isOpen}
@@ -94,8 +84,8 @@ const AdmissionOverview: React.FC<AdmissionOverviewProps> = ({
         subtitle="Complete admission details and billing information."
         onClose={onClose}
         extra={
-          <div className="flex flex-col items-end gap-0.5 px-3 py-1.5 bg-white/50 border border-slate-200/50 rounded-xl shadow-xs">
-            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+          <div className="flex flex-col items-end gap-0.5 px-3 py-1.5 bg-white border border-slate-200 rounded-xl shadow-xs">
+            <span className="text-2xs font-black text-slate-500 uppercase tracking-widest">
               Last Updated
             </span>
             <span className="text-xs font-black text-slate-700">
@@ -105,52 +95,50 @@ const AdmissionOverview: React.FC<AdmissionOverviewProps> = ({
         }
       >
         <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
-          <div className="flex items-center gap-1.5 px-1.5 py-0.5 sm:px-2 sm:py-1 bg-purple-50 border border-purple-100 rounded-md">
-            <span className="text-[8px] sm:text-[9px] font-bold text-purple-400 uppercase">
+          <div className="flex items-center gap-1.5 px-1.5 py-0.5 sm:px-2 sm:py-1 bg-slate-50 border border-slate-200 rounded-md">
+            <span className="text-2xs sm:text-2xs font-bold text-slate-500 uppercase">
               Adm No
             </span>
-            <span className="text-[10px] sm:text-[11px] font-bold text-purple-700 font-mono">
+            <span className="text-2xs sm:text-2xs font-bold text-slate-800 font-mono tabular-nums">
               {patient.admissionNumber}
             </span>
           </div>
           <div className="hidden sm:flex items-center gap-1.5 px-2 py-1 bg-slate-50 border border-slate-100 rounded-md">
-            <Clock className="w-2.5 h-2.5 text-gray-400" />
-            <span className="text-[9px] font-bold text-gray-400 uppercase">
+            <Clock className="w-2.5 h-2.5 text-slate-500" />
+            <span className="text-2xs font-bold text-slate-500 uppercase">
               Admitted
             </span>
-            <span className="text-[10px] font-bold text-gray-600">
+            <span className="text-2xs font-bold text-slate-600">
               {formatDateWithTime(patient.dateAdmitted).date}
             </span>
-            <span className="text-[9px] font-medium text-gray-400">
+            <span className="text-2xs font-medium text-slate-500">
               {formatDateWithTime(patient.dateAdmitted).time}
             </span>
           </div>
-          <div
-            className={`flex items-center gap-1 px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-md text-[9px] sm:text-[10px] font-bold uppercase border ${getStatusBgColor(
-              statusOption?.color || "blue",
-            )}`}
-          >
-            {statusOption?.label || patient.status}
-          </div>
-          <div className="hidden lg:flex items-center gap-1 sm:gap-1.5 px-1.5 sm:px-2 py-0.5 sm:py-1 bg-emerald-50 border border-emerald-100 rounded-md min-w-0">
-            <span className="text-[8px] sm:text-[9px] font-bold text-emerald-500 uppercase shrink-0">
+          <StatusBadge
+            status={patient.status}
+            tone={statusOption?.tone}
+            label={statusOption?.label || patient.status}
+          />
+          <div className="hidden lg:flex items-center gap-1 sm:gap-1.5 px-1.5 sm:px-2 py-0.5 sm:py-1 bg-slate-50 border border-slate-200 rounded-md min-w-0">
+            <span className="text-2xs sm:text-2xs font-bold text-slate-500 uppercase shrink-0">
               Added
             </span>
-            <span className="text-[10px] sm:text-[11px] font-semibold text-emerald-700 truncate max-w-[170px]">
+            <span className="text-2xs sm:text-2xs font-semibold text-slate-700 truncate max-w-[170px]">
               {patient.createdByName || "Unknown"}
             </span>
-            <span className="text-[9px] sm:text-[10px] text-emerald-600 truncate max-w-[140px]">
+            <span className="text-2xs sm:text-2xs text-slate-500 truncate max-w-[140px]">
               • {formatCompactMetadataDateTime(patient.createdAt)}
             </span>
           </div>
-          <div className="hidden lg:flex items-center gap-1 sm:gap-1.5 px-1.5 sm:px-2 py-0.5 sm:py-1 bg-indigo-50 border border-indigo-100 rounded-md min-w-0">
-            <span className="text-[8px] sm:text-[9px] font-bold text-indigo-500 uppercase shrink-0">
+          <div className="hidden lg:flex items-center gap-1 sm:gap-1.5 px-1.5 sm:px-2 py-0.5 sm:py-1 bg-slate-50 border border-slate-200 rounded-md min-w-0">
+            <span className="text-2xs sm:text-2xs font-bold text-slate-500 uppercase shrink-0">
               Edited
             </span>
-            <span className="text-[10px] sm:text-[11px] font-semibold text-indigo-700 truncate max-w-[170px]">
+            <span className="text-2xs sm:text-2xs font-semibold text-slate-700 truncate max-w-[170px]">
               {patient.lastModifiedByName || "Unknown"}
             </span>
-            <span className="text-[9px] sm:text-[10px] text-indigo-600 truncate max-w-[140px]">
+            <span className="text-2xs sm:text-2xs text-slate-500 truncate max-w-[140px]">
               • {formatCompactMetadataDateTime(patient.updatedAt)}
             </span>
           </div>
@@ -180,14 +168,14 @@ const AdmissionOverview: React.FC<AdmissionOverviewProps> = ({
       </div>
 
       {/* Custom Footer with Print Buttons */}
-      <div className="border-t border-gray-200 bg-gray-50 px-3 sm:px-4 md:px-6 py-2 sm:py-3 rounded-b-3xl">
+      <div className="border-t border-slate-200 bg-slate-50 px-3 sm:px-4 md:px-6 py-2 sm:py-3 rounded-b-3xl">
         <div className="flex items-center justify-between gap-2">
           {/* Left Side - Print Buttons */}
           <div className="flex items-center gap-1.5 sm:gap-2">
             <button
               type="button"
               onClick={handlePrintReceipt}
-              className="inline-flex items-center justify-center gap-2 p-2 sm:px-3 sm:py-2 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-lg hover:bg-emerald-100 transition-colors duration-200 text-xs sm:text-sm font-medium cursor-pointer"
+              className="inline-flex h-9 items-center justify-center gap-2 p-2 sm:px-3 sm:py-2 bg-white border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors text-xs sm:text-sm font-medium cursor-pointer"
             >
               <FileText className="w-4 h-4" />
               <span className="hidden sm:inline">Admission Form</span>
@@ -195,7 +183,7 @@ const AdmissionOverview: React.FC<AdmissionOverviewProps> = ({
             <button
               type="button"
               onClick={handlePrintInvoice}
-              className="inline-flex items-center justify-center gap-2 p-2 sm:px-3 sm:py-2 bg-violet-50 border border-violet-200 text-violet-700 rounded-lg hover:bg-violet-100 transition-colors duration-200 text-xs sm:text-sm font-medium cursor-pointer"
+              className="inline-flex h-9 items-center justify-center gap-2 p-2 sm:px-3 sm:py-2 bg-white border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors text-xs sm:text-sm font-medium cursor-pointer"
             >
               <Printer className="w-4 h-4" />
               <span className="hidden sm:inline">Patient Invoice</span>
@@ -207,7 +195,7 @@ const AdmissionOverview: React.FC<AdmissionOverviewProps> = ({
             <button
               type="button"
               onClick={onClose}
-              className="inline-flex items-center justify-center gap-1.5 p-2 sm:px-4 sm:py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors duration-200 text-xs sm:text-sm font-medium cursor-pointer"
+              className="inline-flex h-9 items-center justify-center gap-1.5 p-2 sm:px-4 sm:py-2 bg-white border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors text-xs sm:text-sm font-medium cursor-pointer"
             >
               <X className="w-4 h-4 sm:hidden" />
               <span className="hidden sm:inline">Close</span>
@@ -215,7 +203,7 @@ const AdmissionOverview: React.FC<AdmissionOverviewProps> = ({
             <button
               type="button"
               onClick={handleEdit}
-              className="inline-flex items-center justify-center gap-1.5 p-2 sm:px-4 sm:py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors duration-200 text-xs sm:text-sm font-medium cursor-pointer"
+              className="inline-flex h-9 items-center justify-center gap-1.5 p-2 sm:px-4 sm:py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-xs sm:text-sm font-medium cursor-pointer"
             >
               <Edit className="w-4 h-4" />
               <span className="hidden sm:inline">Edit</span>

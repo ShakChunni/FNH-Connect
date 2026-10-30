@@ -43,6 +43,7 @@ import {
   DOCTOR_CHAMBER_TESTS,
 } from "@/lib/doctorChamber";
 import { hasRequiredBangladeshDistrict } from "@/lib/bangladeshAddress";
+import { rowVariants } from "@/lib/motion";
 import {
   fetchDoctorChamberVisit,
   useCreateDoctorChamberVisit,
@@ -82,33 +83,33 @@ type ChamberSection = "patient" | "doctor" | "billing";
 const CHAMBER_SECTION_IDS: ChamberSection[] = ["patient", "doctor", "billing"];
 
 const inputClassName =
-  "w-full rounded-lg border-2 border-gray-300 bg-white px-4 py-2 text-xs font-normal text-gray-700 shadow-sm outline-none transition-all duration-300 placeholder:font-light placeholder:text-gray-400 focus:border-blue-900 focus:ring-2 focus:ring-blue-950 hover:shadow-md sm:text-sm md:h-14";
+  "w-full rounded-lg border-2 border-slate-300 bg-white px-4 py-2 text-xs font-normal text-slate-700 shadow-sm outline-none transition-colors placeholder:font-light placeholder:text-slate-400 focus:border-blue-900 focus:ring-2 focus:ring-blue-950 sm:text-sm md:h-14";
 
 const filledInputClassName = (value: string) =>
   value.trim().length > 0
-    ? inputClassName.replace("border-gray-300", "border-green-700")
+    ? inputClassName.replace("border-slate-300", "border-green-700")
     : inputClassName;
 
 const labelClassName =
-  "mb-1.5 block text-xs font-semibold text-gray-700 sm:mb-2 sm:text-sm";
+  "mb-1.5 block text-xs font-semibold text-slate-700 sm:mb-2 sm:text-sm";
 
 const sectionHeaderClassNames: Record<
   ChamberSection,
   { wrapper: string; icon: string; text: string }
 > = {
   patient: {
-    wrapper: "from-indigo-50 to-indigo-100 border-indigo-200",
+    wrapper: "bg-indigo-50 border-indigo-200",
     icon: "text-indigo-600",
     text: "text-indigo-700",
   },
   doctor: {
-    wrapper: "from-purple-50 to-purple-100 border-purple-200",
+    wrapper: "bg-purple-50 border-purple-200",
     icon: "text-purple-600",
     text: "text-purple-700",
   },
   billing: {
-    wrapper: "from-green-50 to-emerald-100 border-green-200",
-    icon: "text-green-600",
+    wrapper: "bg-green-50 border-green-200",
+    icon: "text-emerald-700",
     text: "text-green-700",
   },
 };
@@ -169,12 +170,12 @@ function SectionHeader({ section }: { section: ChamberSection }) {
       : "Select one or more investigations. The chamber visit charge is fixed at BDT 800.";
 
   return (
-    <div className={`mb-4 rounded-lg border bg-gradient-to-r p-4 shadow-sm transition-colors duration-300 sm:mb-5 sm:rounded-xl sm:p-5 md:mb-6 md:p-6 ${config.wrapper}`}>
+    <div className={`mb-4 rounded-lg border p-4 shadow-sm transition-colors duration-200 sm:mb-5 sm:rounded-xl sm:p-5 md:mb-6 md:p-6 ${config.wrapper}`}>
       <div className="flex items-center gap-3 sm:gap-4">
-        <div className="shrink-0 rounded-lg bg-white p-2 shadow-md sm:rounded-xl sm:p-3"><Icon className={config.icon} size={28} /></div>
+        <div className="shrink-0 rounded-lg bg-white p-2 shadow-sm sm:rounded-xl sm:p-3"><Icon className={config.icon} size={28} /></div>
         <div className="flex flex-col">
-          <h3 className="text-base font-bold leading-tight text-gray-800 sm:text-lg md:text-xl">{title}</h3>
-          <p className={`mt-1 text-[11px] font-medium leading-tight sm:text-xs ${config.text}`}>{description}</p>
+          <h3 className="text-base font-bold leading-tight text-slate-800 sm:text-lg md:text-xl">{title}</h3>
+          <p className={`mt-1 text-xs font-medium leading-tight ${config.text}`}>{description}</p>
         </div>
       </div>
     </div>
@@ -454,17 +455,11 @@ export default function DoctorChamberForm({
     }
   };
 
-  const sections: Array<{ id: ChamberSection; label: string; icon: React.ElementType; color: string }> = [
-    { id: "patient", label: "Patient Information", icon: User, color: "indigo" },
-    { id: "doctor", label: "Doctor", icon: Stethoscope, color: "purple" },
-    { id: "billing", label: "Billing", icon: Wallet, color: "green" },
+  const sections: Array<{ id: ChamberSection; label: string; icon: React.ElementType }> = [
+    { id: "patient", label: "Patient Information", icon: User },
+    { id: "doctor", label: "Doctor", icon: Stethoscope },
+    { id: "billing", label: "Billing", icon: Wallet },
   ];
-
-  const tabColors: Record<string, { active: string; inactive: string }> = {
-    indigo: { active: "bg-indigo-600 text-white shadow-lg", inactive: "bg-indigo-100 text-indigo-700 hover:bg-indigo-200" },
-    purple: { active: "bg-purple-600 text-white shadow-lg", inactive: "bg-purple-100 text-purple-700 hover:bg-purple-200" },
-    green: { active: "bg-green-600 text-white shadow-lg", inactive: "bg-green-100 text-green-700 hover:bg-green-200" },
-  };
 
   const formErrorMessage = useMemo(() => formError, [formError]);
 
@@ -472,7 +467,7 @@ export default function DoctorChamberForm({
     <AnimatePresence mode="wait">
       {isOpen && (
         <motion.div
-          className="fixed inset-0 z-[100000] flex items-center justify-center bg-slate-900/70"
+          className="fixed inset-0 z-[100000] flex items-center justify-center bg-slate-950/50"
           variants={backdropVariants}
           initial="hidden"
           animate="visible"
@@ -480,7 +475,7 @@ export default function DoctorChamberForm({
           style={{ isolation: "isolate", willChange: "opacity", backfaceVisibility: "hidden", perspective: 1000 }}
         >
           <motion.div
-            className="popup-content flex h-[95%] w-full max-w-[95%] flex-col rounded-3xl bg-white shadow-lg sm:h-[90%] sm:max-w-[90%] md:max-w-[85%] lg:max-w-[80%] xl:max-w-[80%]"
+            className=" flex h-[95%] w-full max-w-[95%] flex-col rounded-3xl bg-white shadow-lg sm:h-[90%] sm:max-w-[90%] md:max-w-[85%] lg:max-w-[80%] xl:max-w-[80%]"
             variants={modalVariants}
             initial="hidden"
             animate="visible"
@@ -499,13 +494,12 @@ export default function DoctorChamberForm({
                 {sections.map((section) => {
                   const Icon = section.icon;
                   const isActive = activeSection === section.id;
-                  const color = tabColors[section.color];
                   return (
                     <button
                       key={section.id}
                       type="button"
                       onClick={() => scrollToSection(section.id)}
-                      className={`flex cursor-pointer items-center gap-1 rounded-lg px-2 py-2 text-xs font-semibold shadow-sm transition-all duration-300 sm:gap-2 sm:rounded-xl sm:px-3 sm:py-2.5 sm:text-sm ${isActive ? color.active : color.inactive} ${isActive ? "scale-105" : "hover:shadow-md"}`}
+                      className={`flex h-9 cursor-pointer items-center gap-1 rounded-lg px-2 text-xs font-semibold transition-colors sm:h-10 sm:gap-2 sm:rounded-xl sm:px-3 sm:text-sm ${isActive ? "bg-blue-600 text-white" : "border border-slate-300 bg-white text-slate-700 hover:bg-slate-50"}`}
                     >
                       <Icon className="h-3.5 w-3.5 shrink-0 sm:h-4 sm:w-4" />
                       <span className="hidden whitespace-nowrap sm:inline">{section.label}</span>
@@ -523,7 +517,7 @@ export default function DoctorChamberForm({
                     <div className="relative">
                       <label htmlFor="chamber-patient-search" className={labelClassName}>Search Existing Patient</label>
                       <div className="relative">
-                        <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                        <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                         <input ref={patientSearchInputRef} id="chamber-patient-search" value={patientSearch} onFocus={() => setIsPatientSearchOpen(patientSearch.trim().length >= 2)} onChange={(event) => { setPatientSearch(event.target.value); setIsPatientSearchOpen(event.target.value.trim().length >= 2); }} placeholder="Search by patient name, phone, or email" className={`${inputClassName} pl-11`} disabled={isBusy} />
                       </div>
                       <DropdownPortal
@@ -533,12 +527,12 @@ export default function DoctorChamberForm({
                         className="max-h-64 overflow-y-auto p-1"
                       >
                           {isSearching ? (
-                            <div className="flex items-center gap-2 px-3 py-3 text-sm text-gray-500"><Loader2 className="h-4 w-4 animate-spin" />Searching patients...</div>
+                            <div className="flex items-center gap-2 px-3 py-3 text-sm text-slate-500"><Loader2 className="h-4 w-4 animate-spin" />Searching patients...</div>
                           ) : patientResults.length === 0 ? (
-                            <p className="px-3 py-3 text-sm text-gray-500">No matching patient found. Enter new information below.</p>
+                            <p className="px-3 py-3 text-sm text-slate-500">No matching patient found. Enter new information below.</p>
                           ) : patientResults.map((result) => (
                             <button key={result.id} type="button" onClick={() => selectPatient(result)} className="flex w-full cursor-pointer items-start justify-between rounded-lg px-3 py-2 text-left transition-colors hover:bg-indigo-50">
-                              <span><span className="block text-sm font-semibold text-gray-800">{result.fullName}</span><span className="block text-xs text-gray-500">{result.phoneNumber || "No phone"} · {result.gender || "Gender not recorded"}</span></span>
+                              <span><span className="block text-sm font-semibold text-slate-800">{result.fullName}</span><span className="block text-xs text-slate-500">{result.phoneNumber || "No phone"} · {result.gender || "Gender not recorded"}</span></span>
                               <span className="text-xs font-medium text-indigo-600">Use record</span>
                             </button>
                           ))}
@@ -548,10 +542,10 @@ export default function DoctorChamberForm({
                     {patient.id && <div className="rounded-xl border border-indigo-100 bg-indigo-50 px-3 py-2 text-xs text-indigo-800">Editing central patient record #{patient.id}. Changes here update the same patient everywhere.</div>}
 
                     <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                      <div><label className={labelClassName}>First Name<span className="text-red-500">*</span></label><input className={filledInputClassName(patient.firstName)} value={patient.firstName} onChange={(event) => updatePatient("firstName", event.target.value)} disabled={isBusy} /></div>
+                      <div><label className={labelClassName}>First Name<span className="text-red-600">*</span></label><input className={filledInputClassName(patient.firstName)} value={patient.firstName} onChange={(event) => updatePatient("firstName", event.target.value)} disabled={isBusy} /></div>
                       <div><label className={labelClassName}>Last Name</label><input className={filledInputClassName(patient.lastName)} value={patient.lastName} onChange={(event) => updatePatient("lastName", event.target.value)} disabled={isBusy} /></div>
                       <div>
-                        <label className={labelClassName}>Gender<span className="text-red-500">*</span></label>
+                        <label className={labelClassName}>Gender<span className="text-red-600">*</span></label>
                         <GenderDropdown
                           value={patient.gender}
                           onSelect={(value) => updatePatient("gender", value)}
@@ -561,7 +555,7 @@ export default function DoctorChamberForm({
                         />
                       </div>
                       <div>
-                        <label className={labelClassName}><Droplets className="mr-1 inline h-3.5 w-3.5 text-red-500" />Blood Group</label>
+                        <label className={labelClassName}><Droplets className="mr-1 inline h-3.5 w-3.5 text-red-600" />Blood Group</label>
                         <BloodGroupDropdown
                           value={patient.bloodGroup}
                           onSelect={(value) => updatePatient("bloodGroup", value)}
@@ -612,8 +606,8 @@ export default function DoctorChamberForm({
                       disabled={isBusy}
                     />
 
-                    <div className="mt-6 border-t border-gray-200 pt-6">
-                      <h4 className="mb-4 flex items-center gap-2 text-sm font-bold text-gray-800"><UserCheck className="h-4 w-4 text-indigo-500" />Guardian Information</h4>
+                    <div className="mt-6 border-t border-slate-200 pt-6">
+                      <h4 className="mb-4 flex items-center gap-2 text-sm font-bold text-slate-800"><UserCheck className="h-4 w-4 text-indigo-500" />Guardian Information</h4>
                       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                         <div><label className={labelClassName}>Guardian Name</label><input className={filledInputClassName(patient.guardianName)} value={patient.guardianName} onChange={(event) => updatePatient("guardianName", event.target.value)} disabled={isBusy} /></div>
                         <div>
@@ -671,7 +665,7 @@ export default function DoctorChamberForm({
                           <p className="text-sm font-bold text-indigo-950 sm:text-base">Tests / Investigations</p>
                           <p className="mt-1 text-xs font-medium text-indigo-700">Select every investigation the patient will receive.</p>
                         </div>
-                        <span className="rounded-full bg-white px-2.5 py-1 text-[11px] font-bold text-indigo-700 shadow-sm">{selectedTests.length} selected</span>
+                        <span className="rounded-full bg-white px-2.5 py-1 text-2xs font-bold text-indigo-700 shadow-sm">{selectedTests.length} selected</span>
                       </div>
                       <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
                         {DOCTOR_CHAMBER_TESTS.map((test) => {
@@ -684,16 +678,16 @@ export default function DoctorChamberForm({
                               aria-checked={isSelected}
                               onClick={() => toggleTest(test.code)}
                               disabled={isBusy}
-                              className={`flex min-h-[74px] cursor-pointer items-center gap-3 rounded-xl border-2 px-3 py-3 text-left transition-colors duration-150 disabled:cursor-not-allowed disabled:opacity-60 ${isSelected ? "border-indigo-500 bg-white shadow-md" : "border-white bg-white/70 hover:border-indigo-200 hover:bg-white"}`}
+                              className={`flex min-h-[74px] cursor-pointer items-center gap-3 rounded-xl border-2 px-3 py-3 text-left transition-colors duration-150 disabled:cursor-not-allowed disabled:opacity-60 ${isSelected ? "border-indigo-500 bg-white shadow-sm" : "border-white bg-white hover:border-indigo-200"}`}
                             >
-                              <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md border-2 ${isSelected ? "border-indigo-600 bg-indigo-600 text-white" : "border-gray-300 bg-white text-transparent"}`}>
+                              <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md border-2 ${isSelected ? "border-indigo-600 bg-indigo-600 text-white" : "border-slate-300 bg-white text-transparent"}`}>
                                 <Check className="h-3.5 w-3.5" />
                               </span>
                               <span className="min-w-0 flex-1">
-                                <span className="block text-xs font-bold leading-5 text-gray-800 sm:text-sm">{test.name}</span>
-                                <span className="mt-0.5 block text-[10px] font-semibold uppercase tracking-wide text-gray-500">{test.code}</span>
+                                <span className="block text-xs font-bold leading-5 text-slate-800 sm:text-sm">{test.name}</span>
+                                <span className="mt-0.5 block text-2xs font-semibold uppercase tracking-wide text-slate-500">{test.code}</span>
                               </span>
-                              <span className="shrink-0 text-right text-xs font-bold text-indigo-700 sm:text-sm">৳ {test.amount.toLocaleString("en-BD")}</span>
+                              <span className="shrink-0 text-right text-xs font-bold tabular-nums text-indigo-700 sm:text-sm">৳ {test.amount.toLocaleString("en-BD")}</span>
                             </button>
                           );
                         })}
@@ -706,32 +700,32 @@ export default function DoctorChamberForm({
                     </div>
 
                     <div className="grid grid-cols-[1fr_auto] items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-3 sm:grid-cols-[1fr_140px_90px]">
-                      <div><p className="font-semibold text-gray-800">Chamber Visit Charge</p><p className="text-xs text-gray-600">Fixed consultation / visit charge.</p></div>
-                      <span className="text-right text-sm font-bold text-gray-900 sm:text-left">৳ {DOCTOR_CHAMBER_CONFIG.visitingCharge.toLocaleString("en-BD")}</span>
+                      <div><p className="font-semibold text-slate-800">Chamber Visit Charge</p><p className="text-xs text-slate-600">Fixed consultation / visit charge.</p></div>
+                      <span className="text-right text-sm font-bold tabular-nums text-slate-900 sm:text-left">৳ {DOCTOR_CHAMBER_CONFIG.visitingCharge.toLocaleString("en-BD")}</span>
                       <span className="hidden text-right text-xs font-bold text-emerald-700 sm:block">FIXED</span>
                     </div>
 
-                    <div className="overflow-hidden rounded-xl border border-gray-200">
-                      <div className="grid grid-cols-[1fr_auto] items-center gap-3 border-b border-gray-100 bg-gray-50 px-3 py-3 text-sm sm:grid-cols-[1fr_140px_90px]"><span className="font-semibold text-gray-700">Additional charges</span><span className="hidden font-semibold text-gray-700 sm:block">Amount (BDT)</span><span className="text-right font-semibold text-gray-700">Status</span></div>
+                    <div className="overflow-hidden rounded-xl border border-slate-200">
+                      <div className="grid grid-cols-[1fr_auto] items-center gap-3 border-b border-slate-100 bg-fnh-navy px-3 py-3 text-xs font-semibold uppercase tracking-wide text-white sm:grid-cols-[1fr_140px_90px]"><span>Additional charges</span><span className="hidden sm:block">Amount (BDT)</span><span className="text-right">Status</span></div>
                       <AnimatePresence initial={false}>
                         {fees.map((fee, index) => (
                           <motion.div
                             key={fee.id ?? `new-${index}`}
-                            initial={{ opacity: 0, scale: 0.99 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            exit={{ opacity: 0, scale: 0.99 }}
-                            transition={{ duration: 0.16, ease: "easeOut" }}
-                            className="grid origin-top grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-3 border-b border-gray-100 px-3 py-3 sm:grid-cols-[1fr_140px_90px_36px]"
+                            variants={rowVariants}
+                            initial="hidden"
+                            animate="visible"
+                            exit="exit"
+                            className="grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-3 border-b border-slate-100 px-3 py-3 sm:grid-cols-[1fr_140px_90px_36px]"
                           >
                             <input value={fee.feeName} onChange={(event) => updateFee(index, "feeName", event.target.value)} className={inputClassName} placeholder="Charge name" disabled={isBusy} aria-label="Additional charge name" />
                             <NumberInput min="0" step="0.01" value={fee.amountText} onChange={(event) => updateFee(index, "amountText", event.target.value)} className={`${inputClassName} w-32 sm:w-full`} placeholder="0" disabled={isBusy} aria-label="Additional charge amount in BDT" />
                             <span className="hidden text-right text-xs font-bold text-indigo-600 sm:block">Manual</span>
-                            <motion.button type="button" whileHover={{ scale: 1.08 }} whileTap={{ scale: 0.92 }} onClick={() => setFees((current) => current.filter((_, feeIndex) => feeIndex !== index))} className="cursor-pointer rounded-lg p-2 text-red-500 transition-colors hover:bg-red-50" title="Remove charge" disabled={isBusy}><Trash2 className="h-4 w-4" /></motion.button>
+                            <button type="button" onClick={() => setFees((current) => current.filter((_, feeIndex) => feeIndex !== index))} className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg text-red-600 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50" title="Remove charge" aria-label="Remove charge" disabled={isBusy}><Trash2 className="h-4 w-4" /></button>
                           </motion.div>
                         ))}
                       </AnimatePresence>
                     </div>
-                    <motion.button type="button" whileHover={{ y: -1 }} whileTap={{ scale: 0.98 }} onClick={() => setFees((current) => [...current, { feeName: "", amountText: "0" }])} disabled={isBusy || fees.length >= 20} className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-dashed border-green-300 px-3 py-2 text-sm font-semibold text-green-700 transition-colors hover:bg-green-50 disabled:cursor-not-allowed disabled:opacity-50"><CirclePlus className="h-4 w-4" />Add another charge</motion.button>
+                    <button type="button" onClick={() => setFees((current) => [...current, { feeName: "", amountText: "0" }])} disabled={isBusy || fees.length >= 20} className="inline-flex h-9 cursor-pointer items-center gap-2 rounded-xl border border-slate-300 bg-white px-3 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"><CirclePlus className="h-4 w-4" />Add another charge</button>
                     <div className="rounded-2xl border border-green-200 bg-green-50/50 p-4">
                       <label className={labelClassName}>Discount from total charge</label>
                       <div className="flex flex-col gap-3 sm:flex-row">
@@ -746,17 +740,17 @@ export default function DoctorChamberForm({
                           disabled={isBusy}
                           aria-label="Discount value"
                         />
-                        <div className="flex h-12 overflow-hidden rounded-lg border-2 border-gray-300 bg-white sm:h-14">
-                          <button type="button" onClick={() => setDiscountType("percentage")} disabled={isBusy} className={`min-w-16 cursor-pointer px-3 text-xs font-bold transition-colors sm:text-sm ${discountType === "percentage" ? "bg-green-600 text-white" : "text-gray-600 hover:bg-gray-100"}`}>%</button>
-                          <button type="button" onClick={() => setDiscountType("value")} disabled={isBusy} className={`min-w-16 cursor-pointer border-l border-gray-200 px-3 text-xs font-bold transition-colors sm:text-sm ${discountType === "value" ? "bg-green-600 text-white" : "text-gray-600 hover:bg-gray-100"}`}>৳</button>
+                        <div className="flex h-12 overflow-hidden rounded-lg border-2 border-slate-300 bg-white sm:h-14">
+                          <button type="button" onClick={() => setDiscountType("percentage")} disabled={isBusy} className={`min-w-16 cursor-pointer px-3 text-xs font-bold transition-colors sm:text-sm ${discountType === "percentage" ? "bg-green-600 text-white" : "text-slate-600 hover:bg-slate-100"}`}>%</button>
+                          <button type="button" onClick={() => setDiscountType("value")} disabled={isBusy} className={`min-w-16 cursor-pointer border-l border-slate-200 px-3 text-xs font-bold transition-colors sm:text-sm ${discountType === "value" ? "bg-green-600 text-white" : "text-slate-600 hover:bg-slate-100"}`}>৳</button>
                         </div>
                       </div>
                       <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-xs">
-                        <span className="text-gray-600">Patient saves: <strong className="text-green-700">৳ {calculatedDiscountAmount.toLocaleString("en-BD", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong></span>
-                        <span className="text-gray-500">Discount is capped at the subtotal.</span>
+                        <span className="text-slate-600">Patient saves: <strong className="tabular-nums text-green-700">৳ {calculatedDiscountAmount.toLocaleString("en-BD", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong></span>
+                        <span className="text-slate-500">Discount is capped at the subtotal.</span>
                       </div>
                     </div>
-                    <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_260px]"><label><span className={labelClassName}><FileText className="mr-1 inline h-3.5 w-3.5 text-green-600" />Notes / Report Remarks</span><textarea className={`${inputClassName} min-h-24 resize-y`} value={notes} onChange={(event) => setNotes(event.target.value)} disabled={isBusy} placeholder="Optional notes for the printed chamber form" /></label><div className="rounded-2xl bg-green-900 p-4 text-white"><p className="text-xs font-bold uppercase tracking-wider text-green-200">Subtotal</p><p className="mt-1 text-lg font-semibold text-green-100">৳ {subtotal.toLocaleString("en-BD", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p><p className="mt-2 text-xs text-green-200">Discount: − ৳ {calculatedDiscountAmount.toLocaleString("en-BD", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p><p className="mt-2 border-t border-green-700 pt-2 text-xs font-bold uppercase tracking-wider text-green-200">Grand Total</p><p className="mt-1 text-2xl font-bold">৳ {estimatedTotal.toLocaleString("en-BD", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p><p className="mt-2 text-xs text-green-200">Selected tests + fixed visit + additional charges − discount</p></div></div>
+                    <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_260px]"><label><span className={labelClassName}><FileText className="mr-1 inline h-3.5 w-3.5 text-emerald-700" />Notes / Report Remarks</span><textarea className={`${inputClassName} min-h-24 resize-y`} value={notes} onChange={(event) => setNotes(event.target.value)} disabled={isBusy} placeholder="Optional notes for the printed chamber form" /></label><div className="rounded-2xl bg-green-900 p-4 text-white"><p className="text-xs font-bold uppercase tracking-wider text-green-200">Subtotal</p><p className="mt-1 text-lg font-semibold tabular-nums text-green-100">৳ {subtotal.toLocaleString("en-BD", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p><p className="mt-2 text-xs text-green-200">Discount: − ৳ {calculatedDiscountAmount.toLocaleString("en-BD", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p><p className="mt-2 border-t border-green-700 pt-2 text-xs font-bold uppercase tracking-wider text-green-200">Grand Total</p><p className="mt-1 text-2xl font-bold tabular-nums">৳ {estimatedTotal.toLocaleString("en-BD", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p><p className="mt-2 text-xs text-green-200">Selected tests + fixed visit + additional charges − discount</p></div></div>
                   </div>
                 </section>
 
@@ -770,7 +764,7 @@ export default function DoctorChamberForm({
               isSubmitting={isSubmitting}
               isDisabled={!patient.firstName.trim() || !patient.gender.trim()}
               cancelText="Cancel"
-              submitText={isEditing ? "Update Chamber Visit" : "Save Chamber Visit"}
+              submitText={isEditing ? "Save Changes" : "Save Chamber Visit"}
               loadingText="Saving..."
               submitIcon={isEditing ? Save : Check}
               theme={isEditing ? "blue" : "green"}

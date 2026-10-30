@@ -13,6 +13,7 @@ import { generatePathologyReceipt } from "../../../../utils/generateReceipt";
 import { useAuth } from "@/app/AuthContext";
 import { useNotification } from "@/hooks/useNotification";
 import { formatBDT } from "@/lib/timezone";
+import { TONE_BADGE } from "@/lib/statusStyles";
 
 interface PatientOverviewProps {
   isOpen: boolean;
@@ -68,8 +69,8 @@ const PatientOverview: React.FC<PatientOverviewProps> = ({
         subtitle="Complete test details and financial breakdown."
         onClose={onClose}
         extra={
-          <div className="flex flex-col items-end gap-0.5 px-3 py-1.5 bg-white/50 border border-slate-200/50 rounded-xl shadow-xs">
-            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+          <div className="flex flex-col items-end gap-0.5 px-3 py-1.5 bg-white border border-slate-200 rounded-xl shadow-xs">
+            <span className="text-2xs font-black text-slate-500 uppercase tracking-widest">
               Last Updated
             </span>
             <span className="text-xs font-black text-slate-700">
@@ -80,53 +81,51 @@ const PatientOverview: React.FC<PatientOverviewProps> = ({
       >
         <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
           <div className="flex items-center gap-1.5 px-1.5 py-0.5 sm:px-2 sm:py-1 bg-teal-50 border border-teal-100 rounded-md">
-            <span className="text-[8px] sm:text-[9px] font-bold text-teal-400 uppercase">
+            <span className="text-2xs sm:text-2xs font-bold text-teal-700 uppercase">
               Test No
             </span>
-            <span className="text-[10px] sm:text-[11px] font-bold text-teal-700 font-mono">
+            <span className="text-2xs sm:text-2xs font-bold text-teal-700 font-mono">
               {patient.testNumber}
             </span>
           </div>
           <div className="hidden sm:flex items-center gap-1.5 px-2 py-1 bg-slate-50 border border-slate-100 rounded-md">
-            <Clock className="w-2.5 h-2.5 text-gray-400" />
-            <span className="text-[9px] font-bold text-gray-400 uppercase">
+            <Clock className="w-2.5 h-2.5 text-slate-500" />
+            <span className="text-2xs font-bold text-slate-500 uppercase">
               Test Date
             </span>
-            <span className="text-[10px] font-bold text-gray-600">
+            <span className="text-2xs font-bold text-slate-600">
               {formatDateWithTime(patient.testDate).date}
             </span>
-            <span className="text-[9px] font-medium text-gray-400">
+            <span className="text-2xs font-medium text-slate-500">
               {formatDateWithTime(patient.testDate).time}
             </span>
           </div>
           <div
-            className={`flex items-center gap-1 px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-md text-[9px] sm:text-[10px] font-bold uppercase ${
-              patient.isCompleted
-                ? "bg-emerald-50 text-emerald-600 border border-emerald-100"
-                : "bg-amber-50 text-amber-600 border border-amber-100"
+            className={`flex items-center gap-1 px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-md ring-1 ring-inset text-2xs font-bold uppercase ${
+              TONE_BADGE[patient.isCompleted ? "success" : "warning"]
             }`}
           >
             {patient.isCompleted ? "Done" : "Pending"}
           </div>
           <div className="hidden lg:flex items-center gap-1 sm:gap-1.5 px-1.5 sm:px-2 py-0.5 sm:py-1 bg-emerald-50 border border-emerald-100 rounded-md min-w-0">
-            <span className="text-[8px] sm:text-[9px] font-bold text-emerald-500 uppercase shrink-0">
+            <span className="text-2xs sm:text-2xs font-bold text-emerald-700 uppercase shrink-0">
               Added
             </span>
-            <span className="text-[10px] sm:text-[11px] font-semibold text-emerald-700 truncate max-w-[170px]">
+            <span className="text-2xs sm:text-2xs font-semibold text-emerald-700 truncate max-w-[170px]">
               {patient.createdByName || "Unknown"}
             </span>
-            <span className="text-[9px] sm:text-[10px] text-emerald-600 truncate max-w-[140px]">
+            <span className="text-2xs sm:text-2xs text-emerald-700 truncate max-w-[140px]">
               • {formatCompactMetadataDateTime(patient.createdAt)}
             </span>
           </div>
           <div className="hidden lg:flex items-center gap-1 sm:gap-1.5 px-1.5 sm:px-2 py-0.5 sm:py-1 bg-indigo-50 border border-indigo-100 rounded-md min-w-0">
-            <span className="text-[8px] sm:text-[9px] font-bold text-indigo-500 uppercase shrink-0">
+            <span className="text-2xs sm:text-2xs font-bold text-indigo-700 uppercase shrink-0">
               Edited
             </span>
-            <span className="text-[10px] sm:text-[11px] font-semibold text-indigo-700 truncate max-w-[170px]">
+            <span className="text-2xs sm:text-2xs font-semibold text-indigo-700 truncate max-w-[170px]">
               {patient.lastModifiedByName || "Unknown"}
             </span>
-            <span className="text-[9px] sm:text-[10px] text-indigo-600 truncate max-w-[140px]">
+            <span className="text-2xs sm:text-2xs text-indigo-600 truncate max-w-[140px]">
               • {formatCompactMetadataDateTime(patient.updatedAt)}
             </span>
           </div>
@@ -157,13 +156,14 @@ const PatientOverview: React.FC<PatientOverviewProps> = ({
       </div>
 
       {/* Custom Footer with Print Button */}
-      <div className="border-t border-gray-200 bg-gray-50 px-3 sm:px-4 md:px-6 py-2 sm:py-3 rounded-b-3xl">
+      <div className="border-t border-slate-200 bg-slate-50 px-3 sm:px-4 md:px-6 py-2 sm:py-3 rounded-b-3xl">
         <div className="flex items-center justify-between gap-2">
           {/* Left Side - Print Button */}
           <button
             type="button"
             onClick={handlePrint}
-            className="inline-flex items-center justify-center gap-2 p-2 sm:px-4 sm:py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors duration-200 text-xs sm:text-sm font-medium cursor-pointer shadow-sm"
+            aria-label="Print receipt"
+            className="inline-flex h-9 items-center justify-center gap-2 px-3 sm:px-4 border border-slate-300 bg-white text-slate-700 rounded-lg hover:bg-slate-50 transition-colors text-xs sm:text-sm font-medium cursor-pointer"
           >
             <Printer className="w-4 h-4" />
             <span className="hidden sm:inline">Print Receipt</span>
@@ -174,7 +174,8 @@ const PatientOverview: React.FC<PatientOverviewProps> = ({
             <button
               type="button"
               onClick={onClose}
-              className="inline-flex items-center justify-center gap-1.5 p-2 sm:px-4 sm:py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors duration-200 text-xs sm:text-sm font-medium cursor-pointer"
+              aria-label="Close"
+              className="inline-flex h-9 items-center justify-center gap-1.5 px-3 sm:px-4 border border-slate-300 bg-white text-slate-700 rounded-lg hover:bg-slate-50 transition-colors text-xs sm:text-sm font-medium cursor-pointer"
             >
               <X className="w-4 h-4 sm:hidden" />
               <span className="hidden sm:inline">Close</span>
@@ -182,7 +183,8 @@ const PatientOverview: React.FC<PatientOverviewProps> = ({
             <button
               type="button"
               onClick={handleEdit}
-              className="inline-flex items-center justify-center gap-1.5 p-2 sm:px-4 sm:py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-lg transition-colors duration-200 text-xs sm:text-sm font-medium cursor-pointer"
+              aria-label="Edit patient"
+              className="inline-flex h-9 items-center justify-center gap-1.5 px-3 sm:px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-xs sm:text-sm font-medium cursor-pointer"
             >
               <Edit className="w-4 h-4" />
               <span className="hidden sm:inline">Edit</span>

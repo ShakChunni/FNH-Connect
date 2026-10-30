@@ -87,13 +87,13 @@ const ManageDropdown: React.FC<{
       <button
         ref={buttonRef}
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-1.5 px-3 py-2.5 bg-gray-50 hover:bg-gray-100 rounded-xl text-xs font-semibold text-gray-700 transition-colors cursor-pointer border border-gray-100 whitespace-nowrap"
+        className="flex items-center gap-1.5 px-3 py-2.5 bg-slate-50 hover:bg-slate-100 rounded-xl text-xs font-semibold text-slate-700 transition-colors cursor-pointer border border-slate-100 whitespace-nowrap"
       >
         <Settings className="w-3.5 h-3.5" />
         <span>Manage</span>
         <ChevronDown
           className={cn(
-            "w-3.5 h-3.5 text-gray-400 transition-transform duration-200",
+            "w-3.5 h-3.5 text-slate-400 transition-transform duration-200",
             isOpen && "rotate-180",
           )}
         />
@@ -111,7 +111,7 @@ const ManageDropdown: React.FC<{
               openModal("addMedicine");
               setIsOpen(false);
             }}
-            className="w-full flex items-center gap-2 px-4 py-2.5 text-xs font-semibold text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer whitespace-nowrap"
+            className="w-full flex items-center gap-2 px-4 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer whitespace-nowrap"
           >
             <Plus className="w-3.5 h-3.5 text-blue-500" />
             Add Medicine
@@ -121,7 +121,7 @@ const ManageDropdown: React.FC<{
               openModal("addGroup");
               setIsOpen(false);
             }}
-            className="w-full flex items-center gap-2 px-4 py-2.5 text-xs font-semibold text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer whitespace-nowrap"
+            className="w-full flex items-center gap-2 px-4 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer whitespace-nowrap"
           >
             <Plus className="w-3.5 h-3.5 text-purple-500" />
             Add Group
@@ -131,7 +131,7 @@ const ManageDropdown: React.FC<{
               openModal("addCompany");
               setIsOpen(false);
             }}
-            className="w-full flex items-center gap-2 px-4 py-2.5 text-xs font-semibold text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer whitespace-nowrap"
+            className="w-full flex items-center gap-2 px-4 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer whitespace-nowrap"
           >
             <Plus className="w-3.5 h-3.5 text-emerald-500" />
             Add Company
@@ -142,7 +142,7 @@ const ManageDropdown: React.FC<{
                 openModal("managePackages");
                 setIsOpen(false);
               }}
-              className="w-full flex items-center gap-2 px-4 py-2.5 text-xs font-semibold text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer whitespace-nowrap"
+              className="w-full flex items-center gap-2 px-4 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer whitespace-nowrap"
             >
               <Package className="w-3.5 h-3.5 text-indigo-500" />
               Manage medicine packages
@@ -172,7 +172,7 @@ const GroupFilterDropdown: React.FC<{
       <button
         ref={buttonRef}
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center justify-between gap-1.5 min-w-[160px] px-3 py-2.5 bg-gray-50 hover:bg-gray-100 rounded-xl text-xs font-semibold text-gray-700 transition-colors cursor-pointer border border-gray-100"
+        className="flex items-center justify-between gap-1.5 min-w-[160px] px-3 py-2.5 bg-slate-50 hover:bg-slate-100 rounded-xl text-xs font-semibold text-slate-700 transition-colors cursor-pointer border border-slate-100"
       >
         <div className="flex items-center gap-1.5 min-w-0">
           <Layers className="w-3.5 h-3.5 text-purple-500 shrink-0" />
@@ -180,7 +180,7 @@ const GroupFilterDropdown: React.FC<{
         </div>
         <ChevronDown
           className={cn(
-            "w-3.5 h-3.5 text-gray-400 transition-transform duration-200",
+            "w-3.5 h-3.5 text-slate-400 transition-transform duration-200",
             isOpen && "rotate-180",
           )}
         />
@@ -199,8 +199,8 @@ const GroupFilterDropdown: React.FC<{
               setIsOpen(false);
             }}
             className={cn(
-              "w-full px-3 py-2 text-left text-xs font-medium hover:bg-gray-50 transition-colors cursor-pointer",
-              !value ? "text-fnh-navy bg-fnh-navy/5" : "text-gray-700",
+              "w-full px-3 py-2 text-left text-xs font-medium hover:bg-slate-50 transition-colors cursor-pointer",
+              !value ? "text-fnh-navy bg-fnh-navy/5" : "text-slate-700",
             )}
           >
             All Groups
@@ -213,10 +213,10 @@ const GroupFilterDropdown: React.FC<{
                 setIsOpen(false);
               }}
               className={cn(
-                "w-full px-3 py-2 text-left text-xs font-medium hover:bg-gray-50 transition-colors cursor-pointer",
+                "w-full px-3 py-2 text-left text-xs font-medium hover:bg-slate-50 transition-colors cursor-pointer",
                 value === group.id
                   ? "text-fnh-navy bg-fnh-navy/5"
-                  : "text-gray-700",
+                  : "text-slate-700",
               )}
             >
               {group.name}
@@ -511,7 +511,7 @@ const MedicineInventoryPage = () => {
                       }}
                       placeholder="Filter date range"
                       hideSelectedSummary
-                      className="bg-gray-50/80 border-gray-100 hover:bg-gray-100 hover:border-gray-200 focus:border-fnh-blue focus:ring-fnh-blue/20 text-xs font-semibold text-gray-700 shadow-sm"
+                      className="bg-slate-50/80 border-slate-100 hover:bg-slate-100 hover:border-slate-200 focus:border-fnh-blue focus:ring-fnh-blue/20 text-xs font-semibold text-slate-700 shadow-sm"
                       popoverClassName="shadow-xl"
                       disableFutureDates
                       showQuickPresets
@@ -520,14 +520,14 @@ const MedicineInventoryPage = () => {
 
                   <button
                     onClick={() => openModal("addPurchase")}
-                    className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl transition-all shadow-sm text-xs sm:text-sm font-semibold cursor-pointer active:scale-95"
+                    className="flex h-10 items-center justify-center gap-2 px-3 sm:px-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl transition-colors shadow-sm text-xs sm:text-sm font-semibold cursor-pointer"
                   >
                     <TrendingUp className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                     <span>Add Purchase</span>
                   </button>
                   <button
                     onClick={() => openModal("addSale")}
-                    className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition-all shadow-sm text-xs sm:text-sm font-semibold cursor-pointer active:scale-95"
+                    className="flex h-10 items-center justify-center gap-2 px-3 sm:px-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl transition-colors shadow-sm text-xs sm:text-sm font-semibold cursor-pointer"
                   >
                     <ShoppingCart className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                     <span>Record Sale</span>
@@ -550,7 +550,7 @@ const MedicineInventoryPage = () => {
               <div className="p-4 bg-amber-50 border border-amber-200 rounded-2xl">
                 <div className="flex items-start gap-3">
                   <div className="w-10 h-10 bg-amber-100 rounded-xl flex items-center justify-center shrink-0">
-                    <AlertTriangle className="w-5 h-5 text-amber-600" />
+                    <AlertTriangle className="w-5 h-5 text-amber-700" />
                   </div>
                   <div className="flex-1">
                     <h4 className="text-sm font-black text-amber-900 mb-1">
@@ -567,13 +567,13 @@ const MedicineInventoryPage = () => {
                           className="inline-flex items-center gap-1 px-2 py-1 bg-white rounded-lg text-xs font-semibold text-amber-800 border border-amber-200"
                         >
                           <span>{getMedicineDisplayName(item)}</span>
-                          <span className="text-amber-500">
+                          <span className="text-amber-700">
                             ({item.currentStock} left)
                           </span>
                         </span>
                       ))}
                       {lowStockItems.length > 5 && (
-                        <span className="px-2 py-1 text-xs font-semibold text-amber-600">
+                        <span className="px-2 py-1 text-xs font-semibold text-amber-700">
                           +{lowStockItems.length - 5} more
                         </span>
                       )}
@@ -588,100 +588,96 @@ const MedicineInventoryPage = () => {
           <div className="px-1 sm:px-2 lg:px-4">
             <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 lg:gap-6">
               {/* Total Stock Value */}
-              <div className="col-span-1 bg-emerald-50/50 rounded-2xl p-4 sm:p-5 border border-emerald-100 shadow-sm shadow-emerald-100/20 relative overflow-hidden group hover:shadow-md transition-all duration-300">
-                <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-100/50 rounded-full -translate-y-1/2 translate-x-1/2 group-hover:scale-110 transition-transform duration-500" />
+              <div className="col-span-1 rounded-2xl border border-emerald-100 bg-emerald-50 p-4 shadow-sm sm:p-5">
                 <div className="relative z-10">
                   <div className="flex items-center gap-3 mb-3">
                     <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center shadow-sm">
-                      <Package className="w-4 h-4 text-emerald-600" />
+                      <Package className="w-4 h-4 text-emerald-700" />
                     </div>
-                    <span className="text-[10px] sm:text-xs font-black uppercase tracking-widest text-emerald-900/60">
+                    <span className="text-xs font-semibold uppercase tracking-wide text-emerald-900">
                       Stock Value
                     </span>
                   </div>
                   {isLoading ? (
                     <div className="h-8 w-32 bg-emerald-100/50 rounded animate-pulse mb-1" />
                   ) : (
-                    <p className="text-xl sm:text-2xl lg:text-2xl xl:text-3xl font-black text-emerald-950 wrap-break-word min-w-0">
+                    <p className="text-xl sm:text-2xl lg:text-2xl xl:text-3xl font-black tabular-nums text-emerald-950 wrap-break-word min-w-0">
                       {formatCurrency(stats?.totalStockValue || 0)}
                     </p>
                   )}
-                  <p className="text-[10px] sm:text-xs font-medium mt-1 text-emerald-700/80">
+                  <p className="text-xs font-medium mt-1 text-emerald-800">
                     Total inventory value
                   </p>
                 </div>
               </div>
 
               {/* Low Stock Items */}
-              <div className="col-span-1 bg-rose-50/50 rounded-2xl p-4 sm:p-5 border border-rose-100 shadow-sm shadow-rose-100/20 relative overflow-hidden group hover:shadow-md transition-all duration-300">
-                <div className="absolute top-0 right-0 w-24 h-24 bg-rose-100/50 rounded-full -translate-y-1/2 translate-x-1/2 group-hover:scale-110 transition-transform duration-500" />
+              <div className="col-span-1 rounded-2xl border border-amber-200 bg-amber-50 p-4 shadow-sm sm:p-5">
                 <div className="relative z-10">
                   <div className="flex items-center gap-3 mb-3">
                     <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center shadow-sm">
-                      <AlertTriangle className="w-4 h-4 text-rose-600" />
+                      <AlertTriangle className="w-4 h-4 text-amber-700" />
                     </div>
-                    <span className="text-[10px] sm:text-xs font-black uppercase tracking-widest text-rose-900/60">
+                    <span className="text-xs font-semibold uppercase tracking-wide text-amber-900">
                       Low Stock
                     </span>
                   </div>
                   {isLoading ? (
                     <div className="h-8 w-16 bg-rose-100/50 rounded animate-pulse mb-1" />
                   ) : (
-                    <p className="text-xl sm:text-2xl lg:text-2xl xl:text-3xl font-black text-rose-950 min-w-0">
+                    <p className="text-xl sm:text-2xl lg:text-2xl xl:text-3xl font-black tabular-nums text-amber-950 min-w-0">
                       {stats?.lowStockCount || 0}
                     </p>
                   )}
-                  <p className="text-[10px] sm:text-xs font-medium mt-1 text-rose-700/80">
+                  <p className="text-xs font-medium mt-1 text-amber-800">
                     Items need restocking
                   </p>
                 </div>
               </div>
 
               {/* Today's Sales */}
-              <div className="col-span-1 bg-blue-50/50 rounded-2xl p-4 sm:p-5 border border-blue-100 shadow-sm shadow-blue-100/20 relative overflow-hidden group hover:shadow-md transition-all duration-300">
-                <div className="absolute top-0 right-0 w-24 h-24 bg-blue-100/50 rounded-full -translate-y-1/2 translate-x-1/2 group-hover:scale-110 transition-transform duration-500" />
+              <div className="col-span-1 rounded-2xl border border-blue-100 bg-blue-50 p-4 shadow-sm sm:p-5">
                 <div className="relative z-10">
                   <div className="flex items-center gap-3 mb-3">
                     <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center shadow-sm">
-                      <TrendingDown className="w-4 h-4 text-blue-600" />
+                      <TrendingDown className="w-4 h-4 text-blue-700" />
                     </div>
-                    <span className="text-[10px] sm:text-xs font-black uppercase tracking-widest text-blue-900/60">
+                    <span className="text-xs font-semibold uppercase tracking-wide text-blue-900">
                       Total Sales
                     </span>
                   </div>
                   {isLoading ? (
                     <div className="h-8 w-32 bg-blue-100/50 rounded animate-pulse mb-1" />
                   ) : (
-                    <p className="text-xl sm:text-2xl lg:text-2xl xl:text-3xl font-black text-blue-950 wrap-break-word min-w-0">
+                    <p className="text-xl sm:text-2xl lg:text-2xl xl:text-3xl font-black tabular-nums text-blue-950 wrap-break-word min-w-0">
                       {formatCurrency(stats?.totalSalesAmount || 0)}
                     </p>
                   )}
-                  <p className="text-[10px] sm:text-xs font-medium mt-1 text-blue-700/80">
+                  <p className="text-xs font-medium mt-1 text-blue-800">
                     {stats?.totalSalesCount || 0} sale(s)
                   </p>
                 </div>
               </div>
 
               {/* Total Purchases */}
-              <div className="col-span-1 bg-violet-50/50 rounded-2xl p-4 sm:p-5 border border-violet-100 shadow-sm shadow-violet-100/20 relative overflow-hidden group hover:shadow-md transition-all duration-300">
-                <div className="absolute top-0 right-0 w-24 h-24 bg-violet-100/50 rounded-full -translate-y-1/2 translate-x-1/2 group-hover:scale-110 transition-transform duration-500" />
+              <div className="col-span-1 rounded-2xl border border-slate-200 bg-slate-50 p-4 shadow-sm sm:p-5">
                 <div className="relative z-10">
                   <div className="flex items-center gap-3 mb-3">
                     <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center shadow-sm">
-                      <TrendingUp className="w-4 h-4 text-violet-600" />
+                      <TrendingUp className="w-4 h-4 text-slate-600" />
                     </div>
-                    <span className="text-[10px] sm:text-xs font-black uppercase tracking-widest text-violet-900/60">
+                    <span className="text-xs font-semibold uppercase tracking-wide text-slate-700">
                       Total Purchases
                     </span>
                   </div>
                   {isLoading ? (
                     <div className="h-8 w-32 bg-violet-100/50 rounded animate-pulse mb-1" />
                   ) : (
-                    <p className="text-xl sm:text-2xl lg:text-2xl xl:text-3xl font-black text-violet-950 wrap-break-word min-w-0">
+                    <p className="text-xl sm:text-2xl lg:text-2xl xl:text-3xl font-black tabular-nums text-slate-900 wrap-break-word min-w-0">
                       {formatCurrency(stats?.totalPurchasesAmount || 0)}
                     </p>
                   )}
-                  <p className="text-[10px] sm:text-xs font-medium mt-1 text-violet-700/80">
+                  <p className="text-xs font-medium mt-1 text-slate-500">
                     {stats?.totalPurchasesCount || 0} purchase(s)
                   </p>
                 </div>
@@ -694,12 +690,12 @@ const MedicineInventoryPage = () => {
             <div className="relative">
               {showLeftIndicator && (
                 <div className="absolute left-0 top-0 bottom-0 z-10 w-10 bg-gradient-to-r from-fnh-porcelain to-transparent pointer-events-none flex items-center">
-                  <ChevronRight className="w-4 h-4 text-gray-400 rotate-180 ml-1" />
+                  <ChevronRight className="w-4 h-4 text-slate-400 rotate-180 ml-1" />
                 </div>
               )}
               {showRightIndicator && (
                 <div className="absolute right-0 top-0 bottom-0 z-10 w-12 bg-gradient-to-l from-fnh-porcelain to-transparent pointer-events-none flex items-center justify-end pr-1">
-                  <ChevronRight className="w-4 h-4 text-gray-400" />
+                  <ChevronRight className="w-4 h-4 text-slate-400" />
                 </div>
               )}
 
@@ -708,16 +704,16 @@ const MedicineInventoryPage = () => {
                 className="overflow-x-auto scrollbar-hide"
                 style={{ scrollbarWidth: "none" }}
               >
-                <div className="inline-flex gap-1 p-1 bg-white rounded-xl border border-gray-100 shadow-sm min-w-max">
+                <div className="inline-flex gap-1 p-1 bg-white rounded-xl border border-slate-100 shadow-sm min-w-max">
                   {tabConfig.map((tab) => (
                     <button
                       key={tab.id}
                       onClick={() => setActiveTab(tab.id)}
                       className={cn(
-                        "flex items-center gap-2 px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all cursor-pointer whitespace-nowrap",
+                        "flex items-center gap-2 px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-colors cursor-pointer whitespace-nowrap",
                         activeTab === tab.id
                           ? "bg-fnh-navy text-white shadow-sm"
-                          : "text-gray-600 hover:bg-gray-50",
+                          : "text-slate-600 hover:bg-slate-50",
                       )}
                     >
                       <tab.icon className="w-4 h-4" />
@@ -731,10 +727,10 @@ const MedicineInventoryPage = () => {
 
           {/* Search and Filters */}
           <div className="px-1 sm:px-2 lg:px-4">
-            <div className="p-3 sm:p-4 bg-white rounded-2xl border border-gray-100 shadow-sm flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-3 sm:gap-4">
+            <div className="p-3 sm:p-4 bg-white rounded-2xl border border-slate-100 shadow-sm flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-3 sm:gap-4">
               {/* Search Input */}
               <div className="flex-1 min-w-[180px] sm:min-w-[200px] relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                 <input
                   type="text"
                   placeholder={
@@ -748,7 +744,7 @@ const MedicineInventoryPage = () => {
                   }
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 bg-gray-50/50 border border-gray-100 rounded-xl text-xs sm:text-sm font-bold focus:outline-none focus:ring-2 focus:ring-fnh-blue/20 transition-all"
+                  className="w-full pl-10 pr-4 py-2.5 bg-slate-50/50 border border-slate-100 rounded-xl text-xs sm:text-sm font-bold focus:outline-none focus:ring-2 focus:ring-fnh-blue/20 transition-colors"
                 />
               </div>
 
@@ -775,9 +771,9 @@ const MedicineInventoryPage = () => {
                       resetFilters();
                       setSearchTerm("");
                     }}
-                    className="px-3 py-2 text-[10px] sm:text-xs font-black text-rose-500 uppercase tracking-widest hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                    className="h-9 px-3 text-xs font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-50 rounded-lg transition-colors cursor-pointer"
                   >
-                    Clear Filters
+                    Clear filters
                   </button>
                 )}
             </div>

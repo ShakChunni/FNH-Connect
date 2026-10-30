@@ -23,21 +23,21 @@ export const MedicalDetails: React.FC<MedicalDetailsProps> = ({ patient }) => {
     if (!bmi)
       return {
         label: "N/A",
-        color: "text-gray-400",
-        bg: "bg-gray-50",
-        border: "border-gray-100",
+        color: "text-slate-500",
+        bg: "bg-slate-50",
+        border: "border-slate-100",
       };
     if (bmi < 18.5)
       return {
         label: "Underweight",
-        color: "text-amber-600",
+        color: "text-amber-700",
         bg: "bg-amber-50",
         border: "border-amber-100",
       };
     if (bmi < 25)
       return {
         label: "Normal",
-        color: "text-emerald-600",
+        color: "text-emerald-700",
         bg: "bg-emerald-50",
         border: "border-emerald-100",
       };
@@ -93,7 +93,7 @@ export const MedicalDetails: React.FC<MedicalDetailsProps> = ({ patient }) => {
       bg: "bg-emerald-50/50",
       border: "border-emerald-100/50",
       icon: Scale,
-      color: "text-emerald-600",
+      color: "text-emerald-700",
       items: [
         {
           label: "Weight",
@@ -115,7 +115,7 @@ export const MedicalDetails: React.FC<MedicalDetailsProps> = ({ patient }) => {
       {/* BMI Card - Prominent */}
       <div
         className={cn(
-          "md:col-span-2 rounded-2xl sm:rounded-3xl p-4 sm:p-6 border-2 flex flex-col sm:flex-row items-center justify-between gap-4 sm:gap-6 transition-all hover:shadow-md",
+          "md:col-span-2 rounded-2xl sm:rounded-3xl p-4 sm:p-6 border-2 flex flex-col sm:flex-row items-center justify-between gap-4 sm:gap-6 transition-colors ",
           bmiInfo.bg,
           bmiInfo.border
         )}
@@ -130,11 +130,11 @@ export const MedicalDetails: React.FC<MedicalDetailsProps> = ({ patient }) => {
             <Activity className="w-6 h-6 sm:w-8 sm:h-8" />
           </div>
           <div>
-            <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-wider text-gray-500 block mb-0.5 sm:mb-1">
+            <span className="text-2xs sm:text-2xs font-black uppercase tracking-wider text-slate-500 block mb-0.5 sm:mb-1">
               Body Mass Index
             </span>
             <div className="flex items-baseline gap-1.5 sm:gap-2">
-              <h4 className="text-2xl sm:text-4xl font-black tracking-tight text-gray-900">
+              <h4 className="text-2xl sm:text-4xl font-black tracking-tight text-slate-900">
                 {patient.bmi ? Number(patient.bmi).toFixed(1) : "N/A"}
               </h4>
               <span
@@ -166,7 +166,7 @@ export const MedicalDetails: React.FC<MedicalDetailsProps> = ({ patient }) => {
         <div
           key={idx}
           className={cn(
-            "bg-white rounded-2xl sm:rounded-3xl border border-gray-100 p-4 sm:p-6 space-y-4 sm:space-y-6 shadow-sm",
+            "bg-white rounded-2xl sm:rounded-3xl border border-slate-100 p-4 sm:p-6 space-y-4 sm:space-y-6 shadow-sm",
             "hover:border-indigo-100 transition-colors"
           )}
         >
@@ -180,7 +180,7 @@ export const MedicalDetails: React.FC<MedicalDetailsProps> = ({ patient }) => {
             >
               <group.icon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </div>
-            <h5 className="text-[10px] sm:text-xs font-black uppercase tracking-wide text-gray-400">
+            <h5 className="text-2xs sm:text-xs font-black uppercase tracking-wide text-slate-500">
               {group.label}
             </h5>
           </div>
@@ -188,13 +188,13 @@ export const MedicalDetails: React.FC<MedicalDetailsProps> = ({ patient }) => {
           <div className="grid grid-cols-2 gap-y-4 sm:gap-y-6 gap-x-3 sm:gap-x-4">
             {group.items.map((item, i) => (
               <div key={i} className="space-y-0.5 sm:space-y-1">
-                <div className="flex items-center gap-1 text-gray-400">
+                <div className="flex items-center gap-1 text-slate-500">
                   <item.icon size={10} strokeWidth={2.5} />
-                  <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-tight">
+                  <span className="text-2xs sm:text-2xs font-bold uppercase tracking-tight">
                     {item.label}
                   </span>
                 </div>
-                <p className="text-xs sm:text-sm font-black text-gray-800 tracking-tight">
+                <p className="text-xs sm:text-sm font-black text-slate-800 tracking-tight">
                   {item.value}
                 </p>
               </div>

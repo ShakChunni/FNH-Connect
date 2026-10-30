@@ -6,17 +6,17 @@ const colorClasses = {
   indigo: {
     border: "border-indigo-200",
     headerBg: "bg-white",
-    headerText: "text-gray-900",
+    headerText: "text-slate-900",
     todayBg: "bg-indigo-100",
     todayText: "text-indigo-700",
     todayBorder: "border-indigo-300",
     selectedBg: "bg-indigo-500",
     selectedText: "text-white",
     selectedShadow: "shadow-sm",
-    dayText: "text-gray-700",
+    dayText: "text-slate-700",
     dayHoverBg: "hover:bg-indigo-50",
     dayHoverText: "hover:text-indigo-600",
-    disabledText: "text-gray-300",
+    disabledText: "text-slate-300",
     chevron: "text-indigo-600",
     chevronHover: "hover:bg-indigo-50",
     monthYearHover: "hover:bg-indigo-50",
@@ -28,17 +28,17 @@ const colorClasses = {
   emerald: {
     border: "border-emerald-200",
     headerBg: "bg-white",
-    headerText: "text-gray-900",
+    headerText: "text-slate-900",
     todayBg: "bg-emerald-100",
     todayText: "text-emerald-700",
     todayBorder: "border-emerald-300",
     selectedBg: "bg-emerald-500",
     selectedText: "text-white",
     selectedShadow: "shadow-sm",
-    dayText: "text-gray-700",
+    dayText: "text-slate-700",
     dayHoverBg: "hover:bg-emerald-50",
     dayHoverText: "hover:text-emerald-600",
-    disabledText: "text-gray-300",
+    disabledText: "text-slate-300",
     chevron: "text-emerald-600",
     chevronHover: "hover:bg-emerald-50",
     monthYearHover: "hover:bg-emerald-50",
@@ -50,17 +50,17 @@ const colorClasses = {
   amber: {
     border: "border-amber-200",
     headerBg: "bg-white",
-    headerText: "text-gray-900",
+    headerText: "text-slate-900",
     todayBg: "bg-amber-100",
     todayText: "text-amber-700",
     todayBorder: "border-amber-300",
     selectedBg: "bg-amber-500",
     selectedText: "text-white",
     selectedShadow: "shadow-sm",
-    dayText: "text-gray-700",
+    dayText: "text-slate-700",
     dayHoverBg: "hover:bg-amber-50",
     dayHoverText: "hover:text-amber-600",
-    disabledText: "text-gray-300",
+    disabledText: "text-slate-300",
     chevron: "text-amber-600",
     chevronHover: "hover:bg-amber-50",
     monthYearHover: "hover:bg-amber-50",
@@ -72,17 +72,17 @@ const colorClasses = {
   purple: {
     border: "border-purple-200",
     headerBg: "bg-white",
-    headerText: "text-gray-900",
+    headerText: "text-slate-900",
     todayBg: "bg-purple-100",
     todayText: "text-purple-700",
     todayBorder: "border-purple-300",
     selectedBg: "bg-purple-500",
     selectedText: "text-white",
     selectedShadow: "shadow-sm",
-    dayText: "text-gray-700",
+    dayText: "text-slate-700",
     dayHoverBg: "hover:bg-purple-50",
     dayHoverText: "hover:text-purple-600",
-    disabledText: "text-gray-300",
+    disabledText: "text-slate-300",
     chevron: "text-purple-600",
     chevronHover: "hover:bg-purple-50",
     monthYearHover: "hover:bg-purple-50",
@@ -94,17 +94,17 @@ const colorClasses = {
   rose: {
     border: "border-rose-200",
     headerBg: "bg-white",
-    headerText: "text-gray-900",
+    headerText: "text-slate-900",
     todayBg: "bg-rose-100",
     todayText: "text-rose-700",
     todayBorder: "border-rose-300",
     selectedBg: "bg-rose-500",
     selectedText: "text-white",
     selectedShadow: "shadow-sm",
-    dayText: "text-gray-700",
+    dayText: "text-slate-700",
     dayHoverBg: "hover:bg-rose-50",
     dayHoverText: "hover:text-rose-600",
-    disabledText: "text-gray-300",
+    disabledText: "text-slate-300",
     chevron: "text-rose-600",
     chevronHover: "hover:bg-rose-50",
     monthYearHover: "hover:bg-rose-50",
@@ -304,7 +304,7 @@ const CustomCalendar: React.FC<CustomCalendarProps> = ({
         <button
           type="button"
           onClick={handlePrevMonth}
-          className={`p-2 ${colors.chevronHover} rounded-3xl transition-colors`}
+          className={`flex h-9 w-9 items-center justify-center ${colors.chevronHover} rounded-3xl transition-colors`}
           aria-label="Previous month"
         >
           <ChevronLeft className={`w-4 h-4 ${colors.chevron}`} />
@@ -363,7 +363,7 @@ const CustomCalendar: React.FC<CustomCalendarProps> = ({
         <button
           type="button"
           onClick={handleNextMonth}
-          className={`p-2 ${colors.chevronHover} rounded-3xl transition-colors`}
+          className={`flex h-9 w-9 items-center justify-center ${colors.chevronHover} rounded-3xl transition-colors`}
           aria-label="Next month"
         >
           <ChevronRight className={`w-4 h-4 ${colors.chevron}`} />
@@ -374,7 +374,7 @@ const CustomCalendar: React.FC<CustomCalendarProps> = ({
         {["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"].map((day) => (
           <div
             key={day}
-            className="text-center text-xs font-medium text-gray-500 py-2"
+            className="text-center text-xs font-medium text-slate-500 py-2"
           >
             {day}
           </div>
@@ -414,8 +414,8 @@ const CustomCalendar: React.FC<CustomCalendarProps> = ({
         ))}
       </div>
 
-      <div className="mt-3 pt-3 border-t border-gray-100">
-        <p className="text-xs text-gray-500 text-center">
+      <div className="mt-3 pt-3 border-t border-slate-100">
+        <p className="text-xs text-slate-500 text-center">
           {selectedDisplayDate
             ? `Selected: ${format(selectedDisplayDate, "dd/MM/yyyy")}`
             : "Select a date"}

@@ -43,23 +43,23 @@ const UserFilter: React.FC<UserFilterProps> = ({
         disabled={disabled}
         className={cn(
           "flex items-center justify-between gap-2 px-3 py-2 w-full sm:w-[140px]",
-          "bg-gray-50/50 border border-gray-100 rounded-xl",
-          "text-[10px] sm:text-xs font-bold",
+          "bg-slate-50/50 border border-slate-100 rounded-xl",
+          "text-2xs sm:text-xs font-bold",
           "focus:outline-none focus:ring-2 focus:ring-fnh-blue/20",
-          "transition-all duration-200 cursor-pointer",
+          "transition-colors cursor-pointer",
           "disabled:opacity-50 disabled:cursor-not-allowed",
           isOpen && "ring-2 ring-fnh-blue/20"
         )}
       >
         <div className="flex items-center gap-1.5">
-          <Users className="w-3 h-3 text-gray-400 shrink-0" />
+          <Users className="w-3 h-3 text-slate-500 shrink-0" />
           <span className="truncate">
             {selectedUser ? selectedUser.fullName : "All Users"}
           </span>
         </div>
         <ChevronDown
           className={cn(
-            "w-3 h-3 text-gray-400 transition-transform duration-200 shrink-0",
+            "w-3 h-3 text-slate-500 transition-transform duration-200 shrink-0",
             isOpen && "rotate-180"
           )}
         />
@@ -78,8 +78,8 @@ const UserFilter: React.FC<UserFilterProps> = ({
             onClick={() => handleSelect(null)}
             className={cn(
               "w-full flex items-center justify-between gap-2 px-3 py-2 text-left",
-              "text-[10px] sm:text-xs font-medium",
-              "hover:bg-gray-50 transition-colors cursor-pointer",
+              "text-2xs sm:text-xs font-medium",
+              "hover:bg-slate-50 transition-colors cursor-pointer",
               currentUserId === null && "bg-fnh-blue/5"
             )}
           >
@@ -92,7 +92,7 @@ const UserFilter: React.FC<UserFilterProps> = ({
           </button>
 
           {/* Divider */}
-          <div className="h-px bg-gray-100 my-1" />
+          <div className="h-px bg-slate-100 my-1" />
 
           {/* User Options */}
           {users.map((user) => {
@@ -105,8 +105,8 @@ const UserFilter: React.FC<UserFilterProps> = ({
                 onClick={() => handleSelect(user.id)}
                 className={cn(
                   "w-full flex items-center justify-between gap-2 px-3 py-2 text-left",
-                  "text-[10px] sm:text-xs",
-                  "hover:bg-gray-50 transition-colors cursor-pointer",
+                  "text-2xs sm:text-xs",
+                  "hover:bg-slate-50 transition-colors cursor-pointer",
                   isSelected && "bg-fnh-blue/5"
                 )}
               >
@@ -114,7 +114,7 @@ const UserFilter: React.FC<UserFilterProps> = ({
                   <p className={cn("truncate", isSelected && "font-bold")}>
                     {user.fullName}
                   </p>
-                  <p className="text-[8px] text-gray-400 truncate">
+                  <p className="text-2xs text-slate-500 truncate">
                     @{user.username}
                   </p>
                 </div>
@@ -126,7 +126,7 @@ const UserFilter: React.FC<UserFilterProps> = ({
           })}
 
           {users.length === 0 && (
-            <div className="px-3 py-4 text-center text-[10px] text-gray-400">
+            <div className="px-3 py-4 text-center text-2xs text-slate-500">
               No users found
             </div>
           )}

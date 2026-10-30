@@ -81,7 +81,7 @@ const GenderDropdown: FC<GenderDropdownProps> = ({
           onClick={() => handleSelect(g)}
           className={`cursor-pointer px-4 py-3 transition-colors duration-200 rounded-md mx-1 ${
             disabled
-              ? "cursor-not-allowed text-gray-400"
+              ? "cursor-not-allowed text-slate-500"
               : "hover:bg-blue-900 hover:text-white"
           }`}
         >
@@ -102,12 +102,12 @@ const GenderDropdown: FC<GenderDropdownProps> = ({
           handleOpenChange(!isOpen);
         }}
         disabled={disabled}
-        className={`text-gray-700 font-normal rounded-lg flex justify-between items-center w-full px-3 sm:px-4 py-2 h-12 md:h-14 outline-none transition-all duration-300 border-2 ${
+        className={`text-slate-700 font-normal rounded-lg flex justify-between items-center w-full px-3 sm:px-4 py-2 h-12 md:h-14 outline-none transition-colors duration-200 border-2 ${
           disabled
-            ? "bg-gray-200 border-gray-300 cursor-not-allowed"
+            ? "bg-slate-200 border-slate-300 cursor-not-allowed"
             : selectedValue
-            ? "bg-white border-green-700 cursor-pointer focus:border-blue-950 focus:ring-2 focus:ring-blue-950 shadow-sm hover:shadow-md"
-            : "bg-gray-50 border-gray-300 cursor-pointer focus:border-blue-950 focus:ring-2 focus:ring-blue-950 shadow-sm hover:shadow-md"
+            ? "bg-white border-green-700 cursor-pointer focus:border-blue-950 focus:ring-2 focus:ring-blue-950 shadow-sm"
+            : "bg-slate-50 border-slate-300 cursor-pointer focus:border-blue-950 focus:ring-2 focus:ring-blue-950 shadow-sm"
         }`}
         style={style}
         type="button"
@@ -115,8 +115,8 @@ const GenderDropdown: FC<GenderDropdownProps> = ({
         <span
           className={`flex items-center gap-2 ${
             selectedValue
-              ? "text-gray-700 font-normal"
-              : "text-gray-400 font-light"
+              ? "text-slate-700 font-normal"
+              : "text-slate-500 font-light"
           } text-xs sm:text-sm md:text-sm lg:text-sm xl:text-sm`}
         >
           {selectedValue || "Select Gender"}
@@ -129,7 +129,7 @@ const GenderDropdown: FC<GenderDropdownProps> = ({
           </span>
         ) : (
           <ChevronDown
-            className={`transition-transform duration-200 text-gray-400 ${
+            className={`transition-transform duration-200 text-slate-500 ${
               isOpen ? "rotate-180" : ""
             }`}
             size={16}

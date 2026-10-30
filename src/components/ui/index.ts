@@ -18,3 +18,4 @@ export type {
 } from "./SearchBar";
 export type { PageHeaderProps } from "./PageHeader";
 export * from "./modal-animations";
+export { StatusBadge } from "./StatusBadge";

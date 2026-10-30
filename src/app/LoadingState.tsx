@@ -58,22 +58,19 @@ const LoadingState = ({
       <div className="flex flex-col items-center justify-center flex-1 px-4">
         {/* Logo container with fixed dimensions to prevent layout shift */}
         <div className="relative w-20 h-20 sm:w-28 sm:h-28 md:w-32 md:h-32 mb-8 sm:mb-12">
-          {/* Glow background - pure CSS animation with FNH blue */}
-          <div className="absolute inset-0 rounded-full bg-fnh-blue/30 blur-3xl scale-[2] animate-loading-glow-in" />
-
-          {/* Portal logo - pure CSS light-up animation */}
+          {/* Portal logo: short fade-in, no glow */}
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={logoSrc}
             alt={logoAlt}
-            className="absolute inset-0 w-full h-full object-contain animate-loading-logo-light-up"
+            className="absolute inset-0 w-full h-full object-contain animate-in fade-in zoom-in-95 duration-400"
           />
         </div>
 
         {/* Text content - pure CSS fade in with delay */}
         <div className="flex flex-col items-center animate-loading-text-fade-in">
           {/* Description */}
-          <p className="text-sm sm:text-base text-gray-500 text-center">
+          <p className="text-sm sm:text-base text-slate-500 text-center">
             {finalDescription}
           </p>
         </div>
@@ -81,7 +78,7 @@ const LoadingState = ({
 
       {/* Footer branding - pure CSS fade in with longer delay */}
       <div className="pb-6 sm:pb-8 animate-loading-footer-fade-in">
-        <p className="text-[10px] sm:text-xs text-gray-400 tracking-wider uppercase">
+        <p className="text-2xs sm:text-xs text-slate-500 tracking-wider uppercase">
           {footerLabel}
         </p>
       </div>

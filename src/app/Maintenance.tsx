@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Settings, Clock } from "lucide-react";
+import { tween, DURATION } from "@/lib/motion";
 
 const MAINTENANCE_END = new Date("2025-07-16T20:00:00+08:00"); // 8pm MYT, 16 July 2025
 
@@ -46,92 +47,56 @@ const Maintenance = () => {
     <div className="flex items-center justify-center min-h-screen bg-[#f6f9fd] p-2 sm:p-6">
       <AnimatePresence>
         <motion.div
-          className="flex flex-col items-center p-6 sm:p-10 md:p-14 bg-white/90 rounded-3xl shadow-2xl border border-gray-100 w-full max-w-lg md:max-w-2xl"
-          initial={{ opacity: 0, y: 50 }}
+          className="flex flex-col items-center p-6 sm:p-10 md:p-14 bg-white rounded-2xl shadow-sm border border-slate-200 w-full max-w-lg md:max-w-2xl"
+          initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: 50 }}
-          transition={{ duration: 0.6, ease: "easeOut" }}
+          exit={{ opacity: 0, y: 8 }}
+          transition={tween(DURATION.base)}
         >
-          {/* Maintenance Icon */}
-          <motion.div
-            className="w-20 h-20 sm:w-24 sm:h-24 mb-6 flex items-center justify-center rounded-full bg-orange-50 shadow-lg relative"
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ delay: 0.2, duration: 0.5, type: "spring" }}
-          >
+          {/* Maintenance Icon: gear turns slowly as a spinner */}
+          <div className="w-20 h-20 sm:w-24 sm:h-24 mb-6 flex items-center justify-center rounded-full bg-orange-50">
             <motion.div
               animate={{ rotate: 360 }}
               transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
               className="flex items-center justify-center"
             >
-              <motion.div
-                animate={{ scale: [1, 1.1, 1] }}
-                transition={{
-                  repeat: Infinity,
-                  duration: 1.5,
-                  ease: "easeInOut",
-                }}
-              >
-                <Settings className="w-12 h-12 sm:w-16 sm:h-16 text-orange-500 drop-shadow-lg" />
-              </motion.div>
+              <Settings className="w-12 h-12 sm:w-16 sm:h-16 text-orange-500" />
             </motion.div>
-          </motion.div>
+          </div>
 
-          <motion.h1
-            className="text-2xl sm:text-3xl md:text-4xl font-bold text-orange-600 mb-4 text-center"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.4, duration: 0.6 }}
-          >
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-orange-600 mb-4 text-center">
             Under Maintenance
-          </motion.h1>
+          </h1>
 
           {/* Description */}
-          <motion.p
-            className="text-gray-600 text-center mb-6 leading-relaxed text-base sm:text-lg md:text-xl"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.6, duration: 0.6 }}
-          >
+          <p className="text-slate-600 text-center mb-6 leading-relaxed text-base sm:text-lg md:text-xl">
             Our dashboard is currently undergoing a major upgrade.
             <br />
             Thank you for your patience!
-          </motion.p>
+          </p>
 
           {/* Progress indicator */}
-          <motion.div
-            className="w-full bg-gray-200 rounded-full h-3 mb-6 shadow-inner"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.8, duration: 0.6 }}
-          >
+          <div className="w-full bg-slate-200 rounded-full h-3 mb-6">
             <motion.div
               className="bg-orange-500 h-3 rounded-full"
-              initial={{ width: "0%" }}
               animate={{ width: `${progress}%` }}
-              transition={{ delay: 1, duration: 2, ease: "easeOut" }}
-              style={{ width: `${progress}%` }}
+              transition={tween(DURATION.slow)}
             />
-          </motion.div>
+          </div>
 
-          {/* Downtime Information - Horizontal Card */}
-          <motion.div
-            className="flex flex-row items-center justify-center text-center mb-6 gap-6"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 1.2, duration: 0.6 }}
-          >
+          {/* Downtime Information */}
+          <div className="flex flex-row items-center justify-center text-center mb-6 gap-6">
             {/* Remaining time */}
-            <div className="flex flex-col items-center bg-orange-50 px-5 py-4 rounded-xl border border-orange-200 shadow">
-              <span className="flex items-center gap-2 text-sm text-gray-500 font-semibold mb-1">
-                <Clock className="w-4 h-4 text-orange-400" />
+            <div className="flex flex-col items-center bg-orange-50 px-5 py-4 rounded-xl border border-orange-200">
+              <span className="flex items-center gap-2 text-sm text-slate-500 font-semibold mb-1">
+                <Clock className="w-4 h-4 text-orange-500" />
                 Time Remaining
               </span>
               <span className="text-xl font-bold text-orange-700 font-mono">
                 {remaining}
               </span>
             </div>
-          </motion.div>
+          </div>
 
         </motion.div>
       </AnimatePresence>

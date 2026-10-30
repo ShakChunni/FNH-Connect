@@ -219,18 +219,18 @@ const EditStaffModal: React.FC<EditStaffModalProps> = ({
 
   const inputCls = (hasValue: boolean, hasError?: boolean) => {
     const base =
-      "text-gray-700 font-normal rounded-xl h-12 md:h-14 py-2 px-4 w-full focus:ring-2 focus:ring-blue-900/20 focus:border-blue-900 outline-none shadow-sm hover:shadow-md transition-all duration-300 placeholder:text-gray-400 placeholder:font-light text-xs sm:text-sm";
-    if (hasError) return `${base} bg-white border-2 border-rose-500`;
+      "text-slate-700 font-normal rounded-xl h-12 md:h-14 py-2 px-4 w-full focus:ring-2 focus:ring-blue-900/20 focus:border-blue-900 outline-none shadow-sm transition-colors placeholder:text-slate-400 placeholder:font-light text-xs sm:text-sm";
+    if (hasError) return `${base} bg-white border-2 border-red-600`;
     return hasValue
-      ? `${base} bg-white border-2 border-gray-300 focus:border-blue-900`
-      : `${base} bg-white border-2 border-gray-300`;
+      ? `${base} bg-white border-2 border-slate-300 focus:border-blue-900`
+      : `${base} bg-white border-2 border-slate-300`;
   };
 
   return (
     <AnimatePresence mode="wait">
       {isOpen && staff && (
         <motion.div
-          className="fixed inset-0 bg-slate-900/70 flex items-center justify-center z-100000"
+          className="fixed inset-0 bg-slate-950/50 flex items-center justify-center z-100000"
           variants={backdropVariants}
           initial="hidden"
           animate="visible"
@@ -239,7 +239,7 @@ const EditStaffModal: React.FC<EditStaffModalProps> = ({
         >
           <motion.div
             ref={popupRef}
-            className="bg-white rounded-3xl shadow-lg w-full max-w-[95%] sm:max-w-[90%] md:max-w-[50%] lg:max-w-[40%] h-auto max-h-[95%] sm:max-h-[90%] popup-content flex flex-col"
+            className="bg-white rounded-3xl shadow-lg w-full max-w-[95%] sm:max-w-[90%] md:max-w-[50%] lg:max-w-[40%] h-auto max-h-[95%] sm:max-h-[90%] flex flex-col"
             variants={modalVariants}
             initial="hidden"
             animate="visible"
@@ -256,7 +256,7 @@ const EditStaffModal: React.FC<EditStaffModalProps> = ({
             <div className="flex-1 overflow-y-auto p-4 sm:p-6">
               <div className="space-y-6">
                 {errors.general && (
-                  <div className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs font-semibold text-rose-800 sm:text-sm">
+                  <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-xs font-semibold text-red-800 sm:text-sm">
                     {errors.general}
                   </div>
                 )}
@@ -273,8 +273,8 @@ const EditStaffModal: React.FC<EditStaffModalProps> = ({
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-xs font-semibold text-gray-700 mb-2">
-                        First Name <span className="text-red-500">*</span>
+                      <label className="block text-xs font-semibold text-slate-700 mb-2">
+                        First Name <span className="text-red-600">*</span>
                       </label>
                       <input
                         type="text"
@@ -284,13 +284,13 @@ const EditStaffModal: React.FC<EditStaffModalProps> = ({
                         className={inputCls(!!firstName, !!errors.firstName)}
                       />
                       {errors.firstName && (
-                        <p className="mt-1.5 text-xs font-semibold text-rose-600">
+                        <p className="mt-1.5 text-xs font-semibold text-red-600">
                           {errors.firstName}
                         </p>
                       )}
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold text-gray-700 mb-2">
+                      <label className="block text-xs font-semibold text-slate-700 mb-2">
                         Last Name
                       </label>
                       <input
@@ -302,14 +302,14 @@ const EditStaffModal: React.FC<EditStaffModalProps> = ({
                       />
                     </div>
                     <div className="md:col-span-2">
-                      <label className="block text-xs font-semibold text-gray-500 mb-2">
+                      <label className="block text-xs font-semibold text-slate-500 mb-2">
                         Full Name (auto-generated)
                       </label>
                       <input
                         type="text"
                         value={fullName}
                         disabled
-                        className="text-gray-500 font-normal rounded-xl h-12 md:h-14 py-2 px-4 w-full bg-gray-100 border-2 border-gray-200 text-xs sm:text-sm cursor-not-allowed"
+                        className="text-slate-500 font-normal rounded-xl h-12 md:h-14 py-2 px-4 w-full bg-slate-100 border-2 border-slate-200 text-xs sm:text-sm cursor-not-allowed"
                       />
                     </div>
                   </div>
@@ -324,9 +324,9 @@ const EditStaffModal: React.FC<EditStaffModalProps> = ({
                     <h3 className="text-sm font-bold text-blue-900">Role</h3>
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-gray-700 mb-2">
+                    <label className="block text-xs font-semibold text-slate-700 mb-2">
                       Hospital/Staff Role{" "}
-                      <span className="text-red-500">*</span>
+                      <span className="text-red-600">*</span>
                     </label>
                     <button
                       ref={staffRoleBtnRef}
@@ -340,15 +340,15 @@ const EditStaffModal: React.FC<EditStaffModalProps> = ({
                       <span
                         className={
                           staffRole
-                            ? "text-gray-700 font-normal text-xs sm:text-sm"
-                            : "text-gray-400 font-light text-xs sm:text-sm"
+                            ? "text-slate-700 font-normal text-xs sm:text-sm"
+                            : "text-slate-400 font-light text-xs sm:text-sm"
                         }
                       >
                         {staffRole || "Select role..."}
                       </span>
                       <ChevronDown
                         className={cn(
-                          "w-4 h-4 text-gray-400 transition-transform",
+                          "w-4 h-4 text-slate-400 transition-transform",
                           staffRoleOpen && "rotate-180",
                         )}
                       />
@@ -382,22 +382,22 @@ const EditStaffModal: React.FC<EditStaffModalProps> = ({
                 </div>
 
                 {/* Contact & Professional Details */}
-                <div className="bg-gray-50/50 rounded-2xl p-4 sm:p-5 border border-gray-100">
+                <div className="bg-slate-50/50 rounded-2xl p-4 sm:p-5 border border-slate-200">
                   <div className="flex items-center gap-2 mb-4">
-                    <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center">
-                      <Briefcase className="w-4 h-4 text-gray-600" />
+                    <div className="w-8 h-8 bg-slate-100 rounded-lg flex items-center justify-center">
+                      <Briefcase className="w-4 h-4 text-slate-600" />
                     </div>
-                    <h3 className="text-sm font-bold text-gray-700">
+                    <h3 className="text-sm font-bold text-slate-700">
                       Contact & Professional Details
                     </h3>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="md:col-span-2">
-                      <label className="block text-xs font-semibold text-gray-700 mb-2">
+                      <label className="block text-xs font-semibold text-slate-700 mb-2">
                         Specialization
                       </label>
                       <div className="relative">
-                        <Stethoscope className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                        <Stethoscope className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                         <input
                           type="text"
                           value={specialization}
@@ -408,11 +408,11 @@ const EditStaffModal: React.FC<EditStaffModalProps> = ({
                       </div>
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold text-gray-700 mb-2">
+                      <label className="block text-xs font-semibold text-slate-700 mb-2">
                         Phone
                       </label>
                       <div className="relative">
-                        <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                        <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                         <input
                           type="tel"
                           value={phoneNumber}
@@ -423,11 +423,11 @@ const EditStaffModal: React.FC<EditStaffModalProps> = ({
                       </div>
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold text-gray-700 mb-2">
+                      <label className="block text-xs font-semibold text-slate-700 mb-2">
                         Email
                       </label>
                       <div className="relative">
-                        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                         <input
                           type="email"
                           value={email}
@@ -440,7 +440,7 @@ const EditStaffModal: React.FC<EditStaffModalProps> = ({
                         />
                       </div>
                       {errors.email && (
-                        <p className="mt-1.5 text-xs font-semibold text-rose-600">
+                        <p className="mt-1.5 text-xs font-semibold text-red-600">
                           {errors.email}
                         </p>
                       )}
@@ -449,13 +449,13 @@ const EditStaffModal: React.FC<EditStaffModalProps> = ({
                 </div>
 
                 {/* Status */}
-                <div className="bg-gray-50/50 rounded-2xl p-4 sm:p-5 border border-gray-100">
+                <div className="bg-slate-50/50 rounded-2xl p-4 sm:p-5 border border-slate-200">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h3 className="text-sm font-bold text-gray-700">
+                      <h3 className="text-sm font-bold text-slate-700">
                         Active Status
                       </h3>
-                      <p className="text-xs text-gray-500">
+                      <p className="text-xs text-slate-500">
                         Inactive staff are hidden from daily operations.
                       </p>
                     </div>
@@ -464,7 +464,7 @@ const EditStaffModal: React.FC<EditStaffModalProps> = ({
                       onClick={() => setIsActive(!isActive)}
                       className={cn(
                         "relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer",
-                        isActive ? "bg-green-500" : "bg-gray-300",
+                        isActive ? "bg-blue-600" : "bg-slate-300",
                       )}
                     >
                       <span

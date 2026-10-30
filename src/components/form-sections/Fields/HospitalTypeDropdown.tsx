@@ -52,7 +52,7 @@ const HospitalTypeDropdown: React.FC<HospitalTypeDropdownProps> = ({
           onClick={() => handleSelect(opt)}
           className={`cursor-pointer px-4 py-3 transition-colors duration-200 rounded-md mx-1 ${
             disabled
-              ? "cursor-not-allowed text-gray-400"
+              ? "cursor-not-allowed text-slate-500"
               : "hover:bg-blue-900 hover:text-white"
           }`}
         >
@@ -76,13 +76,13 @@ const HospitalTypeDropdown: React.FC<HospitalTypeDropdownProps> = ({
       >
         <span
           className={`flex items-center gap-2 ${
-            value ? "text-gray-700 font-normal" : "text-gray-400 font-light"
+            value ? "text-slate-700 font-normal" : "text-slate-500 font-light"
           } text-xs sm:text-sm`}
         >
           {value || "Select hospital type"}
         </span>
         <ChevronDown
-          className={`transition-transform duration-200 text-gray-400 ${
+          className={`transition-transform duration-200 text-slate-500 ${
             isOpen ? "rotate-180" : ""
           }`}
           size={16}

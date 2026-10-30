@@ -73,8 +73,11 @@ function UserProfileSection({
         className="rounded-3xl px-4 py-3"
         style={{ background: CONTAINER_BG }}
       >
-        <div
-          className={`flex items-center transition-opacity hover:opacity-80 cursor-pointer ${
+        <button
+          type="button"
+          aria-label="Account menu"
+          aria-expanded={isDropdownOpen}
+          className={`flex w-full items-center rounded-2xl transition-opacity hover:opacity-80 cursor-pointer ${
             isExpanded ? "gap-3" : "justify-center"
           }`}
           onClick={() => setIsDropdownOpen(!isDropdownOpen)}
@@ -97,16 +100,15 @@ function UserProfileSection({
                   {displayName}
                 </p>
               </div>
-              <button
-                type="button"
-                className="ml-auto inline-flex h-8 w-8 shrink-0 items-center justify-center text-white/40 transition-all duration-200 hover:text-white hover:cursor-pointer"
-                aria-label="View switcher"
+              <span
+                aria-hidden="true"
+                className="ml-auto inline-flex h-8 w-8 shrink-0 items-center justify-center text-white/40"
               >
                 <Settings className="h-4 w-4" />
-              </button>
+              </span>
             </>
           )}
-        </div>
+        </button>
       </div>
     </div>
   );
@@ -174,6 +176,25 @@ export default function DesktopSidebar({
     }
   }, [isPinned, onExpandedChange]);
 
+  // Keyboard users: tabbing into the rail opens it, tabbing out closes it.
+  const handleFocus = useCallback(
+    (e: React.FocusEvent<HTMLElement>) => {
+      if (!e.target.matches(":focus-visible")) return;
+      if (collapseTimeoutRef.current) clearTimeout(collapseTimeoutRef.current);
+      onExpandedChange(true);
+    },
+    [onExpandedChange]
+  );
+
+  const handleBlur = useCallback(
+    (e: React.FocusEvent<HTMLElement>) => {
+      if (isPinned) return;
+      if (e.currentTarget.contains(e.relatedTarget as Node | null)) return;
+      onExpandedChange(false);
+    },
+    [isPinned, onExpandedChange]
+  );
+
   const handlePinToggle = useCallback(() => {
     onPinnedChange(!isPinned);
   }, [isPinned, onPinnedChange]);
@@ -208,25 +229,38 @@ export default function DesktopSidebar({
   };
 
   const pathname = usePathname();
+  const asideRef = useRef<HTMLElement>(null);
+
+  // After navigating by keyboard, close the floating rail so it doesn't cover the new page.
+  useEffect(() => {
+    if (!isPinned && !asideRef.current?.matches(":hover")) {
+      onExpandedChange(false);
+    }
+  }, [pathname, isPinned, onExpandedChange]);
+
   const homeRoute = getDefaultRouteForRole(user?.role || "", portal || "general");
 
   return (
     <>
       <aside
-        className={`hidden lg:flex fixed top-0 left-0 h-screen flex-col overflow-hidden rounded-3xl transition-all duration-300 ease-[cubic-bezier(0.25,0.1,0.25,1)] ${
+        ref={asideRef}
+        aria-label="Main navigation"
+        className={`hidden lg:flex fixed top-0 left-0 h-screen flex-col overflow-hidden rounded-3xl transition-[width,box-shadow] duration-200 ease-standard ${
           isExpanded
             ? "w-(--sidebar-expanded-width)"
             : "w-(--sidebar-collapsed-width)"
-        }`}
+        } ${isExpanded && !isPinned ? "shadow-2xl shadow-black/40" : ""}`}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
+        onFocus={handleFocus}
+        onBlur={handleBlur}
         style={{
           background: SIDEBAR_BG,
           zIndex: isPinned ? 70 : 60,
         }}
       >
         <div
-          className={`flex flex-1 flex-col gap-5 pb-6 pt-3 text-white transition-all duration-300 ${
+          className={`flex flex-1 flex-col gap-5 pb-6 pt-3 text-white transition-[padding] duration-200 ease-standard ${
             isExpanded ? "px-2" : "px-4"
           }`}
         >
@@ -295,12 +329,12 @@ export default function DesktopSidebar({
                   </Link>
                   <button
                     onClick={handlePinToggle}
-                    className="inline-flex h-6 w-6 items-center justify-center text-white/40 transition-all duration-200 hover:text-white hover:cursor-pointer shrink-0"
+                    className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-white/50 transition-colors duration-150 hover:text-white hover:bg-white/10 hover:cursor-pointer shrink-0"
                     title={isPinned ? "Unpin sidebar" : "Pin sidebar"}
                     aria-label={isPinned ? "Unpin sidebar" : "Pin sidebar"}
                   >
                     <Pin
-                      className={`h-4 w-4 transition-transform duration-300 ${
+                      className={`h-4 w-4 transition-transform duration-200 ${
                         isPinned ? "rotate-45 text-white" : ""
                       }`}
                     />
@@ -326,7 +360,10 @@ export default function DesktopSidebar({
                     <li key={item.href}>
                       <Link
                         href={item.href}
-                        className={`group flex items-center rounded-2xl px-3 py-2.5 text-sm font-medium transition-all duration-200 ease-[cubic-bezier(0.25,0.1,0.25,1)] ${
+                        aria-label={item.label}
+                        aria-current={isActive ? "page" : undefined}
+                        title={isExpanded ? undefined : item.label}
+                        className={`group flex items-center rounded-2xl px-3 py-2.5 text-sm font-medium transition-colors duration-150 ${
                           isActive
                             ? "text-white shadow-lg"
                             : "text-white/70 hover:text-white"
@@ -349,7 +386,7 @@ export default function DesktopSidebar({
                         }}
                       >
                         <span
-                          className={`flex h-9 w-9 min-w-9 shrink-0 items-center justify-center rounded-xl transition-all duration-200 ${
+                          className={`flex h-9 w-9 min-w-9 shrink-0 items-center justify-center rounded-xl transition-colors duration-150 ${
                             isActive
                               ? "text-white"
                               : "text-white/60 group-hover:text-white"
@@ -401,7 +438,7 @@ export default function DesktopSidebar({
           <p className="font-semibold text-fnh-navy-dark">
             Have you handed over all collected cash to the manager?
           </p>
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-slate-600">
             You cannot logout until the cash handover is complete. Please ensure
             all finances are settled before leaving.
           </p>

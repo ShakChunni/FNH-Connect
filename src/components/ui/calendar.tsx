@@ -164,7 +164,7 @@ function CalendarDayButton({
       data-range-end={modifiers.range_end}
       data-range-middle={modifiers.range_middle}
       className={cn(
-        "data-[selected-single=true]:bg-slate-900 data-[selected-single=true]:text-white data-[range-middle=true]:bg-yellow-100 data-[range-middle=true]:text-slate-900 data-[range-start=true]:bg-slate-900 data-[range-start=true]:text-white data-[range-end=true]:bg-slate-900 data-[range-end=true]:text-white group-data-[focused=true]/day:border-ring group-data-[focused=true]/day:ring-ring/50 hover:bg-fnh-navy! hover:text-white! flex aspect-square size-auto w-full min-w-(--cell-size) flex-col gap-1 leading-none text-[0.7rem] font-bold group-data-[focused=true]/day:relative group-data-[focused=true]/day:z-10 group-data-[focused=true]/day:ring-[3px] data-[range-end=true]:rounded-md data-[range-end=true]:rounded-r-md data-[range-middle=true]:rounded-none data-[range-start=true]:rounded-md data-[range-start=true]:rounded-l-md [&>span]:text-[0.7rem] [&>span]:opacity-70 transition-colors duration-200",
+        "data-[selected-single=true]:bg-slate-900 data-[selected-single=true]:text-white data-[range-middle=true]:bg-yellow-100 data-[range-middle=true]:text-slate-900 data-[range-start=true]:bg-slate-900 data-[range-start=true]:text-white data-[range-end=true]:bg-slate-900 data-[range-end=true]:text-white group-data-[focused=true]/day:border-ring group-data-[focused=true]/day:ring-ring/50 hover:bg-fnh-navy! hover:text-white! flex aspect-square size-auto w-full min-w-(--cell-size) flex-col gap-1 leading-none text-xs font-bold group-data-[focused=true]/day:relative group-data-[focused=true]/day:z-10 group-data-[focused=true]/day:ring-[3px] data-[range-end=true]:rounded-md data-[range-end=true]:rounded-r-md data-[range-middle=true]:rounded-none data-[range-start=true]:rounded-md data-[range-start=true]:rounded-l-md [&>span]:text-xs [&>span]:opacity-70 transition-colors duration-200",
         defaultClassNames.day,
         className,
       )}
@@ -269,7 +269,7 @@ export function CalendarWithMonthYearPicker({
             transition={{ duration: 0.15, ease: "easeOut" }}
             layout
             className={cn(
-              "w-full p-4 sm:p-6 bg-white rounded-xl border border-gray-100 shadow-sm",
+              "w-full p-4 sm:p-6 bg-white rounded-xl border border-slate-100 shadow-sm",
               className,
             )}
           >
@@ -278,11 +278,11 @@ export function CalendarWithMonthYearPicker({
                 variant="ghost"
                 size="sm"
                 onClick={() => setView("years")}
-                className="text-xs font-bold text-slate-900 hover:bg-gray-100! hover:text-slate-900! px-3 py-2 rounded-lg transition-colors"
+                className="text-xs font-bold text-slate-900 hover:bg-slate-100! hover:text-slate-900! px-3 py-2 rounded-lg transition-colors"
               >
                 {currentYear}
               </Button>
-              <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
+              <div className="text-2xs font-black text-slate-500 uppercase tracking-widest">
                 Select Month
               </div>
             </div>
@@ -294,10 +294,10 @@ export function CalendarWithMonthYearPicker({
                   size="sm"
                   onClick={() => handleMonthSelect(index)}
                   className={cn(
-                    "text-xs font-bold px-4 py-3 rounded-xl transition-all duration-200 hover:text-slate-900!",
+                    "text-xs font-bold px-4 py-3 rounded-xl transition-colors duration-200 hover:text-slate-900!",
                     currentMonth === index
                       ? "bg-yellow-300 text-slate-900 shadow-xs hover:bg-yellow-400!"
-                      : "bg-gray-50 text-slate-900 hover:bg-gray-100!",
+                      : "bg-slate-50 text-slate-900 hover:bg-slate-100!",
                   )}
                 >
                   {month.slice(0, 3)}
@@ -316,7 +316,7 @@ export function CalendarWithMonthYearPicker({
             transition={{ duration: 0.15, ease: "easeOut" }}
             layout
             className={cn(
-              "w-full p-4 sm:p-6 bg-white rounded-xl border border-gray-100 shadow-sm",
+              "w-full p-4 sm:p-6 bg-white rounded-xl border border-slate-100 shadow-sm",
               className,
             )}
           >
@@ -325,7 +325,7 @@ export function CalendarWithMonthYearPicker({
                 variant="ghost"
                 size="sm"
                 onClick={handlePrevYearRange}
-                className="p-2 rounded-lg hover:bg-gray-100! hover:text-slate-900! transition-colors"
+                className="p-2 rounded-lg hover:bg-slate-100! hover:text-slate-900! transition-colors"
               >
                 <ChevronLeftIcon className="h-4 w-4 text-slate-900" />
               </Button>
@@ -336,7 +336,7 @@ export function CalendarWithMonthYearPicker({
                 variant="ghost"
                 size="sm"
                 onClick={handleNextYearRange}
-                className="p-2 rounded-lg hover:bg-gray-100! hover:text-slate-900! transition-colors"
+                className="p-2 rounded-lg hover:bg-slate-100! hover:text-slate-900! transition-colors"
               >
                 <ChevronRightIcon className="h-4 w-4 text-slate-900" />
               </Button>
@@ -349,10 +349,10 @@ export function CalendarWithMonthYearPicker({
                   size="sm"
                   onClick={() => handleYearSelect(year)}
                   className={cn(
-                    "text-xs font-bold px-4 py-3 rounded-xl transition-all duration-200 hover:text-slate-900!",
+                    "text-xs font-bold px-4 py-3 rounded-xl transition-colors duration-200 hover:text-slate-900!",
                     currentYear === year
                       ? "bg-yellow-300 text-slate-900 shadow-xs hover:bg-yellow-400!"
-                      : "bg-gray-50 text-slate-900 hover:bg-gray-100!",
+                      : "bg-slate-50 text-slate-900 hover:bg-slate-100!",
                   )}
                 >
                   {year}
@@ -364,7 +364,7 @@ export function CalendarWithMonthYearPicker({
                 variant="ghost"
                 size="sm"
                 onClick={() => setView("months")}
-                className="text-xs font-bold text-gray-400 hover:text-slate-900! hover:bg-transparent! transition-colors"
+                className="text-xs font-bold text-slate-500 hover:text-slate-900! hover:bg-transparent! transition-colors"
               >
                 Back to Months
               </Button>
@@ -381,16 +381,16 @@ export function CalendarWithMonthYearPicker({
             transition={{ duration: 0.15, ease: "easeOut" }}
             layout
             className={cn(
-              "w-full bg-white rounded-xl border border-gray-100 overflow-hidden shadow-sm",
+              "w-full bg-white rounded-xl border border-slate-100 overflow-hidden shadow-sm",
               className,
             )}
           >
-            <div className="flex items-center justify-between px-4 sm:px-6 py-4 bg-gradient-to-r from-gray-50 to-white border-b border-gray-100">
+            <div className="flex items-center justify-between px-4 sm:px-6 py-4 bg-slate-50 border-b border-slate-100">
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => setView("months")}
-                className="text-xs font-black text-slate-900 hover:bg-gray-100! hover:text-slate-900! px-4 py-2 rounded-lg transition-all duration-200"
+                className="text-xs font-black text-slate-900 hover:bg-slate-100! hover:text-slate-900! px-4 py-2 rounded-lg transition-colors duration-200"
               >
                 {MONTHS[currentMonth]} {currentYear}
               </Button>
@@ -403,7 +403,7 @@ export function CalendarWithMonthYearPicker({
                     newDate.setMonth(currentMonth - 1);
                     setDisplayDate(newDate);
                   }}
-                  className="p-2 rounded-lg hover:bg-gray-100! hover:text-slate-900! transition-colors"
+                  className="p-2 rounded-lg hover:bg-slate-100! hover:text-slate-900! transition-colors"
                 >
                   <ChevronLeftIcon className="h-4 w-4 text-slate-900" />
                 </Button>
@@ -415,7 +415,7 @@ export function CalendarWithMonthYearPicker({
                     newDate.setMonth(currentMonth + 1);
                     setDisplayDate(newDate);
                   }}
-                  className="p-2 rounded-lg hover:bg-gray-100! hover:text-slate-900! transition-colors"
+                  className="p-2 rounded-lg hover:bg-slate-100! hover:text-slate-900! transition-colors"
                 >
                   <ChevronRightIcon className="h-4 w-4 text-slate-900" />
                 </Button>

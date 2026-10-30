@@ -3,8 +3,13 @@
 import React, { useState, useRef } from "react";
 import { ChevronDown, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { getActionColor, ACTION_COLORS } from "../types";
+import {
+  ACTION_TONES,
+  formatActionLabel,
+  getActionTone,
+} from "../types";
 import { DropdownPortal } from "@/components/ui/DropdownPortal";
+import { TONE_DOT } from "@/lib/statusStyles";
 
 interface ActionTypeFilterProps {
   actionTypes: string[];
@@ -23,7 +28,7 @@ const ActionTypeFilter: React.FC<ActionTypeFilterProps> = ({
   const buttonRef = useRef<HTMLButtonElement>(null);
 
   // Include all known action types + any from the API
-  const knownActions = Object.keys(ACTION_COLORS);
+  const knownActions = Object.keys(ACTION_TONES);
   const apiActions = actionTypes.filter((a) => !knownActions.includes(a));
   const allOptions = ["All", ...knownActions, ...apiActions];
 
@@ -32,8 +37,8 @@ const ActionTypeFilter: React.FC<ActionTypeFilterProps> = ({
     setIsOpen(false);
   };
 
-  const currentColor =
-    currentAction !== "All" ? getActionColor(currentAction) : null;
+  const currentTone =
+    currentAction !== "All" ? getActionTone(currentAction) : null;
 
   return (
     <div className="relative">
@@ -44,25 +49,30 @@ const ActionTypeFilter: React.FC<ActionTypeFilterProps> = ({
         disabled={disabled}
         className={cn(
           "flex items-center justify-between gap-2 px-3 py-2 w-full sm:w-[140px]",
-          "bg-gray-50/50 border border-gray-100 rounded-xl",
-          "text-[10px] sm:text-xs font-bold",
+          "bg-slate-50/50 border border-slate-100 rounded-xl",
+          "text-2xs sm:text-xs font-bold",
           "focus:outline-none focus:ring-2 focus:ring-fnh-blue/20",
-          "transition-all duration-200 cursor-pointer",
+          "transition-colors cursor-pointer",
           "disabled:opacity-50 disabled:cursor-not-allowed",
           isOpen && "ring-2 ring-fnh-blue/20"
         )}
       >
-        <div className="flex items-center gap-1.5">
-          {currentColor && (
-            <span className="text-sm shrink-0">{currentColor.icon}</span>
+        <div className="flex items-center gap-1.5 min-w-0">
+          {currentTone && (
+            <span
+              className={cn("h-2 w-2 rounded-full shrink-0", TONE_DOT[currentTone])}
+              aria-hidden="true"
+            />
           )}
           <span className="truncate">
-            {currentAction === "All" ? "All Actions" : currentAction}
+            {currentAction === "All"
+              ? "All Actions"
+              : formatActionLabel(currentAction)}
           </span>
         </div>
         <ChevronDown
           className={cn(
-            "w-3 h-3 text-gray-400 transition-transform duration-200 shrink-0",
+            "w-3 h-3 text-slate-500 transition-transform duration-200 shrink-0",
             isOpen && "rotate-180"
           )}
         />
@@ -76,7 +86,7 @@ const ActionTypeFilter: React.FC<ActionTypeFilterProps> = ({
       >
         <div className="py-1 max-h-[320px] overflow-y-auto">
           {allOptions.map((action) => {
-            const color = action !== "All" ? getActionColor(action) : null;
+            const tone = action !== "All" ? getActionTone(action) : null;
             const isSelected = action === currentAction;
 
             return (
@@ -86,19 +96,22 @@ const ActionTypeFilter: React.FC<ActionTypeFilterProps> = ({
                 onClick={() => handleSelect(action)}
                 className={cn(
                   "w-full flex items-center justify-between gap-2 px-3 py-2 text-left",
-                  "text-[10px] sm:text-xs font-medium",
-                  "hover:bg-gray-50 transition-colors cursor-pointer",
+                  "text-2xs sm:text-xs font-medium",
+                  "hover:bg-slate-50 transition-colors cursor-pointer",
                   isSelected && "bg-fnh-blue/5"
                 )}
               >
                 <div className="flex items-center gap-2 min-w-0">
-                  {color && (
-                    <span className="text-sm shrink-0">{color.icon}</span>
+                  {tone && (
+                    <span
+                      className={cn("h-2 w-2 rounded-full shrink-0", TONE_DOT[tone])}
+                      aria-hidden="true"
+                    />
                   )}
                   <span
                     className={cn("truncate", isSelected ? "font-bold" : "")}
                   >
-                    {action === "All" ? "All Actions" : action}
+                    {action === "All" ? "All Actions" : formatActionLabel(action)}
                   </span>
                 </div>
                 {isSelected && (

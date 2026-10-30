@@ -35,13 +35,13 @@ const InfoRow = ({
   variant?: "default" | "success" | "primary";
 }) => {
   const variantStyles = {
-    default: "bg-slate-50 text-gray-700",
+    default: "bg-slate-50 text-slate-700",
     success: "bg-emerald-50 text-emerald-700",
     primary: "bg-indigo-50 text-indigo-700",
   };
 
   const iconStyles = {
-    default: "text-gray-400",
+    default: "text-slate-500",
     success: "text-emerald-500",
     primary: "text-indigo-500",
   };
@@ -49,7 +49,7 @@ const InfoRow = ({
   return (
     <div
       className={cn(
-        "flex flex-col gap-1 p-2 sm:p-3 rounded-lg sm:rounded-xl border border-transparent transition-all hover:border-slate-200 hover:bg-white hover:shadow-sm",
+        "flex flex-col gap-1 p-2 sm:p-3 rounded-lg sm:rounded-xl border border-transparent transition-colors hover:border-slate-200 hover:bg-white hover:shadow-sm",
         variantStyles[variant],
       )}
     >
@@ -58,7 +58,7 @@ const InfoRow = ({
           size={10}
           className={cn("shrink-0 sm:w-3 sm:h-3", iconStyles[variant])}
         />
-        <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider opacity-60">
+        <span className="text-2xs sm:text-2xs font-bold uppercase tracking-wider opacity-60">
           {label}
         </span>
       </div>
@@ -135,16 +135,16 @@ const PatientOverview: React.FC<PatientOverviewProps> = ({
       >
         <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
           <div className="flex items-center gap-1 sm:gap-1.5 px-1.5 sm:px-2 py-0.5 sm:py-1 bg-slate-50 border border-slate-100 rounded-md">
-            <span className="text-[8px] sm:text-[10px] font-bold text-gray-400 uppercase">
+            <span className="text-2xs sm:text-2xs font-bold text-slate-500 uppercase">
               ID
             </span>
-            <span className="text-[10px] sm:text-[11px] font-bold text-gray-700 font-mono">
+            <span className="text-2xs sm:text-2xs font-bold text-slate-700 font-mono tabular-nums">
               #{patient.id.toString().padStart(4, "0")}
             </span>
           </div>
           <div
             className={cn(
-              "px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-md text-[9px] sm:text-[10px] font-bold uppercase border",
+              "px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-md text-2xs sm:text-2xs font-bold uppercase border",
               isFemale
                 ? "bg-pink-50 text-pink-600 border-pink-100"
                 : "bg-blue-50 text-blue-600 border-blue-100",
@@ -153,24 +153,24 @@ const PatientOverview: React.FC<PatientOverviewProps> = ({
             {patient.gender}
           </div>
           <div className="hidden lg:flex items-center gap-1 sm:gap-1.5 px-1.5 sm:px-2 py-0.5 sm:py-1 bg-emerald-50 border border-emerald-100 rounded-md min-w-0">
-            <span className="text-[8px] sm:text-[9px] font-bold text-emerald-500 uppercase shrink-0">
+            <span className="text-2xs sm:text-2xs font-bold text-emerald-700 uppercase shrink-0">
               Added
             </span>
-            <span className="text-[10px] sm:text-[11px] font-semibold text-emerald-700 truncate max-w-[180px]">
+            <span className="text-2xs sm:text-2xs font-semibold text-emerald-700 truncate max-w-[180px]">
               {patient.createdByName || "Unknown"}
             </span>
-            <span className="text-[9px] sm:text-[10px] text-emerald-600 truncate max-w-[150px]">
+            <span className="text-2xs sm:text-2xs text-emerald-700 truncate max-w-[150px]">
               • {formatDateTimeCompactBDT(patient.createdAt)}
             </span>
           </div>
           <div className="hidden lg:flex items-center gap-1 sm:gap-1.5 px-1.5 sm:px-2 py-0.5 sm:py-1 bg-indigo-50 border border-indigo-100 rounded-md min-w-0">
-            <span className="text-[8px] sm:text-[9px] font-bold text-indigo-500 uppercase shrink-0">
+            <span className="text-2xs sm:text-2xs font-bold text-indigo-700 uppercase shrink-0">
               Edited
             </span>
-            <span className="text-[10px] sm:text-[11px] font-semibold text-indigo-700 truncate max-w-[180px]">
+            <span className="text-2xs sm:text-2xs font-semibold text-indigo-700 truncate max-w-[180px]">
               {patient.lastEditedByName || "—"}
             </span>
-            <span className="text-[9px] sm:text-[10px] text-indigo-600 truncate max-w-[150px]">
+            <span className="text-2xs sm:text-2xs text-indigo-700 truncate max-w-[150px]">
               •{" "}
               {formatDateTimeCompactBDT(
                 patient.lastEditedAt || patient.updatedAt,
@@ -204,7 +204,7 @@ const PatientOverview: React.FC<PatientOverviewProps> = ({
                     </h2>
                     <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 sm:gap-3 mt-1.5 sm:mt-2">
                       <div className="flex items-center gap-1 sm:gap-1.5 text-slate-500 font-medium text-xs sm:text-sm">
-                        <Calendar className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-slate-400" />
+                        <Calendar className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-slate-500" />
                         <span className="whitespace-nowrap">
                           DOB: {formatDate(patient.dateOfBirth)}
                         </span>
@@ -240,7 +240,7 @@ const PatientOverview: React.FC<PatientOverviewProps> = ({
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 items-stretch">
             {/* Address Section */}
             <div className="space-y-2 sm:space-y-3">
-              <h3 className="text-[10px] sm:text-xs font-black text-slate-400 uppercase tracking-widest px-1">
+              <h3 className="text-2xs sm:text-xs font-black text-slate-500 uppercase tracking-widest px-1">
                 Residential Details
               </h3>
               <div className="bg-white rounded-xl sm:rounded-2xl p-3 sm:p-4 shadow-sm border border-slate-200/50 min-h-[100px] sm:min-h-[130px] h-full">
@@ -249,7 +249,7 @@ const PatientOverview: React.FC<PatientOverviewProps> = ({
                     <MapPin className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-500" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <span className="text-[9px] sm:text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-0.5 sm:mb-1">
+                    <span className="text-2xs sm:text-2xs font-bold text-slate-500 uppercase tracking-wider block mb-0.5 sm:mb-1">
                       Current Address
                     </span>
                     <p className="text-xs sm:text-sm font-medium text-slate-700 leading-relaxed break-words">
@@ -262,7 +262,7 @@ const PatientOverview: React.FC<PatientOverviewProps> = ({
 
             {/* Guardian Section */}
             <div className="space-y-2 sm:space-y-3">
-              <h3 className="text-[10px] sm:text-xs font-black text-slate-400 uppercase tracking-widest px-1">
+              <h3 className="text-2xs sm:text-xs font-black text-slate-500 uppercase tracking-widest px-1">
                 Guardian Information
               </h3>
               <div className="bg-white rounded-xl sm:rounded-2xl p-3 sm:p-4 shadow-sm border border-slate-200/50 min-h-[100px] sm:min-h-[130px] h-full">
@@ -272,7 +272,7 @@ const PatientOverview: React.FC<PatientOverviewProps> = ({
                       <User className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-indigo-500" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <span className="text-[9px] sm:text-[10px] font-bold text-slate-400 uppercase tracking-wider block leading-none mb-0.5">
+                      <span className="text-2xs sm:text-2xs font-bold text-slate-500 uppercase tracking-wider block leading-none mb-0.5">
                         Guardian Name
                       </span>
                       <p className="text-xs sm:text-sm font-bold text-slate-700 truncate">
@@ -284,18 +284,18 @@ const PatientOverview: React.FC<PatientOverviewProps> = ({
                   {patient.guardianGender && (
                     <div className="grid grid-cols-2 gap-1.5 sm:gap-2">
                       <div className="px-2 sm:px-3 py-1.5 sm:py-2 bg-slate-50/50 rounded-lg">
-                        <span className="text-[8px] sm:text-[9px] font-bold text-slate-400 uppercase block mb-0.5">
+                        <span className="text-2xs sm:text-2xs font-bold text-slate-500 uppercase block mb-0.5">
                           Gender
                         </span>
-                        <span className="text-[10px] sm:text-xs font-semibold text-slate-600">
+                        <span className="text-2xs sm:text-xs font-semibold text-slate-600">
                           {patient.guardianGender}
                         </span>
                       </div>
                       <div className="px-2 sm:px-3 py-1.5 sm:py-2 bg-slate-50/50 rounded-lg">
-                        <span className="text-[8px] sm:text-[9px] font-bold text-slate-400 uppercase block mb-0.5">
+                        <span className="text-2xs sm:text-2xs font-bold text-slate-500 uppercase block mb-0.5">
                           DOB
                         </span>
-                        <span className="text-[10px] sm:text-xs font-semibold text-slate-600">
+                        <span className="text-2xs sm:text-xs font-semibold text-slate-600">
                           {formatDate(patient.guardianDOB)}
                         </span>
                       </div>
@@ -310,9 +310,9 @@ const PatientOverview: React.FC<PatientOverviewProps> = ({
 
       {/* Footer - Mobile-first responsive */}
       <div className="border-t border-slate-200 bg-white p-3 sm:p-4 lg:px-8 lg:py-4 flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-0">
-        <div className="flex items-center gap-1.5 sm:gap-2 text-slate-400 order-2 sm:order-1">
+        <div className="flex items-center gap-1.5 sm:gap-2 text-slate-500 order-2 sm:order-1">
           <Activity className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
-          <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-widest">
+          <span className="text-2xs sm:text-2xs font-bold uppercase tracking-widest">
             Registered: {formatDateTimeBDT(patient.createdAt)}
           </span>
         </div>
@@ -320,14 +320,14 @@ const PatientOverview: React.FC<PatientOverviewProps> = ({
           <button
             type="button"
             onClick={onClose}
-            className="flex-1 sm:flex-none px-3 sm:px-4 py-2 sm:py-2 border border-slate-200 text-slate-600 rounded-lg sm:rounded-xl hover:bg-slate-50 transition-colors text-xs sm:text-sm font-semibold cursor-pointer"
+            className="flex-1 sm:flex-none flex h-9 items-center justify-center px-3 sm:px-4 border border-slate-300 bg-white text-slate-700 rounded-lg sm:rounded-xl hover:bg-slate-50 transition-colors text-xs sm:text-sm font-semibold cursor-pointer"
           >
             Close
           </button>
           <button
             type="button"
             onClick={handleEdit}
-            className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 sm:gap-2 px-4 sm:px-6 py-2 sm:py-2 bg-indigo-600 text-white rounded-lg sm:rounded-xl hover:bg-indigo-700 transition-colors text-xs sm:text-sm font-semibold shadow-md shadow-indigo-100 cursor-pointer"
+            className="flex-1 sm:flex-none flex h-9 items-center justify-center gap-1.5 sm:gap-2 px-4 sm:px-6 bg-blue-600 text-white rounded-lg sm:rounded-xl hover:bg-blue-700 transition-colors text-xs sm:text-sm font-semibold cursor-pointer"
           >
             <Edit className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             <span>Edit</span>

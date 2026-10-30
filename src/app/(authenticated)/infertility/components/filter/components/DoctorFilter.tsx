@@ -12,7 +12,7 @@ export const DoctorFilter: React.FC = () => {
 
   return (
     <div className="space-y-2">
-      <label className="flex items-center gap-2 text-xs font-semibold text-gray-500 uppercase tracking-wider px-1">
+      <label className="flex items-center gap-2 text-xs font-semibold text-slate-500 uppercase tracking-wider px-1">
         <User className="w-3.5 h-3.5" />
         Ordered By (Doctor)
       </label>
@@ -20,9 +20,9 @@ export const DoctorFilter: React.FC = () => {
         <select
           value={orderedById || ""}
           onChange={(e) => setOrderedById(e.target.value ? Number(e.target.value) : null)}
-          className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm
+          className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm
             focus:ring-2 focus:ring-emerald-600/20 focus:border-emerald-600 outline-none
-            transition-all duration-200 appearance-none cursor-pointer"
+            transition-colors duration-200 appearance-none cursor-pointer"
           disabled={isLoading}
         >
           <option value="">All Doctors</option>
@@ -32,7 +32,7 @@ export const DoctorFilter: React.FC = () => {
             </option>
           ))}
         </select>
-        <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
+        <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-500">
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
           </svg>

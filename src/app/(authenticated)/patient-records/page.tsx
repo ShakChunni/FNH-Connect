@@ -40,7 +40,7 @@ const PatientRecordsPage = React.memo(() => {
     [pagination.page, pagination.limit, filters.search],
   );
 
-  const { data: result, isLoading } = useFetchPatients(hookFilters);
+  const { data: result, isLoading, isError, refetch } = useFetchPatients(hookFilters);
 
   // Handle edit patient
   const handleOpenEditPopup = useCallback(
@@ -118,12 +118,30 @@ const PatientRecordsPage = React.memo(() => {
 
           {/* Patient Table */}
           <div className="px-1 sm:px-2 lg:px-4">
-            <PatientTable
-              tableData={normalizedPatientData}
-              isLoading={isLoading}
-              onEdit={handleOpenEditPopup}
-              startIndex={startIndex}
-            />
+            {isError ? (
+              <div
+                role="alert"
+                className="bg-white rounded-2xl shadow-sm border border-slate-100 p-8 text-center"
+              >
+                <p className="text-sm font-medium text-red-700">
+                  Could not load patient records.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => void refetch()}
+                  className="mt-3 inline-flex h-9 cursor-pointer items-center justify-center rounded-lg border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50"
+                >
+                  Try again
+                </button>
+              </div>
+            ) : (
+              <PatientTable
+                tableData={normalizedPatientData}
+                isLoading={isLoading}
+                onEdit={handleOpenEditPopup}
+                startIndex={startIndex}
+              />
+            )}
 
             {/* Server-Side Pagination */}
             {!isLoading && result && result.totalPages > 1 && (

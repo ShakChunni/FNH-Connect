@@ -68,7 +68,7 @@ const DeleteStaffModal: React.FC<DeleteStaffModalProps> = ({
     <AnimatePresence mode="wait">
       {isOpen && staff && (
         <motion.div
-          className="fixed inset-0 bg-slate-900/70 flex items-center justify-center z-100000"
+          className="fixed inset-0 bg-slate-950/50 flex items-center justify-center z-100000"
           variants={backdropVariants}
           initial="hidden"
           animate="visible"
@@ -77,7 +77,7 @@ const DeleteStaffModal: React.FC<DeleteStaffModalProps> = ({
         >
           <motion.div
             ref={popupRef}
-            className="bg-white rounded-3xl shadow-lg w-full max-w-[95%] sm:max-w-[90%] md:max-w-[40%] lg:max-w-[35%] popup-content flex flex-col"
+            className="bg-white rounded-3xl shadow-lg w-full max-w-[95%] sm:max-w-[90%] md:max-w-[40%] lg:max-w-[35%] flex flex-col"
             variants={modalVariants}
             initial="hidden"
             animate="visible"
@@ -94,7 +94,7 @@ const DeleteStaffModal: React.FC<DeleteStaffModalProps> = ({
             <div className="p-4 sm:p-6">
               <div className="p-4 rounded-xl border bg-red-50 border-red-200">
                 <div className="flex items-start gap-3">
-                  <AlertTriangle className="w-5 h-5 shrink-0 mt-0.5 text-red-500" />
+                  <AlertTriangle className="w-5 h-5 shrink-0 mt-0.5 text-red-600" />
                   <div>
                     <p className="text-sm font-semibold mb-1 text-red-900">
                       Permanent Deletion
@@ -111,31 +111,31 @@ const DeleteStaffModal: React.FC<DeleteStaffModalProps> = ({
               </div>
 
               {/* Staff Details Summary */}
-              <div className="mt-4 p-3 bg-gray-50 rounded-xl border border-gray-100 text-xs space-y-1.5 text-gray-600">
+              <div className="mt-4 p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs space-y-1.5 text-slate-600">
                 <div className="flex justify-between">
-                  <span className="font-medium text-gray-500">Role:</span>
-                  <span className="font-semibold text-gray-800">{staff.role}</span>
+                  <span className="font-medium text-slate-500">Role:</span>
+                  <span className="font-semibold text-slate-800">{staff.role}</span>
                 </div>
                 {staff.specialization && (
                   <div className="flex justify-between">
-                    <span className="font-medium text-gray-500">Specialization:</span>
-                    <span className="font-semibold text-gray-800">
+                    <span className="font-medium text-slate-500">Specialization:</span>
+                    <span className="font-semibold text-slate-800">
                       {staff.specialization}
                     </span>
                   </div>
                 )}
                 {staff.phoneNumber && (
                   <div className="flex justify-between">
-                    <span className="font-medium text-gray-500">Phone:</span>
-                    <span className="font-semibold text-gray-800">
+                    <span className="font-medium text-slate-500">Phone:</span>
+                    <span className="font-semibold text-slate-800">
                       {staff.phoneNumber}
                     </span>
                   </div>
                 )}
                 {staff.email && (
                   <div className="flex justify-between">
-                    <span className="font-medium text-gray-500">Email:</span>
-                    <span className="font-semibold text-gray-800">
+                    <span className="font-medium text-slate-500">Email:</span>
+                    <span className="font-semibold text-slate-800">
                       {staff.email}
                     </span>
                   </div>
@@ -147,7 +147,7 @@ const DeleteStaffModal: React.FC<DeleteStaffModalProps> = ({
                   type="button"
                   onClick={handleClose}
                   disabled={isLoading}
-                  className="px-4 md:px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors disabled:opacity-50 text-xs sm:text-sm font-medium cursor-pointer"
+                  className="px-4 md:px-6 py-2 border border-slate-300 bg-white text-slate-700 rounded-lg hover:bg-slate-50 transition-colors disabled:opacity-50 text-xs sm:text-sm font-medium cursor-pointer"
                 >
                   Cancel
                 </button>

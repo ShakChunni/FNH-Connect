@@ -30,15 +30,15 @@ const DepartmentSelection: React.FC<DepartmentSelectionProps> = ({
 
   const inputClassName = useMemo(() => {
     const baseStyle =
-      "text-gray-700 font-normal rounded-lg h-12 md:h-14 py-2 px-4 w-full focus:border-purple-900 focus:ring-2 focus:ring-purple-950 outline-none shadow-sm hover:shadow-md transition-all duration-300 placeholder:text-gray-400 placeholder:font-light text-xs sm:text-sm cursor-pointer";
+      "text-slate-700 font-normal rounded-lg h-12 md:h-14 py-2 px-4 w-full focus:border-purple-900 focus:ring-2 focus:ring-purple-950 outline-none shadow-sm transition-colors placeholder:text-slate-400 placeholder:font-light text-xs sm:text-sm cursor-pointer";
     return (value: string | number | null, disabled: boolean = false) => {
       if (disabled) {
-        return `bg-gray-200 border-2 border-gray-300 cursor-not-allowed ${baseStyle}`;
+        return `bg-slate-200 border-2 border-slate-300 cursor-not-allowed ${baseStyle}`;
       }
       const hasValue = value !== null && value !== "";
       return hasValue
         ? `bg-white border-2 border-green-700 ${baseStyle}`
-        : `bg-gray-50 border-2 border-gray-300 ${baseStyle}`;
+        : `bg-slate-50 border-2 border-slate-300 ${baseStyle}`;
     };
   }, []);
 
@@ -74,19 +74,19 @@ const DepartmentSelection: React.FC<DepartmentSelectionProps> = ({
     <div id="department" className="mt-2 sm:mt-0 mb-6 sm:mb-8 md:mb-10">
       {/* Header */}
       <div
-        className={`bg-linear-to-r from-purple-50 to-purple-100 border-purple-200 rounded-lg sm:rounded-xl p-4 sm:p-5 md:p-6 mb-4 sm:mb-5 md:mb-6 shadow-sm border transition-colors duration-300`}
+        className={`bg-purple-50 border-purple-200 rounded-lg sm:rounded-xl p-4 sm:p-5 md:p-6 mb-4 sm:mb-5 md:mb-6 shadow-sm border transition-colors`}
       >
         <div className="flex items-center gap-3 sm:gap-4">
-          <div className="p-2 sm:p-2.5 md:p-3 bg-white rounded-lg sm:rounded-xl shadow-md shrink-0">
+          <div className="p-2 sm:p-2.5 md:p-3 bg-white rounded-lg sm:rounded-xl shadow-sm shrink-0">
             <Stethoscope className={"text-purple-600"} size={28} />
           </div>
           <div className="flex flex-col">
             <div className="flex items-center">
-              <h3 className="text-base sm:text-lg md:text-xl font-bold text-gray-800 mb-0.5 sm:mb-1 leading-tight">
+              <h3 className="text-base sm:text-lg md:text-xl font-bold text-slate-800 mb-0.5 sm:mb-1 leading-tight">
                 Department & Doctor
               </h3>
             </div>
-            <p className="text-purple-700 text-[11px] sm:text-xs font-medium leading-tight transition-colors duration-300 mt-1">
+            <p className="text-purple-700 text-2xs sm:text-xs font-medium leading-tight transition-colors mt-1">
               {getDescription()}
             </p>
           </div>
@@ -96,8 +96,8 @@ const DepartmentSelection: React.FC<DepartmentSelectionProps> = ({
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {/* Department Dropdown */}
         <div>
-          <label className="block text-gray-700 text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2">
-            Department<span className="text-red-500">*</span>
+          <label className="block text-slate-700 text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2">
+            Department<span className="text-red-600">*</span>
           </label>
           <DepartmentDropdown
             value={departmentData.id}
@@ -109,8 +109,8 @@ const DepartmentSelection: React.FC<DepartmentSelectionProps> = ({
 
         {/* Doctor Dropdown */}
         <div>
-          <label className="block text-gray-700 text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2">
-            Referred By / Doctor<span className="text-red-500">*</span>
+          <label className="block text-slate-700 text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2">
+            Referred By / Doctor<span className="text-red-600">*</span>
           </label>
           <DoctorDropdown
             value={doctorData.id}
@@ -125,7 +125,7 @@ const DepartmentSelection: React.FC<DepartmentSelectionProps> = ({
 
         {/* Chief Complaint - Full Width Row */}
         <div className="sm:col-span-2 mt-2">
-          <label className="block text-gray-700 text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2">
+          <label className="block text-slate-700 text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2">
             Chief Complaint
           </label>
           <textarea
@@ -147,7 +147,7 @@ const DepartmentSelection: React.FC<DepartmentSelectionProps> = ({
           <div className="sm:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4 mt-2">
             {/* Ward / Cabin */}
             <div>
-              <label className="block text-gray-700 text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2">
+              <label className="block text-slate-700 text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2">
                 Ward / Cabin
               </label>
               <input
@@ -165,7 +165,7 @@ const DepartmentSelection: React.FC<DepartmentSelectionProps> = ({
 
             {/* Room / Seat Number */}
             <div>
-              <label className="block text-gray-700 text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2">
+              <label className="block text-slate-700 text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2">
                 Room / Seat No.
               </label>
               <input

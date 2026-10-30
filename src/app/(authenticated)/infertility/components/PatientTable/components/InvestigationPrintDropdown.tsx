@@ -6,6 +6,7 @@ import { api } from "@/lib/axios";
 import { useAuth } from "@/app/AuthContext";
 import { useNotification } from "@/hooks/useNotification";
 import { formatBDT } from "@/lib/timezone";
+import { StatusBadge } from "@/components/ui/StatusBadge";
 import { generateInfertilityTestReceipt } from "../../../utils/generateReceipt";
 import { generateInfertilityInvestigationReport } from "../../../utils/generateInvestigationReport";
 import type { InfertilityTestData } from "../../../types";
@@ -145,10 +146,10 @@ const InvestigationPrintDropdown: React.FC<InvestigationPrintDropdownProps> = ({
         aria-label={isDisabled ? "No investigations to print" : "Print infertility investigations"}
         aria-haspopup="menu"
         aria-expanded={isOpen}
-        className={`p-1.5 rounded-lg transition-all shadow-sm hover:shadow-md active:scale-95 flex items-center gap-0.5 ${
+        className={`flex h-9 items-center justify-center gap-0.5 rounded-lg px-2 transition-colors ${
           isDisabled
-            ? "bg-gray-100 text-gray-400 cursor-not-allowed opacity-50"
-            : "bg-gray-100 text-gray-600 hover:bg-gray-200 cursor-pointer"
+            ? "bg-slate-100 text-slate-500 cursor-not-allowed opacity-50"
+            : "bg-slate-100 text-slate-600 hover:bg-slate-200 cursor-pointer"
         }`}
         title={isDisabled ? "No investigations to print" : "Print Investigation Receipt"}
       >
@@ -164,7 +165,7 @@ const InvestigationPrintDropdown: React.FC<InvestigationPrintDropdownProps> = ({
           }`}
         />
         {testCount && testCount > 0 ? (
-          <span className="min-w-3.5 rounded-full bg-gray-700 px-1 text-[9px] font-bold leading-3.5 text-white">
+          <span className="min-w-3.5 rounded-full bg-slate-700 px-1 text-2xs font-bold leading-3.5 text-white">
             {testCount}
           </span>
         ) : null}
@@ -176,13 +177,13 @@ const InvestigationPrintDropdown: React.FC<InvestigationPrintDropdownProps> = ({
         buttonRef={buttonRef}
         className="min-w-[260px] z-100001"
       >
-        <div className="border-b border-gray-100 bg-gray-50/70 px-3 py-2">
+        <div className="border-b border-slate-100 bg-slate-50/70 px-3 py-2">
           <div className="flex items-start justify-between gap-3">
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-wider text-gray-500">
+              <p className="text-2xs font-bold uppercase tracking-wider text-slate-500">
                 Investigation receipts
               </p>
-              <p className="mt-0.5 text-[9px] text-gray-400">
+              <p className="mt-0.5 text-2xs text-slate-500">
                 Patient and husband tests stay under this case.
               </p>
             </div>
@@ -191,7 +192,7 @@ const InvestigationPrintDropdown: React.FC<InvestigationPrintDropdownProps> = ({
                 type="button"
                 onClick={handlePrintAll}
                 disabled={isPrintingAll}
-                className="inline-flex shrink-0 items-center gap-1 rounded-md bg-emerald-700 px-2 py-1 text-[9px] font-bold text-white transition-colors hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-60"
+                className="inline-flex shrink-0 items-center gap-1 rounded-md border border-slate-300 bg-white px-2 py-1 text-2xs font-bold text-slate-700 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {isPrintingAll ? (
                   <Loader2 size={11} className="animate-spin" />
@@ -207,8 +208,8 @@ const InvestigationPrintDropdown: React.FC<InvestigationPrintDropdownProps> = ({
         <div className="py-1 max-h-[240px] overflow-y-auto">
           {isLoading ? (
             <div className="flex items-center justify-center py-4">
-              <Loader2 size={16} className="animate-spin text-gray-400" />
-              <span className="ml-2 text-[11px] text-gray-500">Loading...</span>
+              <Loader2 size={16} className="animate-spin text-slate-500" />
+              <span className="ml-2 text-2xs text-slate-500">Loading...</span>
             </div>
           ) : loadError ? (
             <button
@@ -219,25 +220,25 @@ const InvestigationPrintDropdown: React.FC<InvestigationPrintDropdownProps> = ({
                 setLoadError(null);
                 void fetchInvestigations(true);
               }}
-              className="w-full px-3 py-4 text-center text-[11px] text-red-600 hover:bg-red-50"
+              className="w-full px-3 py-4 text-center text-2xs text-red-600 hover:bg-red-50"
             >
               {loadError}
             </button>
           ) : investigations.length === 0 ? (
             <div className="px-3 py-4 text-center">
-              <FileText size={16} className="mx-auto text-gray-300 mb-1" />
-              <p className="text-[11px] text-gray-500">No investigations found</p>
+              <FileText size={16} className="mx-auto text-slate-300 mb-1" />
+              <p className="text-2xs text-slate-500">No investigations found</p>
             </div>
           ) : (
             groupedInvestigations.map((group) => (
-              <div key={group.key} className="border-b border-gray-100 last:border-b-0">
+              <div key={group.key} className="border-b border-slate-100 last:border-b-0">
                 <div className="flex items-center gap-1.5 px-3 py-1.5">
                   <span className={`rounded-md p-1 ${group.className}`}>{group.icon}</span>
                   <div>
-                    <p className="text-[10px] font-bold text-gray-700">{group.label}</p>
-                    <p className="text-[9px] text-gray-400">{group.description}</p>
+                    <p className="text-2xs font-bold text-slate-700">{group.label}</p>
+                    <p className="text-2xs text-slate-500">{group.description}</p>
                   </div>
-                  <span className="ml-auto text-[9px] font-bold text-gray-400">
+                  <span className="ml-auto text-2xs font-bold text-slate-500">
                     {group.items.length}
                   </span>
                 </div>
@@ -246,28 +247,22 @@ const InvestigationPrintDropdown: React.FC<InvestigationPrintDropdownProps> = ({
                     key={investigation.id}
                     type="button"
                     onClick={(e) => handleSelect(e, investigation)}
-                    className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left transition-colors hover:bg-gray-50"
+                    className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left transition-colors hover:bg-slate-50"
                   >
                     <div className="flex min-w-0 items-center gap-2">
-                      <Printer size={12} className="shrink-0 text-gray-400" />
+                      <Printer size={12} className="shrink-0 text-slate-500" />
                       <div className="min-w-0">
-                        <p className="truncate text-[11px] font-semibold text-gray-700">
+                        <p className="truncate text-2xs font-semibold text-slate-700">
                           {investigation.testNumber}
                         </p>
-                        <p className="truncate text-[9px] text-gray-500">
+                        <p className="truncate text-2xs text-slate-500">
                           {getInvestigationPreview(investigation)} · {formatDate(investigation.testDate)}
                         </p>
                       </div>
                     </div>
-                    <span
-                      className={`shrink-0 inline-flex rounded-md px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide ${
-                        investigation.isCompleted
-                          ? "bg-emerald-100 text-emerald-700"
-                          : "bg-amber-100 text-amber-700"
-                      }`}
-                    >
-                      {investigation.isCompleted ? "Done" : "Pending"}
-                    </span>
+                    <span className="shrink-0">
+                        <StatusBadge status={investigation.isCompleted ? "Completed" : "Pending"} />
+                      </span>
                   </button>
                 ))}
               </div>

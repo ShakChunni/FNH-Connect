@@ -81,7 +81,7 @@ const PatientSearch: React.FC = () => {
 
   const inputClassName = useMemo(() => {
     const baseStyle =
-      "text-gray-700 font-normal rounded-lg h-12 md:h-14 py-2 px-4 w-full focus:border-blue-900 focus:ring-2 focus:ring-blue-950 outline-none shadow-sm hover:shadow-md transition-all duration-300 placeholder:text-gray-400 placeholder:font-light text-xs sm:text-sm";
+      "text-slate-700 font-normal rounded-lg h-12 md:h-14 py-2 px-4 w-full focus:border-blue-900 focus:ring-2 focus:ring-blue-950 outline-none shadow-sm  transition duration-200 placeholder:text-slate-400 placeholder:font-light text-xs sm:text-sm";
     return (
       value: string,
       isValid: boolean = true,
@@ -89,15 +89,15 @@ const PatientSearch: React.FC = () => {
     ) => {
       // ... (reuse style logic)
       let style = disabled
-        ? `bg-gray-200 border-2 border-gray-300 cursor-not-allowed ${baseStyle}`
+        ? `bg-slate-200 border-2 border-slate-300 cursor-not-allowed ${baseStyle}`
         : baseStyle;
       if (!disabled) {
         if (!isValid && value) {
           style = `bg-red-50 border-2 border-red-500 ${baseStyle}`;
         } else {
           style += value
-            ? ` bg-white border-2 border-green-700`
-            : ` bg-gray-50 border-2 border-gray-300`;
+            ? ` bg-white border-2 border-emerald-700`
+            : ` bg-slate-50 border-2 border-slate-300`;
         }
       }
       return style;
@@ -257,7 +257,7 @@ const PatientSearch: React.FC = () => {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -10, scale: 0.98 }}
             transition={{ duration: 0.2, ease: "easeOut" }}
-            className="bg-white border border-gray-300 rounded-lg shadow-2xl z-100000 overflow-hidden"
+            className="bg-white border border-slate-300 rounded-lg shadow-xl z-100000 overflow-hidden"
             style={{
               position: "absolute",
               top: dropdownPosition.top,
@@ -268,7 +268,7 @@ const PatientSearch: React.FC = () => {
           >
             <div className="max-h-[300px] overflow-y-auto scrollbar-thin">
               {loading && (
-                <div className="flex items-center justify-center p-4 text-gray-500">
+                <div className="flex items-center justify-center p-4 text-slate-500">
                   <Loader2 className="w-5 h-5 animate-spin mr-2" />
                   Searching...
                 </div>
@@ -288,18 +288,18 @@ const PatientSearch: React.FC = () => {
                         e.preventDefault();
                         handleSelectPatient(patient);
                       }}
-                      className="px-4 py-3 cursor-pointer hover:bg-indigo-50 flex items-center gap-3 border-b border-gray-100 last:border-b-0"
+                      className="px-4 py-3 cursor-pointer hover:bg-indigo-50 flex items-center gap-3 border-b border-slate-100 last:border-b-0"
                     >
-                      <User className="w-5 h-5 text-gray-400 shrink-0" />
+                      <User className="w-5 h-5 text-slate-500 shrink-0" />
                       <div className="min-w-0 flex-1">
-                        <p className="font-medium text-gray-800 text-sm">
+                        <p className="font-medium text-slate-800 text-sm">
                           {patient.patientFullName}
                         </p>
-                        <p className="text-xs text-gray-500 truncate">
+                        <p className="text-xs text-slate-500 truncate">
                           Phone: {patient.mobileNumber || "N/A"}
                         </p>
                         {patient.address ? (
-                          <p className="text-xs text-gray-500 flex items-center gap-1 mt-0.5 break-words">
+                          <p className="text-xs text-slate-500 flex items-center gap-1 mt-0.5 break-words">
                             <MapPin className="w-3 h-3 text-indigo-500 shrink-0" />
                             <span className="whitespace-normal">
                               {patient.address}
@@ -324,7 +324,7 @@ const PatientSearch: React.FC = () => {
                       e.preventDefault();
                       handleAddNew();
                     }}
-                    className="px-4 py-3 cursor-pointer hover:bg-indigo-50 flex items-center gap-3 border-t border-gray-200"
+                    className="px-4 py-3 cursor-pointer hover:bg-indigo-50 flex items-center gap-3 border-t border-slate-200"
                   >
                     <PlusCircle className="w-5 h-5 text-indigo-600 shrink-0" />
                     <p className="font-medium text-indigo-700 text-sm">
@@ -333,7 +333,7 @@ const PatientSearch: React.FC = () => {
                   </div>
                 )}
               {!loading && error ? (
-                <div className="px-4 py-3 text-xs text-red-600 border-t border-gray-200">
+                <div className="px-4 py-3 text-xs text-red-600 border-t border-slate-200">
                   Unable to search patients. Please try again.
                 </div>
               ) : null}
@@ -356,8 +356,8 @@ const PatientSearch: React.FC = () => {
   return (
     <>
       <div className="flex items-center justify-between mb-1.5 sm:mb-2">
-        <label className="block text-gray-700 text-xs sm:text-sm font-semibold">
-          Patient Full Name<span className="text-red-500">*</span>
+        <label className="block text-slate-700 text-xs sm:text-sm font-semibold">
+          Patient Full Name<span className="text-red-600">*</span>
         </label>
         <div className="sm:hidden">
           {patientStatus === "new" && (
@@ -397,7 +397,7 @@ const PatientSearch: React.FC = () => {
         {isPatientSelected && (
           <button
             onClick={handleClearSelection}
-            className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-full bg-gray-200 hover:bg-red-100 text-gray-500 hover:text-red-600 transition-all duration-200 flex items-center justify-center"
+            className="absolute right-1 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-slate-200 hover:bg-red-100 text-slate-500 hover:text-red-600 transition-colors"
             aria-label="Clear selection"
           >
             <X size={16} />

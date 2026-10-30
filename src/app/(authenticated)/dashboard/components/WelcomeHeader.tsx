@@ -2,8 +2,9 @@
 
 import React from "react";
 import { useAuth } from "@/app/AuthContext";
-import { Sparkles, Calendar, RefreshCw, PowerOff } from "lucide-react";
+import { Calendar, RefreshCw, PowerOff } from "lucide-react";
 import { getRoleDisplayName } from "@/lib/roles";
+import { TONE_DOT } from "@/lib/statusStyles";
 import { useDashboardStore } from "../store";
 import { useNotificationContext } from "@/app/NotificationProvider";
 import { useEndShift } from "@/hooks/useEndShift";
@@ -61,13 +62,13 @@ export const WelcomeHeader: React.FC<WelcomeHeaderProps> = ({
 
   if (isLoading) {
     return (
-      <div className="pt-2 sm:pt-0">
+      <div>
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
           <div className="space-y-2">
-            <div className="h-7 sm:h-8 w-48 sm:w-64 bg-gray-200 rounded animate-pulse" />
-            <div className="h-4 sm:h-5 w-36 sm:w-48 bg-gray-100 rounded animate-pulse" />
+            <div className="h-7 sm:h-8 w-48 sm:w-64 bg-slate-200 rounded animate-pulse" />
+            <div className="h-4 sm:h-5 w-36 sm:w-48 bg-slate-100 rounded animate-pulse" />
           </div>
-          <div className="h-14 sm:h-16 w-full sm:w-80 bg-gray-100 rounded-xl animate-pulse" />
+          <div className="h-14 sm:h-16 w-full sm:w-80 bg-slate-100 rounded-xl animate-pulse" />
         </div>
       </div>
     );
@@ -75,17 +76,14 @@ export const WelcomeHeader: React.FC<WelcomeHeaderProps> = ({
 
   return (
     <>
-      <div className="pt-2 sm:pt-0">
+      <div>
         <div className="flex flex-col gap-4 sm:gap-0 sm:flex-row sm:items-center sm:justify-between">
           {/* Left: Greeting and Date */}
           <div className="order-1">
-            <div className="flex items-center gap-2">
-              <h1 className="text-lg lg:text-2xl font-bold text-fnh-navy-dark tracking-tight">
-                {greeting}, <span className="text-fnh-blue">{displayName}</span>
-              </h1>
-              <Sparkles className="w-4 h-4 lg:w-5 lg:h-5 text-amber-400 animate-pulse" />
-            </div>
-            <p className="text-gray-500 mt-1 flex items-center gap-2 text-xs lg:text-sm">
+            <h1 className="text-lg lg:text-2xl font-bold text-fnh-navy-dark tracking-tight">
+              {greeting}, <span className="text-fnh-blue">{displayName}</span>
+            </h1>
+            <p className="text-slate-500 mt-1 flex items-center gap-2 text-xs lg:text-sm">
               <Calendar className="w-3 h-3 lg:w-4 lg:h-4" />
               {date}
             </p>
@@ -98,7 +96,7 @@ export const WelcomeHeader: React.FC<WelcomeHeaderProps> = ({
               <button
                 onClick={() => setShowEndShiftConfirm(true)}
                 disabled={isEnding}
-                className="flex hover:cursor-pointer items-center justify-center gap-2 px-4 rounded-xl bg-red-50 border border-red-100 hover:bg-red-100 hover:border-red-200 transition-all duration-300 shadow-sm group h-[52px] sm:h-auto"
+                className="flex hover:cursor-pointer items-center justify-center gap-2 px-4 rounded-xl bg-red-50 border border-red-100 hover:bg-red-100 hover:border-red-200 transition-colors shadow-sm h-[52px] sm:h-auto"
               >
                 <PowerOff className="w-4 h-4 text-red-600" />
                 <span className="text-sm font-medium text-red-700">
@@ -110,23 +108,23 @@ export const WelcomeHeader: React.FC<WelcomeHeaderProps> = ({
             {/* Stats Toggle Button - matches role box height */}
             <button
               onClick={handleToggle}
-              className="flex hover:cursor-pointer items-center justify-center gap-2 px-4 rounded-xl bg-white border border-gray-200 hover:bg-gray-50 hover:border-fnh-blue/30 transition-all duration-300 shadow-sm group h-[52px] sm:h-auto"
+              className="flex hover:cursor-pointer items-center justify-center gap-2 px-4 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 hover:border-fnh-blue/30 transition-colors shadow-sm h-[52px] sm:h-auto"
             >
-              <RefreshCw className="w-4 h-4 text-fnh-blue group-hover:rotate-180 transition-transform duration-500" />
+              <RefreshCw className="w-4 h-4 text-fnh-blue" />
               <span className="text-sm font-medium text-fnh-navy-dark">
-                {isAllTime ? "All" : "Today"}
+                {isAllTime ? "All Time" : "Today"}
               </span>
               <div
                 className={`w-2 h-2 rounded-full ${
-                  isAllTime ? "bg-purple-500" : "bg-emerald-500"
+                  isAllTime ? TONE_DOT.info : TONE_DOT.success
                 }`}
               />
             </button>
 
             {/* Role Box */}
-            <div className="flex items-center gap-3 px-4 py-2.5 rounded-xl bg-linear-to-r from-fnh-navy to-fnh-navy-dark text-white shadow-lg">
+            <div className="flex items-center gap-3 px-4 py-2.5 rounded-xl bg-fnh-navy text-white shadow-sm">
               <div>
-                <p className="text-[10px] sm:text-xs text-white/70 font-medium">
+                <p className="text-2xs sm:text-xs text-white/70 font-medium">
                   Your Role
                 </p>
                 <p className="text-xs sm:text-sm font-semibold">
@@ -135,11 +133,11 @@ export const WelcomeHeader: React.FC<WelcomeHeaderProps> = ({
               </div>
               <div className="w-px h-10 bg-white/20" />
               <div>
-                <p className="text-[10px] sm:text-xs text-white/70 font-medium">
+                <p className="text-2xs sm:text-xs text-white/70 font-medium">
                   Status
                 </p>
                 <div className="flex items-center gap-1.5">
-                  <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                  <div className="w-2 h-2 rounded-full bg-emerald-400" />
                   <p className="text-xs sm:text-sm font-semibold">Online</p>
                 </div>
               </div>
@@ -163,13 +161,13 @@ export const WelcomeHeader: React.FC<WelcomeHeaderProps> = ({
           <p className="font-semibold text-fnh-navy-dark">
             Have you handed over all collected cash to the manager?
           </p>
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-slate-600">
             Ending the shift will close your current session and reset your cash
             tracking. Ensure all finances are settled.
           </p>
           <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
             <p className="text-sm text-amber-800 font-medium">
-              ⚠️ This will log you out from ALL devices
+              This will log you out from ALL devices
             </p>
             <p className="text-xs text-amber-700 mt-1">
               Ending your shift will invalidate all your active sessions across

@@ -5,6 +5,8 @@ import { ClientPortal } from "@/components/ui/ClientPortal";
 import { motion, AnimatePresence } from "framer-motion";
 import { CircleDollarSign, Percent, X, RotateCcw, SlidersHorizontal } from "lucide-react";
 import { FinancialFilterSelect } from "@/components/ui";
+import { backdropVariants } from "@/components/ui/modal-animations";
+import { DRAWER_TRANSITION } from "@/lib/motion";
 import { usePathologyFilterStore } from "../../stores/filterStore";
 import {
   DoctorFilter,
@@ -90,12 +92,12 @@ export const Filters: React.FC = () => {
         <>
           {/* Backdrop */}
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
+            variants={backdropVariants}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
             onClick={handleBackdropClick}
-            className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[100000]"
+            className="fixed inset-0 bg-slate-950/50 z-[100000]"
             aria-hidden="true"
           />
 
@@ -104,23 +106,19 @@ export const Filters: React.FC = () => {
             initial={{ x: "100%" }}
             animate={{ x: 0 }}
             exit={{ x: "100%" }}
-            transition={{
-              type: "tween",
-              duration: 0.4,
-              ease: [0.25, 0.1, 0.25, 1],
-            }}
+            transition={DRAWER_TRANSITION}
             className="fixed top-0 right-0 h-full w-full sm:w-[400px] max-w-full
               bg-white
-              shadow-none sm:shadow-[-8px_0_30px_rgba(0,0,0,0.15)] z-[100001]
+              shadow-none sm:shadow-xl z-[100001]
               flex flex-col sm:rounded-l-[2rem] overflow-hidden"
             role="dialog"
             aria-modal="true"
             aria-labelledby="filter-panel-title"
           >
             {/* Header */}
-            <div className="flex items-center justify-between px-6 py-5 bg-linear-to-r from-fnh-navy-dark to-fnh-navy">
+            <div className="flex items-center justify-between px-6 py-5 bg-fnh-navy">
               <div className="flex items-center gap-3">
-                <div className="p-2.5 bg-white/15 rounded-xl backdrop-blur-sm">
+                <div className="p-2.5 bg-white/15 rounded-xl">
                   <SlidersHorizontal className="w-5 h-5 text-white" />
                 </div>
                 <div>
@@ -141,7 +139,7 @@ export const Filters: React.FC = () => {
               <button
                 onClick={closeFilterPanel}
                 className="p-2.5 rounded-xl text-white/70 hover:text-white hover:bg-white/15
-                  transition-all duration-200 cursor-pointer backdrop-blur-sm"
+                  transition-colors cursor-pointer"
                 aria-label="Close filters"
               >
                 <X className="w-5 h-5" />
@@ -180,32 +178,30 @@ export const Filters: React.FC = () => {
             </div>
 
             {/* Footer */}
-            <div className="px-6 py-4 border-t border-gray-100 bg-gray-50/50">
+            <div className="px-6 py-4 border-t border-slate-200 bg-slate-50">
               <div className="flex items-center gap-3">
-                {/* Clear All Button */}
+                {/* Clear Filters Button */}
                 <button
                   onClick={handleClearAll}
                   disabled={activeCount === 0}
                   className="flex-1 flex items-center justify-center gap-2 px-4 py-3
-                    bg-white border border-gray-200 rounded-xl
-                    text-sm font-medium text-gray-600
-                    hover:bg-gray-50 hover:border-gray-300
+                    border border-slate-300 bg-white rounded-xl
+                    text-sm font-medium text-slate-700
+                    hover:bg-slate-50
                     disabled:opacity-50 disabled:cursor-not-allowed
-                    transition-all duration-200 cursor-pointer"
+                    transition-colors cursor-pointer"
                 >
                   <RotateCcw className="w-4 h-4" />
-                  Clear All
+                  Clear filters
                 </button>
 
                 {/* Apply/Close Button */}
                 <button
                   onClick={closeFilterPanel}
                   className="flex-1 px-4 py-3
-                    bg-linear-to-r from-fnh-navy-dark to-fnh-navy rounded-xl
-                    text-sm font-semibold text-white
-                    hover:from-fnh-navy hover:to-fnh-navy-light
-                    shadow-lg hover:shadow-xl
-                    transition-all duration-200 cursor-pointer"
+                    bg-blue-600 hover:bg-blue-700 text-white rounded-xl
+                    text-sm font-semibold
+                    transition-colors cursor-pointer"
                 >
                   Apply Filters
                 </button>

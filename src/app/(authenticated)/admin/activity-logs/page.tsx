@@ -46,7 +46,7 @@ const ActivityLogsPage = () => {
     setFilter("search", debouncedSearch);
   }, [debouncedSearch, setFilter]);
 
-  const { data, isLoading, refetch, isFetching } =
+  const { data, isLoading, isError, refetch, isFetching } =
     useFetchActivityLogs(filters);
 
   const logs = data?.logs || [];
@@ -63,6 +63,7 @@ const ActivityLogsPage = () => {
     lastActivity: null,
   };
   const filterOptions = data?.filterOptions || { actionTypes: [], users: [] };
+  const hasData = !!data;
 
   const formatRelativeTime = (dateStr: string | null) => {
     if (!dateStr) return "No recent activity";
@@ -99,7 +100,7 @@ const ActivityLogsPage = () => {
                 <div className="w-full flex justify-center sm:w-auto">
                   <button
                     onClick={() => refetch()}
-                    className="flex items-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-all shadow-sm text-xs sm:text-sm font-semibold cursor-pointer active:scale-95"
+                    className="flex items-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 bg-white border border-slate-300 text-slate-700 rounded-xl hover:bg-slate-50 transition-colors shadow-sm text-xs sm:text-sm font-semibold cursor-pointer"
                   >
                     <RefreshCw
                       className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${
@@ -116,120 +117,101 @@ const ActivityLogsPage = () => {
           {/* Stats Grid */}
           <div className="px-1 sm:px-2 lg:px-4">
             <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
-              {/* Total Actions */}
-              <div className="bg-indigo-50/50 rounded-2xl p-4 sm:p-5 border border-indigo-100 shadow-sm shadow-indigo-100/20 relative overflow-hidden group hover:shadow-md transition-all duration-300">
-                <div className="absolute top-0 right-0 w-24 h-24 bg-indigo-100/50 rounded-full -translate-y-1/2 translate-x-1/2 group-hover:scale-110 transition-transform duration-500" />
-                <div className="relative z-10">
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center shadow-sm">
-                      <Activity className="w-4 h-4 text-indigo-600" />
-                    </div>
-                    <span className="text-[10px] sm:text-xs font-black uppercase tracking-widest text-indigo-900/60">
-                      Total Actions
-                    </span>
+              <div className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200 shadow-sm">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-8 h-8 bg-slate-50 rounded-lg flex items-center justify-center">
+                    <Activity className="w-4 h-4 text-indigo-600" />
                   </div>
-                  {isLoading ? (
-                    <div className="h-8 w-20 bg-indigo-100/50 rounded animate-pulse mb-1" />
-                  ) : (
-                    <p className="text-xl sm:text-2xl lg:text-2xl xl:text-3xl font-black text-indigo-950">
-                      {summary.totalActions.toLocaleString()}
-                    </p>
-                  )}
-                  <p className="text-[10px] sm:text-xs font-medium mt-1 text-indigo-700/80">
-                    In selected period
-                  </p>
+                  <span className="text-2xs sm:text-xs font-black uppercase tracking-widest text-slate-500">
+                    Total Actions
+                  </span>
                 </div>
+                {isLoading ? (
+                  <div className="h-8 w-20 bg-slate-100 rounded animate-pulse mb-1" />
+                ) : (
+                  <p className="text-xl sm:text-2xl lg:text-2xl xl:text-3xl font-black text-slate-900 tabular-nums">
+                    {hasData ? summary.totalActions.toLocaleString() : "—"}
+                  </p>
+                )}
+                <p className="text-2xs sm:text-xs font-medium mt-1 text-slate-500">
+                  In selected period
+                </p>
               </div>
-
-              {/* Unique Users */}
-              <div className="bg-violet-50/50 rounded-2xl p-4 sm:p-5 border border-violet-100 shadow-sm shadow-violet-100/20 relative overflow-hidden group hover:shadow-md transition-all duration-300">
-                <div className="absolute top-0 right-0 w-24 h-24 bg-violet-100/50 rounded-full -translate-y-1/2 translate-x-1/2 group-hover:scale-110 transition-transform duration-500" />
-                <div className="relative z-10">
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center shadow-sm">
-                      <Users className="w-4 h-4 text-violet-600" />
-                    </div>
-                    <span className="text-[10px] sm:text-xs font-black uppercase tracking-widest text-violet-900/60">
-                      Unique Users
-                    </span>
+              <div className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200 shadow-sm">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-8 h-8 bg-slate-50 rounded-lg flex items-center justify-center">
+                    <Users className="w-4 h-4 text-violet-600" />
                   </div>
-                  {isLoading ? (
-                    <div className="h-8 w-12 bg-violet-100/50 rounded animate-pulse mb-1" />
-                  ) : (
-                    <p className="text-xl sm:text-2xl lg:text-2xl xl:text-3xl font-black text-violet-950">
-                      {summary.uniqueUsers}
-                    </p>
-                  )}
-                  <p className="text-[10px] sm:text-xs font-medium mt-1 text-violet-700/80">
-                    Active in logs
-                  </p>
+                  <span className="text-2xs sm:text-xs font-black uppercase tracking-widest text-slate-500">
+                    Unique Users
+                  </span>
                 </div>
+                {isLoading ? (
+                  <div className="h-8 w-12 bg-slate-100 rounded animate-pulse mb-1" />
+                ) : (
+                  <p className="text-xl sm:text-2xl lg:text-2xl xl:text-3xl font-black text-slate-900 tabular-nums">
+                    {hasData ? summary.uniqueUsers : "—"}
+                  </p>
+                )}
+                <p className="text-2xs sm:text-xs font-medium mt-1 text-slate-500">
+                  Active in logs
+                </p>
               </div>
-
-              {/* Login Count */}
-              <div className="bg-emerald-50/50 rounded-2xl p-4 sm:p-5 border border-emerald-100 shadow-sm shadow-emerald-100/20 relative overflow-hidden group hover:shadow-md transition-all duration-300">
-                <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-100/50 rounded-full -translate-y-1/2 translate-x-1/2 group-hover:scale-110 transition-transform duration-500" />
-                <div className="relative z-10">
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center shadow-sm">
-                      <LogIn className="w-4 h-4 text-emerald-600" />
-                    </div>
-                    <span className="text-[10px] sm:text-xs font-black uppercase tracking-widest text-emerald-900/60">
-                      Login Events
-                    </span>
+              <div className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200 shadow-sm">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-8 h-8 bg-slate-50 rounded-lg flex items-center justify-center">
+                    <LogIn className="w-4 h-4 text-emerald-700" />
                   </div>
-                  {isLoading ? (
-                    <div className="h-8 w-16 bg-emerald-100/50 rounded animate-pulse mb-1" />
-                  ) : (
-                    <p className="text-xl sm:text-2xl lg:text-2xl xl:text-3xl font-black text-emerald-950">
-                      {summary.loginCount}
-                    </p>
-                  )}
-                  <p className="text-[10px] sm:text-xs font-medium mt-1 text-emerald-700/80">
-                    Successful logins
-                  </p>
+                  <span className="text-2xs sm:text-xs font-black uppercase tracking-widest text-slate-500">
+                    Login Events
+                  </span>
                 </div>
+                {isLoading ? (
+                  <div className="h-8 w-16 bg-slate-100 rounded animate-pulse mb-1" />
+                ) : (
+                  <p className="text-xl sm:text-2xl lg:text-2xl xl:text-3xl font-black text-slate-900 tabular-nums">
+                    {hasData ? summary.loginCount : "—"}
+                  </p>
+                )}
+                <p className="text-2xs sm:text-xs font-medium mt-1 text-slate-500">
+                  Successful logins
+                </p>
               </div>
-
-              {/* Last Activity */}
-              <div className="bg-amber-50/50 rounded-2xl p-4 sm:p-5 border border-amber-100 shadow-sm shadow-amber-100/20 relative overflow-hidden group hover:shadow-md transition-all duration-300">
-                <div className="absolute top-0 right-0 w-24 h-24 bg-amber-100/50 rounded-full -translate-y-1/2 translate-x-1/2 group-hover:scale-110 transition-transform duration-500" />
-                <div className="relative z-10">
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center shadow-sm">
-                      <Zap className="w-4 h-4 text-amber-600" />
-                    </div>
-                    <span className="text-[10px] sm:text-xs font-black uppercase tracking-widest text-amber-900/60">
-                      Last Activity
-                    </span>
+              <div className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200 shadow-sm">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-8 h-8 bg-slate-50 rounded-lg flex items-center justify-center">
+                    <Zap className="w-4 h-4 text-amber-700" />
                   </div>
-                  {isLoading ? (
-                    <div className="h-8 w-20 bg-amber-100/50 rounded animate-pulse mb-1" />
-                  ) : (
-                    <p className="text-lg sm:text-xl lg:text-xl xl:text-2xl font-black text-amber-950">
-                      {formatRelativeTime(summary.lastActivity)}
-                    </p>
-                  )}
-                  <p className="text-[10px] sm:text-xs font-medium mt-1 text-amber-700/80">
-                    Most recent log
-                  </p>
+                  <span className="text-2xs sm:text-xs font-black uppercase tracking-widest text-slate-500">
+                    Last Activity
+                  </span>
                 </div>
+                {isLoading ? (
+                  <div className="h-8 w-20 bg-slate-100 rounded animate-pulse mb-1" />
+                ) : (
+                  <p className="text-lg sm:text-xl lg:text-xl xl:text-2xl font-black text-slate-900 tabular-nums">
+                    {hasData ? formatRelativeTime(summary.lastActivity) : "—"}
+                  </p>
+                )}
+                <p className="text-2xs sm:text-xs font-medium mt-1 text-slate-500">
+                  Most recent log
+                </p>
               </div>
             </div>
           </div>
 
           {/* Filters */}
           <div className="px-1 sm:px-2 lg:px-4">
-            <div className="p-3 sm:p-4 bg-white rounded-2xl border border-gray-100 shadow-sm space-y-3 sm:space-y-0 sm:flex sm:flex-row sm:flex-wrap sm:items-center sm:gap-4 relative group">
+            <div className="p-3 sm:p-4 bg-white rounded-2xl border border-slate-100 shadow-sm space-y-3 sm:space-y-0 sm:flex sm:flex-row sm:flex-wrap sm:items-center sm:gap-4 relative">
               {/* Search Input */}
               <div className="flex-1 min-w-[180px] sm:min-w-[200px] relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
                 <input
                   type="text"
                   placeholder="Search users, actions..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 bg-gray-50/50 border border-gray-100 rounded-xl text-xs sm:text-sm font-bold focus:outline-none focus:ring-2 focus:ring-fnh-blue/20 transition-all"
+                  className="w-full pl-10 pr-4 py-2.5 bg-slate-50/50 border border-slate-100 rounded-xl text-xs sm:text-sm font-bold focus:outline-none focus:ring-2 focus:ring-fnh-blue/20 transition-colors"
                 />
               </div>
 
@@ -285,17 +267,13 @@ const ActivityLogsPage = () => {
                       setSearchTerm("");
                     }}
                     disabled={isLoading && !data}
-                    className="px-3 py-2 sm:px-2 sm:py-1 text-[10px] sm:text-xs font-black text-rose-500 uppercase tracking-widest hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
+                    className="h-9 px-3 sm:px-2 text-xs font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
                   >
-                    Clear Filters
+                    Clear filters
                   </button>
                 )}
               </div>
 
-              {/* Minimal Loading Overlay for Filters */}
-              {isLoading && !data && (
-                <div className="absolute inset-y-0 right-0 w-[60%] sm:w-[45%] bg-white/40 backdrop-blur-[1px] rounded-r-2xl z-10 pointer-events-none transition-opacity" />
-              )}
             </div>
           </div>
 
@@ -303,11 +281,13 @@ const ActivityLogsPage = () => {
           <div className="px-1 sm:px-2 lg:px-4 pb-10">
             <div
               ref={tableContainerRef}
-              className="bg-white rounded-xl sm:rounded-2xl border border-gray-100 shadow-sm overflow-hidden"
+              className="bg-white rounded-xl sm:rounded-2xl border border-slate-100 shadow-sm overflow-hidden"
             >
               <ActivityLogTable
                 logs={logs}
                 isLoading={isLoading && !data}
+                isError={isError && !data}
+                onRetry={() => refetch()}
                 onSelectLog={(log) => setSelectedLogId(log.id)}
               />
             </div>

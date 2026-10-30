@@ -204,13 +204,13 @@ export const CashTrackerFilters: React.FC<CashTrackerFiltersProps> = ({
           ref={deptButtonRef}
           onClick={onDeptDropdownToggle}
           disabled={isFetching}
-          className="flex-1 flex items-center justify-between gap-1 px-2.5 py-2 rounded-lg bg-gray-50 hover:bg-gray-100 border border-gray-200 text-xs font-medium text-fnh-navy-dark transition-colors cursor-pointer disabled:opacity-50"
+          className="flex-1 flex items-center justify-between gap-1 h-9 px-2.5 rounded-lg bg-slate-50 hover:bg-slate-100 border border-slate-200 text-xs font-medium text-fnh-navy-dark transition-colors cursor-pointer disabled:opacity-50"
         >
           <div className="flex items-center gap-1.5 min-w-0">
-            <Building2 className="w-3 h-3 text-gray-400 shrink-0" />
+            <Building2 className="w-3 h-3 text-slate-400 shrink-0" />
             <span className="truncate">{selectedDeptLabel}</span>
           </div>
-          <ChevronDown className="w-3 h-3 text-gray-400 shrink-0" />
+          <ChevronDown className="w-3 h-3 text-slate-400 shrink-0" />
         </button>
 
         {/* Date Dropdown */}
@@ -218,13 +218,13 @@ export const CashTrackerFilters: React.FC<CashTrackerFiltersProps> = ({
           ref={dateButtonRef}
           onClick={onDateDropdownToggle}
           disabled={isFetching}
-          className="flex-1 flex items-center justify-between gap-1 px-2.5 py-2 rounded-lg bg-gray-50 hover:bg-gray-100 border border-gray-200 text-xs font-medium text-fnh-navy-dark transition-colors cursor-pointer disabled:opacity-50"
+          className="flex-1 flex items-center justify-between gap-1 h-9 px-2.5 rounded-lg bg-slate-50 hover:bg-slate-100 border border-slate-200 text-xs font-medium text-fnh-navy-dark transition-colors cursor-pointer disabled:opacity-50"
         >
           <div className="flex items-center gap-1.5 min-w-0">
-            <Calendar className="w-3 h-3 text-gray-400 shrink-0" />
+            <Calendar className="w-3 h-3 text-slate-400 shrink-0" />
             <span className="truncate">{getSelectedDateLabel()}</span>
           </div>
-          <ChevronDown className="w-3 h-3 text-gray-400 shrink-0" />
+          <ChevronDown className="w-3 h-3 text-slate-400 shrink-0" />
         </button>
       </div>
 
@@ -238,20 +238,20 @@ export const CashTrackerFilters: React.FC<CashTrackerFiltersProps> = ({
         <div className="py-1 max-h-64 overflow-y-auto">
           <button
             onClick={() => onDepartmentSelect("all")}
-            className={`w-full px-3 py-2 text-left text-xs font-medium hover:bg-gray-50 transition-colors cursor-pointer ${
+            className={`flex h-9 w-full items-center px-3 text-left text-xs font-medium hover:bg-slate-50 transition-colors cursor-pointer ${
               departmentId === "all"
                 ? "text-fnh-navy bg-fnh-navy/5"
-                : "text-gray-700"
+                : "text-slate-700"
             }`}
           >
             All Departments
           </button>
           <button
             onClick={() => onDepartmentSelect("admission")}
-            className={`w-full px-3 py-2 text-left text-xs font-medium hover:bg-gray-50 transition-colors cursor-pointer ${
+            className={`flex h-9 w-full items-center px-3 text-left text-xs font-medium hover:bg-slate-50 transition-colors cursor-pointer ${
               departmentId === "admission"
                 ? "text-fnh-navy bg-fnh-navy/5"
-                : "text-gray-700"
+                : "text-slate-700"
             }`}
           >
             All Admission Departments
@@ -260,10 +260,10 @@ export const CashTrackerFilters: React.FC<CashTrackerFiltersProps> = ({
             <button
               key={dept.id}
               onClick={() => onDepartmentSelect(dept.id)}
-              className={`w-full px-3 py-2 text-left text-xs font-medium hover:bg-gray-50 transition-colors cursor-pointer ${
+              className={`flex h-9 w-full items-center px-3 text-left text-xs font-medium hover:bg-slate-50 transition-colors cursor-pointer ${
                 departmentId === dept.id
                   ? "text-fnh-navy bg-fnh-navy/5"
-                  : "text-gray-700"
+                  : "text-slate-700"
               }`}
             >
               {dept.name}
@@ -284,10 +284,10 @@ export const CashTrackerFilters: React.FC<CashTrackerFiltersProps> = ({
             <button
               key={preset.value}
               onClick={() => handlePresetClick(preset.value)}
-              className={`w-full px-3 py-2 text-left text-xs font-medium hover:bg-gray-50 transition-colors cursor-pointer ${
+              className={`flex h-9 w-full items-center px-3 text-left text-xs font-medium hover:bg-slate-50 transition-colors cursor-pointer ${
                 datePreset === preset.value
                   ? "text-fnh-navy bg-fnh-navy/5"
-                  : "text-gray-700"
+                  : "text-slate-700"
               }`}
             >
               {preset.label}
@@ -301,22 +301,24 @@ export const CashTrackerFilters: React.FC<CashTrackerFiltersProps> = ({
         <div className="fixed inset-0 z-[9999] flex items-center justify-center">
           {/* Backdrop */}
           <div
-            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+            className="absolute inset-0 bg-slate-950/50"
             onClick={onCustomRangePickerClose}
           />
 
           {/* Modal Content */}
-          <div className="relative z-10 bg-white rounded-xl shadow-2xl max-w-sm w-[95vw] max-h-[90vh] overflow-y-auto">
+          <div className="relative z-10 bg-white rounded-xl shadow-xl max-w-sm w-[95vw] max-h-[90vh] overflow-y-auto">
             {/* Header */}
-            <div className="flex items-center justify-between p-4 border-b border-gray-100">
+            <div className="flex items-center justify-between p-4 border-b border-slate-100">
               <h3 className="text-sm font-bold text-fnh-navy">
                 Select Custom Date Range
               </h3>
               <button
+                type="button"
                 onClick={onCustomRangePickerClose}
-                className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
+                aria-label="Close"
+                className="flex h-9 w-9 items-center justify-center rounded-full text-slate-500 transition-colors hover:bg-slate-100 cursor-pointer"
               >
-                <X className="w-4 h-4 text-gray-500" />
+                <X className="w-4 h-4" />
               </button>
             </div>
 
@@ -333,13 +335,13 @@ export const CashTrackerFilters: React.FC<CashTrackerFiltersProps> = ({
 
               {/* Selected Range Display */}
               {(tempRange.from || tempRange.to) && (
-                <div className="space-y-3 border-t border-gray-100 pt-4 mt-4">
-                  <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                <div className="space-y-3 border-t border-slate-100 pt-4 mt-4">
+                  <div className="text-2xs font-black text-slate-500 uppercase tracking-widest">
                     Selected Range
                   </div>
                   <div className="grid grid-cols-2 gap-2 text-xs">
                     <div className="flex flex-col gap-1">
-                      <span className="text-gray-400 font-bold text-[9px] uppercase tracking-wider">
+                      <span className="text-slate-500 font-bold text-2xs uppercase tracking-wider">
                         From
                       </span>
                       <span className="font-bold text-fnh-navy">
@@ -349,7 +351,7 @@ export const CashTrackerFilters: React.FC<CashTrackerFiltersProps> = ({
                       </span>
                     </div>
                     <div className="flex flex-col gap-1">
-                      <span className="text-gray-400 font-bold text-[9px] uppercase tracking-wider">
+                      <span className="text-slate-500 font-bold text-2xs uppercase tracking-wider">
                         To
                       </span>
                       <span className="font-bold text-fnh-navy">
@@ -364,7 +366,7 @@ export const CashTrackerFilters: React.FC<CashTrackerFiltersProps> = ({
                     <button
                       type="button"
                       onClick={handleClearRange}
-                      className="flex-1 px-3 py-2 text-xs font-bold text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors cursor-pointer"
+                      className="flex-1 h-9 px-3 text-xs font-medium text-slate-700 border border-slate-300 bg-white hover:bg-slate-50 rounded-lg transition-colors cursor-pointer"
                     >
                       Clear
                     </button>
@@ -372,7 +374,7 @@ export const CashTrackerFilters: React.FC<CashTrackerFiltersProps> = ({
                       type="button"
                       onClick={handleConfirmRange}
                       disabled={!tempRange.from || !tempRange.to}
-                      className="flex-1 px-3 py-2 text-xs font-bold text-white bg-fnh-navy hover:bg-fnh-navy/90 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                      className="flex-1 h-9 px-3 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                     >
                       Confirm
                     </button>

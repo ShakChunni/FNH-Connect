@@ -5,6 +5,7 @@ import { PasswordInput } from "./PasswordInput";
 import { LoginError } from "./LoginError";
 import { LoginLoading } from "./LoginLoading";
 import { motion } from "framer-motion";
+import { tween } from "@/lib/motion";
 import {
   LOGIN_VALIDATION,
   type LoginFormData,
@@ -16,6 +17,8 @@ interface LoginFormProps {
   isLoading?: boolean;
   error?: string | null;
   portal: import("@/types/auth").PortalType;
+  /** Prefixes input and label ids so the same form can be mounted twice on one page. */
+  idPrefix?: string;
 }
 
 export function LoginForm({
@@ -23,6 +26,7 @@ export function LoginForm({
   isLoading = false,
   error = null,
   portal,
+  idPrefix = "",
 }: LoginFormProps) {
   const [formData, setFormData] = useState<LoginFormData>({
     username: "",
@@ -130,13 +134,13 @@ export function LoginForm({
     field: "username" | "password",
     hasError: boolean,
   ) => {
-    const focusRingColor = portal === "infertility" 
-      ? "focus:ring-emerald-500/20 focus:border-emerald-500" 
+    const focusRingColor = portal === "infertility"
+      ? "focus:ring-emerald-500/20 focus:border-emerald-500"
       : "focus:ring-blue-500/20 focus:border-blue-500";
-      
+
     // Solid white background with dark text for maximum readability
     const base =
-      `w-full px-4 py-3.5 rounded-xl border bg-white text-sm text-slate-900 placeholder-slate-400 transition-[border-color,background-color,box-shadow,transform] duration-300 ease-out focus:outline-none focus:ring-4 shadow-sm`;
+      "w-full px-4 py-3.5 rounded-xl border bg-white text-sm text-slate-900 placeholder-slate-400 transition-[border-color,box-shadow] duration-200 focus:outline-none focus:ring-4 shadow-sm";
 
     const errorStyles = hasError
       ? "border-red-500 bg-red-50 focus:border-red-600 focus:ring-red-500/20"
@@ -156,7 +160,7 @@ export function LoginForm({
       noValidate
       className="space-y-4 py-2"
     >
-      {/* Error Message - Smooth animated */}
+      {/* Error Message */}
       <LoginError
         message={submitError}
         onDismiss={() => setSubmitError(null)}
@@ -165,26 +169,23 @@ export function LoginForm({
       {/* Username Field */}
       <motion.div
         className="space-y-1 relative"
-        initial={{ opacity: 0, y: 10 }}
+        initial={{ opacity: 0, y: 8 }}
         animate={{
           opacity: 1,
           y: 0,
           x: touched.username && errors.username ? [0, -6, 6, -6, 6, 0] : 0,
         }}
-        transition={{
-          y: { duration: 0.4, delay: 0.1 },
-          x: { duration: 0.4 }, // fast shake
-        }}
+        transition={{ ...tween(), x: { duration: 0.4 } }}
       >
         <label
-          htmlFor="username"
+          htmlFor={`${idPrefix}username`}
           className="block text-sm font-bold text-white/80 ml-1 uppercase tracking-wider"
         >
           Username
         </label>
         <input
           type="text"
-          id="username"
+          id={`${idPrefix}username`}
           value={formData.username}
           onChange={(e) => handleFieldChange("username", e.target.value)}
           onBlur={() => handleFieldBlur("username")}
@@ -201,16 +202,13 @@ export function LoginForm({
 
       {/* Password Field */}
       <motion.div
-        initial={{ opacity: 0, y: 10 }}
+        initial={{ opacity: 0, y: 8 }}
         animate={{
           opacity: 1,
           y: 0,
           x: touched.password && errors.password ? [0, -6, 6, -6, 6, 0] : 0,
         }}
-        transition={{
-          y: { duration: 0.4, delay: 0.2 },
-          x: { duration: 0.4 },
-        }}
+        transition={{ ...tween(), x: { duration: 0.4 } }}
       >
         <PasswordInput
           value={formData.password}
@@ -221,22 +219,23 @@ export function LoginForm({
           disabled={isLoading}
           isFocused={focusedField === "password"}
           portal={portal}
+          idPrefix={idPrefix}
         />
       </motion.div>
 
       {/* Submit Button */}
       <motion.div
-        initial={{ opacity: 0, y: 10 }}
+        initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, delay: 0.3 }}
+        transition={tween()}
       >
         <button
           type="submit"
           disabled={isLoading}
-          className={`w-full h-12 px-4 text-white font-bold rounded-xl shadow-lg hover:shadow-xl hover:scale-[1.01] active:scale-[0.98] focus:ring-4 disabled:opacity-50 disabled:cursor-not-allowed transition-[background-color,box-shadow,transform,opacity] duration-300 cursor-pointer select-none ${
+          className={`w-full h-12 px-4 text-white font-bold rounded-xl focus:ring-4 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 cursor-pointer select-none ${
             portal === "infertility"
-              ? "bg-emerald-600 hover:bg-emerald-500 focus:ring-emerald-500/20 shadow-emerald-900/20"
-              : "bg-blue-600 hover:bg-blue-500 focus:ring-blue-500/20 shadow-blue-900/20"
+              ? "bg-emerald-700 hover:bg-emerald-800 focus:ring-emerald-500/20"
+              : "bg-blue-600 hover:bg-blue-700 focus:ring-blue-500/20"
           }`}
         >
           {isLoading ? <LoginLoading message="Signing in..." /> : "Sign In"}
@@ -245,10 +244,10 @@ export function LoginForm({
 
       {/* Footer Info */}
       <motion.p
-        className="text-center text-xs text-fnh-grey-dark/70 pt-2"
-        initial={{ opacity: 0, y: 10 }}
+        className="text-center text-xs text-white/60 pt-2"
+        initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, delay: 0.4 }}
+        transition={tween()}
       >
         For security purposes, sessions expire after 24 hours of inactivity.
       </motion.p>

@@ -128,19 +128,19 @@ const DistrictDropdown: React.FC<DistrictDropdownProps> = ({
         aria-haspopup="listbox"
         aria-expanded={isOpen}
         aria-label="Select Bangladesh district"
-        className={`text-gray-700 font-normal rounded-lg flex justify-between items-center w-full px-3 sm:px-4 py-2 h-12 md:h-14 outline-none transition-all duration-300 border-2 ${
+        className={`text-slate-700 font-normal rounded-lg flex justify-between items-center w-full px-3 sm:px-4 py-2 h-12 md:h-14 outline-none transition-colors duration-200 border-2 ${
           disabled
-            ? "bg-gray-200 border-gray-300 cursor-not-allowed"
+            ? "bg-slate-200 border-slate-300 cursor-not-allowed"
             : value
-              ? "bg-white border-green-700 cursor-pointer focus:border-blue-950 focus:ring-2 focus:ring-blue-950 shadow-sm hover:shadow-md"
-              : "bg-gray-50 border-gray-300 cursor-pointer focus:border-blue-950 focus:ring-2 focus:ring-blue-950 shadow-sm hover:shadow-md"
+              ? "bg-white border-green-700 cursor-pointer focus:border-blue-950 focus:ring-2 focus:ring-blue-950 shadow-sm"
+              : "bg-slate-50 border-slate-300 cursor-pointer focus:border-blue-950 focus:ring-2 focus:ring-blue-950 shadow-sm"
         }`}
       >
         <span
           className={`flex items-center gap-2 ${
             value
-              ? "text-gray-700 font-normal"
-              : "text-gray-400 font-light"
+              ? "text-slate-700 font-normal"
+              : "text-slate-500 font-light"
           } text-xs sm:text-sm md:text-sm lg:text-sm xl:text-sm`}
         >
           {isAutofilled && value ? (
@@ -149,7 +149,7 @@ const DistrictDropdown: React.FC<DistrictDropdownProps> = ({
           {value || "Select district"}
         </span>
         <ChevronDown
-          className={`transition-transform duration-200 text-gray-400 ${
+          className={`transition-transform duration-200 text-slate-500 ${
             isOpen ? "rotate-180" : ""
           }`}
           size={16}
@@ -166,9 +166,9 @@ const DistrictDropdown: React.FC<DistrictDropdownProps> = ({
           className="bg-white"
           onKeyDown={handleKeyDownOnList}
         >
-          <div className="sticky top-0 bg-gray-50 z-10 p-3 border-b border-gray-200 shadow-sm">
+          <div className="sticky top-0 bg-slate-50 z-10 p-3 border-b border-slate-200 shadow-sm">
             <div className="relative flex items-center">
-              <Search className="absolute left-3 w-4 h-4 text-gray-400 pointer-events-none" />
+              <Search className="absolute left-3 w-4 h-4 text-slate-500 pointer-events-none" />
               <input
                 ref={searchInputRef}
                 type="text"
@@ -196,14 +196,14 @@ const DistrictDropdown: React.FC<DistrictDropdownProps> = ({
                     setFocusedIndex((index) => Math.max(index - 1, 0));
                   }
                 }}
-                className="w-full p-2 pl-9 pr-9 rounded-xl border-2 border-gray-200 focus:border-blue-950 focus:ring-2 focus:ring-blue-950 focus:outline-none text-xs sm:text-sm bg-white transition-all duration-150 ease-in-out"
+                className="w-full p-2 pl-9 pr-9 rounded-xl border-2 border-slate-200 focus:border-blue-950 focus:ring-2 focus:ring-blue-950 focus:outline-none text-xs sm:text-sm bg-white transition-colors duration-150 ease-in-out"
                 aria-label="Search districts"
               />
               {searchTerm ? (
                 <button
                   type="button"
                   onClick={() => setSearchTerm("")}
-                  className="absolute right-2 text-gray-400 hover:text-gray-600 p-1"
+                  className="absolute right-1 flex h-9 w-9 items-center justify-center text-slate-500 hover:text-slate-600"
                   aria-label="Clear search"
                 >
                   <X className="w-4 h-4" />
@@ -218,7 +218,7 @@ const DistrictDropdown: React.FC<DistrictDropdownProps> = ({
             aria-label="Bangladesh districts"
           >
             {filteredDistricts.length === 0 ? (
-              <div className="p-4 text-center text-gray-500 text-xs sm:text-sm">
+              <div className="p-4 text-center text-slate-500 text-xs sm:text-sm">
                 No districts found
               </div>
             ) : (
@@ -239,8 +239,8 @@ const DistrictDropdown: React.FC<DistrictDropdownProps> = ({
                       isSelected
                         ? "bg-blue-900 text-white"
                         : isFocused
-                          ? "bg-blue-50 text-gray-800"
-                          : "text-gray-700 hover:bg-blue-900 hover:text-white"
+                          ? "bg-blue-50 text-slate-800"
+                          : "text-slate-700 hover:bg-blue-900 hover:text-white"
                     }`}
                   >
                     {district}

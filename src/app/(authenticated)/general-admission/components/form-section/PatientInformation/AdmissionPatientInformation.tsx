@@ -20,6 +20,7 @@ import ContactPhoneInput from "@/components/form-sections/Fields/ContactPhoneInp
 import ContactEmailInput from "@/components/form-sections/Fields/ContactEmailInput";
 import BloodGroupDropdown from "@/components/form-sections/Fields/BloodGroupDropdown";
 import PatientAddressFields from "@/components/form-sections/Fields/PatientAddressFields";
+import { TONE_BADGE } from "@/lib/statusStyles";
 
 interface AdmissionPatientInformationProps {
   showAdmissionDetails?: boolean;
@@ -46,11 +47,11 @@ const AdmissionPatientInformation: React.FC<
   // Input class helper
   const inputClassName = useMemo(() => {
     const baseStyle =
-      "text-gray-700 font-normal rounded-lg h-12 md:h-14 py-2 px-4 w-full focus:border-blue-900 focus:ring-2 focus:ring-blue-950 outline-none shadow-sm hover:shadow-md transition-all duration-300 placeholder:text-gray-400 placeholder:font-light text-xs sm:text-sm cursor-pointer";
+      "text-slate-700 font-normal rounded-lg h-12 md:h-14 py-2 px-4 w-full focus:border-blue-900 focus:ring-2 focus:ring-blue-950 outline-none shadow-sm transition-colors placeholder:text-slate-400 placeholder:font-light text-xs sm:text-sm cursor-pointer";
     return (value: string) =>
       value
         ? `bg-white border-2 border-green-700 ${baseStyle}`
-        : `bg-white border-2 border-gray-300 ${baseStyle}`;
+        : `bg-white border-2 border-slate-300 ${baseStyle}`;
   }, []);
 
   // Derived logic for description using store only
@@ -78,19 +79,19 @@ const AdmissionPatientInformation: React.FC<
     <div id="patient" className="mt-2 sm:mt-0 mb-6 sm:mb-8 md:mb-10">
       {/* Header */}
       <div
-        className={`bg-linear-to-r from-indigo-50 to-indigo-100 border-indigo-200 rounded-lg sm:rounded-xl p-4 sm:p-5 md:p-6 mb-4 sm:mb-5 md:mb-6 shadow-sm border transition-colors duration-300`}
+        className={`bg-indigo-50 border-indigo-200 rounded-lg sm:rounded-xl p-4 sm:p-5 md:p-6 mb-4 sm:mb-5 md:mb-6 shadow-sm border transition-colors`}
       >
         <div className="flex items-center gap-3 sm:gap-4">
-          <div className="p-2 sm:p-2.5 md:p-3 bg-white rounded-lg sm:rounded-xl shadow-md shrink-0">
+          <div className="p-2 sm:p-2.5 md:p-3 bg-white rounded-lg sm:rounded-xl shadow-sm shrink-0">
             <User className={"text-indigo-600"} size={28} />
           </div>
           <div className="flex flex-col">
             <div className="flex items-center">
-              <h3 className="text-base sm:text-lg md:text-xl font-bold text-gray-800 mb-0.5 sm:mb-1 leading-tight">
+              <h3 className="text-base sm:text-lg md:text-xl font-bold text-slate-800 mb-0.5 sm:mb-1 leading-tight">
                 Patient Information
               </h3>
             </div>
-            <p className="text-indigo-700 text-[11px] sm:text-xs font-medium leading-tight transition-colors duration-300 mt-1">
+            <p className="text-indigo-700 text-2xs sm:text-xs font-medium leading-tight transition-colors mt-1">
               {getDescription()}
             </p>
           </div>
@@ -107,11 +108,11 @@ const AdmissionPatientInformation: React.FC<
           {/* Gender */}
           <div>
             <div className="flex items-center justify-between mb-1.5 sm:mb-2">
-              <label className="block text-gray-700 text-xs sm:text-sm font-semibold">
-                Patient Gender<span className="text-red-500">*</span>
+              <label className="block text-slate-700 text-xs sm:text-sm font-semibold">
+                Patient Gender<span className="text-red-600">*</span>
               </label>
               {isExisting && patientData.gender && (
-                <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 text-xs font-semibold border border-blue-200 shadow-sm">
+                <span className={`hidden sm:inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ring-1 ring-inset ${TONE_BADGE.info}`}>
                   <User className="w-3 h-3 mr-1 text-blue-500" /> Auto-filled
                 </span>
               )}
@@ -127,12 +128,12 @@ const AdmissionPatientInformation: React.FC<
           {/* Date of Birth */}
           <div>
             <div className="flex items-center justify-between mb-1.5 sm:mb-2">
-              <label className="block text-gray-700 text-xs sm:text-sm font-semibold">
-                Date of Birth<span className="text-red-500">*</span>
+              <label className="block text-slate-700 text-xs sm:text-sm font-semibold">
+                Date of Birth<span className="text-red-600">*</span>
               </label>
               {isExisting && patientData.dateOfBirth && (
-                <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded-full bg-rose-100 text-rose-700 text-xs font-semibold border border-rose-200 shadow-sm">
-                  <Calendar className="w-3 h-3 mr-1 text-rose-500" />{" "}
+                <span className={`hidden sm:inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ring-1 ring-inset ${TONE_BADGE.info}`}>
+                  <Calendar className="w-3 h-3 mr-1 text-blue-600" />{" "}
                   Auto-filled
                 </span>
               )}
@@ -149,11 +150,11 @@ const AdmissionPatientInformation: React.FC<
           {/* Phone Number */}
           <div>
             <div className="flex items-center justify-between mb-1.5 sm:mb-2">
-              <label className="block text-gray-700 text-xs sm:text-sm font-semibold">
-                Phone Number<span className="text-red-500">*</span>
+              <label className="block text-slate-700 text-xs sm:text-sm font-semibold">
+                Phone Number<span className="text-red-600">*</span>
               </label>
               {isExisting && patientData.phoneNumber && (
-                <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 text-xs font-semibold border border-indigo-200 shadow-sm">
+                <span className={`hidden sm:inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ring-1 ring-inset ${TONE_BADGE.info}`}>
                   <Phone className="w-3 h-3 mr-1 text-indigo-500" /> Auto-filled
                 </span>
               )}
@@ -172,11 +173,11 @@ const AdmissionPatientInformation: React.FC<
           {/* Email */}
           <div>
             <div className="flex items-center justify-between mb-1.5 sm:mb-2">
-              <label className="block text-gray-700 text-xs sm:text-sm font-semibold">
+              <label className="block text-slate-700 text-xs sm:text-sm font-semibold">
                 Email
               </label>
               {isExisting && patientData.email && (
-                <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 text-xs font-semibold border border-indigo-200 shadow-sm">
+                <span className={`hidden sm:inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ring-1 ring-inset ${TONE_BADGE.info}`}>
                   <Mail className="w-3 h-3 mr-1 text-indigo-500" /> Auto-filled
                 </span>
               )}
@@ -194,12 +195,12 @@ const AdmissionPatientInformation: React.FC<
         {/* Blood Group - Full width row */}
         <div>
           <div className="flex items-center justify-between mb-1.5 sm:mb-2">
-            <label className="block text-gray-700 text-xs sm:text-sm font-semibold">
+            <label className="block text-slate-700 text-xs sm:text-sm font-semibold">
               Blood Group
             </label>
             {isExisting && patientData.bloodGroup && (
-              <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded-full bg-red-100 text-red-700 text-xs font-semibold border border-red-200 shadow-sm">
-                <Droplets className="w-3 h-3 mr-1 text-red-500" /> Auto-filled
+              <span className={`hidden sm:inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ring-1 ring-inset ${TONE_BADGE.info}`}>
+                <Droplets className="w-3 h-3 mr-1 text-blue-600" /> Auto-filled
               </span>
             )}
           </div>
@@ -214,8 +215,8 @@ const AdmissionPatientInformation: React.FC<
         </div>
 
         {/* Guardian Information Section */}
-        <div className="mt-6 pt-6 border-t border-gray-200">
-          <h4 className="text-sm font-bold text-gray-800 mb-4 flex items-center gap-2">
+        <div className="mt-6 pt-6 border-t border-slate-200">
+          <h4 className="text-sm font-bold text-slate-800 mb-4 flex items-center gap-2">
             <UserCheck className="text-indigo-500 w-4 h-4" />
             Guardian Information
           </h4>
@@ -224,11 +225,11 @@ const AdmissionPatientInformation: React.FC<
             {/* Guardian Name */}
             <div>
               <div className="flex items-center justify-between mb-1.5 sm:mb-2">
-                <label className="block text-gray-700 text-xs sm:text-sm font-semibold">
-                  Guardian Name<span className="text-red-500">*</span>
+                <label className="block text-slate-700 text-xs sm:text-sm font-semibold">
+                  Guardian Name<span className="text-red-600">*</span>
                 </label>
                 {isExisting && patientData.guardianName && (
-                  <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 text-xs font-semibold border border-indigo-200 shadow-sm">
+                  <span className={`hidden sm:inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ring-1 ring-inset ${TONE_BADGE.info}`}>
                     <UserCheck className="w-3 h-3 mr-1 text-indigo-500" />{" "}
                     Auto-filled
                   </span>
@@ -251,11 +252,11 @@ const AdmissionPatientInformation: React.FC<
             {/* Guardian Phone */}
             <div>
               <div className="flex items-center justify-between mb-1.5 sm:mb-2">
-                <label className="block text-gray-700 text-xs sm:text-sm font-semibold">
+                <label className="block text-slate-700 text-xs sm:text-sm font-semibold">
                   Guardian Phone
                 </label>
                 {isExisting && patientData.guardianPhone && (
-                  <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 text-xs font-semibold border border-indigo-200 shadow-sm">
+                  <span className={`hidden sm:inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ring-1 ring-inset ${TONE_BADGE.info}`}>
                     <Phone className="w-3 h-3 mr-1 text-indigo-500" />{" "}
                     Auto-filled
                   </span>
@@ -275,13 +276,13 @@ const AdmissionPatientInformation: React.FC<
         </div>
 
         {/* Admission Details & Address */}
-        <div className="mt-6 pt-6 border-t border-gray-200">
+        <div className="mt-6 pt-6 border-t border-slate-200">
           <div className="space-y-6">
             {showAdmissionDetails ? (
               <div className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-gray-700 text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2">
+                    <label className="block text-slate-700 text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2">
                       <Bed className="w-3.5 h-3.5 inline mr-1 text-indigo-500" />
                       Ward / Cabin
                     </label>
@@ -298,7 +299,7 @@ const AdmissionPatientInformation: React.FC<
                   </div>
 
                   <div>
-                    <label className="block text-gray-700 text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2">
+                    <label className="block text-slate-700 text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2">
                       Room / Seat No.
                     </label>
                     <input
@@ -314,7 +315,7 @@ const AdmissionPatientInformation: React.FC<
                   </div>
                 </div>
 
-                <p className="text-[10px] text-gray-400 font-medium bg-gray-50/50 p-2 rounded-lg border border-gray-100 italic">
+                <p className="text-2xs text-slate-500 font-medium bg-slate-50/50 p-2 rounded-lg border border-slate-100 italic">
                   Note: Specify patient location for this admission.
                 </p>
               </div>

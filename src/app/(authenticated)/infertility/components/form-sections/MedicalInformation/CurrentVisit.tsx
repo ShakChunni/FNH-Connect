@@ -26,11 +26,11 @@ const CurrentVisit: React.FC = () => {
 
   const inputClassName = useMemo(() => {
     const baseStyle =
-      "text-gray-700 font-normal rounded-lg h-12 md:h-14 py-2 px-4 w-full focus:border-blue-900 focus:ring-2 focus:ring-blue-950 outline-none shadow-sm hover:shadow-md transition-all duration-300 placeholder:text-gray-400 placeholder:font-light text-xs sm:text-sm";
+      "text-slate-700 font-normal rounded-lg h-12 md:h-14 py-2 px-4 w-full focus:border-blue-900 focus:ring-2 focus:ring-blue-950 outline-none shadow-sm  transition duration-200 placeholder:text-slate-400 placeholder:font-light text-xs sm:text-sm";
     return (value: string) =>
       value
-        ? `bg-white border-2 border-green-700 ${baseStyle}`
-        : `bg-gray-50 border-2 border-gray-300 ${baseStyle}`;
+        ? `bg-white border-2 border-emerald-700 ${baseStyle}`
+        : `bg-slate-50 border-2 border-slate-300 ${baseStyle}`;
   }, []);
 
   // Handle next appointment date change
@@ -39,10 +39,10 @@ const CurrentVisit: React.FC = () => {
   };
 
   return (
-    <div className="mb-6 border-t border-gray-200 pt-6 mt-6">
+    <div className="mb-6 border-t border-slate-200 pt-6 mt-6">
       <div className="flex items-center gap-2 mb-2">
         <UserCheck size={20} className="text-purple-500" />
-        <span className="text-base sm:text-lg font-bold text-gray-800">
+        <span className="text-base sm:text-lg font-bold text-slate-800">
           Current Visit
         </span>
       </div>
@@ -50,7 +50,7 @@ const CurrentVisit: React.FC = () => {
       {/* First Row: Referral Source, Status, Next Appointment */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
         <div>
-          <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1.5 sm:mb-2">
+          <label className="block text-xs sm:text-sm font-semibold text-slate-700 mb-1.5 sm:mb-2">
             Referral Source
           </label>
           <ReferralSourceDropdown
@@ -61,7 +61,7 @@ const CurrentVisit: React.FC = () => {
           />
         </div>
         <div>
-          <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1.5 sm:mb-2">
+          <label className="block text-xs sm:text-sm font-semibold text-slate-700 mb-1.5 sm:mb-2">
             Status
           </label>
           <StatusDropdown
@@ -72,7 +72,7 @@ const CurrentVisit: React.FC = () => {
           />
         </div>
         <div>
-          <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1.5 sm:mb-2">
+          <label className="block text-xs sm:text-sm font-semibold text-slate-700 mb-1.5 sm:mb-2">
             Next Appointment
           </label>
           <AppointmentDatePicker
@@ -86,7 +86,7 @@ const CurrentVisit: React.FC = () => {
 
       {/* Chief Complaint */}
       <div>
-        <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1.5 sm:mb-2">
+        <label className="block text-xs sm:text-sm font-semibold text-slate-700 mb-1.5 sm:mb-2">
           Chief Complaint
         </label>
         <textarea

@@ -17,14 +17,14 @@ interface InvestigationSubjectSelectorProps {
 
 const cardStyles: Record<EditableInvestigationSubjectType, string> = {
   PATIENT:
-    "border-indigo-200 bg-linear-to-br from-indigo-50 to-white text-indigo-950",
+    "border-indigo-200 bg-indigo-50 text-indigo-950",
   SPOUSE:
-    "border-rose-200 bg-linear-to-br from-rose-50 to-white text-rose-950",
+    "border-rose-200 bg-rose-50 text-rose-950",
 };
 
 const selectedStyles: Record<EditableInvestigationSubjectType, string> = {
-  PATIENT: "ring-2 ring-indigo-500 border-indigo-500 shadow-md shadow-indigo-100/80",
-  SPOUSE: "ring-2 ring-rose-500 border-rose-500 shadow-md shadow-rose-100/80",
+  PATIENT: "ring-2 ring-indigo-500 border-indigo-500 shadow-sm",
+  SPOUSE: "ring-2 ring-rose-500 border-rose-500 shadow-sm",
 };
 
 const badgeStyles: Record<EditableInvestigationSubjectType, string> = {
@@ -65,11 +65,11 @@ function SubjectCard({
       }}
       disabled={!option.isAvailable}
       className={cn(
-        "relative flex w-full flex-col rounded-2xl border p-4 text-left transition-all duration-200",
+        "relative flex w-full flex-col rounded-2xl border p-4 text-left transition-colors duration-200",
         cardStyles[option.type],
         isSelected && selectedStyles[option.type],
         !option.isAvailable && "cursor-not-allowed opacity-60 grayscale-[0.2]",
-        option.isAvailable && "cursor-pointer hover:-translate-y-0.5 hover:shadow-md",
+        option.isAvailable && "cursor-pointer ",
       )}
     >
       <div className="mb-3 flex items-start justify-between gap-3">

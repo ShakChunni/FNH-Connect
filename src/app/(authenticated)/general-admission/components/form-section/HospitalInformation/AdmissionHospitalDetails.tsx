@@ -4,6 +4,7 @@ import { useAdmissionHospitalData, useAdmissionActions } from "../../../stores";
 import HospitalTypeDropdown from "@/components/form-sections/Fields/HospitalTypeDropdown";
 import ContactPhoneInput from "@/components/form-sections/Fields/ContactPhoneInput";
 import ContactEmailInput from "@/components/form-sections/Fields/ContactEmailInput";
+import { TONE_BADGE } from "@/lib/statusStyles";
 
 const AdmissionHospitalDetails: React.FC<{ readonly?: boolean }> = ({
   readonly = false,
@@ -22,14 +23,14 @@ const AdmissionHospitalDetails: React.FC<{ readonly?: boolean }> = ({
 
   const inputClassName = useMemo(() => {
     const baseStyle =
-      "text-gray-700 font-normal rounded-lg h-12 md:h-14 py-2 px-4 w-full focus:border-blue-900 focus:ring-2 focus:ring-blue-950 outline-none shadow-sm hover:shadow-md transition-all duration-300 placeholder:text-gray-400 placeholder:font-light text-xs sm:text-sm";
+      "text-slate-700 font-normal rounded-lg h-12 md:h-14 py-2 px-4 w-full focus:border-blue-900 focus:ring-2 focus:ring-blue-950 outline-none shadow-sm transition-colors placeholder:text-slate-400 placeholder:font-light text-xs sm:text-sm";
     return (
       value: string,
       isValid: boolean = true,
       disabled: boolean = false
     ) => {
       let style = disabled
-        ? `bg-gray-200 border-2 border-gray-300 cursor-not-allowed ${baseStyle}`
+        ? `bg-slate-200 border-2 border-slate-300 cursor-not-allowed ${baseStyle}`
         : baseStyle;
       if (!disabled) {
         if (!isValid && value) {
@@ -37,7 +38,7 @@ const AdmissionHospitalDetails: React.FC<{ readonly?: boolean }> = ({
         } else {
           style += value
             ? ` bg-white border-2 border-green-700`
-            : ` bg-gray-50 border-2 border-gray-300`;
+            : ` bg-slate-50 border-2 border-slate-300`;
         }
       }
       return style;
@@ -60,11 +61,11 @@ const AdmissionHospitalDetails: React.FC<{ readonly?: boolean }> = ({
       {/* Type */}
       <div className="mb-3 sm:mb-4 relative">
         <div className="flex items-center justify-between mb-1.5 sm:mb-2">
-          <label className="block text-gray-700 text-xs sm:text-sm font-semibold">
-            Hospital Type<span className="text-red-500">*</span>
+          <label className="block text-slate-700 text-xs sm:text-sm font-semibold">
+            Hospital Type<span className="text-red-600">*</span>
           </label>
           {isExisting && hospitalData.type && (
-            <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 text-xs font-semibold border border-blue-200 shadow-sm">
+            <span className={`hidden sm:inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ring-1 ring-inset ${TONE_BADGE.info}`}>
               <Building2 className="w-3 h-3 mr-1 text-blue-500" /> Auto-filled
             </span>
           )}
@@ -81,11 +82,11 @@ const AdmissionHospitalDetails: React.FC<{ readonly?: boolean }> = ({
       {/* Phone */}
       <div className="mb-3 sm:mb-4">
         <div className="flex items-center justify-between mb-1.5 sm:mb-2">
-          <label className="block text-gray-700 text-xs sm:text-sm font-semibold">
+          <label className="block text-slate-700 text-xs sm:text-sm font-semibold">
             Phone Number
           </label>
           {isExisting && hospitalData.phoneNumber && (
-            <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 text-xs font-semibold border border-blue-200 shadow-sm">
+            <span className={`hidden sm:inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ring-1 ring-inset ${TONE_BADGE.info}`}>
               <Building2 className="w-3 h-3 mr-1 text-blue-500" /> Auto-filled
             </span>
           )}
@@ -104,11 +105,11 @@ const AdmissionHospitalDetails: React.FC<{ readonly?: boolean }> = ({
       {/* Address */}
       <div className="mb-3 sm:mb-4">
         <div className="flex items-center justify-between mb-1.5 sm:mb-2">
-          <label className="block text-gray-700 text-xs sm:text-sm font-semibold">
+          <label className="block text-slate-700 text-xs sm:text-sm font-semibold">
             Address
           </label>
           {isExisting && hospitalData.address && (
-            <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 text-xs font-semibold border border-purple-200 shadow-sm">
+            <span className={`hidden sm:inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ring-1 ring-inset ${TONE_BADGE.info}`}>
               <Building2 className="w-3 h-3 mr-1 text-purple-500" /> Auto-filled
             </span>
           )}
@@ -131,11 +132,11 @@ const AdmissionHospitalDetails: React.FC<{ readonly?: boolean }> = ({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <div className="flex items-center justify-between mb-1.5 sm:mb-2">
-            <label className="block text-gray-700 text-xs sm:text-sm font-semibold">
+            <label className="block text-slate-700 text-xs sm:text-sm font-semibold">
               Email
             </label>
             {isExisting && hospitalData.email && (
-              <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 text-xs font-semibold border border-purple-200 shadow-sm">
+              <span className={`hidden sm:inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ring-1 ring-inset ${TONE_BADGE.info}`}>
                 <Building2 className="w-3 h-3 mr-1 text-purple-500" />{" "}
                 Auto-filled
               </span>
@@ -154,11 +155,11 @@ const AdmissionHospitalDetails: React.FC<{ readonly?: boolean }> = ({
 
         <div>
           <div className="flex items-center justify-between mb-1.5 sm:mb-2">
-            <label className="block text-gray-700 text-xs sm:text-sm font-semibold">
+            <label className="block text-slate-700 text-xs sm:text-sm font-semibold">
               Website
             </label>
             {isExisting && hospitalData.website && (
-              <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 text-xs font-semibold border border-purple-200 shadow-sm">
+              <span className={`hidden sm:inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ring-1 ring-inset ${TONE_BADGE.info}`}>
                 <Building2 className="w-3 h-3 mr-1 text-purple-500" />{" "}
                 Auto-filled
               </span>

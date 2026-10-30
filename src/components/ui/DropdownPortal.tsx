@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useMounted } from "@/hooks/useMounted";
 import { useDynamicDropdownPosition } from "@/hooks/use-dynamic-dropdown-position";
 import type { DropdownPortalProps } from "../../types/dropdownPortal";
+import { SPRING } from "@/lib/motion";
 
 /**
  * DropdownPortal - Renders dropdown content as a portal to document.body
@@ -95,16 +96,11 @@ export function DropdownPortal({
           initial="hidden"
           animate="visible"
           exit="exit"
-          transition={{
-            type: "spring",
-            damping: 28,
-            stiffness: 320,
-            mass: 1,
-          }}
+          transition={SPRING}
           // ensure portal dropdowns in modals are always above the popup overlay
           // set a high zIndex inline so that it overrides any parent stacking context
           style={{ ...positionStyle, zIndex: 110000 }}
-          className={`${withContainerStyles ? "bg-white border border-gray-200/60 rounded-xl shadow-xl shadow-fnh-navy/5 overflow-hidden ring-1 ring-black/5" : "origin-top"} ${className}`}
+          className={`max-w-[calc(100vw-1.25rem)] ${withContainerStyles ? "bg-white border border-slate-200/60 rounded-xl shadow-xl overflow-hidden ring-1 ring-black/5" : "origin-top"} ${className}`}
         >
           {children}
         </motion.div>

@@ -46,7 +46,7 @@ const TableRowSkeleton: React.FC<TableRowSkeletonProps> = ({
   const animationDelay = rowIndex * 75;
 
   return (
-    <tr className="border-b border-gray-100">
+    <tr className="border-b border-slate-100">
       {headers.map((header, index) => {
         const isFirstPinned = index === 0;
         const isSecondPinned = index === 1;
@@ -65,14 +65,14 @@ const TableRowSkeleton: React.FC<TableRowSkeletonProps> = ({
             <td key={header.key} className={cellClasses}>
               <div className="flex items-center gap-2">
                 <div
-                  className="rounded bg-gray-200 h-4 w-6 animate-pulse"
+                  className="rounded bg-slate-200 h-4 w-6 animate-pulse"
                   style={{
                     animationDelay: `${animationDelay}ms`,
                     animationDuration: "1.5s",
                   }}
                 />
                 <div
-                  className="rounded-lg bg-gray-200 h-7 w-7 animate-pulse"
+                  className="rounded-lg bg-slate-200 h-7 w-7 animate-pulse"
                   style={{
                     animationDelay: `${animationDelay + 50}ms`,
                     animationDuration: "1.5s",
@@ -86,7 +86,7 @@ const TableRowSkeleton: React.FC<TableRowSkeletonProps> = ({
         return (
           <td key={header.key} className={cellClasses}>
             <div
-              className={`rounded bg-gray-200 h-3.5 sm:h-4 ${skeletonWidth} animate-pulse`}
+              className={`rounded bg-slate-200 h-3.5 sm:h-4 ${skeletonWidth} animate-pulse`}
               style={{
                 animationDelay: `${animationDelay}ms`,
                 animationDuration: "1.5s",

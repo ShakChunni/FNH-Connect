@@ -24,11 +24,12 @@ interface ModalFooterProps {
   theme?: "blue" | "indigo" | "purple" | "green" | "red";
 }
 
+// Save/submit is blue across the app; green confirms money/completion; red destroys.
 const buttonColors = {
   blue: "bg-blue-600 hover:bg-blue-700",
-  indigo: "bg-indigo-600 hover:bg-indigo-700",
-  purple: "bg-purple-600 hover:bg-purple-700",
-  green: "bg-green-600 hover:bg-green-700",
+  indigo: "bg-blue-600 hover:bg-blue-700",
+  purple: "bg-blue-600 hover:bg-blue-700",
+  green: "bg-emerald-600 hover:bg-emerald-700",
   red: "bg-red-600 hover:bg-red-700",
 };
 
@@ -46,14 +47,14 @@ export function ModalFooter({
   const isButtonDisabled = isSubmitting || isDisabled;
 
   return (
-    <div className="border-t border-gray-200 bg-gray-50 px-3 sm:px-4 md:px-6 py-2.5 sm:py-3 md:py-4 rounded-b-3xl">
+    <div className="border-t border-slate-200 bg-slate-50 px-4 sm:px-6 py-3 sm:py-4 rounded-b-[inherit]">
       <div className="flex justify-end gap-2 sm:gap-3">
         {/* Cancel button */}
         <button
           type="button"
           onClick={onCancel}
           disabled={isSubmitting}
-          className="px-3 sm:px-4 md:px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed text-xs sm:text-sm font-medium cursor-pointer"
+          className="h-10 px-4 md:px-6 border border-slate-300 bg-white text-slate-700 rounded-lg hover:bg-slate-100 transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium cursor-pointer"
         >
           {cancelText}
         </button>
@@ -63,17 +64,17 @@ export function ModalFooter({
           type="button"
           onClick={onSubmit}
           disabled={isButtonDisabled}
-          className={`px-3 sm:px-4 md:px-6 py-2 ${buttonColors[theme]} text-white rounded-lg transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm font-medium cursor-pointer`}
+          className={`h-10 px-4 md:px-6 ${buttonColors[theme]} text-white rounded-lg transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 text-sm font-medium cursor-pointer`}
         >
           {isSubmitting ? (
             <>
-              <Loader2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 animate-spin" />
+              <Loader2 className="w-4 h-4 animate-spin" />
               <span>{loadingText}</span>
             </>
           ) : (
             <>
               {SubmitIcon && (
-                <SubmitIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                <SubmitIcon className="w-4 h-4" />
               )}
               <span>{submitText}</span>
             </>

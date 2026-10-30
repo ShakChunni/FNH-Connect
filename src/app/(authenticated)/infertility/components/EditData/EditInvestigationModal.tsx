@@ -142,7 +142,7 @@ export const EditInvestigationModal: React.FC<EditInvestigationModalProps> = ({
     <AnimatePresence mode="wait" onExitComplete={() => resetForm()}>
       {isOpen && (
         <motion.div
-          className="fixed inset-0 bg-slate-900/70 flex items-center justify-center z-100000"
+          className="fixed inset-0 bg-slate-950/50 flex items-center justify-center z-100000"
           variants={backdropVariants}
           initial="hidden"
           animate="visible"
@@ -170,15 +170,15 @@ export const EditInvestigationModal: React.FC<EditInvestigationModalProps> = ({
               <div className="bg-slate-50 rounded-2xl p-4 mb-6 border border-slate-100">
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                   <div>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Patient Name</p>
+                    <p className="text-2xs font-bold text-slate-500 uppercase tracking-wider">Patient Name</p>
                     <p className="text-sm font-semibold text-slate-700">{investigationData.patientFullName}</p>
                   </div>
                   <div>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Case Number</p>
+                    <p className="text-2xs font-bold text-slate-500 uppercase tracking-wider">Case Number</p>
                     <p className="text-sm font-semibold text-slate-700">{investigationData.caseNumber}</p>
                   </div>
                   <div>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Test Date</p>
+                    <p className="text-2xs font-bold text-slate-500 uppercase tracking-wider">Test Date</p>
                     <p className="text-sm font-semibold text-slate-700">
                       {formatBDT(investigationData.testDate, "d MMM yyyy")}
                     </p>
@@ -196,8 +196,8 @@ export const EditInvestigationModal: React.FC<EditInvestigationModalProps> = ({
               onCancel={handleClose}
               onSubmit={handleSubmit}
               isSubmitting={isSubmitting}
-              submitText="Update Investigation"
-              loadingText="Updating..."
+              submitText="Save Changes"
+              loadingText="Saving..."
               submitIcon={Save}
               theme="green"
             />

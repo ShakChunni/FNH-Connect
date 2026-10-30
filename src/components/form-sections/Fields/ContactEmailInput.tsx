@@ -154,18 +154,18 @@ const ContactEmailInput: React.FC<ContactEmailInputProps> = memo(
           className={`
             flex-1 px-3 py-2 rounded-lg text-[#2A3136] outline-none h-14 font-normal 
             text-xs sm:text-sm md:text-sm lg:text-sm xl:text-sm
-            placeholder:text-gray-400 placeholder:font-light w-full
+            placeholder:text-slate-400 placeholder:font-light w-full
             ${
               isAutofilled
                 ? "bg-green-50 border-2 border-green-300"
                 : shouldShowSuccess
                 ? "bg-white border border-green-700 ring-1 ring-green-700"
                 : shouldShowError
-                ? "bg-gray-50 border-2 border-red-700 ring-2 ring-red-700"
-                : "bg-gray-50 border-2 border-gray-300"
+                ? "bg-slate-50 border-2 border-red-700 ring-2 ring-red-700"
+                : "bg-slate-50 border-2 border-slate-300"
             }
             focus:border-blue-900 focus:ring-2 focus:ring-blue-950
-            shadow-sm hover:shadow-md transition-all duration-300
+            shadow-sm transition-colors duration-200
           `}
           placeholder={placeholder}
           value={localValue}

@@ -209,7 +209,7 @@ const EditMedicineModal: React.FC<EditMedicineModalProps> = ({
 
   const getInputClass = (hasValue: boolean, hasError: boolean = false) => {
     const base =
-      "text-gray-700 font-normal rounded-lg h-12 md:h-14 py-2 px-4 w-full focus:border-blue-900 focus:ring-2 focus:ring-blue-950 outline-none shadow-sm hover:shadow-md transition-all duration-300 placeholder:text-gray-400 placeholder:font-light text-xs sm:text-sm cursor-pointer";
+      "text-slate-700 font-normal rounded-lg h-12 md:h-14 py-2 px-4 w-full focus:border-blue-900 focus:ring-2 focus:ring-blue-950 outline-none shadow-sm transition-colors placeholder:text-slate-400 placeholder:font-light text-xs sm:text-sm cursor-pointer";
 
     if (hasError) {
       return `${base} bg-red-50 border-2 border-red-500`;
@@ -217,14 +217,14 @@ const EditMedicineModal: React.FC<EditMedicineModalProps> = ({
 
     return hasValue
       ? `${base} bg-white border-2 border-green-600`
-      : `${base} bg-white border-2 border-gray-300`;
+      : `${base} bg-white border-2 border-slate-300`;
   };
 
   return (
     <AnimatePresence mode="wait">
       {isOpen && medicine && (
         <motion.div
-          className="fixed inset-0 bg-slate-900/70 flex items-center justify-center z-100000"
+          className="fixed inset-0 bg-slate-950/50 flex items-center justify-center z-100000"
           variants={backdropVariants}
           initial="hidden"
           animate="visible"
@@ -238,7 +238,7 @@ const EditMedicineModal: React.FC<EditMedicineModalProps> = ({
         >
           <motion.div
             ref={popupRef}
-            className="bg-white rounded-3xl shadow-lg w-full max-w-[95%] sm:max-w-[90%] md:max-w-[60%] lg:max-w-[50%] xl:max-w-[45%] h-auto max-h-[95%] sm:max-h-[90%] popup-content flex flex-col"
+            className="bg-white rounded-3xl shadow-lg w-full max-w-[95%] sm:max-w-[90%] md:max-w-[60%] lg:max-w-[50%] xl:max-w-[45%] h-auto max-h-[95%] sm:max-h-[90%] flex flex-col"
             variants={modalVariants}
             initial="hidden"
             animate="visible"
@@ -275,8 +275,8 @@ const EditMedicineModal: React.FC<EditMedicineModalProps> = ({
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="md:col-span-2">
-                      <label className="block text-xs font-semibold text-gray-700 mb-2">
-                        Medicine Name <span className="text-red-500">*</span>
+                      <label className="block text-xs font-semibold text-slate-700 mb-2">
+                        Medicine Name <span className="text-red-600">*</span>
                       </label>
                       <input
                         type="text"
@@ -288,8 +288,8 @@ const EditMedicineModal: React.FC<EditMedicineModalProps> = ({
                     </div>
 
                     <div>
-                      <label className="block text-xs font-semibold text-gray-700 mb-2">
-                        Generic Name <span className="text-red-500">*</span>
+                      <label className="block text-xs font-semibold text-slate-700 mb-2">
+                        Generic Name <span className="text-red-600">*</span>
                       </label>
                       <input
                         type="text"
@@ -301,7 +301,7 @@ const EditMedicineModal: React.FC<EditMedicineModalProps> = ({
                     </div>
 
                     <div>
-                      <label className="block text-xs font-semibold text-gray-700 mb-2">
+                      <label className="block text-xs font-semibold text-slate-700 mb-2">
                         Strength
                       </label>
                       <input
@@ -327,8 +327,8 @@ const EditMedicineModal: React.FC<EditMedicineModalProps> = ({
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-xs font-semibold text-gray-700 mb-2">
-                        Group / Category <span className="text-red-500">*</span>
+                      <label className="block text-xs font-semibold text-slate-700 mb-2">
+                        Group / Category <span className="text-red-600">*</span>
                       </label>
                       <GroupSearch
                         value={groupId}
@@ -339,7 +339,7 @@ const EditMedicineModal: React.FC<EditMedicineModalProps> = ({
                     </div>
 
                     <div>
-                      <label className="block text-xs font-semibold text-gray-700 mb-2">
+                      <label className="block text-xs font-semibold text-slate-700 mb-2">
                         Dosage Form
                       </label>
                       <button
@@ -351,14 +351,14 @@ const EditMedicineModal: React.FC<EditMedicineModalProps> = ({
                         <span
                           className={`${
                             dosageForm
-                              ? "text-gray-700 font-normal"
-                              : "text-gray-400 font-light"
+                              ? "text-slate-700 font-normal"
+                              : "text-slate-400 font-light"
                           } text-xs sm:text-sm`}
                         >
                           {dosageForm || "Select form..."}
                         </span>
                         <ChevronDown
-                          className={`transition-transform duration-200 text-gray-400 ${
+                          className={`transition-transform duration-200 text-slate-400 ${
                             isDosageOpen ? "rotate-180" : ""
                           }`}
                           size={16}
@@ -400,7 +400,7 @@ const EditMedicineModal: React.FC<EditMedicineModalProps> = ({
                 <div className="bg-amber-50/50 rounded-2xl p-4 sm:p-5 border border-amber-100">
                   <div className="flex items-center gap-2 mb-4">
                     <div className="w-8 h-8 bg-amber-100 rounded-lg flex items-center justify-center">
-                      <AlertTriangle className="w-4 h-4 text-amber-600" />
+                      <AlertTriangle className="w-4 h-4 text-amber-700" />
                     </div>
                     <h3 className="text-sm font-bold text-amber-900">
                       Pricing & Alerts
@@ -409,7 +409,7 @@ const EditMedicineModal: React.FC<EditMedicineModalProps> = ({
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="max-w-xs">
-                      <label className="block text-xs font-semibold text-gray-700 mb-2">
+                      <label className="block text-xs font-semibold text-slate-700 mb-2">
                         Default Sale Price (৳)
                       </label>
                       <NumberInput
@@ -425,7 +425,7 @@ const EditMedicineModal: React.FC<EditMedicineModalProps> = ({
                     </div>
 
                     <div className="max-w-xs">
-                      <label className="block text-xs font-semibold text-gray-700 mb-2">
+                      <label className="block text-xs font-semibold text-slate-700 mb-2">
                         Low Stock Alert Threshold
                       </label>
                       <NumberInput

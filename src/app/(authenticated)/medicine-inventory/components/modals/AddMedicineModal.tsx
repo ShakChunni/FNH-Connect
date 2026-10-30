@@ -247,7 +247,7 @@ const AddMedicineModal: React.FC<AddMedicineModalProps> = ({
   // Common input class
   const getInputClass = (hasValue: boolean, hasError: boolean = false) => {
     const base =
-      "text-gray-700 font-normal rounded-lg h-12 md:h-14 py-2 px-4 w-full focus:border-blue-900 focus:ring-2 focus:ring-blue-950 outline-none shadow-sm hover:shadow-md transition-all duration-300 placeholder:text-gray-400 placeholder:font-light text-xs sm:text-sm cursor-pointer";
+      "text-slate-700 font-normal rounded-lg h-12 md:h-14 py-2 px-4 w-full focus:border-blue-900 focus:ring-2 focus:ring-blue-950 outline-none shadow-sm transition-colors placeholder:text-slate-400 placeholder:font-light text-xs sm:text-sm cursor-pointer";
 
     if (hasError) {
       return `${base} bg-red-50 border-2 border-red-500`;
@@ -255,14 +255,14 @@ const AddMedicineModal: React.FC<AddMedicineModalProps> = ({
 
     return hasValue
       ? `${base} bg-white border-2 border-green-600`
-      : `${base} bg-white border-2 border-gray-300`;
+      : `${base} bg-white border-2 border-slate-300`;
   };
 
   return (
     <AnimatePresence mode="wait">
       {isOpen && (
         <motion.div
-          className="fixed inset-0 bg-slate-900/70 flex items-center justify-center z-100000"
+          className="fixed inset-0 bg-slate-950/50 flex items-center justify-center z-100000"
           variants={backdropVariants}
           initial="hidden"
           animate="visible"
@@ -276,7 +276,7 @@ const AddMedicineModal: React.FC<AddMedicineModalProps> = ({
         >
           <motion.div
             ref={popupRef}
-            className="bg-white rounded-3xl shadow-lg w-full max-w-[95%] sm:max-w-[90%] md:max-w-[60%] lg:max-w-[50%] xl:max-w-[45%] h-auto max-h-[95%] sm:max-h-[90%] popup-content flex flex-col"
+            className="bg-white rounded-3xl shadow-lg w-full max-w-[95%] sm:max-w-[90%] md:max-w-[60%] lg:max-w-[50%] xl:max-w-[45%] h-auto max-h-[95%] sm:max-h-[90%] flex flex-col"
             variants={modalVariants}
             initial="hidden"
             animate="visible"
@@ -315,8 +315,8 @@ const AddMedicineModal: React.FC<AddMedicineModalProps> = ({
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {/* Medicine Name */}
                     <div className="md:col-span-2">
-                      <label className="block text-xs font-semibold text-gray-700 mb-2">
-                        Medicine Name <span className="text-red-500">*</span>
+                      <label className="block text-xs font-semibold text-slate-700 mb-2">
+                        Medicine Name <span className="text-red-600">*</span>
                       </label>
                       <input
                         type="text"
@@ -329,8 +329,8 @@ const AddMedicineModal: React.FC<AddMedicineModalProps> = ({
 
                     {/* Generic Name */}
                     <div>
-                      <label className="block text-xs font-semibold text-gray-700 mb-2">
-                        Generic Name <span className="text-red-500">*</span>
+                      <label className="block text-xs font-semibold text-slate-700 mb-2">
+                        Generic Name <span className="text-red-600">*</span>
                       </label>
                       <input
                         type="text"
@@ -343,7 +343,7 @@ const AddMedicineModal: React.FC<AddMedicineModalProps> = ({
 
                     {/* Strength */}
                     <div>
-                      <label className="block text-xs font-semibold text-gray-700 mb-2">
+                      <label className="block text-xs font-semibold text-slate-700 mb-2">
                         Strength
                       </label>
                       <input
@@ -371,8 +371,8 @@ const AddMedicineModal: React.FC<AddMedicineModalProps> = ({
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {/* Group Search */}
                     <div>
-                      <label className="block text-xs font-semibold text-gray-700 mb-2">
-                        Group / Category <span className="text-red-500">*</span>
+                      <label className="block text-xs font-semibold text-slate-700 mb-2">
+                        Group / Category <span className="text-red-600">*</span>
                       </label>
                       {!isAddingGroup ? (
                         <GroupSearch
@@ -395,7 +395,7 @@ const AddMedicineModal: React.FC<AddMedicineModalProps> = ({
                               type="button"
                               onClick={handleConfirmAddGroup}
                               disabled={isAddingGroupLoading}
-                              className="flex-1 px-3 py-2 bg-purple-600 text-white text-xs font-semibold rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50 cursor-pointer"
+                              className="flex-1 h-9 px-3 bg-blue-600 text-white text-xs font-semibold rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 cursor-pointer"
                             >
                               {isAddingGroupLoading
                                 ? "Adding..."
@@ -405,7 +405,7 @@ const AddMedicineModal: React.FC<AddMedicineModalProps> = ({
                               type="button"
                               onClick={handleCancelAddGroup}
                               disabled={isAddingGroupLoading}
-                              className="px-3 py-2 bg-gray-200 text-gray-700 text-xs font-semibold rounded-lg hover:bg-gray-300 transition-colors cursor-pointer"
+                              className="px-3 py-2 bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg hover:bg-slate-300 transition-colors cursor-pointer"
                             >
                               Cancel
                             </button>
@@ -416,7 +416,7 @@ const AddMedicineModal: React.FC<AddMedicineModalProps> = ({
 
                     {/* Dosage Form */}
                     <div>
-                      <label className="block text-xs font-semibold text-gray-700 mb-2">
+                      <label className="block text-xs font-semibold text-slate-700 mb-2">
                         Dosage Form
                       </label>
                       <button
@@ -428,14 +428,14 @@ const AddMedicineModal: React.FC<AddMedicineModalProps> = ({
                         <span
                           className={`${
                             dosageForm
-                              ? "text-gray-700 font-normal"
-                              : "text-gray-400 font-light"
+                              ? "text-slate-700 font-normal"
+                              : "text-slate-400 font-light"
                           } text-xs sm:text-sm`}
                         >
                           {dosageForm || "Select form..."}
                         </span>
                         <ChevronDown
-                          className={`transition-transform duration-200 text-gray-400 ${
+                          className={`transition-transform duration-200 text-slate-400 ${
                             isDosageOpen ? "rotate-180" : ""
                           }`}
                           size={16}
@@ -478,7 +478,7 @@ const AddMedicineModal: React.FC<AddMedicineModalProps> = ({
                 <div className="bg-amber-50/50 rounded-2xl p-4 sm:p-5 border border-amber-100">
                   <div className="flex items-center gap-2 mb-4">
                     <div className="w-8 h-8 bg-amber-100 rounded-lg flex items-center justify-center">
-                      <AlertTriangle className="w-4 h-4 text-amber-600" />
+                      <AlertTriangle className="w-4 h-4 text-amber-700" />
                     </div>
                     <h3 className="text-sm font-bold text-amber-900">
                       Stock Settings
@@ -488,7 +488,7 @@ const AddMedicineModal: React.FC<AddMedicineModalProps> = ({
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {/* Default Sale Price */}
                     <div className="max-w-xs">
-                      <label className="block text-xs font-semibold text-gray-700 mb-2">
+                      <label className="block text-xs font-semibold text-slate-700 mb-2">
                         Default Sale Price (৳)
                       </label>
                       <NumberInput
@@ -501,14 +501,14 @@ const AddMedicineModal: React.FC<AddMedicineModalProps> = ({
                         placeholder="e.g., 50"
                         className={getInputClass(defaultSalePrice > 0)}
                       />
-                      <p className="text-xs text-gray-500 mt-1">
+                      <p className="text-xs text-slate-500 mt-1">
                         Auto-fills sale price in Record Sale (editable there)
                       </p>
                     </div>
 
                     {/* Low Stock Threshold */}
                     <div className="max-w-xs">
-                      <label className="block text-xs font-semibold text-gray-700 mb-2">
+                      <label className="block text-xs font-semibold text-slate-700 mb-2">
                         Low Stock Alert Threshold
                       </label>
                       <NumberInput
@@ -520,7 +520,7 @@ const AddMedicineModal: React.FC<AddMedicineModalProps> = ({
                         placeholder="Alert when stock falls below this"
                         className={getInputClass(lowStockThreshold > 0)}
                       />
-                      <p className="text-xs text-gray-500 mt-1">
+                      <p className="text-xs text-slate-500 mt-1">
                         You&apos;ll be alerted when stock falls below this
                         number
                       </p>

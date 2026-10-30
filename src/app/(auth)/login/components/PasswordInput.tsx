@@ -2,7 +2,6 @@
 
 import React, { useState } from "react";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
-import { motion, AnimatePresence } from "framer-motion";
 import type { PortalType } from "@/types/auth";
 
 interface PasswordInputProps {
@@ -16,6 +15,8 @@ interface PasswordInputProps {
   autoComplete?: string;
   isFocused?: boolean;
   portal?: PortalType;
+  /** Prefixes the input and label ids so the form can be mounted more than once. */
+  idPrefix?: string;
 }
 
 export function PasswordInput({
@@ -29,18 +30,19 @@ export function PasswordInput({
   autoComplete = "current-password",
   isFocused = false,
   portal,
+  idPrefix = "",
 }: PasswordInputProps) {
   const [showPassword, setShowPassword] = useState(false);
+  const inputId = `${idPrefix}password`;
 
-  // Modernized input styles - cleaner border, subtle shadow
   const getInputClassName = () => {
-    const focusRingColor = portal === "infertility" 
-      ? "focus:ring-emerald-500/20 focus:border-emerald-500" 
+    const focusRingColor = portal === "infertility"
+      ? "focus:ring-emerald-500/20 focus:border-emerald-500"
       : "focus:ring-blue-500/20 focus:border-blue-500";
 
     // Solid white background with dark text for maximum readability
     const base =
-      `w-full px-4 py-3.5 pr-12 rounded-xl border bg-white text-sm text-slate-900 placeholder-slate-400 transition-[border-color,background-color,box-shadow,transform] duration-300 ease-out focus:outline-none focus:ring-4 shadow-sm`;
+      "w-full px-4 py-3.5 pr-12 rounded-xl border bg-white text-sm text-slate-900 placeholder-slate-400 transition-[border-color,box-shadow] duration-200 focus:outline-none focus:ring-4 shadow-sm";
 
     // Error state: High visibility red border
     const errorStyles = error
@@ -57,15 +59,15 @@ export function PasswordInput({
   return (
     <div className="space-y-1 relative">
       <label
-        htmlFor="password"
+        htmlFor={inputId}
         className="block text-sm font-bold text-white/80 ml-1 uppercase tracking-wider"
       >
         Password
       </label>
-      <div className="relative group">
+      <div className="relative">
         <input
           type={showPassword ? "text" : "password"}
-          id="password"
+          id={inputId}
           value={value}
           onChange={(e) => onChange(e.target.value)}
           onBlur={onBlur}
@@ -79,10 +81,10 @@ export function PasswordInput({
           type="button"
           onClick={() => setShowPassword(!showPassword)}
           disabled={disabled}
-          className={`absolute right-3 top-1/2 -translate-y-1/2 p-2 rounded-lg transition-[color,background-color,transform] duration-200 active:scale-95 ${
+          className={`absolute right-3 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-lg transition-colors ${
             error
-              ? "text-red-400 hover:text-red-500 hover:bg-red-50"
-              : "text-gray-400 hover:text-fnh-blue hover:bg-blue-50"
+              ? "text-red-600 hover:text-red-700 hover:bg-red-100"
+              : "text-slate-500 hover:text-fnh-blue hover:bg-blue-50"
           } ${disabled ? "cursor-not-allowed opacity-50" : "cursor-pointer"}`}
           aria-label={showPassword ? "Hide password" : "Show password"}
         >

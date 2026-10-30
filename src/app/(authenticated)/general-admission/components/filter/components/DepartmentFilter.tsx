@@ -28,7 +28,7 @@ export const DepartmentFilter: React.FC = () => {
 
   return (
     <div className="space-y-2">
-      <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+      <label className="flex items-center gap-2 text-sm font-medium text-slate-700">
         <Building2 className="w-4 h-4 text-fnh-grey" />
         Department
       </label>
@@ -37,21 +37,21 @@ export const DepartmentFilter: React.FC = () => {
         ref={buttonRef}
         onClick={() => setIsOpen(!isOpen)}
         className="w-full flex items-center justify-between gap-2 px-4 py-3
-          bg-white border border-gray-200 rounded-xl
-          text-sm text-gray-700
-          hover:border-fnh-blue hover:bg-gray-50
+          bg-white border border-slate-200 rounded-xl
+          text-sm text-slate-700
+          hover:border-fnh-blue hover:bg-slate-50
           focus:outline-none focus:ring-2 focus:ring-fnh-blue/20 focus:border-fnh-blue
-          transition-all duration-200 cursor-pointer"
+          transition-colors cursor-pointer"
       >
         <span
           className={
-            departmentId ? "text-gray-900 font-medium" : "text-gray-500"
+            departmentId ? "text-slate-900 font-medium" : "text-slate-500"
           }
         >
           {displayLabel}
         </span>
         <ChevronDown
-          className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${
+          className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${
             isOpen ? "rotate-180" : ""
           }`}
         />
@@ -70,7 +70,7 @@ export const DepartmentFilter: React.FC = () => {
             className={`w-full text-left px-4 py-2.5 text-sm transition-colors duration-150 cursor-pointer ${
               departmentId === null
                 ? "bg-fnh-navy text-white font-medium"
-                : "text-gray-700 hover:bg-slate-100"
+                : "text-slate-700 hover:bg-slate-100"
             }`}
           >
             All Departments
@@ -84,7 +84,7 @@ export const DepartmentFilter: React.FC = () => {
               className={`w-full text-left px-4 py-2.5 text-sm transition-colors duration-150 cursor-pointer ${
                 departmentId === dept.id
                   ? "bg-fnh-navy text-white font-medium"
-                  : "text-gray-700 hover:bg-slate-100"
+                  : "text-slate-700 hover:bg-slate-100"
               }`}
             >
               {dept.name}

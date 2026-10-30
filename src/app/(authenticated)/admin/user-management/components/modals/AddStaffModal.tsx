@@ -129,17 +129,17 @@ const AddStaffModal: React.FC<AddStaffModalProps> = ({ isOpen, onClose }) => {
 
   const getInputClass = (hasValue: boolean) => {
     const base =
-      "text-gray-700 font-normal rounded-lg h-12 md:h-14 py-2 px-4 w-full focus:border-blue-900 focus:ring-2 focus:ring-blue-950 outline-none shadow-sm hover:shadow-md transition-all duration-300 placeholder:text-gray-400 placeholder:font-light text-xs sm:text-sm cursor-pointer";
+      "text-slate-700 font-normal rounded-lg h-12 md:h-14 py-2 px-4 w-full focus:border-blue-900 focus:ring-2 focus:ring-blue-950 outline-none shadow-sm transition-colors placeholder:text-slate-400 placeholder:font-light text-xs sm:text-sm cursor-pointer";
     return hasValue
-      ? `${base} bg-white border-2 border-green-600`
-      : `${base} bg-white border-2 border-gray-300`;
+      ? `${base} bg-white border-2 border-emerald-600`
+      : `${base} bg-white border-2 border-slate-300`;
   };
 
   return (
     <AnimatePresence mode="wait">
       {isOpen && (
         <motion.div
-          className="fixed inset-0 bg-slate-900/70 flex items-center justify-center z-100000"
+          className="fixed inset-0 bg-slate-950/50 flex items-center justify-center z-100000"
           variants={backdropVariants}
           initial="hidden"
           animate="visible"
@@ -148,7 +148,7 @@ const AddStaffModal: React.FC<AddStaffModalProps> = ({ isOpen, onClose }) => {
         >
           <motion.div
             ref={popupRef}
-            className="bg-white rounded-3xl shadow-lg w-full max-w-[95%] sm:max-w-[90%] md:max-w-[50%] lg:max-w-[40%] h-auto max-h-[95%] sm:max-h-[90%] popup-content flex flex-col"
+            className="bg-white rounded-3xl shadow-lg w-full max-w-[95%] sm:max-w-[90%] md:max-w-[50%] lg:max-w-[40%] h-auto max-h-[95%] sm:max-h-[90%] flex flex-col"
             variants={modalVariants}
             initial="hidden"
             animate="visible"
@@ -168,8 +168,8 @@ const AddStaffModal: React.FC<AddStaffModalProps> = ({ isOpen, onClose }) => {
                 <div className="bg-indigo-50/50 rounded-2xl p-4 sm:p-5 border border-indigo-100">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-xs font-semibold text-gray-700 mb-2">
-                        First Name <span className="text-red-500">*</span>
+                      <label className="block text-xs font-semibold text-slate-700 mb-2">
+                        First Name <span className="text-red-600">*</span>
                       </label>
                       <input
                         type="text"
@@ -180,7 +180,7 @@ const AddStaffModal: React.FC<AddStaffModalProps> = ({ isOpen, onClose }) => {
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold text-gray-700 mb-2">
+                      <label className="block text-xs font-semibold text-slate-700 mb-2">
                         Last Name
                       </label>
                       <input
@@ -192,8 +192,8 @@ const AddStaffModal: React.FC<AddStaffModalProps> = ({ isOpen, onClose }) => {
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold text-gray-700 mb-2">
-                        Role <span className="text-red-500">*</span>
+                      <label className="block text-xs font-semibold text-slate-700 mb-2">
+                        Role <span className="text-red-600">*</span>
                       </label>
                       <button
                         ref={staffRoleBtnRef}
@@ -204,15 +204,15 @@ const AddStaffModal: React.FC<AddStaffModalProps> = ({ isOpen, onClose }) => {
                         <span
                           className={
                             staffRole
-                              ? "text-gray-700 font-normal text-xs sm:text-sm"
-                              : "text-gray-400 font-light text-xs sm:text-sm"
+                              ? "text-slate-700 font-normal text-xs sm:text-sm"
+                              : "text-slate-400 font-light text-xs sm:text-sm"
                           }
                         >
                           {staffRole || "Select role..."}
                         </span>
                         <ChevronDown
                           className={cn(
-                            "w-4 h-4 text-gray-400 transition-transform",
+                            "w-4 h-4 text-slate-400 transition-transform",
                             staffRoleOpen && "rotate-180",
                           )}
                         />
@@ -244,7 +244,7 @@ const AddStaffModal: React.FC<AddStaffModalProps> = ({ isOpen, onClose }) => {
                       </DropdownPortal>
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold text-gray-700 mb-2">
+                      <label className="block text-xs font-semibold text-slate-700 mb-2">
                         Specialization
                       </label>
                       <input
@@ -256,7 +256,7 @@ const AddStaffModal: React.FC<AddStaffModalProps> = ({ isOpen, onClose }) => {
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold text-gray-700 mb-2">
+                      <label className="block text-xs font-semibold text-slate-700 mb-2">
                         Phone
                       </label>
                       <input
@@ -268,7 +268,7 @@ const AddStaffModal: React.FC<AddStaffModalProps> = ({ isOpen, onClose }) => {
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold text-gray-700 mb-2">
+                      <label className="block text-xs font-semibold text-slate-700 mb-2">
                         Email
                       </label>
                       <input

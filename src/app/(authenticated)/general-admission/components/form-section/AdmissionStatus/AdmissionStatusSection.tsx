@@ -10,11 +10,11 @@ const AdmissionStatusSection: React.FC = () => {
 
   const inputClassName = useMemo(() => {
     const baseStyle =
-      "text-gray-700 font-normal rounded-lg h-12 md:h-14 py-2 px-4 w-full focus:border-amber-900 focus:ring-2 focus:ring-amber-950 outline-none shadow-sm hover:shadow-md transition-all duration-300 placeholder:text-gray-400 placeholder:font-light text-xs sm:text-sm";
+      "text-slate-700 font-normal rounded-lg h-12 md:h-14 py-2 px-4 w-full focus:border-amber-900 focus:ring-2 focus:ring-amber-950 outline-none shadow-sm transition-colors placeholder:text-slate-400 placeholder:font-light text-xs sm:text-sm";
     return (value: string) =>
       value
         ? `bg-white border-2 border-green-700 ${baseStyle}`
-        : `bg-gray-50 border-2 border-gray-300 ${baseStyle}`;
+        : `bg-slate-50 border-2 border-slate-300 ${baseStyle}`;
   }, []);
 
   // Get status options as string array for dropdown
@@ -42,16 +42,16 @@ const AdmissionStatusSection: React.FC = () => {
   return (
     <div id="status" className="mt-2 sm:mt-0 mb-6 sm:mb-8 md:mb-10">
       {/* Header - matching pathology section style */}
-      <div className="bg-linear-to-r from-amber-50 to-orange-100 border-amber-200 rounded-lg sm:rounded-xl p-4 sm:p-5 md:p-6 mb-4 sm:mb-5 md:mb-6 shadow-sm border transition-colors duration-300">
+      <div className="bg-amber-50 border-amber-200 rounded-lg sm:rounded-xl p-4 sm:p-5 md:p-6 mb-4 sm:mb-5 md:mb-6 shadow-sm border transition-colors">
         <div className="flex items-center gap-3 sm:gap-4">
-          <div className="p-2 sm:p-2.5 md:p-3 bg-white rounded-lg sm:rounded-xl shadow-md shrink-0">
-            <Activity className="text-amber-600" size={28} />
+          <div className="p-2 sm:p-2.5 md:p-3 bg-white rounded-lg sm:rounded-xl shadow-sm shrink-0">
+            <Activity className="text-amber-700" size={28} />
           </div>
           <div className="flex flex-col">
-            <h3 className="text-base sm:text-lg md:text-xl font-bold text-gray-800 mb-0.5 sm:mb-1 leading-tight">
+            <h3 className="text-base sm:text-lg md:text-xl font-bold text-slate-800 mb-0.5 sm:mb-1 leading-tight">
               Admission Status
             </h3>
-            <p className="text-amber-700 text-[11px] sm:text-xs font-medium leading-tight transition-colors duration-300 mt-1">
+            <p className="text-amber-700 text-2xs sm:text-xs font-medium leading-tight transition-colors mt-1">
               Current status and room information
             </p>
           </div>
@@ -62,7 +62,7 @@ const AdmissionStatusSection: React.FC = () => {
       <div className="space-y-4 sm:space-y-5">
         {/* Status Dropdown */}
         <div>
-          <label className="block text-gray-700 text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2">
+          <label className="block text-slate-700 text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2">
             Status
           </label>
           <StatusDropdown
@@ -76,7 +76,7 @@ const AdmissionStatusSection: React.FC = () => {
         {/* Room/Ward */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="block text-gray-700 text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2">
+            <label className="block text-slate-700 text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2">
               <Bed className="w-4 h-4 inline mr-1" />
               Room / Seat Number
             </label>
@@ -91,7 +91,7 @@ const AdmissionStatusSection: React.FC = () => {
             />
           </div>
           <div>
-            <label className="block text-gray-700 text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2">
+            <label className="block text-slate-700 text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2">
               Ward
             </label>
             <input
@@ -107,7 +107,7 @@ const AdmissionStatusSection: React.FC = () => {
         {/* Medical Info */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="block text-gray-700 text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2">
+            <label className="block text-slate-700 text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2">
               Diagnosis
             </label>
             <input
@@ -119,7 +119,7 @@ const AdmissionStatusSection: React.FC = () => {
             />
           </div>
           <div>
-            <label className="block text-gray-700 text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2">
+            <label className="block text-slate-700 text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2">
               OT Type
             </label>
             <input
@@ -134,7 +134,7 @@ const AdmissionStatusSection: React.FC = () => {
 
         {/* Treatment */}
         <div>
-          <label className="block text-gray-700 text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2">
+          <label className="block text-slate-700 text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2">
             Treatment
           </label>
           <textarea
@@ -148,7 +148,7 @@ const AdmissionStatusSection: React.FC = () => {
 
         {/* Remarks */}
         <div>
-          <label className="block text-gray-700 text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2">
+          <label className="block text-slate-700 text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2">
             Remarks
           </label>
           <textarea

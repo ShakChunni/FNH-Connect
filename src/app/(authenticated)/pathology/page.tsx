@@ -69,8 +69,15 @@ const PathologyManagement = React.memo(() => {
     [filterValues],
   );
 
-  const { data: pathologyResult, isLoading } =
-    useFetchPathologyData(hookFilters);
+  const {
+    data: pathologyResult,
+    isLoading,
+    isError,
+    refetch,
+  } = useFetchPathologyData(hookFilters);
+
+  // Failed load with nothing cached: show the error, not the empty table
+  const showLoadError = isError && !pathologyResult;
 
   // Extract data and pagination from result
   const pathologyPatients = pathologyResult?.data || [];
@@ -186,13 +193,28 @@ const PathologyManagement = React.memo(() => {
           <div className="px-0 sm:px-2 lg:px-4">
             <div
               ref={tableContainerRef}
-              className="bg-white rounded-xl sm:rounded-3xl shadow-sm border border-slate-100 overflow-hidden"
+              className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden"
             >
-              <PatientTable
-                tableData={tableData}
-                isLoading={isLoading}
-                onEdit={handleOpenEditPopup}
-              />
+              {showLoadError ? (
+                <div role="alert" className="p-8 text-center">
+                  <p className="text-sm font-medium text-red-700">
+                    Could not load pathology patients.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => refetch()}
+                    className="mt-3 h-9 px-4 rounded-lg border border-slate-300 bg-white text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer"
+                  >
+                    Try again
+                  </button>
+                </div>
+              ) : (
+                <PatientTable
+                  tableData={tableData}
+                  isLoading={isLoading}
+                  onEdit={handleOpenEditPopup}
+                />
+              )}
             </div>
 
             {/* Server-side Pagination - Separate from table */}

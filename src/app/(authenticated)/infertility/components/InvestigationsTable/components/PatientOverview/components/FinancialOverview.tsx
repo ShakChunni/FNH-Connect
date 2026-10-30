@@ -36,7 +36,7 @@ export const FinancialOverview: React.FC<FinancialOverviewProps> = ({
       bg: "bg-slate-50",
       border: "border-slate-100",
       color: "text-slate-600",
-      valueColor: "text-gray-900",
+      valueColor: "text-slate-900",
     },
     {
       label: "Discount",
@@ -63,14 +63,14 @@ export const FinancialOverview: React.FC<FinancialOverviewProps> = ({
     <div className="space-y-4 sm:space-y-6">
       {/* Header */}
       <div className="flex items-center gap-2 sm:gap-3">
-        <div className="hidden sm:flex p-2 bg-emerald-50 rounded-xl text-emerald-600 border border-emerald-100/50">
+        <div className="hidden sm:flex p-2 bg-emerald-50 rounded-xl text-emerald-700 border border-emerald-100/50">
           <Wallet size={16} />
         </div>
         <div>
-          <h4 className="text-[11px] sm:text-xs font-black text-gray-800 uppercase tracking-wide leading-tight">
+          <h4 className="text-2xs sm:text-xs font-black text-slate-800 uppercase tracking-wide leading-tight">
             Financial Overview
           </h4>
-          <p className="hidden sm:block text-[9px] font-bold text-gray-400 mt-0.5 uppercase tracking-tight">
+          <p className="hidden sm:block text-2xs font-bold text-slate-500 mt-0.5 uppercase tracking-tight">
             Payment summary & billing
           </p>
         </div>
@@ -82,7 +82,7 @@ export const FinancialOverview: React.FC<FinancialOverviewProps> = ({
           <div
             key={idx}
             className={cn(
-              "group p-3 sm:p-4 rounded-xl sm:rounded-2xl border transition-all duration-300 hover:shadow-md",
+              "group p-3 sm:p-4 rounded-xl sm:rounded-2xl border transition duration-200 ",
               stat.bg,
               stat.border
             )}
@@ -91,7 +91,7 @@ export const FinancialOverview: React.FC<FinancialOverviewProps> = ({
               <stat.icon size={12} className={stat.color} />
               <p
                 className={cn(
-                  "text-[9px] sm:text-[10px] font-bold uppercase tracking-wide",
+                  "text-2xs sm:text-2xs font-bold uppercase tracking-wide",
                   stat.color
                 )}
               >
@@ -109,32 +109,32 @@ export const FinancialOverview: React.FC<FinancialOverviewProps> = ({
       </div>
 
       {/* Payment Status Card */}
-      <div className="bg-white rounded-xl sm:rounded-2xl border border-gray-100 p-3 sm:p-5 shadow-sm">
+      <div className="bg-white rounded-xl sm:rounded-2xl border border-slate-100 p-3 sm:p-5 shadow-sm">
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4">
           {/* Paid & Due */}
           <div className="flex gap-6 sm:gap-8">
             <div className="space-y-0.5 sm:space-y-1">
-              <div className="flex items-center gap-1 text-gray-400">
+              <div className="flex items-center gap-1 text-slate-500">
                 <TrendingDown size={10} strokeWidth={2.5} />
-                <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-tight">
+                <span className="text-2xs sm:text-2xs font-bold uppercase tracking-tight">
                   Paid
                 </span>
               </div>
-              <p className="text-sm sm:text-lg font-black text-emerald-600">
+              <p className="text-sm sm:text-lg font-black text-emerald-700">
                 {formatCurrency(patient.paidAmount)}
               </p>
             </div>
             <div className="space-y-0.5 sm:space-y-1">
-              <div className="flex items-center gap-1 text-gray-400">
+              <div className="flex items-center gap-1 text-slate-500">
                 <AlertCircle size={10} strokeWidth={2.5} />
-                <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-tight">
+                <span className="text-2xs sm:text-2xs font-bold uppercase tracking-tight">
                   Due
                 </span>
               </div>
               <p
                 className={cn(
                   "text-sm sm:text-lg font-black",
-                  calculatedDueAmount > 0 ? "text-red-500" : "text-gray-400"
+                  calculatedDueAmount > 0 ? "text-red-600" : "text-slate-500"
                 )}
               >
                 {formatCurrency(calculatedDueAmount)}
@@ -145,7 +145,7 @@ export const FinancialOverview: React.FC<FinancialOverviewProps> = ({
           {/* Status Badge */}
           <div
             className={cn(
-              "flex items-center justify-center gap-1.5 px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg sm:rounded-xl text-[10px] sm:text-xs font-bold transition-all",
+              "flex items-center justify-center gap-1.5 px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg sm:rounded-xl text-2xs sm:text-xs font-bold transition-colors",
               calculatedDueAmount > 0
                 ? "bg-red-100 text-red-700"
                 : "bg-emerald-100 text-emerald-700"

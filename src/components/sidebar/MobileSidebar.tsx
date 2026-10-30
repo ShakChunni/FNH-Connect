@@ -131,20 +131,19 @@ export default function MobileSidebar() {
     <>
       {/* ... header ... (omitted for brevity in replacement, but kept logic same) */}
       <header
-        className={`lg:hidden fixed top-0 left-0 right-0 z-40 flex h-16 items-center gap-4 px-4 text-fnh-navy shadow-md transition-all duration-300 ${
-          isOpen ? "bg-white/80 backdrop-blur-sm" : "bg-white"
-        }`}
+        className="lg:hidden fixed top-0 left-0 right-0 z-40 flex h-16 items-center gap-3 px-2 text-fnh-navy bg-white border-b border-slate-200"
       >
         <button
           onClick={handleToggle}
-          className="inline-flex h-12 w-12 items-center justify-center transition-colors text-jd-rich-black hover:text-jd-grey"
+          className="inline-flex h-12 w-12 items-center justify-center rounded-xl transition-colors text-slate-900 hover:bg-slate-100 active:bg-slate-200"
           aria-label="Toggle navigation"
+          aria-expanded={isOpen}
         >
           <Menu className="h-5 w-5" />
         </button>
 
         <Link href={homeRoute} className="flex flex-1 flex-col">
-          <span className="text-sm font-semibold text-jd-rich-black">
+          <span className="text-base font-semibold text-slate-900">
             {portal === "infertility" ? "HSI Center" : "FNH Connect"}
           </span>
         </Link>
@@ -153,13 +152,13 @@ export default function MobileSidebar() {
       {isOpen && (
         <div
           ref={overlayRef}
-          className="lg:hidden fixed left-0 right-0 bottom-0 top-0 z-30 bg-black/50 backdrop-blur-xs"
+          className="lg:hidden fixed inset-0 z-30 bg-slate-950/50 animate-in fade-in duration-200"
           onClick={handleOverlayClick}
         />
       )}
 
       <aside
-        className={`lg:hidden fixed left-0 top-0 z-40 h-dvh w-full max-w-[20rem] transform bg-sidebar text-sidebar-foreground transition-all duration-300 ${
+        className={`lg:hidden fixed left-0 top-0 z-40 h-dvh w-full max-w-[20rem] transform bg-sidebar text-sidebar-foreground transition-transform duration-250 ease-standard ${
           isOpen ? "translate-x-0" : "-translate-x-full"
         }`}
         style={{ background: SIDEBAR_BG }}
@@ -189,7 +188,7 @@ export default function MobileSidebar() {
                     className="h-8 w-8 shrink-0 object-contain brightness-0 invert"
                   />
                 )}
-                <div className="text-[10px] font-bold uppercase tracking-[0.25em] text-white/80 leading-tight">
+                <div className="text-2xs font-bold uppercase tracking-[0.25em] text-white/80 leading-tight">
                   {portal === "infertility" ? "HSI Center" : "FNH Connect"}
                 </div>
               </div>
@@ -219,14 +218,14 @@ export default function MobileSidebar() {
                       <Link
                         href={item.href}
                         onClick={handleClose}
-                        className={`group flex items-center rounded-xl px-2 py-2 text-xs font-medium transition-all duration-200 ease-[cubic-bezier(0.25,0.1,0.25,1)] ${
+                        className={`group flex items-center rounded-xl px-2 py-2 text-xs font-medium transition-colors duration-200 ease-[cubic-bezier(0.25,0.1,0.25,1)] ${
                           isActive
                             ? "bg-white/15 text-white border-r-4 border-yellow-400"
                             : "text-white/85 hover:bg-white/10 hover:text-white"
                         } gap-2`}
                       >
                         <span
-                          className={`flex h-7 w-7 min-w-7 shrink-0 items-center justify-center rounded-lg transition-all duration-200 ${
+                          className={`flex h-7 w-7 min-w-7 shrink-0 items-center justify-center rounded-lg transition-colors duration-200 ${
                             isActive
                               ? "bg-white/15 text-white"
                               : "text-white/70 group-hover:text-white"
@@ -286,7 +285,7 @@ export default function MobileSidebar() {
                   </div>
                   <button
                     type="button"
-                    className="ml-auto inline-flex h-7 w-7 shrink-0 items-center justify-center text-white/40 transition-all duration-200 hover:text-white"
+                    className="ml-auto inline-flex h-7 w-7 shrink-0 items-center justify-center text-white/40 transition-colors duration-200 hover:text-white"
                     aria-label="View switcher"
                   >
                     <Settings className="h-3.5 w-3.5" />
@@ -312,7 +311,7 @@ export default function MobileSidebar() {
           <p className="font-semibold text-fnh-navy-dark">
             Have you handed over all collected cash to the manager?
           </p>
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-slate-600">
             You cannot logout until the cash handover is complete. Please ensure
             all finances are settled before leaving.
           </p>

@@ -69,7 +69,7 @@ const ArchiveUserModal: React.FC<ArchiveUserModalProps> = ({
     <AnimatePresence mode="wait">
       {isOpen && user && (
         <motion.div
-          className="fixed inset-0 bg-slate-900/70 flex items-center justify-center z-100000"
+          className="fixed inset-0 bg-slate-950/50 flex items-center justify-center z-100000"
           variants={backdropVariants}
           initial="hidden"
           animate="visible"
@@ -78,7 +78,7 @@ const ArchiveUserModal: React.FC<ArchiveUserModalProps> = ({
         >
           <motion.div
             ref={popupRef}
-            className="bg-white rounded-3xl shadow-lg w-full max-w-[95%] sm:max-w-[90%] md:max-w-[40%] lg:max-w-[35%] popup-content flex flex-col"
+            className="bg-white rounded-3xl shadow-lg w-full max-w-[95%] sm:max-w-[90%] md:max-w-[40%] lg:max-w-[35%] flex flex-col"
             variants={modalVariants}
             initial="hidden"
             animate="visible"
@@ -94,22 +94,22 @@ const ArchiveUserModal: React.FC<ArchiveUserModalProps> = ({
             />
             <div className="p-4 sm:p-6">
               <div
-                className={`p-4 rounded-xl border ${isArchiving ? "bg-red-50 border-red-200" : "bg-green-50 border-green-200"}`}
+                className={`p-4 rounded-xl border ${isArchiving ? "bg-red-50 border-red-200" : "bg-emerald-50 border-emerald-200"}`}
               >
                 <div className="flex items-start gap-3">
                   <AlertTriangle
-                    className={`w-5 h-5 shrink-0 mt-0.5 ${isArchiving ? "text-red-500" : "text-green-500"}`}
+                    className={`w-5 h-5 shrink-0 mt-0.5 ${isArchiving ? "text-red-600" : "text-emerald-700"}`}
                   />
                   <div>
                     <p
-                      className={`text-sm font-semibold mb-1 ${isArchiving ? "text-red-900" : "text-green-900"}`}
+                      className={`text-sm font-semibold mb-1 ${isArchiving ? "text-red-900" : "text-emerald-900"}`}
                     >
                       {isArchiving
                         ? "This user will lose access"
                         : "This user will regain access"}
                     </p>
                     <p
-                      className={`text-xs ${isArchiving ? "text-red-700" : "text-green-700"}`}
+                      className={`text-xs ${isArchiving ? "text-red-700" : "text-emerald-700"}`}
                     >
                       {isArchiving
                         ? `"${user.username}" will no longer be able to log in to the system. All active sessions will be terminated.`
@@ -124,7 +124,7 @@ const ArchiveUserModal: React.FC<ArchiveUserModalProps> = ({
                   type="button"
                   onClick={handleClose}
                   disabled={isLoading}
-                  className="px-4 md:px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors disabled:opacity-50 text-xs sm:text-sm font-medium cursor-pointer"
+                  className="px-4 md:px-6 py-2 border border-slate-300 bg-white text-slate-700 rounded-lg hover:bg-slate-50 transition-colors disabled:opacity-50 text-xs sm:text-sm font-medium cursor-pointer"
                 >
                   Cancel
                 </button>
@@ -132,7 +132,7 @@ const ArchiveUserModal: React.FC<ArchiveUserModalProps> = ({
                   type="button"
                   onClick={handleConfirm}
                   disabled={isLoading}
-                  className={`px-4 md:px-6 py-2 text-white rounded-lg transition-colors disabled:opacity-50 flex items-center gap-2 text-xs sm:text-sm font-medium cursor-pointer ${isArchiving ? "bg-red-600 hover:bg-red-700" : "bg-green-600 hover:bg-green-700"}`}
+                  className={`px-4 md:px-6 py-2 text-white rounded-lg transition-colors disabled:opacity-50 flex items-center gap-2 text-xs sm:text-sm font-medium cursor-pointer ${isArchiving ? "bg-red-600 hover:bg-red-700" : "bg-blue-600 hover:bg-blue-700"}`}
                 >
                   {isLoading ? (
                     <span>

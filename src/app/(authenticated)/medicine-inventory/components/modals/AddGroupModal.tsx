@@ -105,11 +105,11 @@ const AddGroupModal: React.FC<AddGroupModalProps> = ({
   // Common input class
   const getInputClass = (hasValue: boolean) => {
     const base =
-      "text-gray-700 font-normal rounded-lg h-12 md:h-14 py-2 px-4 w-full focus:border-blue-900 focus:ring-2 focus:ring-blue-950 outline-none shadow-sm hover:shadow-md transition-all duration-300 placeholder:text-gray-400 placeholder:font-light text-xs sm:text-sm cursor-pointer";
+      "text-slate-700 font-normal rounded-lg h-12 md:h-14 py-2 px-4 w-full focus:border-blue-900 focus:ring-2 focus:ring-blue-950 outline-none shadow-sm transition-colors placeholder:text-slate-400 placeholder:font-light text-xs sm:text-sm cursor-pointer";
 
     return hasValue
       ? `${base} bg-white border-2 border-green-600`
-      : `${base} bg-white border-2 border-gray-300`;
+      : `${base} bg-white border-2 border-slate-300`;
   };
 
   // Common group examples
@@ -128,7 +128,7 @@ const AddGroupModal: React.FC<AddGroupModalProps> = ({
     <AnimatePresence mode="wait">
       {isOpen && (
         <motion.div
-          className="fixed inset-0 bg-slate-900/70 flex items-center justify-center z-100000"
+          className="fixed inset-0 bg-slate-950/50 flex items-center justify-center z-100000"
           variants={backdropVariants}
           initial="hidden"
           animate="visible"
@@ -142,7 +142,7 @@ const AddGroupModal: React.FC<AddGroupModalProps> = ({
         >
           <motion.div
             ref={popupRef}
-            className="bg-white rounded-3xl shadow-lg w-full max-w-[95%] sm:max-w-[450px] h-auto max-h-[90%] popup-content flex flex-col"
+            className="bg-white rounded-3xl shadow-lg w-full max-w-[95%] sm:max-w-[450px] h-auto max-h-[90%] flex flex-col"
             variants={modalVariants}
             initial="hidden"
             animate="visible"
@@ -166,11 +166,11 @@ const AddGroupModal: React.FC<AddGroupModalProps> = ({
               <div className="space-y-4">
                 {/* Group Name */}
                 <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-2">
-                    Group Name <span className="text-red-500">*</span>
+                  <label className="block text-xs font-semibold text-slate-700 mb-2">
+                    Group Name <span className="text-red-600">*</span>
                   </label>
                   <div className="relative">
-                    <Layers className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    <Layers className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                     <input
                       type="text"
                       value={name}
@@ -184,7 +184,7 @@ const AddGroupModal: React.FC<AddGroupModalProps> = ({
 
                 {/* Quick Select Examples */}
                 <div>
-                  <p className="text-xs text-gray-500 mb-2">
+                  <p className="text-xs text-slate-500 mb-2">
                     Common groups (click to use):
                   </p>
                   <div className="flex flex-wrap gap-2">
@@ -193,10 +193,10 @@ const AddGroupModal: React.FC<AddGroupModalProps> = ({
                         key={example}
                         type="button"
                         onClick={() => setName(example)}
-                        className={`px-3 py-1.5 text-xs font-medium rounded-full transition-all cursor-pointer ${
+                        className={`px-3 py-1.5 text-xs font-medium rounded-full transition-colors cursor-pointer ${
                           name === example
-                            ? "bg-purple-600 text-white"
-                            : "bg-purple-50 text-purple-700 hover:bg-purple-100"
+                            ? "bg-blue-600 text-white"
+                            : "bg-blue-50 text-blue-700 hover:bg-blue-100"
                         }`}
                       >
                         {example}

@@ -84,18 +84,18 @@ export const InfertilitySearch: React.FC<InfertilitySearchProps> = ({
 
   const searchInput = (mobile: boolean) => (
     <div
-      className={`relative flex w-full flex-1 items-center rounded-full border bg-white shadow-sm transition-all duration-300 ${
+      className={`relative flex w-full flex-1 items-center rounded-full border bg-white shadow-sm transition duration-200 ${
         mobile ? "h-11" : "h-14"
       } ${
         isFocused
-          ? "border-emerald-600 ring-4 ring-emerald-600/5 shadow-md"
-          : "border-slate-200 hover:border-slate-300 hover:shadow-md"
+          ? "border-emerald-600"
+          : "border-slate-200 hover:border-slate-300 "
       } ${disabled ? "pointer-events-none opacity-60" : ""}`}
     >
       <Search
         className={`pointer-events-none absolute ${
           mobile ? "left-3 h-4 w-4" : "left-4 h-5 w-5"
-        } ${isFocused ? "text-emerald-600" : "text-slate-400"}`}
+        } ${isFocused ? "text-emerald-700" : "text-slate-500"}`}
       />
       <input
         type="text"
@@ -119,7 +119,7 @@ export const InfertilitySearch: React.FC<InfertilitySearchProps> = ({
         <button
           type="button"
           onClick={handleClear}
-          className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
+          className="absolute right-1 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-700 cursor-pointer"
           aria-label="Clear search"
         >
           <X className="h-4 w-4" />

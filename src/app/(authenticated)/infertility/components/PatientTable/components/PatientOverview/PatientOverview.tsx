@@ -106,8 +106,8 @@ const PatientOverview: React.FC<PatientOverviewProps> = ({
         subtitle="Comprehensive breakdown of HSI Center management details."
         onClose={onClose}
         extra={
-          <div className="flex flex-col items-end gap-0.5 px-3 py-1.5 bg-white/50 border border-slate-200/50 rounded-xl shadow-xs">
-            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+          <div className="flex flex-col items-end gap-0.5 px-3 py-1.5 bg-white border border-slate-200 rounded-xl shadow-xs">
+            <span className="text-2xs font-black text-slate-500 uppercase tracking-widest">
               Last Updated
             </span>
             <span className="text-xs font-black text-slate-700">
@@ -118,22 +118,22 @@ const PatientOverview: React.FC<PatientOverviewProps> = ({
       >
         <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
           <div className="flex items-center gap-1.5 px-1.5 py-0.5 sm:px-2 sm:py-1 bg-indigo-50 border border-indigo-100 rounded-md">
-            <span className="text-[8px] sm:text-[9px] font-bold text-indigo-400 uppercase">
+            <span className="text-2xs sm:text-2xs font-bold text-indigo-700 uppercase">
               Case ID
             </span>
-            <span className="text-[10px] sm:text-[11px] font-bold text-indigo-700 font-mono">
+            <span className="text-2xs sm:text-2xs font-bold text-indigo-700 font-mono">
               #{patient.caseNumber || `INF-${patient.id}`}
             </span>
           </div>
           <div className="hidden sm:flex items-center gap-1.5 px-2 py-1 bg-slate-50 border border-slate-100 rounded-md">
-            <Clock className="w-2.5 h-2.5 text-gray-400" />
-            <span className="text-[9px] font-bold text-gray-400 uppercase">
+            <Clock className="w-2.5 h-2.5 text-slate-500" />
+            <span className="text-2xs font-bold text-slate-500 uppercase">
               Created
             </span>
-            <span className="text-[10px] font-bold text-gray-600">
+            <span className="text-2xs font-bold text-slate-600">
               {formatDateWithTime(patient.createdAt).date}
             </span>
-            <span className="text-[9px] font-medium text-gray-400">
+            <span className="text-2xs font-medium text-slate-500">
               {formatDateWithTime(patient.createdAt).time}
             </span>
           </div>
@@ -168,8 +168,8 @@ const PatientOverview: React.FC<PatientOverviewProps> = ({
             {/* Right Column: Case Context & Referrals */}
             <div className="lg:col-span-4 flex flex-col gap-6 lg:gap-8">
               {/* Treatment & Medications Card */}
-              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex-1 flex flex-col">
-                <div className="bg-indigo-600 px-6 py-4 flex items-center justify-between shrink-0">
+              <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden flex-1 flex flex-col">
+                <div className="bg-fnh-navy px-6 py-4 flex items-center justify-between shrink-0">
                   <h4 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
                     <FileText className="w-4 h-4" />
                     Medication & Plan
@@ -177,7 +177,7 @@ const PatientOverview: React.FC<PatientOverviewProps> = ({
                 </div>
                 <div className="p-6 space-y-6 flex-1 flex flex-col">
                   <div className="space-y-3 flex-1 flex flex-col">
-                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block">
+                    <span className="text-2xs font-bold text-slate-500 uppercase tracking-widest block">
                       Prescribed Medications
                     </span>
                     <div className="bg-amber-50/50 rounded-xl p-4 border border-amber-100/50 flex-1">
@@ -185,7 +185,7 @@ const PatientOverview: React.FC<PatientOverviewProps> = ({
                         className={`text-sm leading-relaxed ${
                           patient.medications
                             ? "text-amber-900 font-medium whitespace-pre-wrap"
-                            : "text-amber-600/60 italic"
+                            : "text-slate-500 italic"
                         }`}
                       >
                         {patient.medications ||
@@ -195,7 +195,7 @@ const PatientOverview: React.FC<PatientOverviewProps> = ({
                   </div>
 
                   <div className="space-y-3 flex-1 flex flex-col">
-                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block">
+                    <span className="text-2xs font-bold text-slate-500 uppercase tracking-widest block">
                       Active Treatment Plan
                     </span>
                     <div className="bg-emerald-50/50 rounded-xl p-4 border border-emerald-100/50 flex-1">
@@ -203,7 +203,7 @@ const PatientOverview: React.FC<PatientOverviewProps> = ({
                         className={`text-sm leading-relaxed ${
                           patient.treatmentPlan
                             ? "text-emerald-900 font-medium whitespace-pre-wrap"
-                            : "text-emerald-600/60 italic"
+                            : "text-slate-500 italic"
                         }`}
                       >
                         {patient.treatmentPlan ||
@@ -228,14 +228,14 @@ const PatientOverview: React.FC<PatientOverviewProps> = ({
       </div>
 
       {/* Custom Footer with Print Button */}
-      <div className="border-t border-gray-200 bg-gray-50 px-3 sm:px-4 md:px-6 py-2 sm:py-3 rounded-b-3xl">
+      <div className="border-t border-slate-200 bg-slate-50 px-3 sm:px-4 md:px-6 py-2 sm:py-3 rounded-b-3xl">
         <div className="flex items-center justify-between gap-2">
           {/* Left Side - Print + Workflow Actions */}
           <div className="flex items-center gap-2">
             <button
               type="button"
               onClick={handlePrint}
-              className="inline-flex items-center justify-center gap-2 p-2 sm:px-4 sm:py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors duration-200 text-xs sm:text-sm font-medium cursor-pointer shadow-sm"
+              className="inline-flex items-center justify-center gap-2 p-2 sm:px-4 sm:py-2 bg-white border border-slate-300 bg-white text-slate-700 rounded-lg hover:bg-slate-50 transition-colors duration-200 text-xs sm:text-sm font-medium cursor-pointer shadow-sm"
             >
               <Printer className="w-4 h-4" />
               <span className="hidden sm:inline">Print Report</span>
@@ -254,8 +254,8 @@ const PatientOverview: React.FC<PatientOverviewProps> = ({
               disabled={isAlreadyAdmitted || isStatusUpdating}
               className={`inline-flex items-center justify-center gap-2 p-2 sm:px-4 sm:py-2 rounded-lg transition-colors duration-200 text-xs sm:text-sm font-medium ${
                 isAlreadyAdmitted
-                  ? "bg-indigo-100 text-indigo-700 cursor-not-allowed"
-                  : "bg-purple-600 hover:bg-purple-700 text-white cursor-pointer"
+                  ? "bg-blue-100 text-blue-700 cursor-not-allowed"
+                  : "bg-fnh-blue hover:bg-fnh-blue-dark text-white cursor-pointer"
               } ${isStatusUpdating ? "opacity-60" : ""}`}
             >
               <UserCheck className="w-4 h-4" />
@@ -270,7 +270,7 @@ const PatientOverview: React.FC<PatientOverviewProps> = ({
             <button
               type="button"
               onClick={onClose}
-              className="inline-flex items-center justify-center gap-1.5 p-2 sm:px-4 sm:py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors duration-200 text-xs sm:text-sm font-medium cursor-pointer"
+              className="inline-flex items-center justify-center gap-1.5 p-2 sm:px-4 sm:py-2 border border-slate-300 bg-white text-slate-700 rounded-lg hover:bg-slate-50 transition-colors duration-200 text-xs sm:text-sm font-medium cursor-pointer"
             >
               <X className="w-4 h-4 sm:hidden" />
               <span className="hidden sm:inline">Close</span>
@@ -278,7 +278,7 @@ const PatientOverview: React.FC<PatientOverviewProps> = ({
             <button
               type="button"
               onClick={handleEdit}
-              className="inline-flex items-center justify-center gap-1.5 p-2 sm:px-4 sm:py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors duration-200 text-xs sm:text-sm font-medium cursor-pointer"
+              className="inline-flex items-center justify-center gap-1.5 p-2 sm:px-4 sm:py-2 bg-fnh-blue hover:bg-fnh-blue-dark text-white rounded-lg transition-colors duration-200 text-xs sm:text-sm font-medium cursor-pointer"
             >
               <Edit className="w-4 h-4" />
               <span className="hidden sm:inline">Edit</span>

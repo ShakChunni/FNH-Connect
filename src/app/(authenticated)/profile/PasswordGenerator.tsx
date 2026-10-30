@@ -132,7 +132,7 @@ export function PasswordGenerator({
         type="button"
         onClick={() => setIsOpen((current) => !current)}
         disabled={disabled}
-        className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-700 transition-colors hover:bg-emerald-100 hover:text-emerald-800 disabled:cursor-not-allowed disabled:opacity-60"
+        className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-700 transition-colors hover:bg-emerald-100 hover:text-emerald-800 disabled:cursor-not-allowed disabled:opacity-60"
         title="Generate strong password"
         aria-label="Open password generator"
       >
@@ -155,7 +155,7 @@ export function PasswordGenerator({
               <p className="text-sm font-black text-fnh-navy-dark">
                 Password Generator
               </p>
-              <p className="mt-1 text-xs leading-5 text-gray-500">
+              <p className="mt-1 text-xs leading-5 text-slate-500">
                 Creates a random {passwordLengthLabel} password with uppercase,
                 lowercase, number, and special character.
               </p>
@@ -166,7 +166,7 @@ export function PasswordGenerator({
             type="button"
             onClick={handleGenerate}
             disabled={disabled}
-            className="mt-3 inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg bg-emerald-700 px-3 text-xs font-bold text-white transition-colors hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-60"
+            className="mt-3 inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-3 text-xs font-bold text-slate-700 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
           >
             <RefreshCw className="h-3.5 w-3.5" />
             Generate and Fill
@@ -192,7 +192,7 @@ export function PasswordGenerator({
                   {copied ? "Copied" : "Copy"}
                 </button>
               </div>
-              <p className="mt-2 text-[11px] font-medium text-emerald-800">
+              <p className="mt-2 text-2xs font-medium text-emerald-800">
                 This password has been filled into the new password fields.
               </p>
             </div>

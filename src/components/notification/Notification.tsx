@@ -1,6 +1,7 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { CheckCircle, XCircle, Info, Loader2, X } from "lucide-react";
+import { DURATION, SPRING, tween } from "@/lib/motion";
 
 interface NotificationProps {
   message: string;
@@ -10,192 +11,67 @@ interface NotificationProps {
   onClose: () => void;
 }
 
+// Errors stay up long enough to actually read; success is a quick confirmation.
+const DEFAULT_DURATION: Record<NotificationProps["type"], number> = {
+  success: 3000,
+  info: 4000,
+  error: 7000,
+  loading: 0,
+};
+
+// Navy surface (brand), coloured accent per type.
+const TYPE_STYLES = {
+  success: { icon: CheckCircle, accent: "bg-emerald-400", iconClass: "text-emerald-400" },
+  error: { icon: XCircle, accent: "bg-red-400", iconClass: "text-red-400" },
+  info: { icon: Info, accent: "bg-blue-400", iconClass: "text-blue-400" },
+  loading: { icon: Loader2, accent: "bg-fnh-yellow", iconClass: "text-fnh-yellow animate-spin" },
+} as const;
+
 const Notification: React.FC<NotificationProps> = ({
   message,
   type,
   onClose,
-  timestamp,
-  duration = 3000,
+  duration,
 }) => {
   const [visible, setVisible] = useState(true);
-  const [displayMessage, setDisplayMessage] = useState(message);
-  const [dots, setDots] = useState("");
-
-  const getStyles = useCallback(() => {
-    // FNH Healthcare Brand Colors from globals.css
-    const fnhNavyDark = "#0f172a"; // Slate 900 - Darkest navy
-    const fnhNavy = "#1e293b"; // Slate 800 - Primary navy
-    const fnhNavyLight = "#334155"; // Slate 700 - Lighter navy
-    const fnhBlue = "#3b82f6"; // Blue 500 - Primary blue accent
-    const fnhBlueDark = "#2563eb"; // Blue 600 - Darker blue
-    const fnhWhite = "#ffffff";
-    const fnhYellow = "#fbbf24"; // Amber 400 - Yellow accent
-    const fnhGrey = "#94a3b8"; // Slate 400
-
-    // FNH Gradient backgrounds
-    const successBg = `linear-gradient(135deg, ${fnhNavy} 0%, ${fnhNavyDark} 100%)`;
-    const errorBg = `linear-gradient(135deg, ${fnhNavyDark} 0%, ${fnhNavy} 100%)`;
-    const infoBg = `linear-gradient(135deg, ${fnhNavy} 0%, ${fnhNavyLight} 100%)`;
-    const loadingBg = `linear-gradient(135deg, ${fnhNavyDark} 0%, ${fnhNavy} 100%)`;
-
-    switch (type) {
-      case "success":
-        return {
-          bg: loadingBg,
-          border: fnhYellow,
-          icon: CheckCircle,
-          iconColor: fnhYellow,
-          textColor: fnhWhite,
-        };
-      case "error":
-        return {
-          bg: errorBg,
-          border: "#ef4444", // Red 500 for errors
-          icon: XCircle,
-          iconColor: "#ef4444",
-          textColor: fnhWhite,
-        };
-      case "info":
-        return {
-          bg: infoBg,
-          border: fnhGrey,
-          icon: Info,
-          iconColor: fnhBlue,
-          textColor: fnhWhite,
-        };
-      case "loading":
-        return {
-          bg: loadingBg,
-          border: fnhYellow,
-          icon: Loader2,
-          iconColor: fnhYellow,
-          textColor: fnhWhite,
-        };
-      default:
-        return {
-          bg: infoBg,
-          border: fnhBlue,
-          icon: Info,
-          iconColor: fnhBlue,
-          textColor: fnhWhite,
-        };
-    }
-  }, [type]);
-
-  useEffect(() => {
-    setDisplayMessage(message);
-    if (type === "loading") {
-      const interval = setInterval(() => {
-        setDots((prev) => (prev.length < 3 ? prev + "." : ""));
-      }, 500);
-      return () => clearInterval(interval);
-    } else {
-      setDots("");
-    }
-  }, [message, type]);
-
-  useEffect(() => {
-    if (type !== "loading") {
-      const timer = setTimeout(() => {
-        setVisible(false);
-      }, duration);
-      return () => clearTimeout(timer);
-    }
-  }, [type, duration]);
-
-  const styles = getStyles();
+  const styles = TYPE_STYLES[type] ?? TYPE_STYLES.info;
   const IconComponent = styles.icon;
+  const timeout = duration ?? DEFAULT_DURATION[type];
+
+  useEffect(() => {
+    if (type === "loading" || !timeout) return;
+    const timer = setTimeout(() => setVisible(false), timeout);
+    return () => clearTimeout(timer);
+  }, [type, timeout]);
 
   return (
-    <AnimatePresence mode="wait" onExitComplete={onClose}>
+    <AnimatePresence onExitComplete={onClose}>
       {visible && (
         <motion.div
-          layoutId="notification"
-          className="overflow-hidden"
-          initial={{ opacity: 0, y: 20, scale: 0.95 }}
-          animate={{
-            opacity: 1,
-            y: 0,
-            scale: 1,
-            transition: {
-              type: "spring",
-              stiffness: 400,
-              damping: 30,
-            },
-          }}
-          exit={{
-            opacity: 0,
-            y: -10,
-            scale: 0.95,
-            transition: {
-              duration: 0.3,
-              ease: "easeInOut",
-            },
-          }}
+          initial={{ opacity: 0, y: -12 }}
+          animate={{ opacity: 1, y: 0, transition: SPRING }}
+          exit={{ opacity: 0, y: -4, transition: tween(DURATION.fast) }}
+          role={type === "error" ? "alert" : "status"}
+          className="relative flex items-center gap-3 overflow-hidden rounded-2xl bg-fnh-navy-dark py-3 pl-4 pr-2 shadow-xl ring-1 ring-white/10 w-full sm:w-auto sm:min-w-[280px] sm:max-w-md"
         >
-          <motion.div
-            className="rounded-3xl shadow-xl backdrop-blur-md border min-w-[280px] max-w-[90vw] sm:max-w-sm md:max-w-md"
-            style={{
-              background: styles.bg,
-              borderColor: styles.border,
-              padding: "0.5rem 0.75rem",
-            }}
-          >
-            <motion.div
-              layout
-              className="flex items-center gap-3"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
+          <span
+            aria-hidden="true"
+            className={`absolute inset-y-0 left-0 w-1 ${styles.accent}`}
+          />
+          <IconComponent className={`w-5 h-5 shrink-0 ${styles.iconClass}`} />
+          <span className="flex-1 text-sm font-medium leading-snug text-white">
+            {message}
+          </span>
+          {(
+            <button
+              type="button"
+              onClick={() => setVisible(false)}
+              className="shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-white/60 hover:text-white hover:bg-white/10 transition-colors duration-150"
+              aria-label="Close notification"
             >
-              <motion.div
-                animate={
-                  type === "loading"
-                    ? {
-                        rotate: 360,
-                      }
-                    : {}
-                }
-                transition={
-                  type === "loading"
-                    ? {
-                        duration: 1,
-                        repeat: Infinity,
-                        ease: "linear",
-                      }
-                    : {}
-                }
-              >
-                <IconComponent
-                  className="w-4 h-4 shrink-0"
-                  style={{ color: styles.iconColor }}
-                />
-              </motion.div>
-              <motion.span
-                layout
-                key={displayMessage}
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 10 }}
-                className="text-white font-medium text-sm flex-1 leading-relaxed"
-                style={{ color: styles.textColor }}
-              >
-                {displayMessage}
-                {dots}
-              </motion.span>
-              <button
-                onClick={() => setVisible(false)}
-                className="shrink-0 w-5 h-5 rounded-full hover:bg-white/20 flex items-center justify-center transition-all duration-200 ease-in-out opacity-60 hover:opacity-100"
-                style={{ color: styles.textColor }}
-                aria-label="Close notification"
-              >
-                <X
-                  className="w-3 h-3 text-white/80 hover:text-white"
-                  style={{ color: styles.textColor, opacity: 0.8 }}
-                />
-              </button>
-            </motion.div>
-          </motion.div>
+              <X className="w-4 h-4" />
+            </button>
+          )}
         </motion.div>
       )}
     </AnimatePresence>

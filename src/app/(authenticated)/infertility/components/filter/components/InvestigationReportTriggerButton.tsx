@@ -98,12 +98,12 @@ export const InvestigationReportTriggerButton: React.FC<ReportTriggerButtonProps
         onClick={() => setIsOpen(!isOpen)}
         disabled={disabled || isFetching}
         className="relative flex items-center justify-center gap-2 h-full w-full sm:w-auto px-4 sm:px-5 
-          bg-white border border-gray-200 rounded-full
-          text-gray-600 text-sm font-medium
-          hover:bg-gray-50 hover:border-emerald-600 hover:text-emerald-600
-          transition-all duration-200 
+          bg-white border border-slate-200 rounded-full
+          text-slate-600 text-sm font-medium
+          hover:bg-slate-50 hover:border-emerald-600 hover:text-emerald-700
+          transition-colors duration-200 
           disabled:opacity-50 disabled:cursor-not-allowed
-          cursor-pointer shadow-sm hover:shadow-md"
+          cursor-pointer shadow-sm "
       >
         {isFetching ? (
           <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 animate-spin" />
@@ -120,53 +120,53 @@ export const InvestigationReportTriggerButton: React.FC<ReportTriggerButtonProps
         className="min-w-[240px]"
       >
         <div className="py-2">
-          <div className="px-3 py-2 text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+          <div className="px-3 py-2 text-2xs font-bold text-slate-500 uppercase tracking-wider">
             Investigation Reports
           </div>
 
           <button
             onClick={() => handleGenerateReport("summary")}
-            className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-slate-100 transition-colors"
+            className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-100 transition-colors"
           >
             <BarChart3 className="w-4 h-4 text-indigo-500" />
             <div className="text-left">
               <div className="font-medium">Summary Report</div>
-              <div className="text-xs text-gray-400">Overview & test counts</div>
+              <div className="text-xs text-slate-500">Overview & test counts</div>
             </div>
           </button>
 
           <button
             onClick={() => handleGenerateReport("financial")}
-            className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-slate-100 transition-colors"
+            className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-100 transition-colors"
           >
             <DollarSign className="w-4 h-4 text-emerald-500" />
             <div className="text-left">
               <div className="font-medium">Financial Report</div>
-              <div className="text-xs text-gray-400">Revenue & collection stats</div>
+              <div className="text-xs text-slate-500">Revenue & collection stats</div>
             </div>
           </button>
 
           <button
             onClick={() => handleGenerateReport("detailed")}
-            className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-slate-100 transition-colors"
+            className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-100 transition-colors"
           >
             <FileText className="w-4 h-4 text-blue-500" />
             <div className="text-left">
               <div className="font-medium">Detailed Report</div>
-              <div className="text-xs text-gray-400">Full investigation records</div>
+              <div className="text-xs text-slate-500">Full investigation records</div>
             </div>
           </button>
 
-          <div className="my-2 border-t border-gray-100" />
+          <div className="my-2 border-t border-slate-100" />
 
           <button
             onClick={() => handleGenerateReport("csv")}
-            className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-slate-100 transition-colors"
+            className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-100 transition-colors"
           >
-            <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
+            <FileSpreadsheet className="w-4 h-4 text-emerald-700" />
             <div className="text-left">
               <div className="font-medium">Export to CSV</div>
-              <div className="text-xs text-gray-400">Open in Excel/Sheets</div>
+              <div className="text-xs text-slate-500">Open in Excel/Sheets</div>
             </div>
           </button>
         </div>

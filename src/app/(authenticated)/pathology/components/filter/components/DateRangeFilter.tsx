@@ -124,7 +124,7 @@ export const DateRangeFilter: React.FC = () => {
 
   return (
     <div className="space-y-2">
-      <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+      <label className="flex items-center gap-2 text-sm font-medium text-slate-700">
         <Calendar className="w-4 h-4 text-fnh-grey" />
         Date Range
       </label>
@@ -139,23 +139,23 @@ export const DateRangeFilter: React.FC = () => {
           }
         }}
         className="w-full flex items-center justify-between gap-2 px-4 py-3
-          bg-white border border-gray-200 rounded-xl
-          text-sm text-gray-700
-          hover:border-fnh-blue hover:bg-gray-50
+          bg-white border border-slate-200 rounded-xl
+          text-sm text-slate-700
+          hover:border-fnh-blue hover:bg-slate-50
           focus:outline-none focus:ring-2 focus:ring-fnh-blue/20 focus:border-fnh-blue
-          transition-all duration-200 cursor-pointer"
+          transition-colors cursor-pointer"
       >
         <span
           className={
             filters.dateRange === "all"
-              ? "text-gray-500"
-              : "text-gray-900 font-medium"
+              ? "text-slate-500"
+              : "text-slate-900 font-medium"
           }
         >
           {displayText}
         </span>
         <ChevronDown
-          className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${
+          className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${
             isOpen || showCalendar ? "rotate-180" : ""
           }`}
         />
@@ -176,7 +176,7 @@ export const DateRangeFilter: React.FC = () => {
               className={`w-full text-left px-4 py-2.5 text-sm transition-colors duration-150 cursor-pointer ${
                 filters.dateRange === option.value
                   ? "bg-fnh-navy text-white font-medium"
-                  : "text-gray-700 hover:bg-slate-100"
+                  : "text-slate-700 hover:bg-slate-100"
               }`}
             >
               <div className="flex items-center justify-between">
@@ -192,26 +192,26 @@ export const DateRangeFilter: React.FC = () => {
 
       {/* Inline Calendar - Shows when custom range is selected */}
       {showCalendar && (
-        <div className="mt-3 space-y-3 animate-in fade-in slide-in-from-top-2 duration-200">
+        <div className="mt-3 space-y-3 animate-in fade-in slide-in-from-top-2 duration-150">
           {/* Back button */}
           <button
             onClick={handleBackToPresets}
-            className="flex items-center gap-1.5 text-xs font-medium text-gray-500 hover:text-fnh-navy transition-colors cursor-pointer"
+            className="h-9 flex items-center gap-1.5 text-xs font-medium text-slate-500 hover:text-fnh-navy transition-colors cursor-pointer"
           >
             <ChevronLeft className="w-3 h-3" />
             Back to presets
           </button>
 
           {/* Selected Range Display */}
-          <div className="bg-gray-50 rounded-xl p-3 space-y-2 border border-gray-100">
-            <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
+          <div className="bg-slate-50 rounded-xl p-3 space-y-2 border border-slate-200">
+            <div className="text-2xs font-black text-slate-500 uppercase tracking-widest">
               {tempRange.from && tempRange.to
                 ? "Selected Range"
                 : "Select Start & End Date"}
             </div>
             <div className="grid grid-cols-2 gap-2 text-xs">
               <div className="flex flex-col gap-1">
-                <span className="text-gray-400 font-bold text-[9px] uppercase tracking-wider">
+                <span className="text-slate-500 font-bold text-2xs uppercase tracking-wider">
                   From
                 </span>
                 <span className="font-bold text-fnh-navy">
@@ -221,7 +221,7 @@ export const DateRangeFilter: React.FC = () => {
                 </span>
               </div>
               <div className="flex flex-col gap-1">
-                <span className="text-gray-400 font-bold text-[9px] uppercase tracking-wider">
+                <span className="text-slate-500 font-bold text-2xs uppercase tracking-wider">
                   To
                 </span>
                 <span className="font-bold text-fnh-navy">
@@ -233,7 +233,7 @@ export const DateRangeFilter: React.FC = () => {
               <button
                 type="button"
                 onClick={handleClear}
-                className="w-full mt-2 px-3 py-2 text-xs font-bold text-gray-600 bg-white hover:bg-gray-100 rounded-lg transition-colors cursor-pointer border border-gray-200"
+                className="w-full mt-2 h-9 px-3 text-xs font-bold text-slate-700 bg-white hover:bg-slate-50 rounded-lg transition-colors cursor-pointer border border-slate-300"
               >
                 Clear Selection
               </button>

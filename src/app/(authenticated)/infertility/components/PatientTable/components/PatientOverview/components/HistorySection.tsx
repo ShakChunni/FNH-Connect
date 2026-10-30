@@ -42,7 +42,7 @@ export const HistorySection: React.FC<HistorySectionProps> = ({
       label: "Chief Complaint",
       value: chiefComplaint,
       icon: ClipboardList,
-      color: "bg-amber-50 text-amber-600 border-amber-100",
+      color: "bg-amber-50 text-amber-700 border-amber-100",
     },
     {
       label: "Medical History",
@@ -66,7 +66,7 @@ export const HistorySection: React.FC<HistorySectionProps> = ({
       label: "Contraceptive History",
       value: contraceptiveHistory,
       icon: ShieldAlert,
-      color: "bg-emerald-50 text-emerald-600 border-emerald-100",
+      color: "bg-emerald-50 text-emerald-700 border-emerald-100",
     },
     {
       label: "Clinical Notes",
@@ -84,17 +84,17 @@ export const HistorySection: React.FC<HistorySectionProps> = ({
             <ClipboardList size={16} />
           </div>
           <div>
-            <h4 className="text-[11px] sm:text-xs font-black text-gray-800 uppercase tracking-wide leading-tight">
+            <h4 className="text-2xs sm:text-xs font-black text-slate-800 uppercase tracking-wide leading-tight">
               Clinical History
             </h4>
-            <p className="hidden sm:block text-[9px] font-bold text-gray-400 mt-0.5 uppercase tracking-tight">
+            <p className="hidden sm:block text-2xs font-bold text-slate-500 mt-0.5 uppercase tracking-tight">
               Diagnostic & clinical observations
             </p>
           </div>
         </div>
         <div className="hidden md:flex items-center gap-2 px-2 py-1 bg-white border border-slate-100 rounded-lg">
-          <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-          <span className="text-[9px] font-bold text-slate-600">Active</span>
+          <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+          <span className="text-2xs font-bold text-slate-600">Active</span>
         </div>
       </div>
 
@@ -102,12 +102,12 @@ export const HistorySection: React.FC<HistorySectionProps> = ({
         {sections.map((section, idx) => (
           <div
             key={idx}
-            className="group bg-white rounded-2xl sm:rounded-3xl p-3 sm:p-5 border border-gray-100 shadow-sm hover:border-indigo-100 transition-all duration-300 flex flex-col gap-3 sm:gap-4"
+            className="group bg-white rounded-2xl sm:rounded-3xl p-3 sm:p-5 border border-slate-100 shadow-sm hover:border-indigo-100 transition duration-200 flex flex-col gap-3 sm:gap-4"
           >
             <div className="flex items-center gap-2 sm:gap-3">
               <div
                 className={cn(
-                  "p-1.5 sm:p-2 rounded-lg sm:rounded-xl border shrink-0 transition-transform group-hover:scale-110",
+                  "p-1.5 sm:p-2 rounded-lg sm:rounded-xl border shrink-0 transition-transform ",
                   section.color
                 )}
               >
@@ -116,7 +116,7 @@ export const HistorySection: React.FC<HistorySectionProps> = ({
                   strokeWidth={2.5}
                 />
               </div>
-              <h5 className="text-[10px] sm:text-[11px] font-black text-gray-400 uppercase tracking-wide">
+              <h5 className="text-2xs sm:text-2xs font-black text-slate-500 uppercase tracking-wide">
                 {section.label}
               </h5>
             </div>
@@ -126,8 +126,8 @@ export const HistorySection: React.FC<HistorySectionProps> = ({
                 className={cn(
                   "text-xs sm:text-sm leading-relaxed whitespace-pre-wrap wrap-break-word",
                   section.value
-                    ? "text-gray-700 font-semibold"
-                    : "text-gray-400 italic font-medium"
+                    ? "text-slate-700 font-semibold"
+                    : "text-slate-500 italic font-medium"
                 )}
               >
                 {section.value ||

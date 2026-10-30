@@ -17,7 +17,6 @@
  */
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { AnimatePresence, motion } from "framer-motion";
 import { AlertCircle, Package, Pill } from "lucide-react";
 import { api } from "@/lib/axios";
 import {
@@ -337,16 +336,16 @@ const MedicineInformation: React.FC<MedicineInformationProps> = ({
 
   return (
     <div id="medicines" className="mt-2 sm:mt-0 mb-6 sm:mb-8 md:mb-10">
-      <div className="bg-linear-to-r from-emerald-50 to-teal-100 border-emerald-200 rounded-lg sm:rounded-xl p-4 sm:p-5 md:p-6 mb-4 sm:mb-5 md:mb-6 shadow-sm border transition-colors duration-300">
+      <div className="bg-emerald-50 border-emerald-200 rounded-lg sm:rounded-xl p-4 sm:p-5 md:p-6 mb-4 sm:mb-5 md:mb-6 shadow-sm border transition-colors">
         <div className="flex items-center gap-3 sm:gap-4">
-          <div className="p-2 sm:p-2.5 md:p-3 bg-white rounded-lg sm:rounded-xl shadow-md shrink-0">
-            <Pill className="text-emerald-600" size={28} />
+          <div className="p-2 sm:p-2.5 md:p-3 bg-white rounded-lg sm:rounded-xl shadow-sm shrink-0">
+            <Pill className="text-emerald-700" size={28} />
           </div>
           <div className="flex flex-col">
-            <h3 className="text-base sm:text-lg md:text-xl font-bold text-gray-800 mb-0.5 sm:mb-1 leading-tight">
+            <h3 className="text-base sm:text-lg md:text-xl font-bold text-slate-800 mb-0.5 sm:mb-1 leading-tight">
               Medicines
             </h3>
-            <p className="text-emerald-700 text-[11px] sm:text-xs font-medium leading-tight transition-colors duration-300 mt-1">
+            <p className="text-emerald-700 text-2xs sm:text-xs font-medium leading-tight transition-colors mt-1">
               {medicineBillingEnabled
                 ? "Legacy billable medicines — these rows affect the admission invoice."
                 : "Inventory-only — stock is deducted but no charge is added to admission billing."}
@@ -373,7 +372,7 @@ const MedicineInformation: React.FC<MedicineInformationProps> = ({
             <h4 className="text-red-800 font-semibold text-xs sm:text-sm">
               Admission Canceled
             </h4>
-            <p className="text-red-700 text-[11px] sm:text-xs mt-0.5">
+            <p className="text-red-700 text-2xs sm:text-xs mt-0.5">
               All medicines have been cleared. Stock was already restored
               when the admission was canceled.
             </p>
@@ -384,18 +383,18 @@ const MedicineInformation: React.FC<MedicineInformationProps> = ({
       <div className="mb-4 sm:mb-5">
         <div className="mb-4 sm:mb-5">
           <div className="flex items-center gap-2 mb-2.5">
-            <Package className="w-4 h-4 text-emerald-600 shrink-0" />
-            <span className="text-gray-700 text-xs sm:text-sm font-semibold">
+            <Package className="w-4 h-4 text-emerald-700 shrink-0" />
+            <span className="text-slate-700 text-xs sm:text-sm font-semibold">
               Department Medicine Packages
             </span>
           </div>
 
           {packageLoadError && (
-            <p className="text-xs text-amber-600 mb-2">{packageLoadError}</p>
+            <p className="text-xs text-amber-700 mb-2">{packageLoadError}</p>
           )}
 
           {packagesLoaded && departmentPackages.length === 0 && !packageLoadError && (
-            <p className="text-xs text-gray-500 mb-2">
+            <p className="text-xs text-slate-500 mb-2">
               No medicine package is configured for {departmentData.name || "this department"}.
             </p>
           )}
@@ -406,18 +405,15 @@ const MedicineInformation: React.FC<MedicineInformationProps> = ({
               const isLoading = loadingPackageCode === summary.code;
               const matchedCount = data?.items.filter((item) => item.matched).length;
               return (
-                <motion.button
+                <button
                   key={summary.code}
                   type="button"
                   onClick={() => void handlePackageSelect(summary)}
                   disabled={isCanceled || Boolean(loadingPackageCode)}
-                  whileHover={isCanceled ? undefined : { scale: 1.005, y: -1 }}
-                  whileTap={isCanceled ? undefined : { scale: 0.97 }}
-                  transition={{ type: "spring", stiffness: 400, damping: 17 }}
-                  className={`w-full rounded-xl border-2 px-4 py-3 text-left transition-all duration-200 ${
+                  className={`w-full rounded-xl border-2 px-4 py-3 text-left transition-colors ${
                     isCanceled
-                      ? "border-gray-200 bg-gray-50 opacity-50 cursor-not-allowed"
-                      : "border-emerald-300 bg-emerald-50 hover:border-emerald-500 hover:bg-emerald-100 hover:shadow-sm cursor-pointer"
+                      ? "border-slate-200 bg-slate-50 opacity-50 cursor-not-allowed"
+                      : "border-emerald-300 bg-emerald-50 hover:border-emerald-500 hover:bg-emerald-100 cursor-pointer"
                   }`}
                 >
                   <div className="flex items-center justify-between gap-3">
@@ -426,98 +422,63 @@ const MedicineInformation: React.FC<MedicineInformationProps> = ({
                         <Pill className="h-5 w-5" />
                       </div>
                       <div className="min-w-0">
-                        <p className="truncate text-sm font-bold text-gray-800">
+                        <p className="truncate text-sm font-bold text-slate-800">
                           Add {summary.operationName} package
                         </p>
-                        <p className="mt-0.5 text-xs text-gray-500">
+                        <p className="mt-0.5 text-xs text-slate-500">
                           {data
                             ? `${data.items.length} medicine${data.items.length !== 1 ? "s" : ""} · ${matchedCount} matched`
                             : `${summary.departmentName} preset`}
                         </p>
                       </div>
                     </div>
-                    <motion.span
-                      layout
-                      className="shrink-0 rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white"
-                    >
+                    <span className="shrink-0 rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white">
                       {isLoading ? "Loading…" : "Apply"}
-                    </motion.span>
+                    </span>
                   </div>
-                </motion.button>
+                </button>
               );
             })}
           </div>
         </div>
       </div>
 
-      <AnimatePresence initial={false}>
-        {hasItemizedMedicines && (
-          <motion.div
-            key="medicine-table"
-            initial={{ opacity: 0, scale: 0.95, y: 12 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.96, y: -8 }}
-            transition={{
-              opacity: { duration: 0.35, ease: [0.4, 0, 0.2, 1] },
-              scale: { duration: 0.35, ease: [0.4, 0, 0.2, 1] },
-              y: { duration: 0.35, ease: [0.4, 0, 0.2, 1] },
-            }}
-            className="origin-top"
-          >
-            <AdmissionMedicineItemsTable
-              items={medicineChargeItems}
-              isCanceled={isCanceled}
-              refreshing={refreshing}
-              onUpdate={updateMedicineChargeItem}
-              onSelectMedicine={handleSelectMedicine}
-              onRemove={removeMedicineChargeItem}
-              onAddRow={handleAddEmptyMedicineRow}
-              onRefresh={handleRefreshPharmacyValues}
-              onClearAll={clearMedicineChargeItems}
-              inventoryOnly={!medicineBillingEnabled}
-            />
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {hasItemizedMedicines && (
+        <AdmissionMedicineItemsTable
+          items={medicineChargeItems}
+          isCanceled={isCanceled}
+          refreshing={refreshing}
+          onUpdate={updateMedicineChargeItem}
+          onSelectMedicine={handleSelectMedicine}
+          onRemove={removeMedicineChargeItem}
+          onAddRow={handleAddEmptyMedicineRow}
+          onRefresh={handleRefreshPharmacyValues}
+          onClearAll={clearMedicineChargeItems}
+          inventoryOnly={!medicineBillingEnabled}
+        />
+      )}
 
-      <AnimatePresence initial={false}>
-        {!hasItemizedMedicines && !isCanceled && (
-          <motion.div
-            key="single-medicine-button"
-            initial={{ opacity: 0, y: 10, scale: 0.96 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -8, scale: 0.96 }}
-            transition={{
-              type: "spring",
-              damping: 20,
-              stiffness: 300,
-              mass: 0.8,
-            }}
-            className="mb-4 sm:mb-5 origin-top"
+      {!hasItemizedMedicines && !isCanceled && (
+        <div className="mb-4 sm:mb-5">
+          <button
+            type="button"
+            onClick={handleAddEmptyMedicineRow}
+            className="inline-flex items-center gap-1.5 rounded-lg border-2 border-dashed border-emerald-300 bg-emerald-50/50 px-3 py-2 text-xs font-semibold text-emerald-700 transition-colors hover:bg-emerald-100 hover:border-emerald-500"
           >
-            <motion.button
-              type="button"
-              onClick={handleAddEmptyMedicineRow}
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.96 }}
-              transition={{ type: "spring", stiffness: 400, damping: 17 }}
-              className="inline-flex items-center gap-1.5 rounded-lg border-2 border-dashed border-emerald-300 bg-emerald-50/50 px-3 py-2 text-xs font-semibold text-emerald-700 transition-all hover:bg-emerald-100 hover:border-emerald-500"
-            >
-              <Pill className="h-3.5 w-3.5" />
-              Add a single pharmacy medicine
-            </motion.button>
-          </motion.div>
-        )}
-      </AnimatePresence>
+            <Pill className="h-3.5 w-3.5" />
+            Add a single pharmacy medicine
+          </button>
+        </div>
+      )}
 
       {hasItemizedMedicines && !medicineBillingEnabled && (
-        <div className="rounded-xl border border-emerald-200 bg-emerald-50/40 p-3 sm:p-4 text-xs text-emerald-900">
+        <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 sm:p-4 text-xs text-emerald-900">
           <p className="font-semibold">
             {medicineChargeItems.length} medicine
             {medicineChargeItems.length !== 1 ? "s" : ""} · {totalQuantity}{" "}
             unit{totalQuantity !== 1 ? "s" : ""} (inventory only)
           </p>
-          <p className="text-emerald-800/80 mt-1">
+          <p className="text-emerald-800 mt-1">
             These medicines will be deducted from pharmacy stock and printed
             as a quantity-only section on the receipt. They are not included
             in admission billing.

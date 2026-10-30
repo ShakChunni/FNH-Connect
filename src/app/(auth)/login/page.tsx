@@ -7,6 +7,7 @@ import { useAuth } from "@/app/AuthContext";
 import { LoginForm } from "./components";
 import { MobileLogin } from "./components/MobileLogin";
 import { fetchWithCSRF } from "@/lib/fetchWithCSRF";
+import { tween, DURATION } from "@/lib/motion";
 import type { LoginFormData, LoginResponse } from "./types";
 import type { PortalType } from "@/types/auth";
 import {
@@ -24,73 +25,45 @@ import { cn } from "@/lib/utils";
 import { version } from "@/../package.json";
 
 const APP_VERSION = `v${version}`;
-const SOFT_EASE = [0.16, 1, 0.3, 1] as const;
-const BACKGROUND_TRANSITION_CLASS =
-  "transition-colors duration-[800ms] ease-[cubic-bezier(0.16,1,0.3,1)]";
-const BACKGROUND_BLUR_BASE_CLASS =
-  "fixed top-[-20%] left-[-10%] w-[50%] h-[50%] rounded-full blur-[80px] pointer-events-none opacity-35";
-const BACKGROUND_BLUR_SECONDARY_CLASS =
-  "fixed bottom-[-20%] right-[-10%] w-[50%] h-[50%] rounded-full blur-[80px] pointer-events-none opacity-35";
-const PANEL_TRANSITION = {
-  opacity: { duration: 0.55, ease: SOFT_EASE },
-  scale: { duration: 0.48, ease: SOFT_EASE },
-} as const;
-const ACTIVE_PORTAL_TRANSITION = {
-  duration: 0.5,
-  delay: 0.08,
-  ease: SOFT_EASE,
-} as const;
-const INTRO_PORTAL_TRANSITION = {
-  duration: 0.42,
-  ease: SOFT_EASE,
-} as const;
-const PORTAL_EXIT_TRANSITION = {
-  duration: 0.22,
-  ease: SOFT_EASE,
-} as const;
-const HEADER_TEXT_TRANSITION = {
-  duration: 0.32,
-  ease: SOFT_EASE,
-} as const;
+// All page motion is short and uses the shared tween (under 250ms, no delays).
+const PANEL_TRANSITION = tween(DURATION.base);
+const ACTIVE_PORTAL_TRANSITION = tween(DURATION.base);
+const INTRO_PORTAL_TRANSITION = tween(DURATION.base);
+const PORTAL_EXIT_TRANSITION = tween(DURATION.fast);
+const HEADER_TEXT_TRANSITION = tween(DURATION.base);
 const activePortalMotion = {
-  initial: { opacity: 0, y: 18, scale: 0.985, filter: "blur(10px)" },
-  animate: { opacity: 1, y: 0, scale: 1, filter: "blur(0px)" },
+  initial: { opacity: 0, y: 8 },
+  animate: { opacity: 1, y: 0 },
   exit: {
     opacity: 0,
-    y: -10,
-    scale: 0.99,
-    filter: "blur(8px)",
+    y: -8,
     transition: PORTAL_EXIT_TRANSITION,
   },
 } as const;
 const introPortalMotion = {
-  initial: { opacity: 0, y: 14, scale: 0.99, filter: "blur(8px)" },
-  animate: { opacity: 1, y: 0, scale: 1, filter: "blur(0px)" },
+  initial: { opacity: 0, y: 8 },
+  animate: { opacity: 1, y: 0 },
   exit: {
     opacity: 0,
     y: -8,
-    scale: 0.992,
-    filter: "blur(8px)",
     transition: PORTAL_EXIT_TRANSITION,
   },
 } as const;
 const introItemMotion = {
-  initial: { opacity: 0, y: 16, scale: 0.99 },
-  animate: { opacity: 1, y: 0, scale: 1 },
+  initial: { opacity: 0, y: 8 },
+  animate: { opacity: 1, y: 0 },
   exit: {
     opacity: 0,
     y: -8,
-    scale: 0.995,
     transition: PORTAL_EXIT_TRANSITION,
   },
 } as const;
 const headerTextMotion = {
-  initial: { opacity: 0, y: 8, filter: "blur(6px)" },
-  animate: { opacity: 1, y: 0, filter: "blur(0px)" },
+  initial: { opacity: 0, y: 6 },
+  animate: { opacity: 1, y: 0 },
   exit: {
     opacity: 0,
     y: -6,
-    filter: "blur(6px)",
     transition: PORTAL_EXIT_TRANSITION,
   },
 } as const;
@@ -137,7 +110,7 @@ function PortalLogo({
   return (
     <div
       className={cn(
-        "shrink-0 flex items-center justify-center overflow-hidden border shadow-xl transition-[colors,opacity,transform,box-shadow] duration-[500ms] ease-[cubic-bezier(0.16,1,0.3,1)]",
+        "shrink-0 flex items-center justify-center overflow-hidden border",
         size === "rail"
           ? "h-20 w-20 rounded-3xl p-2"
           : "h-12 w-12 rounded-2xl p-1.5 lg:h-14 lg:w-14",
@@ -153,7 +126,6 @@ function PortalLogo({
         className={cn(
           "h-full w-full object-contain",
           logo.imageClassName,
-          size === "rail" ? "drop-shadow-[0_14px_24px_rgba(0,0,0,0.22)]" : "",
         )}
       />
     </div>
@@ -164,7 +136,7 @@ function VersionBadge({ portal }: { portal?: PortalType }) {
   return (
     <span
       className={cn(
-        "inline-flex h-8 items-center rounded-full border px-3 text-[10px] font-black uppercase tracking-[0.22em] shadow-md backdrop-blur-md",
+        "inline-flex h-8 items-center rounded-full border px-3 text-2xs font-black uppercase tracking-[0.22em]",
         portal === "infertility"
           ? "border-emerald-300/20 bg-emerald-950/40 text-emerald-100/70"
           : "border-blue-300/20 bg-slate-950/35 text-blue-100/70",
@@ -187,9 +159,9 @@ function PortalTopBar({
       <button
         type="button"
         onClick={onBack}
-        className="group/back flex items-center gap-2 rounded-full border border-white/5 bg-white/5 px-4 py-2 text-[10px] font-bold uppercase tracking-[0.3em] text-white/50 transition-[colors,border-color,transform] hover:border-white/20 hover:text-white"
+        className="flex items-center gap-2 rounded-full border border-white/5 bg-white/5 px-4 py-2 text-2xs font-bold uppercase tracking-[0.3em] text-white/50 transition-colors hover:border-white/20 hover:text-white"
       >
-        <ArrowLeft className="h-3 w-3 transition-transform group-hover/back:-translate-x-1" />{" "}
+        <ArrowLeft className="h-3 w-3" />{" "}
         Back to Portals
       </button>
       <VersionBadge portal={portal} />
@@ -209,14 +181,13 @@ function CompactPortalRail({
   return (
     <motion.div
       key={`${portal}-rail`}
-      initial={{ opacity: 0, scale: 0.985 }}
-      animate={{ opacity: 1, scale: 1 }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
       exit={{
         opacity: 0,
-        scale: 0.99,
         transition: PORTAL_EXIT_TRANSITION,
       }}
-      transition={{ duration: 0.28, ease: SOFT_EASE }}
+      transition={tween(DURATION.base)}
       className="absolute inset-0 flex flex-col items-center justify-center gap-4 px-4 text-center"
     >
       <PortalLogo portal={portal} size="rail" />
@@ -224,7 +195,7 @@ function CompactPortalRail({
         <p className="text-sm font-black uppercase tracking-[0.22em] text-white/80">
           {label}
         </p>
-        <p className="mx-auto max-w-[7rem] text-[10px] font-bold uppercase leading-relaxed tracking-[0.18em] text-white/35">
+        <p className="mx-auto max-w-[7rem] text-2xs font-bold uppercase leading-relaxed tracking-[0.18em] text-white/35">
           {description}
         </p>
       </div>
@@ -238,10 +209,10 @@ function PortalGhostLogo({ portal }: { portal: PortalType }) {
   return (
     <motion.div
       aria-hidden="true"
-      initial={{ opacity: 0, scale: 0.92, rotate: portal === "general" ? -4 : 4 }}
-      animate={{ opacity: 0.08, scale: 1, rotate: 0 }}
-      exit={{ opacity: 0, scale: 0.96, transition: PORTAL_EXIT_TRANSITION }}
-      transition={{ duration: 0.55, ease: SOFT_EASE }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 0.08 }}
+      exit={{ opacity: 0, transition: PORTAL_EXIT_TRANSITION }}
+      transition={tween(DURATION.base)}
       className={cn(
         "pointer-events-none absolute top-1/2 -translate-y-1/2",
         portal === "general" ? "-right-12" : "-left-12",
@@ -268,39 +239,24 @@ function FeatureIconRow({
   return (
     <motion.div
       {...introItemMotion}
-      transition={{ duration: 0.36, ease: SOFT_EASE }}
+      transition={tween(DURATION.base)}
       className="-mx-2 hidden overflow-visible px-2 py-2 lg:flex gap-3"
     >
       {icons.map((Icon, index) => (
-        <motion.div
+        <div
           key={`${portal}-feature-${index}`}
-          initial={{ opacity: 0, y: 12, scale: 0.94 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          transition={{
-            duration: 0.34,
-            delay: 0.08 + index * 0.05,
-            ease: SOFT_EASE,
-          }}
           className={cn(
-            "group/icon relative flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-2xl border bg-white/[0.055] shadow-[0_12px_24px_-18px_rgba(0,0,0,0.65)] backdrop-blur-md transition-[colors,border-color,transform,box-shadow] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-1 hover:scale-[1.04]",
-            portal === "infertility"
-              ? "border-emerald-300/10 hover:border-emerald-300/35 hover:bg-emerald-400/10 hover:shadow-[0_12px_28px_-18px_rgba(16,185,129,0.55)]"
-              : "border-blue-300/10 hover:border-blue-300/35 hover:bg-blue-400/10 hover:shadow-[0_12px_28px_-18px_rgba(59,130,246,0.55)]",
+            "flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border bg-white/[0.055]",
+            portal === "infertility" ? "border-emerald-300/10" : "border-blue-300/10",
           )}
         >
-          <div
-            className={cn(
-              "absolute inset-x-2 top-1 h-px opacity-0 transition-opacity duration-500 group-hover/icon:opacity-100",
-              portal === "infertility" ? "bg-emerald-200/55" : "bg-blue-200/55",
-            )}
-          />
           <Icon
             className={cn(
-              "h-5 w-5 transition-transform duration-500 group-hover/icon:scale-110",
+              "h-5 w-5",
               portal === "infertility" ? "text-emerald-300" : "text-blue-300",
             )}
           />
-        </motion.div>
+        </div>
       ))}
     </motion.div>
   );
@@ -309,11 +265,11 @@ function FeatureIconRow({
 export default function LoginPage() {
   return (
     <>
-      {/* Mobile (< lg): new segmented-control layout */}
+      {/* Mobile (< lg): segmented-control layout */}
       <div className="lg:hidden">
         <MobileLogin />
       </div>
-      {/* Desktop (lg+): original two-panel split-screen layout, untouched */}
+      {/* Desktop (lg+): two-panel split-screen layout */}
       <div className="hidden w-full lg:block">
         <LoginPageDesktop />
       </div>
@@ -330,27 +286,15 @@ function LoginPageDesktop() {
   // Sync body background and layout wrapper with selected portal
   React.useEffect(() => {
     const wrapper = document.getElementById("auth-layout-wrapper");
-    const blur1 = document.getElementById("auth-bg-blur-1");
-    const blur2 = document.getElementById("auth-bg-blur-2");
-    
+
     if (selectedPortal === "infertility") {
       document.documentElement.style.backgroundColor = "#022c22";
       document.body.style.backgroundColor = "#022c22";
       if (wrapper) wrapper.style.backgroundColor = "#022c22";
-      if (blur1) blur1.className = `${BACKGROUND_BLUR_BASE_CLASS} bg-emerald-500/20 ${BACKGROUND_TRANSITION_CLASS}`;
-      if (blur2) blur2.className = `${BACKGROUND_BLUR_SECONDARY_CLASS} bg-emerald-700/20 ${BACKGROUND_TRANSITION_CLASS}`;
-    } else if (selectedPortal === "general") {
-      document.documentElement.style.backgroundColor = "#020617";
-      document.body.style.backgroundColor = "#020617";
-      if (wrapper) wrapper.style.backgroundColor = "#020617";
-      if (blur1) blur1.className = `${BACKGROUND_BLUR_BASE_CLASS} bg-blue-500/20 ${BACKGROUND_TRANSITION_CLASS}`;
-      if (blur2) blur2.className = `${BACKGROUND_BLUR_SECONDARY_CLASS} bg-blue-700/10 ${BACKGROUND_TRANSITION_CLASS}`;
     } else {
       document.documentElement.style.backgroundColor = "#020617";
       document.body.style.backgroundColor = "#020617";
       if (wrapper) wrapper.style.backgroundColor = "#020617";
-      if (blur1) blur1.className = `${BACKGROUND_BLUR_BASE_CLASS} bg-blue-500/20 ${BACKGROUND_TRANSITION_CLASS}`;
-      if (blur2) blur2.className = `${BACKGROUND_BLUR_SECONDARY_CLASS} bg-purple-500/10 ${BACKGROUND_TRANSITION_CLASS}`;
     }
     return () => {
       document.documentElement.style.backgroundColor = "";
@@ -424,7 +368,7 @@ function LoginPageDesktop() {
   return (
       <div className="w-full flex items-center justify-center p-0 sm:p-4 lg:p-6 min-h-screen lg:min-h-0">
         <div
-          className="relative flex w-full max-w-[1280px] min-h-[700px] lg:h-[820px] overflow-hidden rounded-[2.5rem] border border-white/5 bg-slate-950 shadow-[0_24px_48px_-12px_rgba(0,0,0,0.45)]"
+          className="relative flex w-full max-w-[1280px] min-h-[700px] lg:min-h-[640px] lg:h-[min(820px,calc(100dvh-3rem))] overflow-hidden rounded-[2.5rem] border border-white/5 bg-slate-950 shadow-sm"
         >
           {/* ═══════════════ LEFT PANEL: GENERAL HOSPITAL ═══════════════ */}
           <motion.div
@@ -435,23 +379,15 @@ function LoginPageDesktop() {
             }}
             transition={PANEL_TRANSITION}
             className={cn(
-              "relative min-w-0 flex flex-col h-full cursor-pointer group overflow-hidden transition-[flex] duration-[720ms] ease-[cubic-bezier(0.16,1,0.3,1)]",
+              "relative min-w-0 flex flex-col h-full cursor-pointer overflow-hidden transition-[flex] duration-200",
               leftPanelFlex,
               selectedPortal === "general"
                 ? "z-20 cursor-default"
                 : "z-10",
             )}
           >
-            {/* Background & Lighting Decor */}
+            {/* Navy panel background */}
             <div className="absolute inset-0 bg-gradient-to-br from-[#1e293b] via-[#0f172a] to-[#020617] z-0" />
-            <div
-              className="absolute inset-0 z-0 opacity-0 transition-opacity duration-400 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:opacity-100"
-              style={{
-                background:
-                  "radial-gradient(circle at 28% 22%, rgba(96,165,250,0.12), transparent 34%), radial-gradient(circle at 72% 70%, rgba(14,165,233,0.08), transparent 32%)",
-              }}
-            />
-            <div className="absolute inset-0 opacity-0 group-hover:opacity-10 transition-opacity duration-300 bg-gradient-to-tr from-blue-500 via-transparent to-transparent z-0" />
 
             {selectedPortal === "infertility" ? (
               <CompactPortalRail
@@ -474,7 +410,7 @@ function LoginPageDesktop() {
                   <h1 className="text-xl lg:text-2xl font-black text-white tracking-tight uppercase">
                     FNH <span className="text-blue-500">Connect</span>
                   </h1>
-                  <p className="text-[10px] font-bold text-blue-400/60 uppercase tracking-[0.3em]">
+                  <p className="text-2xs font-bold text-blue-400/60 uppercase tracking-[0.3em]">
                     Hospital Management
                   </p>
                 </motion.div>
@@ -487,10 +423,10 @@ function LoginPageDesktop() {
                       key="general-active"
                       {...activePortalMotion}
                       transition={ACTIVE_PORTAL_TRANSITION}
-                      className="absolute inset-0 flex flex-col justify-center"
+                      className="absolute inset-0 flex flex-col overflow-y-auto"
                       onClick={(e) => e.stopPropagation()}
                     >
-                      <div className="mx-auto w-full max-w-md">
+                      <div className="mx-auto my-auto w-full max-w-md">
                         <PortalTopBar
                           portal="general"
                           onBack={() => setSelectedPortal(null)}
@@ -504,16 +440,14 @@ function LoginPageDesktop() {
                             Access the central system for general patient admissions, pathology records, and hospital operations.
                           </p>
                         </div>
-                        <div className="bg-[#0f172a]/90 backdrop-blur-xl border border-blue-500/20 p-6 lg:p-8 rounded-[2.5rem] shadow-[0_0_32px_-12px_rgba(59,130,246,0.22)] relative overflow-hidden group/form">
-                          <div className="absolute inset-0 bg-gradient-to-br from-blue-600/10 via-transparent to-transparent opacity-50 pointer-events-none" />
-                          <div className="relative z-10">
-                            <LoginForm
-                              onSubmit={handleLogin}
-                              isLoading={isLoading}
-                              error={error}
-                              portal="general"
-                            />
-                          </div>
+                        <div className="rounded-2xl border border-blue-500/20 bg-[#0f172a] p-6 lg:p-8">
+                          <LoginForm
+                            onSubmit={handleLogin}
+                            isLoading={isLoading}
+                            error={error}
+                            portal="general"
+                            idPrefix="desktop-general-"
+                          />
                         </div>
                       </div>
                     </motion.div>
@@ -521,20 +455,17 @@ function LoginPageDesktop() {
                     <motion.div
                       key="general-intro"
                       {...introPortalMotion}
-                      transition={{
-                        ...INTRO_PORTAL_TRANSITION,
-                        delay: selectedPortal ? 0.08 : 0.04,
-                      }}
+                      transition={INTRO_PORTAL_TRANSITION}
                       className="absolute inset-0 flex flex-col justify-center overflow-visible"
                     >
                       <PortalGhostLogo portal="general" />
-                      <div className="relative z-10 w-[28rem] space-y-7">
+                      <div className="relative z-10 my-auto w-full max-w-[28rem] space-y-7">
                         <motion.div
                           {...introItemMotion}
-                          transition={{ duration: 0.36, ease: SOFT_EASE }}
+                          transition={tween(DURATION.base)}
                           className="max-w-md"
                         >
-                          <div className="mb-8 inline-flex items-center gap-2 rounded-full border border-blue-400/20 bg-blue-400/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.3em] text-blue-300 shadow-[0_10px_24px_-18px_rgba(59,130,246,0.65)] backdrop-blur-md">
+                          <div className="mb-8 inline-flex items-center gap-2 rounded-full border border-blue-400/20 bg-blue-400/10 px-3 py-1 text-2xs font-black uppercase tracking-[0.3em] text-blue-300">
                             <Building2 className="w-3 h-3" /> System Primary
                           </div>
                           <h2 className="mb-8 text-5xl font-black leading-[0.9] tracking-tighter text-white lg:text-7xl">
@@ -553,8 +484,8 @@ function LoginPageDesktop() {
 
                         <motion.div
                           {...introItemMotion}
-                          transition={{ duration: 0.36, delay: 0.1, ease: SOFT_EASE }}
-                          className="lg:hidden flex items-center gap-2 text-blue-500 font-bold text-sm uppercase tracking-widest animate-pulse"
+                          transition={tween(DURATION.base)}
+                          className="lg:hidden flex items-center gap-2 text-blue-500 font-bold text-sm uppercase tracking-widest"
                         >
                           Tap to Enter <ArrowRight className="w-4 h-4" />
                         </motion.div>
@@ -565,8 +496,6 @@ function LoginPageDesktop() {
               </div>
             </div>
             )}
-            {/* Hover Decor */}
-            <div className="absolute bottom-0 right-0 w-64 h-64 bg-blue-600/10 rounded-full blur-[80px] -mr-32 -mb-32 group-hover:bg-blue-600/25 group-hover:scale-125 transition-[colors,opacity,transform] duration-500" />
           </motion.div>
 
           {/* ═══════════════ RIGHT PANEL: INFERTILITY ═══════════════ */}
@@ -578,23 +507,15 @@ function LoginPageDesktop() {
             }}
             transition={PANEL_TRANSITION}
             className={cn(
-              "relative min-w-0 flex flex-col h-full cursor-pointer group overflow-hidden transition-[flex] duration-[720ms] ease-[cubic-bezier(0.16,1,0.3,1)]",
+              "relative min-w-0 flex flex-col h-full cursor-pointer overflow-hidden transition-[flex] duration-200",
               rightPanelFlex,
               selectedPortal === "infertility"
                 ? "z-20 cursor-default"
                 : "z-10",
             )}
           >
-            {/* Background & Lighting Decor */}
+            {/* Navy panel background */}
             <div className="absolute inset-0 bg-gradient-to-br from-[#111827] via-[#064e3b] to-[#022c22] z-0" />
-            <div
-              className="absolute inset-0 z-0 opacity-0 transition-opacity duration-400 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:opacity-100"
-              style={{
-                background:
-                  "radial-gradient(circle at 72% 22%, rgba(52,211,153,0.12), transparent 34%), radial-gradient(circle at 24% 72%, rgba(20,184,166,0.08), transparent 32%)",
-              }}
-            />
-            <div className="absolute inset-0 opacity-0 group-hover:opacity-10 transition-opacity duration-300 bg-gradient-to-tl from-emerald-500 via-transparent to-transparent z-0" />
 
             {selectedPortal === "general" ? (
               <CompactPortalRail
@@ -618,7 +539,7 @@ function LoginPageDesktop() {
                   <h1 className="text-xl lg:text-2xl font-black text-white tracking-tight uppercase">
                      HSI <span className="text-emerald-500">Center</span>
                   </h1>
-                  <p className="text-[10px] font-bold text-emerald-400/60 uppercase tracking-[0.3em]">
+                  <p className="text-2xs font-bold text-emerald-400/60 uppercase tracking-[0.3em]">
                      Infertility Portal
                   </p>
                 </motion.div>
@@ -631,10 +552,10 @@ function LoginPageDesktop() {
                       key="infertility-active"
                       {...activePortalMotion}
                       transition={ACTIVE_PORTAL_TRANSITION}
-                      className="absolute inset-0 flex flex-col justify-center"
+                      className="absolute inset-0 flex flex-col overflow-y-auto"
                       onClick={(e) => e.stopPropagation()}
                     >
-                      <div className="mx-auto w-full max-w-md">
+                      <div className="mx-auto my-auto w-full max-w-md">
                         <PortalTopBar
                           portal="infertility"
                           onBack={() => setSelectedPortal(null)}
@@ -648,16 +569,14 @@ function LoginPageDesktop() {
                              Access the dedicated portal for HSI treatments, related diagnostics, and specialized patient management.
                            </p>
                         </div>
-                        <div className="bg-[#022c22]/90 backdrop-blur-xl border border-emerald-500/20 p-6 lg:p-8 rounded-[2.5rem] shadow-[0_0_32px_-12px_rgba(16,185,129,0.22)] relative overflow-hidden group/form">
-                          <div className="absolute inset-0 bg-gradient-to-br from-emerald-600/10 via-transparent to-transparent opacity-50 pointer-events-none" />
-                          <div className="relative z-10">
-                            <LoginForm
-                              onSubmit={handleLogin}
-                              isLoading={isLoading}
-                              error={error}
-                              portal="infertility"
-                            />
-                          </div>
+                        <div className="rounded-2xl border border-emerald-500/20 bg-[#022c22] p-6 lg:p-8">
+                          <LoginForm
+                            onSubmit={handleLogin}
+                            isLoading={isLoading}
+                            error={error}
+                            portal="infertility"
+                            idPrefix="desktop-infertility-"
+                          />
                         </div>
                       </div>
                     </motion.div>
@@ -665,20 +584,17 @@ function LoginPageDesktop() {
                     <motion.div
                       key="infertility-intro"
                       {...introPortalMotion}
-                      transition={{
-                        ...INTRO_PORTAL_TRANSITION,
-                        delay: selectedPortal ? 0.08 : 0.04,
-                      }}
+                      transition={INTRO_PORTAL_TRANSITION}
                       className="absolute inset-0 flex flex-col items-end justify-center overflow-visible text-right lg:items-start lg:text-left"
                     >
                       <PortalGhostLogo portal="infertility" />
-                      <div className="relative z-10 w-[28rem] space-y-7">
+                      <div className="relative z-10 my-auto w-full max-w-[28rem] space-y-7">
                         <motion.div
                           {...introItemMotion}
-                          transition={{ duration: 0.36, ease: SOFT_EASE }}
+                          transition={tween(DURATION.base)}
                           className="max-w-md"
                         >
-                          <div className="mb-8 inline-flex items-center gap-2 rounded-full border border-emerald-300/20 bg-emerald-400/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.3em] text-emerald-300 shadow-[0_10px_24px_-18px_rgba(16,185,129,0.65)] backdrop-blur-md">
+                          <div className="mb-8 inline-flex items-center gap-2 rounded-full border border-emerald-300/20 bg-emerald-400/10 px-3 py-1 text-2xs font-black uppercase tracking-[0.3em] text-emerald-300">
                             <Microscope className="w-3 h-3" /> Infertility Care
                           </div>
                            <h2 className="mb-8 text-5xl font-black leading-[0.9] tracking-tighter text-white lg:text-7xl">
@@ -697,8 +613,8 @@ function LoginPageDesktop() {
 
                         <motion.div
                           {...introItemMotion}
-                          transition={{ duration: 0.36, delay: 0.1, ease: SOFT_EASE }}
-                          className="lg:hidden flex items-center gap-2 text-emerald-500 font-bold text-sm uppercase tracking-widest animate-pulse"
+                          transition={tween(DURATION.base)}
+                          className="lg:hidden flex items-center gap-2 text-emerald-500 font-bold text-sm uppercase tracking-widest"
                         >
                           <ArrowLeft className="w-4 h-4" /> Tap to Enter
                         </motion.div>
@@ -709,8 +625,6 @@ function LoginPageDesktop() {
               </div>
             </div>
             )}
-            {/* Hover Decor */}
-            <div className="absolute top-0 left-0 w-64 h-64 bg-emerald-600/10 rounded-full blur-[80px] -ml-32 -mt-32 group-hover:bg-emerald-600/25 group-hover:scale-125 transition-[colors,opacity,transform] duration-500" />
           </motion.div>
 
           {!selectedPortal ? (

@@ -38,7 +38,7 @@ const NewPatientButton: React.FC<{
   <button
     onClick={onClick}
     disabled={disabled}
-    className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 sm:px-6 py-3 bg-linear-to-r from-emerald-600 to-green-600 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl hover:from-emerald-700 hover:to-green-700 transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+    className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 sm:px-6 h-10 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
   >
     <svg
       className="w-5 h-5"
@@ -99,6 +99,7 @@ const GeneralAdmissionPage = React.memo(() => {
     data: admissionsData,
     isLoading,
     error,
+    refetch,
   } = useFetchAdmissions({
     ...hookFilters,
     page: filterValues.page,
@@ -190,14 +191,29 @@ const GeneralAdmissionPage = React.memo(() => {
               ref={tableContainerRef}
               className="bg-white rounded-xl sm:rounded-3xl shadow-sm border border-slate-100 overflow-hidden mb-4 sm:mb-8"
             >
-              <AdmissionTable
-                tableData={admissions}
-                isLoading={isLoading}
-                onEdit={handleEdit}
-                onStatusChange={handleStatusChange}
-                isStatusUpdating={isStatusUpdating}
-                startIndex={(filterValues.page - 1) * filterValues.limit}
-              />
+              {error ? (
+                <div role="alert" className="p-8 text-center">
+                  <p className="text-sm font-medium text-red-700">
+                    Could not load admissions.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => void refetch()}
+                    className="mt-3 inline-flex h-9 items-center justify-center rounded-lg border border-slate-300 bg-white px-4 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer"
+                  >
+                    Try again
+                  </button>
+                </div>
+              ) : (
+                <AdmissionTable
+                  tableData={admissions}
+                  isLoading={isLoading}
+                  onEdit={handleEdit}
+                  onStatusChange={handleStatusChange}
+                  isStatusUpdating={isStatusUpdating}
+                  startIndex={(filterValues.page - 1) * filterValues.limit}
+                />
+              )}
             </div>
 
             {/* Pagination UI - Separate from table */}

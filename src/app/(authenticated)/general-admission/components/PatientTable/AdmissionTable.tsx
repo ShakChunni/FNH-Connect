@@ -2,11 +2,19 @@ import React, { useState, useMemo, useCallback } from "react";
 import { usePagination } from "@/hooks/usePagination";
 import { useHorizontalDragScroll } from "@/hooks/useHorizontalDragScroll";
 import { Pagination } from "@/components/pagination/Pagination";
-import TableRow from "./components/TableRow";
+import TableRow, {
+  AdmissionRowActions,
+  AdmissionStatusBadge,
+} from "./components/TableRow";
 import TableRowSkeleton from "./components/TableRowSkeleton";
 import AdmissionOverview from "./components/AdmissionOverview/AdmissionOverview";
 import { AdmissionPatientData, SortConfig, AdmissionStatus } from "../../types";
-import { getTableHeaders, TableHeader } from "./utils";
+import {
+  formatCurrency,
+  formatDateWithTime,
+  getTableHeaders,
+  TableHeader,
+} from "./utils";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
 
 interface AdmissionTableProps {
@@ -190,8 +198,8 @@ const AdmissionTable: React.FC<AdmissionTableProps> = ({
   const getHeaderClasses = (header: TableHeader, index: number) => {
     const baseClasses = `
       px-2 py-2 sm:px-3 sm:py-3 md:px-4 md:py-4
-      text-left text-[10px] sm:text-xs md:text-xs
-      font-semibold text-white uppercase tracking-wider
+      text-left text-xs
+      font-semibold text-white uppercase tracking-wide
       bg-fnh-navy
       transition-colors
       ${
@@ -202,23 +210,133 @@ const AdmissionTable: React.FC<AdmissionTableProps> = ({
     `;
 
     if (index === 0) {
-      return `${baseClasses} ${FIRST_COL_WIDTH} lg:sticky lg:z-30 lg:left-0 lg:bg-[#111827]`;
+      return `${baseClasses} ${FIRST_COL_WIDTH} lg:sticky lg:z-30 lg:left-0 lg:bg-fnh-navy`;
     }
     if (index === 1) {
-      return `${baseClasses} ${SECOND_COL_WIDTH} lg:sticky lg:z-30 lg:left-[60px] lg:bg-[#111827]`;
+      return `${baseClasses} ${SECOND_COL_WIDTH} lg:sticky lg:z-30 lg:left-[60px] lg:bg-fnh-navy`;
     }
     if (index === 2) {
-      return `${baseClasses} ${THIRD_COL_WIDTH} lg:sticky lg:z-30 lg:left-[160px] lg:bg-[#111827]`;
+      return `${baseClasses} ${THIRD_COL_WIDTH} lg:sticky lg:z-30 lg:left-[160px] lg:bg-fnh-navy`;
     }
     return baseClasses;
   };
 
+  // Phone layout: one card per admission, same data and actions as the table row
+  const renderMobileCards = (rows: AdmissionPatientData[]) => (
+    <div className="md:hidden divide-y divide-slate-100">
+      {rows.map((row, index) => {
+        const serial = (startIndex ?? (currentPage - 1) * 15) + index + 1;
+
+        return (
+          <div key={row.id} className="p-4 space-y-3">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-2xs font-semibold text-slate-500 tabular-nums">
+                  #{serial}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => handlePatientClick(row)}
+                  className="block max-w-full truncate text-left text-sm font-semibold text-slate-900 hover:text-fnh-blue cursor-pointer"
+                >
+                  {row.patientFullName}
+                </button>
+                <p className="text-xs text-slate-500">
+                  {row.patientGender}
+                  {row.patientAge ? `, ${row.patientAge}y` : ""}
+                </p>
+              </div>
+              <AdmissionStatusBadge status={row.status} />
+            </div>
+
+            <dl className="grid grid-cols-2 gap-x-4 gap-y-2.5 text-xs">
+              <div className="min-w-0">
+                <dt className="text-2xs font-semibold uppercase tracking-wide text-slate-500">
+                  Admission #
+                </dt>
+                <dd className="mt-0.5 font-mono tabular-nums text-fnh-navy break-all">
+                  {row.admissionNumber}
+                </dd>
+              </div>
+              <div className="min-w-0">
+                <dt className="text-2xs font-semibold uppercase tracking-wide text-slate-500">
+                  Admitted
+                </dt>
+                <dd className="mt-0.5 text-slate-700">
+                  {formatDateWithTime(row.dateAdmitted)}
+                </dd>
+              </div>
+              <div className="min-w-0">
+                <dt className="text-2xs font-semibold uppercase tracking-wide text-slate-500">
+                  Department
+                </dt>
+                <dd className="mt-0.5 text-slate-700">{row.departmentName}</dd>
+              </div>
+              <div className="min-w-0">
+                <dt className="text-2xs font-semibold uppercase tracking-wide text-slate-500">
+                  Doctor
+                </dt>
+                <dd className="mt-0.5 text-slate-700">
+                  {row.doctorName}
+                  {row.doctorSpecialization && (
+                    <span className="block text-2xs text-slate-500">
+                      {row.doctorSpecialization}
+                    </span>
+                  )}
+                </dd>
+              </div>
+              <div className="min-w-0">
+                <dt className="text-2xs font-semibold uppercase tracking-wide text-slate-500">
+                  Total (BDT)
+                </dt>
+                <dd className="mt-0.5 font-semibold tabular-nums text-emerald-700">
+                  {formatCurrency(row.grandTotal)}
+                </dd>
+              </div>
+              <div className="min-w-0">
+                <dt className="text-2xs font-semibold uppercase tracking-wide text-slate-500">
+                  Due (BDT)
+                </dt>
+                <dd
+                  className={`mt-0.5 font-semibold tabular-nums ${
+                    row.dueAmount > 0 ? "text-red-600" : "text-slate-500"
+                  }`}
+                >
+                  {formatCurrency(row.dueAmount)}
+                </dd>
+              </div>
+            </dl>
+
+            <div className="border-t border-slate-100 pt-3">
+              <AdmissionRowActions
+                row={row}
+                onEdit={onEdit}
+                onStatusChange={handleStatusChangeRequest}
+                isStatusUpdating={isStatusUpdating}
+              />
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+
   return (
     <>
-      <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg overflow-hidden">
+      <div className="bg-white rounded-xl sm:rounded-2xl shadow-sm overflow-hidden">
         {isLoading ? (
+          <>
+          <div className="md:hidden divide-y divide-slate-100">
+            {Array.from({ length: 5 }).map((_, index) => (
+              <div key={index} className="p-4 space-y-3">
+                <div className="h-4 w-40 rounded bg-slate-200 animate-pulse" />
+                <div className="h-3 w-24 rounded bg-slate-200 animate-pulse" />
+                <div className="h-3 w-full rounded bg-slate-200 animate-pulse" />
+              </div>
+            ))}
+          </div>
           <div
-            className="overflow-x-auto overflow-y-auto w-full"
+            className="hidden md:block overflow-x-auto overflow-y-auto w-full"
             style={{ maxHeight: "600px" }}
             ref={dragScroll.ref}
             onMouseDown={dragScroll.onMouseDown}
@@ -226,7 +344,7 @@ const AdmissionTable: React.FC<AdmissionTableProps> = ({
             onMouseMove={dragScroll.onMouseMove}
             onMouseLeave={dragScroll.onMouseLeave}
           >
-            <table className="min-w-full divide-y divide-gray-200">
+            <table className="min-w-full divide-y divide-slate-200">
               <thead className="bg-fnh-navy sticky top-0 z-20">
                 <tr>
                   {headers.map((header, index) => (
@@ -241,7 +359,7 @@ const AdmissionTable: React.FC<AdmissionTableProps> = ({
                   ))}
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-100">
+              <tbody className="bg-white divide-y divide-slate-100">
                 {Array.from({ length: 15 }).map((_, index) => (
                   <TableRowSkeleton
                     key={index}
@@ -252,10 +370,11 @@ const AdmissionTable: React.FC<AdmissionTableProps> = ({
               </tbody>
             </table>
           </div>
+          </>
         ) : paginatedData.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-12 sm:py-16 text-gray-500">
+          <div className="flex flex-col items-center justify-center py-12 sm:py-16 text-slate-500">
             <svg
-              className="w-12 h-12 sm:w-16 sm:h-16 mb-3 sm:mb-4 text-gray-300"
+              className="w-12 h-12 sm:w-16 sm:h-16 mb-3 sm:mb-4 text-slate-300"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -275,8 +394,10 @@ const AdmissionTable: React.FC<AdmissionTableProps> = ({
             </p>
           </div>
         ) : (
+          <>
+          {renderMobileCards(paginatedData)}
           <div
-            className="overflow-x-auto overflow-y-auto w-full"
+            className="hidden md:block overflow-x-auto overflow-y-auto w-full"
             style={{ maxHeight: "600px" }}
             ref={dragScroll.ref}
             onMouseDown={dragScroll.onMouseDown}
@@ -284,7 +405,7 @@ const AdmissionTable: React.FC<AdmissionTableProps> = ({
             onMouseMove={dragScroll.onMouseMove}
             onMouseLeave={dragScroll.onMouseLeave}
           >
-            <table className="min-w-full divide-y divide-gray-200">
+            <table className="min-w-full divide-y divide-slate-200">
               <thead className="bg-fnh-navy sticky top-0 z-20">
                 <tr>
                   {headers.map((header, index) => (
@@ -307,7 +428,7 @@ const AdmissionTable: React.FC<AdmissionTableProps> = ({
                   ))}
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className="bg-white divide-y divide-slate-200">
                 {paginatedData.map((row, index) => (
                   <TableRow
                     key={row.id}
@@ -323,6 +444,7 @@ const AdmissionTable: React.FC<AdmissionTableProps> = ({
               </tbody>
             </table>
           </div>
+          </>
         )}
       </div>
 

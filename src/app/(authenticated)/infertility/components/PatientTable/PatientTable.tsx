@@ -106,6 +106,11 @@ const PatientTable: React.FC<PatientTableProps> = ({
     currentPage * 15
   );
 
+  const getRowNumber = (index: number) =>
+    startIndex
+      ? startIndex + index
+      : (currentPage - 1) * 15 + index + 1;
+
   const headers = getTableHeaders();
 
   // Sorting
@@ -134,78 +139,93 @@ const PatientTable: React.FC<PatientTableProps> = ({
   const SECOND_COL_WIDTH = "w-[120px] min-w-[120px]";
   const THIRD_COL_WIDTH = "w-[200px] min-w-[200px]";
 
-  // Get header classes based on pinning and position - FNH Navy styling
+  // Header cells: FNH navy (themed per portal), white text
   const getHeaderClasses = (header: TableHeader, index: number) => {
     const baseClasses = `
       px-2 py-2 sm:px-3 sm:py-3 md:px-4 md:py-4
-      text-left text-[10px] sm:text-xs md:text-xs
-      font-semibold text-white uppercase tracking-wider
-      bg-emerald-900
+      text-left text-xs font-semibold uppercase tracking-wide text-white
+      bg-fnh-navy
       transition-colors
       ${
         header.key !== "id" && header.key !== "actions"
-          ? "cursor-pointer hover:bg-emerald-950"
+          ? "cursor-pointer hover:bg-fnh-navy-light"
           : ""
       }
     `;
 
     // Pinned columns only on lg+ screens with fixed widths
     if (index === 0) {
-      return `${baseClasses} ${FIRST_COL_WIDTH} lg:sticky lg:z-30 lg:left-0 lg:bg-[#111827]`;
+      return `${baseClasses} ${FIRST_COL_WIDTH} lg:sticky lg:z-30 lg:left-0 lg:bg-fnh-navy`;
     }
     if (index === 1) {
-      return `${baseClasses} ${SECOND_COL_WIDTH} lg:sticky lg:z-30 lg:left-[60px] lg:bg-[#111827]`;
+      return `${baseClasses} ${SECOND_COL_WIDTH} lg:sticky lg:z-30 lg:left-[60px] lg:bg-fnh-navy`;
     }
     if (index === 2) {
-      return `${baseClasses} ${THIRD_COL_WIDTH} lg:sticky lg:z-30 lg:left-[180px] lg:bg-[#111827]`;
+      return `${baseClasses} ${THIRD_COL_WIDTH} lg:sticky lg:z-30 lg:left-[180px] lg:bg-fnh-navy`;
     }
     return baseClasses;
   };
 
   return (
     <>
-      <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg overflow-hidden">
-        {/* Table Container */}
+      <div className="bg-white rounded-xl sm:rounded-2xl overflow-hidden">
+        {/* Table Container: desktop table, phone cards below md */}
         {isLoading ? (
-          <div
-            className="overflow-x-auto overflow-y-auto w-full"
-            style={{ maxHeight: "600px" }}
-            ref={dragScroll.ref}
-            onMouseDown={dragScroll.onMouseDown}
-            onMouseUp={dragScroll.onMouseUp}
-            onMouseMove={dragScroll.onMouseMove}
-            onMouseLeave={dragScroll.onMouseLeave}
-          >
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-emerald-900 sticky top-0 z-20">
-                <tr>
-                  {headers.map((header, index) => (
-                    <th
-                      key={header.key}
-                      className={getHeaderClasses(header, index)}
-                    >
-                      <div className="flex items-center gap-1 sm:gap-2 group">
-                        {header.label}
-                      </div>
-                    </th>
+          <>
+            <div
+              className="hidden md:block overflow-x-auto overflow-y-auto w-full"
+              style={{ maxHeight: "600px" }}
+              ref={dragScroll.ref}
+              onMouseDown={dragScroll.onMouseDown}
+              onMouseUp={dragScroll.onMouseUp}
+              onMouseMove={dragScroll.onMouseMove}
+              onMouseLeave={dragScroll.onMouseLeave}
+            >
+              <table className="min-w-full divide-y divide-slate-200">
+                <thead className="bg-fnh-navy sticky top-0 z-20">
+                  <tr>
+                    {headers.map((header, index) => (
+                      <th
+                        key={header.key}
+                        className={getHeaderClasses(header, index)}
+                      >
+                        <div className="flex items-center gap-1 sm:gap-2 group">
+                          {header.label}
+                        </div>
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-slate-100">
+                  {Array.from({ length: 15 }).map((_, index) => (
+                    <TableRowSkeleton
+                      key={index}
+                      headers={headers}
+                      rowIndex={index}
+                    />
                   ))}
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-100">
-                {Array.from({ length: 15 }).map((_, index) => (
-                  <TableRowSkeleton
-                    key={index}
-                    headers={headers}
-                    rowIndex={index}
-                  />
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </tbody>
+              </table>
+            </div>
+            <div className="md:hidden divide-y divide-slate-100">
+              {Array.from({ length: 6 }).map((_, index) => (
+                <div key={index} className="p-4 space-y-3 animate-pulse">
+                  <div className="h-4 w-40 rounded bg-slate-200" />
+                  <div className="h-3 w-24 rounded bg-slate-100" />
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="h-3 rounded bg-slate-100" />
+                    <div className="h-3 rounded bg-slate-100" />
+                    <div className="h-3 rounded bg-slate-100" />
+                    <div className="h-3 rounded bg-slate-100" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
         ) : paginatedData.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-12 sm:py-16 text-gray-500">
+          <div className="flex flex-col items-center justify-center py-12 sm:py-16 text-slate-500">
             <svg
-              className="w-12 h-12 sm:w-16 sm:h-16 mb-3 sm:mb-4 text-gray-300"
+              className="w-12 h-12 sm:w-16 sm:h-16 mb-3 sm:mb-4 text-slate-300"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -225,59 +245,74 @@ const PatientTable: React.FC<PatientTableProps> = ({
             </p>
           </div>
         ) : (
-          <div
-            className="overflow-x-auto overflow-y-auto w-full"
-            style={{ maxHeight: "600px" }}
-            ref={dragScroll.ref}
-            onMouseDown={dragScroll.onMouseDown}
-            onMouseUp={dragScroll.onMouseUp}
-            onMouseMove={dragScroll.onMouseMove}
-            onMouseLeave={dragScroll.onMouseLeave}
-          >
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-emerald-900 sticky top-0 z-20">
-                <tr>
-                  {headers.map((header, index) => (
-                    <th
-                      key={header.key}
-                      className={getHeaderClasses(header, index)}
-                      onClick={() => requestSort(header.key)}
-                    >
-                      <div className="flex items-center gap-1 sm:gap-2 group">
-                        <span className="whitespace-nowrap">
-                          {header.label}
-                        </span>
-                        {sortConfig?.key === header.key && (
-                          <span className="text-fnh-yellow font-bold">
-                            {sortConfig.direction === "ascending" ? "↑" : "↓"}
+          <>
+            <div
+              className="hidden md:block overflow-x-auto overflow-y-auto w-full"
+              style={{ maxHeight: "600px" }}
+              ref={dragScroll.ref}
+              onMouseDown={dragScroll.onMouseDown}
+              onMouseUp={dragScroll.onMouseUp}
+              onMouseMove={dragScroll.onMouseMove}
+              onMouseLeave={dragScroll.onMouseLeave}
+            >
+              <table className="min-w-full divide-y divide-slate-200">
+                <thead className="bg-fnh-navy sticky top-0 z-20">
+                  <tr>
+                    {headers.map((header, index) => (
+                      <th
+                        key={header.key}
+                        className={getHeaderClasses(header, index)}
+                        onClick={() => requestSort(header.key)}
+                      >
+                        <div className="flex items-center gap-1 sm:gap-2 group">
+                          <span className="whitespace-nowrap">
+                            {header.label}
                           </span>
-                        )}
-                      </div>
-                    </th>
+                          {sortConfig?.key === header.key && (
+                            <span className="text-fnh-yellow font-bold">
+                              {sortConfig.direction === "ascending" ? "↑" : "↓"}
+                            </span>
+                          )}
+                        </div>
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-slate-200">
+                  {paginatedData.map((row, index) => (
+                    <TableRow
+                      key={row.id}
+                      row={row}
+                      index={getRowNumber(index)}
+                      headers={headers}
+                      onEdit={onEdit}
+                      onOrderInvestigation={onOrderInvestigation}
+                      onSetAdmitted={onSetAdmitted}
+                      isStatusUpdating={isStatusUpdating}
+                      onClick={() => handleRowClick(row)}
+                    />
                   ))}
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {paginatedData.map((row, index) => (
-                  <TableRow
-                    key={row.id}
-                    row={row}
-                    index={
-                      startIndex
-                        ? startIndex + index
-                        : (currentPage - 1) * 15 + index + 1
-                    }
-                    headers={headers}
-                    onEdit={onEdit}
-                    onOrderInvestigation={onOrderInvestigation}
-                    onSetAdmitted={onSetAdmitted}
-                    isStatusUpdating={isStatusUpdating}
-                    onClick={() => handleRowClick(row)}
-                  />
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </tbody>
+              </table>
+            </div>
+
+            <div className="md:hidden divide-y divide-slate-100">
+              {paginatedData.map((row, index) => (
+                <TableRow
+                  key={row.id}
+                  variant="card"
+                  row={row}
+                  index={getRowNumber(index)}
+                  headers={headers}
+                  onEdit={onEdit}
+                  onOrderInvestigation={onOrderInvestigation}
+                  onSetAdmitted={onSetAdmitted}
+                  isStatusUpdating={isStatusUpdating}
+                  onClick={() => handleRowClick(row)}
+                />
+              ))}
+            </div>
+          </>
         )}
       </div>
 

@@ -7,7 +7,7 @@ import React, {
   memo,
 } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Text } from "@radix-ui/themes";
+import { SPRING } from "@/lib/motion";
 import {
   getCountries,
   getCountryCallingCode,
@@ -75,7 +75,7 @@ const LazyFlag = memo(
         style={{ width: "1.2em", height: "1.2em", marginRight: "0.25rem" }}
       >
         {!isLoaded && (
-          <div className="w-full h-full bg-gray-200 rounded-sm absolute"></div>
+          <div className="w-full h-full bg-slate-200 rounded-sm absolute"></div>
         )}
         <Flag
           code={code}
@@ -110,12 +110,12 @@ const CountryItem = memo(
         style={{ height: "48px", ...style }}
       >
         <LazyFlag code={country.code} />
-        <Text className="flex-1 text-xs sm:text-sm md:text-sm lg:text-sm xl:text-sm">
+        <span className="flex-1 text-xs sm:text-sm md:text-sm lg:text-sm xl:text-sm">
           {country.name}
-        </Text>
-        <Text className="text-xs sm:text-sm md:text-sm lg:text-sm xl:text-sm font-medium">
+        </span>
+        <span className="text-xs sm:text-sm md:text-sm lg:text-sm xl:text-sm font-medium">
           {country.dialCode}
-        </Text>
+        </span>
       </div>
     );
   },
@@ -455,15 +455,15 @@ const ContactPhoneInput: React.FC<ContactPhoneInputProps> = memo(
                 : shouldShowSuccess
                 ? "border border-green-700 ring-1 ring-green-700 bg-white"
                 : shouldShowError
-                ? "border-2 border-red-700 ring-2 ring-red-700 bg-gray-50"
-                : "border-2 border-gray-300 bg-gray-50"
+                ? "border-2 border-red-700 ring-2 ring-red-700 bg-slate-50"
+                : "border-2 border-slate-300 bg-slate-50"
             }
             focus-within:border-blue-900 focus-within:ring-2 focus-within:ring-blue-950
-            shadow-sm hover:shadow-md transition-all duration-300
+            shadow-sm transition-colors duration-200
           `}
         >
           <div
-            className="flex items-center bg-gray-200 px-3 py-2 cursor-pointer h-14"
+            className="flex items-center bg-slate-200 px-3 py-2 cursor-pointer h-14"
             style={{ minWidth: "90px", maxWidth: "90px" }}
             onClick={toggleDropdown}
           >
@@ -508,13 +508,13 @@ const ContactPhoneInput: React.FC<ContactPhoneInputProps> = memo(
             className={`
               flex-1 px-3 py-2 text-[#2A3136] outline-none h-14 font-normal 
               text-xs sm:text-sm md:text-sm lg:text-sm xl:text-sm 
-              placeholder:text-gray-400 placeholder:font-light
+              placeholder:text-slate-400 placeholder:font-light
               ${
                 isAutofilled
                   ? "bg-green-50"
                   : shouldShowSuccess
                   ? "bg-white"
-                  : "bg-gray-50"
+                  : "bg-slate-50"
               }
             `}
             placeholder="Enter phone number"
@@ -554,11 +554,7 @@ const ContactPhoneInput: React.FC<ContactPhoneInputProps> = memo(
                       y: 0,
                       scale: 1,
                       height: "auto",
-                      transition: {
-                        type: "spring",
-                        stiffness: 300,
-                        damping: 20,
-                      },
+                      transition: SPRING,
                     }
                   : { opacity: 0, y: -10, scale: 0.95, height: 0 }
               }
@@ -569,7 +565,7 @@ const ContactPhoneInput: React.FC<ContactPhoneInputProps> = memo(
                 height: 0,
                 transition: { duration: 0.2, ease: "easeOut" },
               }}
-              className="absolute z-50 bg-white border border-gray-300 rounded-lg mt-1 w-full overflow-hidden"
+              className="absolute z-50 bg-white border border-slate-300 rounded-lg mt-1 w-full overflow-hidden"
               style={{
                 maxHeight: "400px",
                 boxShadow:
@@ -579,14 +575,14 @@ const ContactPhoneInput: React.FC<ContactPhoneInputProps> = memo(
                 if (!isDropdownOpen) setIsDropdownReady(false);
               }}
             >
-              <div className="sticky top-0 bg-gray-50 z-10 p-3 border-b border-gray-200 shadow-sm">
+              <div className="sticky top-0 bg-slate-50 z-10 p-3 border-b border-slate-200 shadow-sm">
                 <div className="relative flex items-center">
                   <input
                     type="text"
                     placeholder="Search country..."
                     value={searchTerm}
                     onChange={handleSearchChange}
-                    className="country-search-input w-full p-2 sm:p-2 md:p-2 lg:p-2.5 rounded-xl border-2 border-gray-200 focus:border-blue-950 focus:ring-2 focus:ring-blue-950 focus:outline-none text-xs sm:text-sm md:text-sm lg:text-sm xl:text-sm bg-white transition-all duration-150 ease-in-out"
+                    className="country-search-input w-full p-2 sm:p-2 md:p-2 lg:p-2.5 rounded-xl border-2 border-slate-200 focus:border-blue-950 focus:ring-2 focus:ring-blue-950 focus:outline-none text-xs sm:text-sm md:text-sm lg:text-sm xl:text-sm bg-white transition-colors duration-150 ease-in-out"
                     autoFocus
                   />
                 </div>
@@ -599,7 +595,7 @@ const ContactPhoneInput: React.FC<ContactPhoneInputProps> = memo(
                   itemCount={filteredCountries.length}
                   itemSize={48}
                   overscanCount={5}
-                  className="scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent"
+                  className="scrollbar-thin scrollbar-thumb-slate-300 scrollbar-track-transparent"
                 >
                   {({ index, style }) => (
                     <CountryItem

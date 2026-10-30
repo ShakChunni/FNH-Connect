@@ -11,6 +11,7 @@ import {
   UserRound,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { StatusBadge } from "@/components/ui/StatusBadge";
 import { formatBDT } from "@/lib/timezone";
 import { InfertilityTestData } from "../../../../../types";
 import { INFERTILITY_TESTS } from "../../../../../constants/infertilityTests";
@@ -120,22 +121,22 @@ export const InvestigationDetails: React.FC<InvestigationDetailsProps> = ({
   };
 
   return (
-    <div className="overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm sm:rounded-2xl">
-      <div className="flex items-center justify-between bg-emerald-800 px-3 py-2.5 sm:px-5 sm:py-4">
+    <div className="overflow-hidden rounded-xl border border-slate-100 bg-white shadow-sm sm:rounded-2xl">
+      <div className="flex items-center justify-between bg-fnh-navy px-3 py-2.5 sm:px-5 sm:py-4">
         <div className="flex items-center gap-2">
           <Beaker size={14} className="text-white sm:h-4 sm:w-4" />
-          <h4 className="text-[11px] font-bold uppercase tracking-wide text-white sm:text-sm">
+          <h4 className="text-2xs font-bold uppercase tracking-wide text-white sm:text-sm">
             Investigations Ordered
           </h4>
         </div>
-        <span className="rounded-md bg-white/20 px-2 py-0.5 text-[10px] font-bold text-white sm:rounded-lg sm:px-2.5 sm:py-1 sm:text-xs">
+        <span className="rounded-md bg-white/20 px-2 py-0.5 text-2xs font-bold text-white sm:rounded-lg sm:px-2.5 sm:py-1 sm:text-xs">
           {tests.length} {tests.length === 1 ? "Record" : "Records"}
         </span>
       </div>
 
       <div className="space-y-4 p-3 sm:p-5">
         {groupedInvestigations.length === 0 ? (
-          <div className="py-6 text-center text-sm text-gray-400">
+          <div className="py-6 text-center text-sm text-slate-500">
             No investigations ordered yet.
           </div>
         ) : null}
@@ -180,7 +181,7 @@ export const InvestigationDetails: React.FC<InvestigationDetailsProps> = ({
                 <div className="flex items-center gap-2">
                   <span
                     className={cn(
-                      "rounded-lg px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide",
+                      "rounded-lg px-2.5 py-1 text-2xs font-bold uppercase tracking-wide",
                       group.badgeClassName,
                     )}
                   >
@@ -213,7 +214,7 @@ export const InvestigationDetails: React.FC<InvestigationDetailsProps> = ({
                         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                           <div className="min-w-0">
                             <div className="flex flex-wrap items-center gap-2">
-                              <span className="rounded-lg bg-slate-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-slate-700">
+                              <span className="rounded-lg bg-slate-100 px-2 py-0.5 text-2xs font-bold uppercase tracking-wide text-slate-700">
                                 #{index + 1}
                               </span>
                               <span className="font-mono text-sm font-bold text-slate-900">
@@ -222,16 +223,9 @@ export const InvestigationDetails: React.FC<InvestigationDetailsProps> = ({
                               <span className="text-xs text-slate-500">
                                 {formatDate(test.testDate)}
                               </span>
-                              <span
-                                className={cn(
-                                  "rounded-lg px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide",
-                                  test.isCompleted
-                                    ? "bg-emerald-100 text-emerald-700"
-                                    : "bg-amber-100 text-amber-700",
-                                )}
-                              >
-                                {test.isCompleted ? "Completed" : "Pending"}
-                              </span>
+                              <StatusBadge
+                                status={test.isCompleted ? "Completed" : "Pending"}
+                              />
                             </div>
 
                             <p className="mt-2 text-xs font-semibold text-slate-500">
@@ -247,7 +241,8 @@ export const InvestigationDetails: React.FC<InvestigationDetailsProps> = ({
                               <button
                                 type="button"
                                 onClick={() => onEditInvestigation(test)}
-                                className="inline-flex items-center justify-center rounded-lg bg-emerald-100 p-2 text-emerald-700 transition-colors hover:bg-emerald-200"
+                                className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-fnh-blue text-white transition-colors hover:bg-fnh-blue-dark cursor-pointer"
+                                aria-label="Edit investigation"
                                 title="Edit Investigation"
                               >
                                 <Edit2 size={14} />
@@ -255,7 +250,8 @@ export const InvestigationDetails: React.FC<InvestigationDetailsProps> = ({
                             ) : null}
                             <button
                               onClick={(event) => handleDownloadReceipt(test, event)}
-                              className="inline-flex items-center justify-center rounded-lg bg-slate-100 p-2 text-slate-700 transition-colors hover:bg-slate-200"
+                              className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-slate-100 text-slate-700 transition-colors hover:bg-slate-200 cursor-pointer"
+                              aria-label="Download receipt"
                               title="Download Receipt"
                             >
                               <Printer size={14} />
@@ -267,7 +263,7 @@ export const InvestigationDetails: React.FC<InvestigationDetailsProps> = ({
                           {resolvedTests.map((resolvedTest) => (
                             <span
                               key={`${test.id}-${resolvedTest.name}`}
-                              className="inline-flex items-center rounded-md border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[10px] font-medium text-slate-700 sm:text-xs"
+                              className="inline-flex items-center rounded-md border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-2xs font-medium text-slate-700 sm:text-xs"
                             >
                               {resolvedTest.name}
                               {resolvedTest.price > 0 ? (
@@ -279,19 +275,19 @@ export const InvestigationDetails: React.FC<InvestigationDetailsProps> = ({
                           ))}
                         </div>
 
-                        <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-slate-100 pt-3 text-[10px] sm:text-xs">
-                          <span className="font-bold text-slate-600">
+                        <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-slate-100 pt-3 text-2xs sm:text-xs">
+                          <span className="font-bold tabular-nums text-slate-700">
                             Total: {formatCurrency(test.grandTotal)}
                           </span>
                           <span className="text-slate-300">|</span>
-                          <span className="font-bold text-blue-600">
+                          <span className="font-bold tabular-nums text-emerald-700">
                             Paid: {formatCurrency(test.paidAmount)}
                           </span>
                           <span className="text-slate-300">|</span>
                           <span
                             className={cn(
-                              "font-bold",
-                              isPaid ? "text-slate-400" : "text-red-600",
+                              "font-bold tabular-nums",
+                              isPaid ? "text-slate-500" : "text-red-600",
                             )}
                           >
                             Due: {formatCurrency(calculatedDueAmount)}

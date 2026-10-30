@@ -63,11 +63,11 @@ interface QuickActionsProps {
 }
 
 const QuickActionSkeleton: React.FC = () => (
-  <div className="flex items-center gap-3 p-3 lg:p-4 rounded-xl bg-gray-50 animate-pulse">
-    <div className="w-10 h-10 lg:w-12 lg:h-12 rounded-xl bg-gray-200" />
+  <div className="flex items-center gap-3 p-3 lg:p-4 rounded-xl bg-slate-50 animate-pulse">
+    <div className="w-10 h-10 lg:w-12 lg:h-12 rounded-xl bg-slate-200" />
     <div className="flex-1 space-y-1.5">
-      <div className="h-4 w-20 bg-gray-200 rounded" />
-      <div className="h-3 w-28 bg-gray-100 rounded" />
+      <div className="h-4 w-20 bg-slate-200 rounded" />
+      <div className="h-3 w-28 bg-slate-100 rounded" />
     </div>
   </div>
 );
@@ -114,10 +114,10 @@ export const QuickActions: React.FC<QuickActionsProps> = ({
 
   if (isLoading) {
     return (
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 lg:p-6">
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 lg:p-6">
         <div className="mb-4">
-          <div className="h-5 w-28 bg-gray-200 rounded animate-pulse mb-1" />
-          <div className="h-4 w-40 bg-gray-100 rounded animate-pulse" />
+          <div className="h-5 w-28 bg-slate-200 rounded animate-pulse mb-1" />
+          <div className="h-4 w-40 bg-slate-100 rounded animate-pulse" />
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3">
           {Array.from({ length: 5 }).map((_, i) => (
@@ -129,12 +129,12 @@ export const QuickActions: React.FC<QuickActionsProps> = ({
   }
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 lg:p-6 hover:shadow-md transition-shadow duration-300">
+    <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 lg:p-6">
       <div className="mb-4">
         <h2 className="text-base lg:text-lg font-semibold text-fnh-navy-dark">
           Quick Actions
         </h2>
-        <p className="text-xs lg:text-sm text-gray-500">
+        <p className="text-xs lg:text-sm text-slate-500">
           Access frequently used features
         </p>
       </div>
@@ -149,10 +149,10 @@ export const QuickActions: React.FC<QuickActionsProps> = ({
             <Link
               key={action.id}
               href={action.href}
-              className={`group flex items-center lg:flex-col lg:items-center gap-3 lg:gap-2 p-3 lg:p-4 rounded-xl ${action.bgColor} ${action.hoverBgColor} transition-all duration-300 hover:shadow-md`}
+              className={`flex items-center lg:flex-col lg:items-center gap-3 lg:gap-2 p-3 lg:p-4 rounded-xl ${action.bgColor} ${action.hoverBgColor} transition-colors`}
             >
               <div
-                className={`w-10 h-10 lg:w-12 lg:h-12 rounded-xl ${action.bgColor} flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-sm shrink-0`}
+                className={`w-10 h-10 lg:w-12 lg:h-12 rounded-xl ${action.bgColor} flex items-center justify-center shadow-sm shrink-0`}
               >
                 <Icon className={`w-5 h-5 lg:w-6 lg:h-6 ${action.color}`} />
               </div>
@@ -160,7 +160,7 @@ export const QuickActions: React.FC<QuickActionsProps> = ({
                 <span className="text-sm lg:text-sm font-semibold text-fnh-navy-dark block truncate">
                   {action.label}
                 </span>
-                <span className="text-xs lg:text-xs text-gray-500 block truncate">
+                <span className="text-xs lg:text-xs text-slate-500 block truncate">
                   {action.description}
                 </span>
               </div>

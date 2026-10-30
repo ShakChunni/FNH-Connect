@@ -99,7 +99,7 @@ export const MedicineReportHeader: React.FC<MedicineReportHeaderProps> = ({
         ref={buttonRef}
         onClick={() => setIsOpen(!isOpen)}
         disabled={disabled || isLoading}
-        className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 bg-fnh-navy hover:bg-fnh-navy-dark text-white rounded-xl transition-all shadow-sm text-xs sm:text-sm font-semibold cursor-pointer active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 whitespace-nowrap"
+        className="flex h-9 sm:h-10 items-center justify-center gap-2 px-3 sm:px-4 border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 rounded-xl transition-colors shadow-sm text-xs sm:text-sm font-semibold cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
         title="Print Report"
       >
         {isLoading ? (
@@ -117,15 +117,15 @@ export const MedicineReportHeader: React.FC<MedicineReportHeaderProps> = ({
         matchButtonWidth={false}
         className="w-[min(22rem,calc(100vw-1rem))] max-h-[min(78vh,34rem)] overflow-hidden p-0"
       >
-        <div className="border-b border-gray-100 px-3 py-2.5">
+        <div className="border-b border-slate-100 px-3 py-2.5">
           <p className="text-xs font-bold text-fnh-navy-dark">Print Report</p>
-          <p className="text-[10px] text-gray-500">
+          <p className="text-2xs text-slate-500">
             Choose a section, then print or download Excel.
           </p>
         </div>
 
         <div className="max-h-[calc(min(78vh,34rem)-3.5rem)] overflow-y-auto p-2">
-          <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 px-2 pb-1 text-[9px] font-bold uppercase tracking-wider text-gray-400">
+          <div className="mb-1 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 rounded-md bg-fnh-navy px-2 py-1.5 text-xs font-semibold uppercase tracking-wide text-white">
             <span>Report section</span>
             <span className="grid grid-cols-3 gap-1.5 text-center">
               <span className="w-9">PDF</span>
@@ -139,10 +139,10 @@ export const MedicineReportHeader: React.FC<MedicineReportHeaderProps> = ({
             return (
               <div key={option.target}>
                 {index > 0 ? (
-                  <div className="h-px bg-gray-100 mx-1 my-1" />
+                  <div className="h-px bg-slate-100 mx-1 my-1" />
                 ) : null}
 
-                <div className="rounded-lg px-2 py-2 hover:bg-gray-50">
+                <div className="rounded-lg px-2 py-2 hover:bg-slate-50">
                   <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
                     <div className="flex min-w-0 items-center gap-2">
                       <div className="w-8 h-8 rounded-lg bg-fnh-navy/5 flex items-center justify-center shrink-0">
@@ -152,7 +152,7 @@ export const MedicineReportHeader: React.FC<MedicineReportHeaderProps> = ({
                         <p className="truncate text-xs font-bold text-fnh-navy-dark">
                           {option.label}
                         </p>
-                        <p className="truncate text-[10px] text-gray-500">
+                        <p className="truncate text-2xs text-slate-500">
                           {option.description}
                         </p>
                       </div>
@@ -163,7 +163,7 @@ export const MedicineReportHeader: React.FC<MedicineReportHeaderProps> = ({
                         type="button"
                         onClick={() => handleReport("summary", option.target)}
                         disabled={isLoading}
-                        className="flex h-8 w-9 items-center justify-center rounded-lg border border-fnh-navy/10 bg-fnh-navy/5 text-fnh-navy hover:bg-fnh-navy/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="flex h-9 w-9 items-center justify-center rounded-lg border border-fnh-navy/10 bg-fnh-navy/5 text-fnh-navy hover:bg-fnh-navy/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         title={`${option.label} summary`}
                         aria-label={`${option.label} summary report`}
                       >
@@ -173,7 +173,7 @@ export const MedicineReportHeader: React.FC<MedicineReportHeaderProps> = ({
                         type="button"
                         onClick={() => handleReport("detailed", option.target)}
                         disabled={isLoading}
-                        className="flex h-8 w-9 items-center justify-center rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="flex h-9 w-9 items-center justify-center rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         title={`${option.label} detailed`}
                         aria-label={`${option.label} detailed report`}
                       >
@@ -183,7 +183,7 @@ export const MedicineReportHeader: React.FC<MedicineReportHeaderProps> = ({
                         type="button"
                         onClick={() => handleExcelExport(option.target)}
                         disabled={isLoading}
-                        className="flex h-8 w-9 items-center justify-center rounded-lg border border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="flex h-9 w-9 items-center justify-center rounded-lg border border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         title={`${option.label} Excel download`}
                         aria-label={`${option.label} Excel download`}
                       >

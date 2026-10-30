@@ -81,35 +81,35 @@ const PhysicalMeasurements: React.FC = () => {
 
   const inputClassName = useMemo(() => {
     const baseStyle =
-      "text-gray-700 font-normal rounded-lg h-12 md:h-14 py-2 px-4 w-full focus:border-blue-900 focus:ring-2 focus:ring-blue-950 outline-none shadow-sm hover:shadow-md transition-all duration-300 placeholder:text-gray-400 placeholder:font-light text-xs sm:text-sm";
+      "text-slate-700 font-normal rounded-lg h-12 md:h-14 py-2 px-4 w-full focus:border-blue-900 focus:ring-2 focus:ring-blue-950 outline-none shadow-sm  transition duration-200 placeholder:text-slate-400 placeholder:font-light text-xs sm:text-sm";
     return (
       value: string | number | null,
       isValid: boolean = true,
       disabled: boolean = false
     ) => {
       let style = disabled
-        ? `bg-gray-200 border-2 border-gray-300 cursor-not-allowed ${baseStyle}`
+        ? `bg-slate-200 border-2 border-slate-300 cursor-not-allowed ${baseStyle}`
         : baseStyle;
       if (!disabled && value !== "" && value !== null) {
-        style += ` bg-white border-2 border-green-700`;
+        style += ` bg-white border-2 border-emerald-700`;
       } else if (!disabled) {
-        style += ` bg-gray-50 border-2 border-gray-300`;
+        style += ` bg-slate-50 border-2 border-slate-300`;
       }
       return style;
     };
   }, []);
 
   return (
-    <div className="mb-6 border-t border-gray-200 pt-6 mt-6">
+    <div className="mb-6 border-t border-slate-200 pt-6 mt-6">
       <div className="flex items-center gap-2 mb-2">
         <Ruler size={20} className="text-purple-500" />
-        <span className="text-base sm:text-lg font-bold text-gray-800">
+        <span className="text-base sm:text-lg font-bold text-slate-800">
           Physical Measurements
         </span>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div>
-          <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1.5 sm:mb-2">
+          <label className="block text-xs sm:text-sm font-semibold text-slate-700 mb-1.5 sm:mb-2">
             Weight (kg)
           </label>
           <NumberInput
@@ -131,13 +131,13 @@ const PhysicalMeasurements: React.FC = () => {
         {/* Height with Unit Switcher */}
         <div className="md:col-span-1">
           <div className="flex items-center justify-between mb-1.5 sm:mb-2">
-            <label className="block text-xs sm:text-sm font-semibold text-gray-700">
+            <label className="block text-xs sm:text-sm font-semibold text-slate-700">
               Height
             </label>
             {/* Unit Switcher */}
-            <div className="relative flex bg-gray-100 rounded-full p-0.5 shadow-inner">
+            <div className="relative flex bg-slate-100 rounded-full p-0.5 shadow-inner">
               <div
-                className={`absolute top-0.5 h-[calc(100%-4px)] rounded-full bg-purple-500 shadow-md transition-all duration-300 ease-out ${
+                className={`absolute top-0.5 h-[calc(100%-4px)] rounded-full bg-purple-500 shadow-sm transition duration-200 ease-out ${
                   heightUnit === "cm"
                     ? "left-0.5 w-[calc(50%-2px)]"
                     : "left-[50%] w-[calc(50%-2px)]"
@@ -146,10 +146,10 @@ const PhysicalMeasurements: React.FC = () => {
               <button
                 type="button"
                 onClick={() => handleHeightUnitChange("cm")}
-                className={`relative z-10 px-2 py-0.5 text-[10px] sm:text-xs font-bold rounded-full transition-colors duration-200 cursor-pointer ${
+                className={`relative z-10 px-2 py-0.5 text-2xs sm:text-xs font-bold rounded-full transition-colors duration-200 cursor-pointer ${
                   heightUnit === "cm"
                     ? "text-white"
-                    : "text-gray-500 hover:text-gray-700"
+                    : "text-slate-500 hover:text-slate-700"
                 }`}
               >
                 cm
@@ -157,10 +157,10 @@ const PhysicalMeasurements: React.FC = () => {
               <button
                 type="button"
                 onClick={() => handleHeightUnitChange("ft")}
-                className={`relative z-10 px-2 py-0.5 text-[10px] sm:text-xs font-bold rounded-full transition-colors duration-200 cursor-pointer ${
+                className={`relative z-10 px-2 py-0.5 text-2xs sm:text-xs font-bold rounded-full transition-colors duration-200 cursor-pointer ${
                   heightUnit === "ft"
                     ? "text-white"
-                    : "text-gray-500 hover:text-gray-700"
+                    : "text-slate-500 hover:text-slate-700"
                 }`}
               >
                 ft
@@ -224,7 +224,7 @@ const PhysicalMeasurements: React.FC = () => {
         </div>
 
         <div>
-          <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1.5 sm:mb-2">
+          <label className="block text-xs sm:text-sm font-semibold text-slate-700 mb-1.5 sm:mb-2">
             BMI
           </label>
           <NumberInput
@@ -235,7 +235,7 @@ const PhysicalMeasurements: React.FC = () => {
           />
         </div>
         <div>
-          <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1.5 sm:mb-2">
+          <label className="block text-xs sm:text-sm font-semibold text-slate-700 mb-1.5 sm:mb-2">
             Blood Group
           </label>
           <BloodGroupDropdown

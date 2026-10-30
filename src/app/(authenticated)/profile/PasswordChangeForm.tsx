@@ -51,13 +51,13 @@ function PasswordField({
           disabled={disabled}
           placeholder={placeholder}
           autoComplete={autoComplete}
-          className="w-full px-4 py-3 pr-11 rounded-xl border border-gray-200 bg-white text-sm text-fnh-navy-dark placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-fnh-blue/20 focus:border-fnh-blue disabled:opacity-60 disabled:cursor-not-allowed transition-[border-color,box-shadow]"
+          className="w-full px-4 py-3 pr-11 rounded-xl border border-slate-200 bg-white text-sm text-fnh-navy-dark placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-fnh-blue/20 focus:border-fnh-blue disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
         />
         <button
           type="button"
           onClick={() => setShowPassword(!showPassword)}
           disabled={disabled}
-          className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-lg text-gray-400 hover:text-fnh-navy hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          className="absolute right-1.5 top-1/2 -translate-y-1/2 h-9 w-9 flex items-center justify-center rounded-lg text-slate-500 hover:text-fnh-navy hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           aria-label={showPassword ? `Hide ${label}` : `Show ${label}`}
         >
           {showPassword ? (
@@ -214,7 +214,7 @@ export function PasswordChangeForm() {
       )}
 
       {(errors.general || serverError) && (
-        <div className="flex items-start gap-2.5 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-800">
+        <div role="alert" className="flex items-start gap-2.5 p-3 rounded-xl bg-red-50 border border-red-200 text-red-800">
           <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
           <p className="text-xs sm:text-sm font-semibold">
             {errors.general || serverError}
@@ -232,7 +232,7 @@ export function PasswordChangeForm() {
         autoComplete="current-password"
       />
       {errors.currentPassword && (
-        <p className="text-xs font-semibold text-rose-600 -mt-2">
+        <p className="text-xs font-semibold text-red-600 -mt-2">
           {errors.currentPassword}
         </p>
       )}
@@ -254,7 +254,7 @@ export function PasswordChangeForm() {
         autoComplete="new-password"
       />
       {errors.newPassword && (
-        <p className="text-xs font-semibold text-rose-600 -mt-2">
+        <p className="text-xs font-semibold text-red-600 -mt-2">
           {errors.newPassword}
         </p>
       )}
@@ -269,7 +269,7 @@ export function PasswordChangeForm() {
         autoComplete="new-password"
       />
       {errors.confirmPassword && (
-        <p className="text-xs font-semibold text-rose-600 -mt-2">
+        <p className="text-xs font-semibold text-red-600 -mt-2">
           {errors.confirmPassword}
         </p>
       )}
@@ -287,10 +287,10 @@ export function PasswordChangeForm() {
         type="submit"
         disabled={isLoading}
         className={cn(
-          "w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-black text-white transition-[background-color,box-shadow,transform]",
+          "w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-black text-white transition-colors",
           isLoading
-            ? "bg-fnh-navy/70 cursor-not-allowed"
-            : "bg-fnh-navy hover:bg-fnh-navy-dark active:scale-[0.98] shadow-sm hover:shadow-md",
+            ? "bg-blue-600/70 cursor-not-allowed"
+            : "bg-blue-600 hover:bg-blue-700 shadow-sm",
         )}
       >
         {isLoading ? (

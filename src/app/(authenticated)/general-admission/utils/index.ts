@@ -3,6 +3,7 @@
  * Form transformers and helper functions
  */
 
+import { statusTone, type StatusTone } from "@/lib/statusStyles";
 import {
   HospitalData,
   PatientData,
@@ -268,16 +269,10 @@ export function validateAddAdmissionForm(
 }
 
 /**
- * Get status badge color class
+ * Shared status tone (info / success / warning / danger / neutral) for an admission status
  */
-export function getStatusColor(status: string): string {
-  const colorMap: Record<string, string> = {
-    Admitted: "blue",
-    "Under Treatment": "amber",
-    "Awaiting Discharge": "purple",
-    Discharged: "green",
-  };
-  return colorMap[status] || "gray";
+export function getStatusColor(status: string): StatusTone {
+  return statusTone(status);
 }
 
 /**

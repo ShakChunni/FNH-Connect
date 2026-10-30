@@ -331,7 +331,7 @@ export const OrderInvestigationModal: React.FC<OrderInvestigationModalProps> = (
           <div className="mb-6 rounded-2xl border border-slate-100 bg-slate-50 p-4">
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
               <div>
-                <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                <p className="text-2xs font-bold uppercase tracking-wider text-slate-500">
                   Patient Name
                 </p>
                 <p className="text-sm font-semibold text-slate-700">
@@ -339,7 +339,7 @@ export const OrderInvestigationModal: React.FC<OrderInvestigationModalProps> = (
                 </p>
               </div>
               <div>
-                <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                <p className="text-2xs font-bold uppercase tracking-wider text-slate-500">
                   Case Number
                 </p>
                 <p className="text-sm font-semibold text-slate-700">
@@ -347,7 +347,7 @@ export const OrderInvestigationModal: React.FC<OrderInvestigationModalProps> = (
                 </p>
               </div>
               <div>
-                <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                <p className="text-2xs font-bold uppercase tracking-wider text-slate-500">
                   Current Status
                 </p>
                 <p className="text-sm font-semibold text-slate-700">
@@ -415,7 +415,7 @@ export const OrderInvestigationModal: React.FC<OrderInvestigationModalProps> = (
                                 {investigation.testNumber}
                               </span>
                               <span
-                                className={`rounded-md px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${
+                                className={`rounded-md px-2 py-0.5 text-2xs font-bold uppercase tracking-wide ${
                                   investigation.subjectType === "SPOUSE"
                                     ? "bg-rose-100 text-rose-700"
                                     : "bg-indigo-100 text-indigo-700"
@@ -424,7 +424,7 @@ export const OrderInvestigationModal: React.FC<OrderInvestigationModalProps> = (
                                 {investigation.subjectLabel}
                               </span>
                               <span
-                                className={`rounded-md px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${
+                                className={`rounded-md px-2 py-0.5 text-2xs font-bold uppercase tracking-wide ${
                                   investigation.isCompleted
                                     ? "bg-emerald-100 text-emerald-700"
                                     : "bg-amber-100 text-amber-700"
@@ -462,7 +462,7 @@ export const OrderInvestigationModal: React.FC<OrderInvestigationModalProps> = (
                               handleEditExistingInvestigation(investigation)
                             }
                             disabled={!onEditInvestigation || isSubmitting}
-                            className="inline-flex items-center justify-center gap-2 rounded-lg bg-emerald-900 px-3 py-2 text-sm font-semibold text-white transition hover:bg-emerald-950 disabled:cursor-not-allowed disabled:opacity-50"
+                            className="inline-flex items-center justify-center gap-2 rounded-lg bg-fnh-blue px-3 py-2 text-sm font-semibold text-white transition-colors hover:bg-fnh-blue-dark disabled:cursor-not-allowed disabled:opacity-50"
                           >
                             <Edit2 className="h-4 w-4" />
                             Edit

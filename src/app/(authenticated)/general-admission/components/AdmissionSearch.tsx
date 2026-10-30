@@ -211,11 +211,11 @@ export const AdmissionSearch: React.FC<AdmissionSearchProps> = ({
             flex items-center w-full
             bg-white border rounded-full 
             h-11
-            transition-all duration-300 ease-out
+            transition-colors
             ${
               isFocused
-                ? "border-fnh-blue shadow-[0_0_0_3px_rgba(59,130,246,0.12),0_0_16px_rgba(59,130,246,0.08)] ring-1 ring-fnh-blue/20"
-                : "border-gray-200 shadow-sm hover:shadow-md hover:border-gray-300"
+                ? "border-fnh-blue ring-1 ring-fnh-blue/20"
+                : "border-slate-200 shadow-sm hover:border-slate-300"
             }
           `}
         >
@@ -223,7 +223,7 @@ export const AdmissionSearch: React.FC<AdmissionSearchProps> = ({
             <div className="relative flex items-center h-full">
               <Search
                 className={`absolute left-3 w-4 h-4 pointer-events-none transition-colors duration-200 ${
-                  isFocused ? "text-fnh-blue" : "text-gray-400"
+                  isFocused ? "text-fnh-blue" : "text-slate-400"
                 }`}
               />
               <input
@@ -235,8 +235,8 @@ export const AdmissionSearch: React.FC<AdmissionSearchProps> = ({
                 placeholder="Search patient, phone..."
                 className="w-full h-full pl-10 pr-4 bg-transparent border-0 
                   focus:ring-0 focus:outline-none 
-                  text-gray-700 text-xs 
-                  placeholder:text-gray-400 placeholder:text-xs
+                  text-slate-700 text-xs 
+                  placeholder:text-slate-400 placeholder:text-xs
                   rounded-full"
               />
             </div>
@@ -267,11 +267,11 @@ export const AdmissionSearch: React.FC<AdmissionSearchProps> = ({
             flex items-center flex-1 min-w-0
             bg-white border rounded-full 
             h-14
-            transition-all duration-300 ease-out
+            transition-colors
             ${
               isFocused
-                ? "border-fnh-blue shadow-[0_0_0_3px_rgba(59,130,246,0.12),0_0_16px_rgba(59,130,246,0.08)] ring-1 ring-fnh-blue/20"
-                : "border-gray-200 shadow-sm hover:shadow-md hover:border-gray-300"
+                ? "border-fnh-blue ring-1 ring-fnh-blue/20"
+                : "border-slate-200 shadow-sm hover:border-slate-300"
             }
           `}
         >
@@ -307,7 +307,7 @@ export const AdmissionSearch: React.FC<AdmissionSearchProps> = ({
                   className={`w-full text-left px-4 py-2.5 text-sm transition-colors duration-150 cursor-pointer ${
                     filters.departmentId === null
                       ? "bg-fnh-navy text-white font-medium"
-                      : "text-gray-700 hover:bg-slate-100"
+                      : "text-slate-700 hover:bg-slate-100"
                   }`}
                 >
                   All Departments
@@ -321,7 +321,7 @@ export const AdmissionSearch: React.FC<AdmissionSearchProps> = ({
                     className={`w-full text-left px-4 py-2.5 text-sm transition-colors duration-150 cursor-pointer ${
                       filters.departmentId === dept.id
                         ? "bg-fnh-navy text-white font-medium"
-                        : "text-gray-700 hover:bg-slate-100"
+                        : "text-slate-700 hover:bg-slate-100"
                     }`}
                   >
                     {dept.name}
@@ -336,7 +336,7 @@ export const AdmissionSearch: React.FC<AdmissionSearchProps> = ({
             <div className="relative flex items-center h-full">
               <Search
                 className={`absolute left-4 w-5 h-5 pointer-events-none transition-colors duration-200 ${
-                  isFocused ? "text-fnh-blue" : "text-gray-400"
+                  isFocused ? "text-fnh-blue" : "text-slate-400"
                 }`}
               />
               <input
@@ -348,8 +348,8 @@ export const AdmissionSearch: React.FC<AdmissionSearchProps> = ({
                 placeholder="Search patient, phone..."
                 className="w-full h-full pl-12 pr-4 bg-transparent border-0 
                   focus:ring-0 focus:outline-none 
-                  text-gray-700 text-base 
-                  placeholder:text-gray-400 placeholder:text-sm
+                  text-slate-700 text-base 
+                  placeholder:text-slate-400 placeholder:text-sm
                   rounded-r-full"
               />
             </div>

@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/app/AuthContext";
 import { fetchWithCSRF } from "@/lib/fetchWithCSRF";
+import { tween, DURATION } from "@/lib/motion";
 import { LoginForm } from "./LoginForm";
 import { cn } from "@/lib/utils";
 import type { LoginFormData, LoginResponse } from "../types";
@@ -31,7 +32,6 @@ const PORTAL_META: Record<
     accentBg: string;
     accentRing: string;
     accentBorder: string;
-    accentGlow: string;
     icon: React.ComponentType<{ className?: string }>;
     pills: Array<{ icon: React.ComponentType<{ className?: string }>; label: string }>;
   }
@@ -45,7 +45,6 @@ const PORTAL_META: Record<
     accentBg: "bg-blue-500",
     accentRing: "ring-blue-500/40",
     accentBorder: "border-blue-500/40",
-    accentGlow: "shadow-[0_0_30px_-10px_rgba(59,130,246,0.6)]",
     icon: Building2,
     pills: [
       { icon: Stethoscope, label: "Admissions" },
@@ -62,7 +61,6 @@ const PORTAL_META: Record<
     accentBg: "bg-emerald-500",
     accentRing: "ring-emerald-500/40",
     accentBorder: "border-emerald-500/40",
-    accentGlow: "shadow-[0_0_30px_-10px_rgba(16,185,129,0.6)]",
     icon: Microscope,
     pills: [
       { icon: Microscope, label: "Diagnostics" },
@@ -131,43 +129,6 @@ export function MobileLogin() {
 
   return (
     <div className="min-h-dvh w-full bg-[#020617] text-white relative overflow-x-hidden">
-      {/* ── Background ambient lights ── */}
-      <div className="pointer-events-none fixed inset-0 -z-10">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={`blur-top-${selectedPortal}`}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.6 }}
-            className={cn(
-              "absolute top-[-25%] left-[-20%] w-[80%] h-[60%] rounded-full blur-[120px] opacity-50",
-              selectedPortal === "infertility" ? "bg-emerald-500/30" : "bg-blue-500/30",
-            )}
-          />
-          <motion.div
-            key={`blur-bottom-${selectedPortal}`}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.6 }}
-            className={cn(
-              "absolute bottom-[-25%] right-[-20%] w-[80%] h-[60%] rounded-full blur-[120px] opacity-40",
-              selectedPortal === "infertility" ? "bg-emerald-700/30" : "bg-blue-700/20",
-            )}
-          />
-        </AnimatePresence>
-        {/* Grid overlay */}
-        <div
-          className="absolute inset-0 opacity-[0.04]"
-          style={{
-            backgroundImage:
-              "radial-gradient(circle at 1px 1px, white 1px, transparent 0)",
-            backgroundSize: "32px 32px",
-          }}
-        />
-      </div>
-
       {/* ── Safe-area aware header ── */}
       <header
         className="px-5 pb-3 flex items-center justify-between"
@@ -177,11 +138,11 @@ export function MobileLogin() {
           <p className="text-lg font-black tracking-tight text-white">
             Welcome
           </p>
-          <p className="mt-1 text-[11px] font-bold uppercase tracking-[0.22em] text-white/45">
+          <p className="mt-1 text-2xs font-bold uppercase tracking-[0.22em] text-white/45">
             Select a portal to sign in
           </p>
         </div>
-        <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-white/30">
+        <p className="text-2xs font-bold uppercase tracking-[0.25em] text-white/30">
           Secure
         </p>
       </header>
@@ -196,7 +157,7 @@ export function MobileLogin() {
           <div
             role="tablist"
             aria-label="Select portal"
-            className="grid grid-cols-2 gap-1.5 p-1.5 bg-white/5 border border-white/10 rounded-2xl backdrop-blur-xl"
+            className="grid grid-cols-2 gap-1.5 p-1.5 bg-white/5 border border-white/10 rounded-2xl"
           >
             {(Object.keys(PORTAL_META) as PortalType[]).map((portal) => {
               const isActive = selectedPortal === portal;
@@ -212,13 +173,13 @@ export function MobileLogin() {
                   className={cn(
                     "relative h-12 px-3 rounded-xl text-xs font-black uppercase tracking-wider",
                     "flex items-center justify-center gap-2",
-                    "transition-all duration-300 cursor-pointer select-none",
+                    "transition-colors duration-200 cursor-pointer select-none",
                     "focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-[#020617]",
                     isActive
                       ? cn(
                           "text-white",
                           portal === "infertility"
-                            ? "bg-emerald-600 focus:ring-emerald-500"
+                            ? "bg-emerald-700 focus:ring-emerald-500"
                             : "bg-blue-600 focus:ring-blue-500",
                         )
                       : "text-white/60 hover:text-white hover:bg-white/5 focus:ring-white/20",
@@ -242,7 +203,7 @@ export function MobileLogin() {
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
-            transition={{ duration: 0.25 }}
+            transition={tween(DURATION.base)}
             className="mb-5"
           >
             <div className="flex items-start gap-3">
@@ -250,7 +211,6 @@ export function MobileLogin() {
                 className={cn(
                   "shrink-0 w-12 h-12 rounded-2xl flex items-center justify-center border",
                   "bg-white/5 border-white/10",
-                  meta.accentGlow,
                 )}
               >
                 <PortalIcon className={cn("w-6 h-6", meta.accentText)} />
@@ -273,7 +233,7 @@ export function MobileLogin() {
                   className={cn(
                     "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full",
                     "bg-white/5 border border-white/10",
-                    "text-[10px] font-black uppercase tracking-wider text-white/70",
+                    "text-2xs font-black uppercase tracking-wider text-white/70",
                   )}
                 >
                   <Icon className={cn("w-3 h-3", meta.accentText)} />
@@ -288,38 +248,28 @@ export function MobileLogin() {
         <AnimatePresence mode="wait">
           <motion.div
             key={selectedPortal}
-            initial={{ opacity: 0, y: 12 }}
+            initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
-            transition={{ duration: 0.3, delay: 0.05 }}
+            transition={tween(DURATION.base)}
             className={cn(
-              "relative overflow-hidden rounded-3xl border backdrop-blur-2xl",
-              "bg-slate-900/80",
+              "relative overflow-hidden rounded-2xl border bg-slate-900",
               meta.accentBorder,
-              "shadow-2xl",
             )}
           >
-            <div
-              className={cn(
-                "absolute inset-0 opacity-30 pointer-events-none",
-                "bg-gradient-to-br",
-                selectedPortal === "infertility"
-                  ? "from-emerald-600/20 via-transparent to-transparent"
-                  : "from-blue-600/20 via-transparent to-transparent",
-              )}
-            />
-            <div className="relative p-5">
+            <div className="p-5">
               <LoginForm
                 onSubmit={handleLogin}
                 isLoading={isLoading}
                 error={error}
                 portal={selectedPortal}
+                idPrefix="mobile-"
               />
             </div>
           </motion.div>
         </AnimatePresence>
 
-        <p className="mt-5 text-center text-[10px] font-bold uppercase tracking-[0.28em] text-white/30">
+        <p className="mt-5 text-center text-2xs font-bold uppercase tracking-[0.28em] text-white/30">
           {APP_VERSION}
         </p>
       </main>

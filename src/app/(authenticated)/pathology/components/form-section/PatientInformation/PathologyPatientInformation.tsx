@@ -34,11 +34,11 @@ const PathologyPatientInformation: React.FC = () => {
   // Input class helper
   const inputClassName = useMemo(() => {
     const baseStyle =
-      "text-gray-700 font-normal rounded-lg h-12 md:h-14 py-2 px-4 w-full focus:border-blue-900 focus:ring-2 focus:ring-blue-950 outline-none shadow-sm hover:shadow-md transition-all duration-300 placeholder:text-gray-400 placeholder:font-light text-xs sm:text-sm cursor-pointer";
+      "text-slate-700 font-normal rounded-lg h-12 md:h-14 py-2 px-4 w-full focus:border-blue-900 focus:ring-2 focus:ring-blue-950 outline-none shadow-sm transition-colors placeholder:text-slate-400 placeholder:font-light text-xs sm:text-sm cursor-pointer";
     return (value: string) =>
       value
         ? `bg-white border-2 border-green-700 ${baseStyle}`
-        : `bg-white border-2 border-gray-300 ${baseStyle}`;
+        : `bg-white border-2 border-slate-300 ${baseStyle}`;
   }, []);
 
   // Derived logic for description using store only
@@ -78,19 +78,19 @@ const PathologyPatientInformation: React.FC = () => {
     <div id="patient" className="mt-2 sm:mt-0 mb-6 sm:mb-8 md:mb-10">
       {/* Header */}
       <div
-        className={`bg-linear-to-r from-indigo-50 to-indigo-100 border-indigo-200 rounded-lg sm:rounded-xl p-4 sm:p-5 md:p-6 mb-4 sm:mb-5 md:mb-6 shadow-sm border transition-colors duration-300`}
+        className={`bg-indigo-50 border-indigo-200 rounded-lg sm:rounded-xl p-4 sm:p-5 md:p-6 mb-4 sm:mb-5 md:mb-6 shadow-sm border transition-colors`}
       >
         <div className="flex items-center gap-3 sm:gap-4">
-          <div className="p-2 sm:p-2.5 md:p-3 bg-white rounded-lg sm:rounded-xl shadow-md shrink-0">
+          <div className="p-2 sm:p-2.5 md:p-3 bg-white rounded-lg sm:rounded-xl shadow-sm shrink-0">
             <User className={"text-indigo-600"} size={28} />
           </div>
           <div className="flex flex-col">
             <div className="flex items-center">
-              <h3 className="text-base sm:text-lg md:text-xl font-bold text-gray-800 mb-0.5 sm:mb-1 leading-tight">
+              <h3 className="text-base sm:text-lg md:text-xl font-bold text-slate-800 mb-0.5 sm:mb-1 leading-tight">
                 Patient Information
               </h3>
             </div>
-            <p className="text-indigo-700 text-[11px] sm:text-xs font-medium leading-tight transition-colors duration-300 mt-1">
+            <p className="text-indigo-700 text-2xs sm:text-xs font-medium leading-tight mt-1">
               {getDescription()}
             </p>
           </div>
@@ -107,8 +107,8 @@ const PathologyPatientInformation: React.FC = () => {
           {/* Gender - No default selection for pathology */}
           <div>
             <div className="flex items-center justify-between mb-1.5 sm:mb-2">
-              <label className="block text-gray-700 text-xs sm:text-sm font-semibold">
-                Patient Gender<span className="text-red-500">*</span>
+              <label className="block text-slate-700 text-xs sm:text-sm font-semibold">
+                Patient Gender<span className="text-red-600">*</span>
               </label>
               {isExisting && patientData.gender && (
                 <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 text-xs font-semibold border border-blue-200 shadow-sm">
@@ -127,8 +127,8 @@ const PathologyPatientInformation: React.FC = () => {
           {/* Date of Birth + Age Boxes */}
           <div>
             <div className="flex items-center justify-between mb-1.5 sm:mb-2">
-              <label className="block text-gray-700 text-xs sm:text-sm font-semibold">
-                Date of Birth<span className="text-red-500">*</span>
+              <label className="block text-slate-700 text-xs sm:text-sm font-semibold">
+                Date of Birth<span className="text-red-600">*</span>
               </label>
               {isExisting && patientData.dateOfBirth && (
                 <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded-full bg-rose-100 text-rose-700 text-xs font-semibold border border-rose-200 shadow-sm">
@@ -149,8 +149,8 @@ const PathologyPatientInformation: React.FC = () => {
           {/* Phone Number */}
           <div>
             <div className="flex items-center justify-between mb-1.5 sm:mb-2">
-              <label className="block text-gray-700 text-xs sm:text-sm font-semibold">
-                Phone Number<span className="text-red-500">*</span>
+              <label className="block text-slate-700 text-xs sm:text-sm font-semibold">
+                Phone Number<span className="text-red-600">*</span>
               </label>
               {isExisting && patientData.phoneNumber && (
                 <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 text-xs font-semibold border border-indigo-200 shadow-sm">
@@ -172,7 +172,7 @@ const PathologyPatientInformation: React.FC = () => {
           {/* Email */}
           <div>
             <div className="flex items-center justify-between mb-1.5 sm:mb-2">
-              <label className="block text-gray-700 text-xs sm:text-sm font-semibold">
+              <label className="block text-slate-700 text-xs sm:text-sm font-semibold">
                 Email
               </label>
               {isExisting && patientData.email && (
@@ -192,8 +192,8 @@ const PathologyPatientInformation: React.FC = () => {
         </div>
 
         {/* Guardian Information Section */}
-        <div className="mt-6 pt-6 border-t border-gray-200">
-          <h4 className="text-sm font-bold text-gray-800 mb-4 flex items-center gap-2">
+        <div className="mt-6 pt-6 border-t border-slate-200">
+          <h4 className="text-sm font-bold text-slate-800 mb-4 flex items-center gap-2">
             <UserCheck className="text-indigo-500 w-4 h-4" />
             Guardian Information
           </h4>
@@ -201,7 +201,7 @@ const PathologyPatientInformation: React.FC = () => {
           {/* Guardian Name (full width) */}
           <div className="mb-4">
             <div className="flex items-center justify-between mb-1.5 sm:mb-2">
-              <label className="block text-gray-700 text-xs sm:text-sm font-semibold">
+              <label className="block text-slate-700 text-xs sm:text-sm font-semibold">
                 Guardian Name
               </label>
               {isExisting && guardianData.name && (
@@ -229,7 +229,7 @@ const PathologyPatientInformation: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Guardian Gender */}
             <div>
-              <label className="block text-gray-700 text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2">
+              <label className="block text-slate-700 text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2">
                 Guardian Gender
               </label>
               <GenderDropdown
@@ -244,7 +244,7 @@ const PathologyPatientInformation: React.FC = () => {
 
             {/* Guardian Date of Birth */}
             <div>
-              <label className="block text-gray-700 text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2">
+              <label className="block text-slate-700 text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2">
                 Guardian Date of Birth
               </label>
               <DateOfBirthDropdown
@@ -256,7 +256,7 @@ const PathologyPatientInformation: React.FC = () => {
         </div>
 
         {/* Additional Patient Details */}
-        <div className="mt-6 pt-6 border-t border-gray-200">
+        <div className="mt-6 pt-6 border-t border-slate-200">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Address */}
             <div className="md:col-span-2">

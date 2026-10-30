@@ -29,11 +29,11 @@ const DEFAULT_STATE: SidebarState = {
 const getClientState = (): SidebarState => {
   try {
     const savedPinned = localStorage.getItem("isPinned");
-    const savedExpanded = localStorage.getItem("isExpanded");
     const savedSections = localStorage.getItem("expandedSections");
 
     const isPinned = savedPinned === "true";
-    const isExpanded = isPinned ? true : savedExpanded === "true";
+    // Hover/focus expansion is momentary; only a pinned rail survives a reload.
+    const isExpanded = isPinned;
     const expandedSections: ExpandedSections = savedSections
       ? JSON.parse(savedSections)
       : { dashboards: true };

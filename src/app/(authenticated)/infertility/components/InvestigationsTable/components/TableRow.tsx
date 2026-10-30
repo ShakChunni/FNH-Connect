@@ -3,6 +3,7 @@ import { Edit2, Printer, CheckCircle, XCircle } from "lucide-react";
 import { InfertilityTestData } from "../../../types";
 import { TableHeader } from "../utils";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
+import { StatusBadge } from "@/components/ui/StatusBadge";
 import { useEditInfertilityTest } from "../../../hooks";
 import { generateInfertilityTestReceipt } from "../../../utils/generateReceipt";
 import { useAuth } from "@/app/AuthContext";
@@ -15,6 +16,8 @@ interface TableRowProps {
   headers: TableHeader[];
   onEdit?: (patient: InfertilityTestData) => void;
   onPatientClick?: (patient: InfertilityTestData) => void;
+  /** "row" renders a desktop table row; "card" renders the phone card. */
+  variant?: "row" | "card";
 }
 
 const TableRow: React.FC<TableRowProps> = ({
@@ -23,6 +26,7 @@ const TableRow: React.FC<TableRowProps> = ({
   headers,
   onEdit,
   onPatientClick,
+  variant = "row",
 }) => {
   const [showStatusConfirm, setShowStatusConfirm] = useState(false);
 
@@ -36,16 +40,16 @@ const TableRow: React.FC<TableRowProps> = ({
 
   const getCellClasses = (headerIndex: number) => {
     const baseClasses =
-      "px-2 py-2 sm:px-3 sm:py-3 md:px-4 md:py-4 text-[11px] sm:text-xs text-gray-900 whitespace-nowrap transition-colors";
+      "px-2 py-2 sm:px-3 sm:py-3 md:px-4 md:py-4 text-xs text-slate-900 whitespace-nowrap transition-colors";
 
     if (headerIndex === 0) {
-      return `${baseClasses} ${FIRST_COL_WIDTH} lg:sticky lg:z-10 lg:left-0 lg:bg-gray-50/95 group-hover:lg:bg-gray-100`;
+      return `${baseClasses} ${FIRST_COL_WIDTH} lg:sticky lg:z-10 lg:left-0 lg:bg-slate-50/95 group-hover:lg:bg-slate-100`;
     }
     if (headerIndex === 1) {
-      return `${baseClasses} ${SECOND_COL_WIDTH} lg:sticky lg:z-10 lg:left-[60px] lg:bg-gray-50/95 group-hover:lg:bg-gray-100`;
+      return `${baseClasses} ${SECOND_COL_WIDTH} lg:sticky lg:z-10 lg:left-[60px] lg:bg-slate-50/95 group-hover:lg:bg-slate-100`;
     }
     if (headerIndex === 2) {
-      return `${baseClasses} ${THIRD_COL_WIDTH} lg:sticky lg:z-10 lg:left-[160px] lg:bg-gray-50/95 group-hover:lg:bg-gray-100`;
+      return `${baseClasses} ${THIRD_COL_WIDTH} lg:sticky lg:z-10 lg:left-[160px] lg:bg-slate-50/95 group-hover:lg:bg-slate-100`;
     }
     return baseClasses;
   };
@@ -102,10 +106,59 @@ const TableRow: React.FC<TableRowProps> = ({
     return "N/A";
   };
 
+  const calculatedDueAmount = Math.max(
+    0,
+    Number(row.grandTotal) - Number(row.paidAmount),
+  );
+
+  // Row actions shared by the desktop row and the phone card.
+  const renderActions = () => (
+    <div className="flex items-center gap-1.5">
+      <button
+        type="button"
+        onClick={() => onEdit?.(row)}
+        aria-label="Edit investigation"
+        title="Edit investigation"
+        className="flex h-9 w-9 items-center justify-center rounded-lg bg-fnh-blue text-white hover:bg-fnh-blue-dark transition-colors cursor-pointer"
+      >
+        <Edit2 size={16} />
+      </button>
+
+      <button
+        type="button"
+        onClick={() => {
+          generateInfertilityTestReceipt(row, user?.fullName || "Staff");
+          showNotification("Generating receipt document...", "success");
+        }}
+        aria-label="Download receipt"
+        title="Download Receipt"
+        className="flex h-9 w-9 items-center justify-center rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors cursor-pointer"
+      >
+        <Printer size={16} />
+      </button>
+
+      {/* Status Toggle Button */}
+      <button
+        type="button"
+        onClick={() => setShowStatusConfirm(true)}
+        disabled={isLoading}
+        aria-label={row.isCompleted ? "Mark as pending" : "Mark as completed"}
+        title={row.isCompleted ? "Mark as Pending" : "Mark as Completed"}
+        className={`flex h-9 w-9 items-center justify-center rounded-lg transition-colors cursor-pointer disabled:opacity-50 ${
+          row.isCompleted
+            ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-200"
+            : "bg-amber-100 text-amber-800 hover:bg-amber-200"
+        }`}
+      >
+        {row.isCompleted ? <CheckCircle size={16} /> : <XCircle size={16} />}
+      </button>
+    </div>
+  );
+
   const renderCellContent = (header: TableHeader): React.ReactNode => {
     switch (header.key) {
       case "id":
-        return <span className="font-semibold text-emerald-900">{index}</span>;
+        return <span className="font-semibold tabular-nums text-emerald-900">{index}</span>;
 
       case "patientFullName":
         return (
@@ -113,24 +166,18 @@ const TableRow: React.FC<TableRowProps> = ({
             className="font-medium cursor-pointer group/name"
             onClick={() => onPatientClick?.(row)}
           >
-            <div className="text-gray-900 group-hover/name:text-emerald-600 transition-colors flex items-center gap-2">
+            <div className="text-slate-900 group-hover/name:text-emerald-700 transition-colors flex items-center gap-2">
               <span>{row.patientFullName}</span>
-              <span
-                className={`inline-flex rounded-md px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${
-                  row.subjectType === "SPOUSE"
-                    ? "bg-rose-100 text-rose-700"
-                    : "bg-indigo-100 text-indigo-700"
-                }`}
-              >
+              <span className="inline-flex rounded-md bg-slate-100 px-2 py-0.5 text-2xs font-bold uppercase tracking-wide text-slate-700">
                 {row.subjectLabel}
               </span>
             </div>
             {row.subjectType === "SPOUSE" ? (
-              <div className="text-[10px] text-gray-500 leading-none mt-0.5">
+              <div className="text-2xs text-slate-500 leading-none mt-0.5">
                 Test for: {row.subjectName || row.guardianName || "Spouse"}
               </div>
             ) : row.guardianName ? (
-              <div className="text-[10px] text-gray-500 leading-none mt-0.5">
+              <div className="text-2xs text-slate-500 leading-none mt-0.5">
                 Spouse: {row.guardianName}
               </div>
             ) : null}
@@ -146,113 +193,128 @@ const TableRow: React.FC<TableRowProps> = ({
         return formatDate(row.testDate);
 
       case "mobileNumber":
-        return row.mobileNumber || "N/A";
+        return <span className="tabular-nums">{row.mobileNumber || "N/A"}</span>;
 
       case "grandTotal":
         return (
-          <span className="font-semibold text-green-600">
+          <span className="font-semibold text-slate-900 tabular-nums">
             {formatCurrency(row.grandTotal)}
           </span>
         );
 
       case "paidAmount":
         return (
-          <span className="font-semibold text-blue-600">
+          <span className="font-semibold text-emerald-700 tabular-nums">
             {formatCurrency(row.paidAmount)}
           </span>
         );
 
       case "dueAmount":
-        {
-          const calculatedDueAmount = Math.max(
-            0,
-            Number(row.grandTotal) - Number(row.paidAmount),
-          );
-
-          return (
-            <span
-              className={`font-semibold ${
-                calculatedDueAmount > 0 ? "text-red-600" : "text-gray-400"
-              }`}
-            >
-              {formatCurrency(calculatedDueAmount)}
-            </span>
-          );
-        }
-
-      case "isCompleted":
         return (
           <span
-            className={`inline-flex px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded-md ${
-              row.isCompleted
-                ? "bg-green-100 text-green-800"
-                : "bg-yellow-100 text-yellow-800"
+            className={`font-semibold tabular-nums ${
+              calculatedDueAmount > 0 ? "text-red-600" : "text-slate-500"
             }`}
           >
-            {row.isCompleted ? "Completed" : "Pending"}
+            {formatCurrency(calculatedDueAmount)}
           </span>
         );
 
-      case "actions":
+      case "isCompleted":
         return (
-          <div className="flex items-center gap-1.5">
-            {/* Edit Button */}
-            <button
-              onClick={() => onEdit?.(row)}
-              className="p-1.5 bg-emerald-900 text-white rounded-lg hover:bg-emerald-950 transition-all cursor-pointer shadow-sm hover:shadow-md active:scale-95"
-              title="Edit patient"
-            >
-              <Edit2 size={16} />
-            </button>
-
-            {/* Receipt Button */}
-            <button
-              onClick={() => {
-                generateInfertilityTestReceipt(row, user?.fullName || "Staff");
-                showNotification("Generating receipt document...", "success");
-              }}
-              className="p-1.5 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition-all cursor-pointer shadow-sm hover:shadow-md active:scale-95"
-              title="Download Receipt"
-            >
-              <Printer size={16} />
-            </button>
-
-            {/* Status Toggle Button */}
-            <button
-              onClick={() => setShowStatusConfirm(true)}
-              disabled={isLoading}
-              className={`p-1.5 rounded-lg transition-all cursor-pointer disabled:opacity-50 shadow-sm hover:shadow-md active:scale-95 ${
-                row.isCompleted
-                  ? "bg-green-100 text-green-700 hover:bg-green-200" // Currently completed
-                  : "bg-amber-100 text-amber-700 hover:bg-amber-200" // Currently pending
-              }`}
-              title={row.isCompleted ? "Mark as Pending" : "Mark as Completed"}
-            >
-              {row.isCompleted ? (
-                <CheckCircle size={16} />
-              ) : (
-                <XCircle size={16} />
-              )}
-            </button>
-          </div>
+          <StatusBadge status={row.isCompleted ? "Completed" : "Pending"} />
         );
+
+      case "actions":
+        return renderActions();
 
       default:
         return renderFallbackValue(row[header.key as keyof InfertilityTestData]);
     }
   };
 
+  // Phone card: same key data as the table row, same actions.
+  const renderCard = () => (
+    <div className="p-4 space-y-3">
+      <div className="flex items-start justify-between gap-3">
+        <button
+          type="button"
+          onClick={() => onPatientClick?.(row)}
+          className="min-w-0 text-left cursor-pointer"
+        >
+          <span className="block text-sm font-semibold text-slate-900 truncate">
+            {row.patientFullName}
+          </span>
+          <span className="mt-0.5 inline-flex rounded-md bg-slate-100 px-2 py-0.5 text-2xs font-bold uppercase tracking-wide text-slate-700">
+            {row.subjectLabel}
+          </span>
+        </button>
+        <StatusBadge
+          status={row.isCompleted ? "Completed" : "Pending"}
+          className="shrink-0"
+        />
+      </div>
+
+      <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
+        <div className="min-w-0">
+          <dt className="text-slate-500">Test No.</dt>
+          <dd className="font-mono font-medium text-emerald-900 break-all">
+            {row.testNumber}
+          </dd>
+        </div>
+        <div className="min-w-0">
+          <dt className="text-slate-500">Test Date</dt>
+          <dd className="font-medium text-slate-900">{formatDate(row.testDate)}</dd>
+        </div>
+        <div className="min-w-0">
+          <dt className="text-slate-500">Mobile</dt>
+          <dd className="font-medium text-slate-900 tabular-nums break-all">
+            {row.mobileNumber || "N/A"}
+          </dd>
+        </div>
+        <div className="min-w-0">
+          <dt className="text-slate-500">Total</dt>
+          <dd className="font-semibold text-slate-900 tabular-nums">
+            {formatCurrency(row.grandTotal)}
+          </dd>
+        </div>
+        <div className="min-w-0">
+          <dt className="text-slate-500">Paid</dt>
+          <dd className="font-semibold text-emerald-700 tabular-nums">
+            {formatCurrency(row.paidAmount)}
+          </dd>
+        </div>
+        <div className="min-w-0">
+          <dt className="text-slate-500">Due</dt>
+          <dd
+            className={`font-semibold tabular-nums ${
+              calculatedDueAmount > 0 ? "text-red-600" : "text-slate-500"
+            }`}
+          >
+            {formatCurrency(calculatedDueAmount)}
+          </dd>
+        </div>
+      </dl>
+
+      {renderActions()}
+    </div>
+  );
+
   return (
     <>
-      <tr className="hover:bg-gray-50 transition-colors">
-        {headers.map((header, headerIndex) => (
-          <td key={header.key} className={getCellClasses(headerIndex)}>
-            {renderCellContent(header)}
-          </td>
-        ))}
-      </tr>
+      {variant === "card" ? (
+        renderCard()
+      ) : (
+        <tr className="hover:bg-slate-50 transition-colors">
+          {headers.map((header, headerIndex) => (
+            <td key={header.key} className={getCellClasses(headerIndex)}>
+              {renderCellContent(header)}
+            </td>
+          ))}
+        </tr>
+      )}
 
-      {/* Status Change Confirmation Modal */}
+      {/* Status Change Confirmation Modal (portal, kept outside the row/card) */}
       <ConfirmModal
         isOpen={showStatusConfirm}
         onClose={() => setShowStatusConfirm(false)}

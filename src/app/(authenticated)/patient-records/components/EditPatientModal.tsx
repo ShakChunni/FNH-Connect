@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { User, Save } from "lucide-react";
 import { ModalHeader, ModalFooter } from "@/components/ui";
+import { backdropVariants, modalVariants } from "@/components/ui/modal-animations";
 
 // Existing field components from infertility
 import GenderDropdown from "@/components/form-sections/Fields/GenderDropdown";
@@ -136,22 +137,23 @@ export const EditPatientModal: React.FC<EditPatientModalProps> = ({
         <>
           {/* Backdrop */}
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-100"
+            variants={backdropVariants}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+            className="fixed inset-0 bg-slate-950/50 z-100"
             onClick={onClose}
           />
 
           {/* Modal */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            transition={{ duration: 0.2 }}
+            variants={modalVariants}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
             className="fixed inset-0 z-101 flex items-center justify-center p-4"
           >
-            <div className="bg-white rounded-3xl shadow-2xl w-full max-w-xl max-h-[90vh] overflow-hidden flex flex-col">
+            <div className="bg-white rounded-3xl shadow-xl w-full max-w-xl max-h-[90vh] overflow-hidden flex flex-col">
               {/* Global Modal Header */}
               <ModalHeader
                 icon={User}
@@ -167,21 +169,21 @@ export const EditPatientModal: React.FC<EditPatientModalProps> = ({
                 {/* Name Row */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5">
-                      First Name <span className="text-red-500">*</span>
+                    <label className="block text-xs sm:text-sm font-medium text-slate-700 mb-1.5">
+                      First Name <span className="text-red-600">*</span>
                     </label>
                     <input
                       type="text"
                       name="firstName"
                       value={formData.firstName}
                       onChange={handleInputChange}
-                      className="w-full px-3 sm:px-4 py-2 h-12 md:h-14 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-950 focus:ring-2 focus:ring-blue-950 transition-all text-xs sm:text-sm cursor-text"
+                      className="w-full px-3 sm:px-4 py-2 h-12 md:h-14 border-2 border-slate-300 rounded-lg focus:outline-none focus:border-blue-950 focus:ring-2 focus:ring-blue-950 transition-colors text-xs sm:text-sm cursor-text"
                       placeholder="First name"
                       required
                     />
                   </div>
                   <div>
-                    <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5">
+                    <label className="block text-xs sm:text-sm font-medium text-slate-700 mb-1.5">
                       Last Name
                     </label>
                     <input
@@ -189,7 +191,7 @@ export const EditPatientModal: React.FC<EditPatientModalProps> = ({
                       name="lastName"
                       value={formData.lastName}
                       onChange={handleInputChange}
-                      className="w-full px-3 sm:px-4 py-2 h-12 md:h-14 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-950 focus:ring-2 focus:ring-blue-950 transition-all text-xs sm:text-sm cursor-text"
+                      className="w-full px-3 sm:px-4 py-2 h-12 md:h-14 border-2 border-slate-300 rounded-lg focus:outline-none focus:border-blue-950 focus:ring-2 focus:ring-blue-950 transition-colors text-xs sm:text-sm cursor-text"
                       placeholder="Last name"
                     />
                   </div>
@@ -197,7 +199,7 @@ export const EditPatientModal: React.FC<EditPatientModalProps> = ({
 
                 {/* Guardian Name */}
                 <div>
-                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5">
+                  <label className="block text-xs sm:text-sm font-medium text-slate-700 mb-1.5">
                     Guardian / Spouse Name
                   </label>
                   <input
@@ -205,14 +207,14 @@ export const EditPatientModal: React.FC<EditPatientModalProps> = ({
                     name="guardianName"
                     value={formData.guardianName}
                     onChange={handleInputChange}
-                    className="w-full px-3 sm:px-4 py-2 h-12 md:h-14 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-950 focus:ring-2 focus:ring-blue-950 transition-all text-xs sm:text-sm cursor-text"
+                    className="w-full px-3 sm:px-4 py-2 h-12 md:h-14 border-2 border-slate-300 rounded-lg focus:outline-none focus:border-blue-950 focus:ring-2 focus:ring-blue-950 transition-colors text-xs sm:text-sm cursor-text"
                     placeholder="Guardian or spouse name"
                   />
                 </div>
 
                 {/* Guardian / spouse date of birth and editable age controls */}
                 <div>
-                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5">
+                  <label className="block text-xs sm:text-sm font-medium text-slate-700 mb-1.5">
                     Guardian / Spouse Date of Birth
                   </label>
                   <DobDropdown
@@ -224,7 +226,7 @@ export const EditPatientModal: React.FC<EditPatientModalProps> = ({
 
                 {/* Gender - own row */}
                 <div>
-                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5">
+                  <label className="block text-xs sm:text-sm font-medium text-slate-700 mb-1.5">
                     Gender
                   </label>
                   <GenderDropdown
@@ -236,7 +238,7 @@ export const EditPatientModal: React.FC<EditPatientModalProps> = ({
 
                 {/* Date of Birth - own row */}
                 <div>
-                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5">
+                  <label className="block text-xs sm:text-sm font-medium text-slate-700 mb-1.5">
                     Date of Birth
                   </label>
                   <DobDropdown
@@ -248,7 +250,7 @@ export const EditPatientModal: React.FC<EditPatientModalProps> = ({
 
                 {/* Phone */}
                 <div>
-                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5">
+                  <label className="block text-xs sm:text-sm font-medium text-slate-700 mb-1.5">
                     Phone Number
                   </label>
                   <ContactPhoneInput

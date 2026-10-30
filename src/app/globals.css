@@ -1,12 +1,22 @@
 @import "tailwindcss";
+@import "tw-animate-css";
 
+/* No dark theme yet; keep `dark:` tied to a class so OS dark mode never flips styles */
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-inter);
-  --font-mono: var(--font-geist-mono);
+  --font-mono:
+    ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+
+  /* 11px step for compact labels; nothing in the app should go below this */
+  --text-2xs: 0.6875rem;
+  --text-2xs--line-height: 1rem;
+
+  /* Motion: one easing curve for UI, used via `ease-standard` */
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -41,6 +51,10 @@
   --color-fnh-navy-light: var(--fnh-navy-light);
   --color-fnh-blue: var(--fnh-blue);
   --color-fnh-blue-light: var(--fnh-blue-light);
+  --color-fnh-blue-dark: var(--fnh-blue-dark);
+  --color-fnh-yellow: var(--fnh-yellow);
+  --color-fnh-yellow-light: var(--fnh-yellow-light);
+  --color-fnh-grey-lighter: var(--fnh-grey-lighter);
   --color-fnh-white: var(--fnh-white);
   --color-fnh-porcelain: var(--fnh-porcelain);
   --color-fnh-grey: var(--fnh-grey);
@@ -111,46 +125,8 @@
   --sidebar-collapsed-width: 7.5rem;
   --sidebar-expanded-width: 20rem;
 
-  /* Modal Styles */
-  --modal-border-radius: 1.5rem;
-  --modal-shadow:
-    0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-  --modal-backdrop: rgba(0, 0, 0, 0.6);
 }
 
-.dark {
-  --background: var(--navy-dark);
-  --foreground: var(--white);
-  --card: var(--navy-main);
-  --card-foreground: var(--white);
-  --popover: var(--navy-main);
-  --popover-foreground: var(--white);
-  --primary: var(--navy-main);
-  --primary-foreground: var(--white);
-  --secondary: var(--navy-light);
-  --secondary-foreground: var(--white);
-  --muted: var(--grey-dark);
-  --muted-foreground: var(--grey-light);
-  --accent: var(--blue-accent);
-  --accent-foreground: var(--white);
-  --destructive: #b91c1c;
-  --border: var(--grey);
-  --input: var(--grey);
-  --ring: var(--blue-accent);
-  --chart-1: #23395d;
-  --chart-2: #1e3a8a;
-  --chart-3: #3b4a6b;
-  --chart-4: #4b5563;
-  --chart-5: #9ca3af;
-  --sidebar: var(--navy-dark);
-  --sidebar-foreground: var(--white);
-  --sidebar-primary: var(--navy-main);
-  --sidebar-primary-foreground: var(--white);
-  --sidebar-accent: var(--blue-accent);
-  --sidebar-accent-foreground: var(--white);
-  --sidebar-border: var(--grey);
-  --sidebar-ring: var(--blue-muted);
-}
 
 @layer base {
   * {
@@ -174,20 +150,57 @@
     -moz-appearance: textfield;
     appearance: textfield;
   }
-}
 
-/* Shimmer animation for benefits progress bar */
-@keyframes shimmer {
-  0% {
-    transform: translateX(-100%);
-  }
-  100% {
-    transform: translateX(100%);
+  /* Figures line up in tables and money columns */
+  table,
+  .font-mono {
+    font-variant-numeric: tabular-nums;
   }
 }
 
-.animate-shimmer {
-  animation: shimmer 2s infinite;
+/* ========================================
+   ACCESSIBILITY & DEVICE BASELINES
+   Unlayered on purpose so they win over `outline-none`
+   and small text utilities set in components.
+   ======================================== */
+
+/* Visible keyboard focus for every clickable thing (mouse clicks unaffected) */
+:where(button, a, summary, [role="button"], [role="tab"], [role="menuitem"], [role="option"], [tabindex]:not([tabindex="-1"])):focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+/* iOS Safari zooms into any input under 16px; stop that on touch devices */
+@media (hover: none) and (pointer: coarse) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+  select,
+  textarea {
+    font-size: 16px;
+  }
+}
+
+/* Respect the OS "reduce motion" setting; loading spinners keep turning */
+@media (prefers-reduced-motion: reduce) {
+  *:not(.animate-spin),
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+@utility scrollbar-hide {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@utility scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: var(--fnh-grey-light) transparent;
 }
 
 /* ========================================
@@ -219,76 +232,17 @@
 }
 
 .animate-dropdown-in {
-  animation: dropdown-in 300ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: dropdown-in 180ms cubic-bezier(0.2, 0, 0, 1) forwards;
 }
 
 .animate-dropdown-out {
-  animation: dropdown-out 250ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  animation: dropdown-out 120ms cubic-bezier(0.2, 0, 0, 1) forwards;
 }
 
 /* Initial state for dropdown before animation starts */
 .dropdown-hidden {
   opacity: 0;
   transform: translateY(10px);
-}
-
-/* Fade animations - for overlays, modals, and simple transitions */
-@keyframes fade-in {
-  0% {
-    opacity: 0;
-  }
-  100% {
-    opacity: 1;
-  }
-}
-
-@keyframes fade-out {
-  0% {
-    opacity: 1;
-  }
-  100% {
-    opacity: 0;
-  }
-}
-
-.animate-fade-in {
-  animation: fade-in 200ms ease-in-out forwards;
-}
-
-.animate-fade-out {
-  animation: fade-out 200ms ease-in-out forwards;
-}
-
-/* Slide animations - for notifications, toasts, and sliding elements */
-@keyframes slide-in-from-top {
-  0% {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes slide-in-from-bottom {
-  0% {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.animate-slide-in-from-top {
-  animation: slide-in-from-top 300ms cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-}
-
-.animate-slide-in-from-bottom {
-  animation: slide-in-from-bottom 300ms cubic-bezier(0.34, 1.56, 0.64, 1)
-    forwards;
 }
 
 /* ========================================
@@ -309,12 +263,10 @@
   0% {
     opacity: 0.3;
     transform: scale(0.95);
-    filter: drop-shadow(0 0 0px rgba(59, 130, 246, 0));
   }
   100% {
     opacity: 1;
     transform: scale(1);
-    filter: drop-shadow(0 0 30px rgba(59, 130, 246, 0.5));
   }
 }
 
@@ -339,111 +291,21 @@
 }
 
 .animate-loading-glow-in {
-  animation: loading-glow-in 1s ease-out forwards;
+  animation: loading-glow-in 400ms ease-out forwards;
 }
 
 .animate-loading-logo-light-up {
-  animation: loading-logo-light-up 1s ease-out forwards;
+  animation: loading-logo-light-up 400ms ease-out forwards;
 }
 
 .animate-loading-text-fade-in {
   opacity: 0;
-  animation: loading-text-fade-in 700ms ease-out 300ms forwards;
+  animation: loading-text-fade-in 300ms ease-out 100ms forwards;
 }
 
 .animate-loading-footer-fade-in {
   opacity: 0;
-  animation: loading-footer-fade-in 700ms ease-out 500ms forwards;
-}
-
-/* ========================================
-   GMAIL-STYLE LOADING SCREEN ANIMATIONS
-   For more advanced loading states
-   ======================================== */
-
-@keyframes logo-pulse {
-  0%,
-  100% {
-    opacity: 0.4;
-    transform: scale(0.98);
-  }
-  50% {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-@keyframes logo-glow {
-  0%,
-  100% {
-    filter: drop-shadow(0 0 0px rgba(59, 130, 246, 0));
-  }
-  50% {
-    filter: drop-shadow(0 0 20px rgba(59, 130, 246, 0.6));
-  }
-}
-
-@keyframes progress-indeterminate {
-  0% {
-    transform: translateX(-100%);
-  }
-  100% {
-    transform: translateX(400%);
-  }
-}
-
-@keyframes fade-in-up {
-  0% {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes dot-pulse {
-  0%,
-  80%,
-  100% {
-    opacity: 0.3;
-    transform: scale(0.8);
-  }
-  40% {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-.animate-logo-pulse {
-  animation: logo-pulse 2s ease-in-out infinite;
-}
-
-.animate-logo-glow {
-  animation: logo-glow 2s ease-in-out infinite;
-}
-
-.animate-progress-indeterminate {
-  animation: progress-indeterminate 1.5s ease-in-out infinite;
-}
-
-.animate-fade-in-up {
-  animation: fade-in-up 0.5s ease-out forwards;
-}
-
-.animate-dot-pulse {
-  animation: dot-pulse 1.4s ease-in-out infinite;
-}
-
-.animate-dot-pulse-delay-1 {
-  animation: dot-pulse 1.4s ease-in-out infinite;
-  animation-delay: 0.2s;
-}
-
-.animate-dot-pulse-delay-2 {
-  animation: dot-pulse 1.4s ease-in-out infinite;
-  animation-delay: 0.4s;
+  animation: loading-footer-fade-in 300ms ease-out 150ms forwards;
 }
 
 /* ========================================
@@ -465,8 +327,8 @@
   --fnh-blue-light: #059669;
   --fnh-blue-dark: #065f46;
   --fnh-porcelain: #f8fafc;
-  --fnh-grey: #94a3b8;
-  --fnh-grey-dark: #64748b;
+  --fnh-grey: #64748b;
+  --fnh-grey-dark: #475569;
 
   --primary: var(--fnh-navy);
   --primary-foreground: #ffffff;

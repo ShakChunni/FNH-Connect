@@ -11,6 +11,7 @@ export interface NotificationState {
 }
 
 let notificationId = 0;
+const MAX_VISIBLE_NOTIFICATIONS = 4;
 
 export interface NotificationHookReturn {
   notifications: NotificationState[];
@@ -29,13 +30,15 @@ export function useNotificationState(): NotificationHookReturn {
 
       setNotifications((prev) => {
         // Remove loading notifications of the same type if showing success/error
-        if (type === "success" || type === "error") {
-          return [
-            ...prev.filter((n) => n.type !== "loading"),
-            { id, message, type, timestamp },
-          ];
-        }
-        return [...prev, { id, message, type, timestamp }];
+        const next =
+          type === "success" || type === "error"
+            ? [
+                ...prev.filter((n) => n.type !== "loading"),
+                { id, message, type, timestamp },
+              ]
+            : [...prev, { id, message, type, timestamp }];
+        // Keep the stack short so toasts never cover the page
+        return next.slice(-MAX_VISIBLE_NOTIFICATIONS);
       });
 
       return id;

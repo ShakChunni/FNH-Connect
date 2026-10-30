@@ -210,12 +210,12 @@ export const ReportTriggerButton: React.FC<ReportTriggerButtonProps> = ({
         onClick={() => setIsOpen(!isOpen)}
         disabled={disabled || isLoading}
         className="relative flex items-center justify-center gap-2 h-full w-full sm:w-auto px-4 sm:px-5 
-          bg-white border border-gray-200 rounded-full
-          text-gray-600 text-sm font-medium
-          hover:bg-gray-50 hover:border-emerald-600 hover:text-emerald-600
-          transition-all duration-200 
+          bg-white border border-slate-200 rounded-full
+          text-slate-600 text-sm font-medium
+          hover:bg-slate-50 hover:border-emerald-600 hover:text-emerald-700
+          transition-colors duration-200 
           disabled:opacity-50 disabled:cursor-not-allowed
-          cursor-pointer shadow-sm hover:shadow-md"
+          cursor-pointer shadow-sm "
         aria-label="Generate reports"
       >
         {isLoading ? (
@@ -233,20 +233,20 @@ export const ReportTriggerButton: React.FC<ReportTriggerButtonProps> = ({
         className="min-w-[220px]"
       >
         <div className="py-2">
-          <div className="px-3 py-2 text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+          <div className="px-3 py-2 text-2xs font-bold text-slate-500 uppercase tracking-wider">
             Generate Report
           </div>
 
           <button
             onClick={handleSummaryReport}
             disabled={recordCount === 0}
-            className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 
+            className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 
               hover:bg-slate-100 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <BarChart3 className="w-4 h-4 text-indigo-500" />
             <div className="text-left">
               <div className="font-medium">Summary Report</div>
-              <div className="text-xs text-gray-400">
+              <div className="text-xs text-slate-500">
                 Overview stats & counts
               </div>
             </div>
@@ -255,20 +255,20 @@ export const ReportTriggerButton: React.FC<ReportTriggerButtonProps> = ({
           <button
             onClick={handleDetailedReport}
             disabled={recordCount === 0}
-            className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 
+            className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 
               hover:bg-slate-100 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <FileText className="w-4 h-4 text-emerald-500" />
             <div className="text-left">
               <div className="font-medium">Detailed Report</div>
-              <div className="text-xs text-gray-400">Full patient details</div>
+              <div className="text-xs text-slate-500">Full patient details</div>
             </div>
           </button>
 
           {recordCount > 0 && (
             <>
-              <div className="my-2 border-t border-gray-100" />
-              <div className="px-4 py-2 text-xs text-gray-400">
+              <div className="my-2 border-t border-slate-100" />
+              <div className="px-4 py-2 text-xs text-slate-500">
                 {recordCount} {recordCount === 1 ? "record" : "records"}{" "}
                 available
               </div>

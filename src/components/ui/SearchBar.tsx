@@ -23,7 +23,6 @@ export const DEFAULT_DATE_RANGES: DateRangeOption[] = [
   { value: "last_3_months", label: "Last 3 Months" },
   { value: "last_6_months", label: "Last 6 Months" },
   { value: "this_year", label: "This Year" },
-  { value: "custom", label: "Custom Range" },
 ];
 
 export interface SearchBarProps {
@@ -90,10 +89,6 @@ export const SearchBar: React.FC<SearchBarProps> = ({
 
   const handleDateRangeSelect = useCallback(
     (value: string) => {
-      if (value === "custom") {
-        // Future: Open calendar picker
-        return;
-      }
       onDateRangeChange?.(value);
       setIsDateRangeOpen(false);
     },
@@ -119,17 +114,17 @@ export const SearchBar: React.FC<SearchBarProps> = ({
 
   return (
     <div className="w-full">
-      {/* Main Search Bar Container with glow effect on focus */}
+      {/* Main Search Bar Container */}
       <div
         className={`
-          flex items-center w-full 
-          bg-white border rounded-full 
+          flex items-center w-full
+          bg-white border rounded-full
           h-12 sm:h-14
-          transition-all duration-300 ease-out
+          transition-colors duration-200 ease-out
           ${
             isFocused
-              ? "border-fnh-blue shadow-[0_0_0_3px_rgba(59,130,246,0.12),0_0_16px_rgba(59,130,246,0.08)] ring-1 ring-fnh-blue/20"
-              : "border-gray-200 shadow-sm hover:shadow-md hover:border-gray-300"
+              ? "border-fnh-blue shadow-sm ring-1 ring-fnh-blue/20"
+              : "border-slate-200 shadow-sm hover:border-slate-300"
           }
         `}
       >
@@ -153,6 +148,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
               isOpen={isDepartmentOpen}
               onClose={() => setIsDepartmentOpen(false)}
               buttonRef={departmentButtonRef}
+              matchButtonWidth={false}
               className="w-52"
             >
               <div className="py-1 max-h-[300px] overflow-y-auto">
@@ -163,7 +159,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
                     className={`w-full text-left px-4 py-2.5 text-sm transition-colors duration-150 cursor-pointer ${
                       selectedDepartment === dept.value
                         ? "bg-fnh-navy text-white font-medium"
-                        : "text-gray-700 hover:bg-slate-100"
+                        : "text-slate-700 hover:bg-slate-100"
                     }`}
                   >
                     {dept.label}
@@ -184,7 +180,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
           <div className="relative flex items-center h-full">
             <Search
               className={`absolute left-3 sm:left-4 w-4 h-4 sm:w-5 sm:h-5 pointer-events-none transition-colors duration-200 ${
-                isFocused ? "text-fnh-blue" : "text-gray-400"
+                isFocused ? "text-fnh-blue" : "text-slate-400"
               }`}
             />
             <input
@@ -195,7 +191,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
               onFocus={() => setIsFocused(true)}
               onBlur={() => setIsFocused(false)}
               placeholder={placeholder}
-              className={`w-full h-full pl-10 sm:pl-12 pr-4 bg-transparent border-0 focus:ring-0 focus:outline-none text-gray-700 text-sm sm:text-base placeholder:text-gray-400 placeholder:text-sm ${
+              className={`w-full h-full pl-10 sm:pl-12 pr-4 bg-transparent border-0 focus:ring-0 focus:outline-none text-slate-700 text-sm sm:text-base placeholder:text-slate-400 placeholder:text-sm ${
                 !showDepartmentFilter ? "rounded-l-full" : ""
               }`}
             />
@@ -208,14 +204,14 @@ export const SearchBar: React.FC<SearchBarProps> = ({
             <button
               ref={dateRangeButtonRef}
               onClick={() => setIsDateRangeOpen(!isDateRangeOpen)}
-              className={`flex items-center gap-1.5 sm:gap-2 h-full px-4 sm:px-5 rounded-r-full text-xs sm:text-sm font-medium transition-all duration-200 cursor-pointer ${
+              className={`flex items-center gap-1.5 sm:gap-2 h-full px-4 sm:px-5 rounded-r-full text-xs sm:text-sm font-medium transition-colors duration-200 cursor-pointer ${
                 selectedDateRange !== "all"
                   ? "bg-fnh-navy text-white hover:bg-fnh-navy-light"
-                  : "bg-gray-200 hover:bg-slate-100 text-gray-600"
+                  : "bg-slate-200 hover:bg-slate-100 text-slate-600"
               }`}
             >
               <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-              <span className="hidden sm:inline whitespace-nowrap">
+              <span className="max-w-[5.5rem] truncate sm:max-w-none">
                 {selectedDateRangeLabel}
               </span>
               <ChevronDown
@@ -229,9 +225,10 @@ export const SearchBar: React.FC<SearchBarProps> = ({
               isOpen={isDateRangeOpen}
               onClose={() => setIsDateRangeOpen(false)}
               buttonRef={dateRangeButtonRef}
+              matchButtonWidth={false}
               className="w-52"
             >
-              <div className="py-1 max-h-[300px] min-w-[200px] overflow-y-auto">
+              <div className="py-1 max-h-[300px] overflow-y-auto">
                 {dateRangeOptions.map((option) => (
                   <button
                     key={option.value}
@@ -239,9 +236,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
                     className={`w-full text-left px-4 py-2.5 text-sm transition-colors duration-150 cursor-pointer ${
                       selectedDateRange === option.value
                         ? "bg-fnh-navy text-white font-medium"
-                        : option.value === "custom"
-                        ? "text-gray-500 hover:bg-slate-100 border-t border-gray-100"
-                        : "text-gray-700 hover:bg-slate-100"
+                        : "text-slate-700 hover:bg-slate-100"
                     }`}
                   >
                     {option.label}

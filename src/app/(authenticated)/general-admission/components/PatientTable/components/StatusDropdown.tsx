@@ -1,9 +1,14 @@
 "use client";
 import React, { useState, useRef } from "react";
-import { motion } from "framer-motion";
 import { Activity, Check, ChevronDown, Loader2 } from "lucide-react";
 import { DropdownPortal } from "@/components/ui/DropdownPortal";
 import { ADMISSION_STATUS_OPTIONS, AdmissionStatus } from "../../../types";
+import {
+  TONE_BADGE,
+  TONE_DOT,
+  TONE_TEXT,
+  statusTone,
+} from "@/lib/statusStyles";
 
 interface StatusDropdownProps {
   currentStatus: string;
@@ -22,45 +27,7 @@ const StatusDropdown: React.FC<StatusDropdownProps> = ({
   const currentOption = ADMISSION_STATUS_OPTIONS.find(
     (o) => o.value === currentStatus
   );
-
-  const getStatusColor = (color: string) => {
-    const colors: Record<
-      string,
-      { bg: string; text: string; hover: string; dot: string }
-    > = {
-      blue: {
-        bg: "bg-blue-100",
-        text: "text-blue-700",
-        hover: "hover:bg-blue-200",
-        dot: "bg-blue-500",
-      },
-      amber: {
-        bg: "bg-amber-100",
-        text: "text-amber-700",
-        hover: "hover:bg-amber-200",
-        dot: "bg-amber-500",
-      },
-      purple: {
-        bg: "bg-purple-100",
-        text: "text-purple-700",
-        hover: "hover:bg-purple-200",
-        dot: "bg-purple-500",
-      },
-      green: {
-        bg: "bg-green-100",
-        text: "text-green-700",
-        hover: "hover:bg-green-200",
-        dot: "bg-green-500",
-      },
-      red: {
-        bg: "bg-red-100",
-        text: "text-red-700",
-        hover: "hover:bg-red-200",
-        dot: "bg-red-500",
-      },
-    };
-    return colors[color] || colors.blue;
-  };
+  const currentTone = currentOption?.tone ?? statusTone(currentStatus);
 
   const handleSelect = (status: AdmissionStatus) => {
     setIsOpen(false);
@@ -69,24 +36,22 @@ const StatusDropdown: React.FC<StatusDropdownProps> = ({
     }
   };
 
-  const buttonColors = getStatusColor(currentOption?.color || "blue");
-
   return (
     <>
       {/* Trigger Button */}
       <button
         ref={buttonRef}
+        type="button"
         onClick={() => {
           if (!isUpdating) {
             setIsOpen(!isOpen);
           }
         }}
         disabled={isUpdating}
-        className={`p-1 rounded-md transition-all cursor-pointer shadow-sm hover:shadow active:scale-95 flex items-center gap-0.5 ${
-          buttonColors.bg
-        } ${buttonColors.text} ${buttonColors.hover} ${
-          isUpdating ? "opacity-50 cursor-not-allowed" : ""
-        }`}
+        className={`flex h-9 w-9 items-center justify-center gap-0.5 rounded-md ring-1 ring-inset transition-colors hover:opacity-80 cursor-pointer ${
+          TONE_BADGE[currentTone]
+        } ${isUpdating ? "opacity-50 cursor-not-allowed" : ""}`}
+        aria-label="Change status"
         title="Change status"
       >
         {isUpdating ? (
@@ -110,8 +75,8 @@ const StatusDropdown: React.FC<StatusDropdownProps> = ({
         className="min-w-[180px] z-100001"
       >
         {/* Header */}
-        <div className="px-2.5 py-1.5 border-b border-gray-100 bg-gray-50/50">
-          <p className="text-[9px] font-bold text-gray-400 uppercase tracking-wider">
+        <div className="px-2.5 py-1.5 border-b border-slate-100 bg-slate-50">
+          <p className="text-2xs font-bold text-slate-500 uppercase tracking-wider">
             Change Status
           </p>
         </div>
@@ -120,33 +85,29 @@ const StatusDropdown: React.FC<StatusDropdownProps> = ({
         <div className="py-1">
           {ADMISSION_STATUS_OPTIONS.map((option) => {
             const isSelected = option.value === currentStatus;
-            const colors = getStatusColor(option.color);
             return (
               <button
                 key={option.value}
+                type="button"
                 onClick={() => handleSelect(option.value)}
-                className={`w-full px-3 py-2 text-left flex items-center justify-between gap-2.5 transition-all duration-200 cursor-pointer ${
-                  isSelected
-                    ? `${colors.bg} ${colors.text}`
-                    : "hover:bg-gray-50"
+                className={`flex min-h-9 w-full items-center justify-between gap-2.5 px-3 py-2 text-left transition-colors cursor-pointer ${
+                  isSelected ? "bg-slate-50" : "hover:bg-slate-50"
                 }`}
               >
                 <div className="flex items-center gap-2">
                   <span
-                    className={`w-2 h-2 rounded-full shadow-sm ${colors.dot}`}
+                    className={`h-2 w-2 rounded-full ${TONE_DOT[option.tone]}`}
                   />
-                  <span className="text-[11px] font-semibold text-gray-700">
+                  <span
+                    className={`text-xs font-semibold ${
+                      isSelected ? TONE_TEXT[option.tone] : "text-slate-700"
+                    }`}
+                  >
                     {option.label}
                   </span>
                 </div>
                 {isSelected && (
-                  <motion.div
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    transition={{ type: "spring", stiffness: 300, damping: 20 }}
-                  >
-                    <Check size={12} className={colors.text} />
-                  </motion.div>
+                  <Check size={12} className={TONE_TEXT[option.tone]} />
                 )}
               </button>
             );

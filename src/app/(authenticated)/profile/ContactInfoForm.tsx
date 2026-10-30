@@ -128,7 +128,7 @@ export function ContactInfoForm({
           <h4 className="text-sm font-black text-fnh-navy-dark">
             Contact Information
           </h4>
-          <p className="text-xs text-gray-500">
+          <p className="text-xs text-slate-500">
             Email and phone are the only editable profile fields.
           </p>
         </div>
@@ -137,7 +137,7 @@ export function ContactInfoForm({
           <button
             type="button"
             onClick={handleStartEditing}
-            className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg border border-fnh-blue/20 bg-blue-50 px-3 text-xs font-bold text-fnh-blue transition-colors hover:bg-blue-100"
+            className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 text-xs font-bold text-slate-700 transition-colors hover:bg-slate-50"
           >
             <Pencil className="h-3.5 w-3.5" />
             Edit
@@ -153,7 +153,7 @@ export function ContactInfoForm({
       ) : null}
 
       {errors.general ? (
-        <div className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs font-semibold text-rose-800 sm:text-sm">
+        <div role="alert" className="rounded-xl border border-red-200 bg-red-50 p-3 text-xs font-semibold text-red-800 sm:text-sm">
           {errors.general}
         </div>
       ) : null}
@@ -166,7 +166,7 @@ export function ContactInfoForm({
           Email
         </label>
         <div className="relative">
-          <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+          <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
           <input
             id="profileEmail"
             type="email"
@@ -175,11 +175,11 @@ export function ContactInfoForm({
             disabled={!isEditing || isLoading}
             placeholder="Enter email address"
             autoComplete="email"
-            className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 pl-10 text-sm text-fnh-navy-dark transition-[border-color,box-shadow] placeholder:text-gray-400 focus:border-fnh-blue focus:outline-none focus:ring-2 focus:ring-fnh-blue/20 disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-gray-600"
+            className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 pl-10 text-sm text-fnh-navy-dark transition-colors placeholder:text-slate-400 focus:border-fnh-blue focus:outline-none focus:ring-2 focus:ring-fnh-blue/20 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-600"
           />
         </div>
         {errors.email ? (
-          <p className="text-xs font-semibold text-rose-600">
+          <p className="text-xs font-semibold text-red-600">
             {errors.email}
           </p>
         ) : null}
@@ -193,7 +193,7 @@ export function ContactInfoForm({
           Phone
         </label>
         <div className="relative">
-          <Phone className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+          <Phone className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
           <input
             id="profilePhoneNumber"
             type="tel"
@@ -202,11 +202,11 @@ export function ContactInfoForm({
             disabled={!isEditing || isLoading}
             placeholder="Enter phone number"
             autoComplete="tel"
-            className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 pl-10 text-sm text-fnh-navy-dark transition-[border-color,box-shadow] placeholder:text-gray-400 focus:border-fnh-blue focus:outline-none focus:ring-2 focus:ring-fnh-blue/20 disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-gray-600"
+            className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 pl-10 text-sm text-fnh-navy-dark transition-colors placeholder:text-slate-400 focus:border-fnh-blue focus:outline-none focus:ring-2 focus:ring-fnh-blue/20 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-600"
           />
         </div>
         {errors.phoneNumber ? (
-          <p className="text-xs font-semibold text-rose-600">
+          <p className="text-xs font-semibold text-red-600">
             {errors.phoneNumber}
           </p>
         ) : null}
@@ -218,7 +218,7 @@ export function ContactInfoForm({
             type="button"
             onClick={handleCancelEditing}
             disabled={isLoading}
-            className="flex items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm font-black text-gray-700 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
+            className="flex items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-black text-slate-700 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
           >
             <X className="h-4 w-4" />
             Cancel
@@ -227,10 +227,10 @@ export function ContactInfoForm({
             type="submit"
             disabled={isLoading}
             className={cn(
-              "flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-black text-white transition-[background-color,box-shadow,transform]",
+              "flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-black text-white transition-colors",
               isLoading
-                ? "cursor-not-allowed bg-fnh-navy/70"
-                : "bg-fnh-navy shadow-sm hover:bg-fnh-navy-dark hover:shadow-md active:scale-[0.98]",
+                ? "cursor-not-allowed bg-blue-600/70"
+                : "bg-blue-600 shadow-sm hover:bg-blue-700",
             )}
           >
             {isLoading ? (
@@ -241,7 +241,7 @@ export function ContactInfoForm({
             ) : (
               <>
                 <Save className="h-4 w-4" />
-                Save
+                Save Changes
               </>
             )}
           </button>

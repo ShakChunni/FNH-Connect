@@ -284,7 +284,7 @@ const EditDataPathology: React.FC<EditDataProps> = ({
     <AnimatePresence mode="wait" onExitComplete={() => afterEditModalClosed()}>
       {isOpen && (
         <motion.div
-          className="fixed inset-0 bg-slate-900/70 flex items-center justify-center z-100000"
+          className="fixed inset-0 bg-slate-950/50 flex items-center justify-center z-100000"
           variants={backdropVariants}
           initial="hidden"
           animate="visible"
@@ -298,7 +298,7 @@ const EditDataPathology: React.FC<EditDataProps> = ({
         >
           <motion.div
             ref={popupRef}
-            className="bg-white rounded-3xl shadow-lg w-full max-w-[95%] sm:max-w-[90%] md:max-w-[80%] lg:max-w-[75%] xl:max-w-[75%] h-[95%] sm:h-[90%] popup-content flex flex-col"
+            className="bg-white rounded-3xl shadow-lg w-full max-w-[95%] sm:max-w-[90%] md:max-w-[80%] lg:max-w-[75%] xl:max-w-[75%] h-[95%] sm:h-[90%] flex flex-col"
             variants={modalVariants}
             initial="hidden"
             animate="visible"
@@ -325,12 +325,10 @@ const EditDataPathology: React.FC<EditDataProps> = ({
                     <button
                       key={section.id}
                       onClick={() => scrollToSection(section.id)}
-                      className={`flex items-center gap-1 sm:gap-2 px-2 sm:px-3 md:px-4 py-2 sm:py-2.5 md:py-3 rounded-lg sm:rounded-xl text-xs sm:text-sm font-semibold transition-all duration-300 shadow-sm cursor-pointer ${getTabColors(
+                      className={`flex items-center gap-1 sm:gap-2 px-2 sm:px-3 md:px-4 py-2 sm:py-2.5 md:py-3 rounded-lg sm:rounded-xl text-xs sm:text-sm font-semibold transition-colors shadow-sm cursor-pointer ${getTabColors(
                         section.color,
                         isActive,
-                      )} ${
-                        isActive ? "transform scale-110" : "hover:shadow-md"
-                      }`}
+                      )}`}
                     >
                       <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4 md:w-[18px] md:h-[18px] shrink-0" />
                       <span className="hidden sm:inline whitespace-nowrap">
@@ -362,10 +360,10 @@ const EditDataPathology: React.FC<EditDataProps> = ({
               isSubmitting={isSubmitting}
               isDisabled={false}
               cancelText="Cancel"
-              submitText="Update Pathology Test"
-              loadingText="Updating..."
+              submitText="Save Changes"
+              loadingText="Saving..."
               submitIcon={Save}
-              theme="green"
+              theme="blue"
             />
           </motion.div>
         </motion.div>

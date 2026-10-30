@@ -11,14 +11,14 @@ const TableRowSkeleton: React.FC<TableRowSkeletonProps> = ({
   rowIndex,
 }) => {
   return (
-    <tr className={rowIndex % 2 === 0 ? "bg-white" : "bg-gray-50"}>
+    <tr className={rowIndex % 2 === 0 ? "bg-white" : "bg-slate-50"}>
       {headers.map((header, index) => (
         <td
           key={header.key}
           className="px-2 py-2 sm:px-3 sm:py-3 md:px-4 md:py-4"
         >
           <div
-            className={`h-4 bg-gray-200 rounded animate-pulse ${
+            className={`h-4 bg-slate-200 rounded animate-pulse ${
               index === 0
                 ? "w-8"
                 : index === 1

@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { validateServerSession } from "@/lib/auth-validation";
 import { getRoleDisplayName } from "@/lib/roles";
+import { StatusBadge } from "@/components/ui/StatusBadge";
 import { ContactInfoForm } from "./ContactInfoForm";
 import { PasswordChangeForm } from "./PasswordChangeForm";
 
@@ -23,12 +24,12 @@ interface ProfileFieldProps {
 
 function ProfileField({ label, value, icon: Icon }: ProfileFieldProps) {
   return (
-    <div className="flex items-start gap-3 rounded-xl border border-gray-100 bg-white p-3 shadow-sm">
+    <div className="flex items-start gap-3 rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
       <div className="w-8 h-8 rounded-lg border border-slate-200 bg-slate-100 flex items-center justify-center shrink-0 text-slate-600">
         <Icon className="w-4 h-4" />
       </div>
       <div className="min-w-0 flex-1">
-        <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-0.5">
+        <p className="text-2xs font-black uppercase tracking-widest text-slate-500 mb-0.5">
           {label}
         </p>
         <p className="text-sm font-semibold text-slate-800 truncate">
@@ -40,7 +41,7 @@ function ProfileField({ label, value, icon: Icon }: ProfileFieldProps) {
 }
 
 function NotProvided() {
-  return <span className="text-slate-400 font-medium italic">Not provided</span>;
+  return <span className="text-slate-500 font-medium italic">Not provided</span>;
 }
 
 export default async function ProfilePage() {
@@ -66,7 +67,7 @@ export default async function ProfilePage() {
                 <h1 className="text-xl sm:text-2xl lg:text-3xl font-black text-fnh-navy-dark tracking-tight">
                   Profile
                 </h1>
-                <p className="text-xs sm:text-sm text-gray-500 mt-1">
+                <p className="text-xs sm:text-sm text-slate-500 mt-1">
                   View your account information and manage your password
                 </p>
               </div>
@@ -74,13 +75,13 @@ export default async function ProfilePage() {
           </div>
 
           <div className="px-1 sm:px-2 lg:px-4">
-            <div className="grid grid-cols-1 overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm lg:grid-cols-[minmax(320px,0.78fr)_minmax(460px,1fr)]">
+            <div className="grid grid-cols-1 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm lg:grid-cols-[minmax(320px,0.78fr)_minmax(460px,1fr)]">
               <section className="bg-slate-50 p-4 sm:p-6 lg:p-7">
                 <div className="flex flex-col gap-5">
                   {/* Header card: identity + access level + status together */}
-                  <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+                  <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
                     <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-                      <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-slate-600 to-slate-800 text-xl font-black leading-none text-white shadow-md">
+                      <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-slate-700 text-xl font-black leading-none text-white shadow-sm">
                         <span className="leading-none">
                           {initials.toUpperCase()}
                         </span>
@@ -91,20 +92,7 @@ export default async function ProfilePage() {
                           <h2 className="truncate text-xl font-black text-slate-900">
                             {user.fullName || user.username}
                           </h2>
-                          <span
-                            className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[10px] font-black uppercase tracking-wider ${
-                              user.isActive
-                                ? "bg-slate-800 text-white"
-                                : "bg-rose-100 text-rose-700"
-                            }`}
-                          >
-                            <span
-                              className={`h-1.5 w-1.5 rounded-full ${
-                                user.isActive ? "bg-emerald-400" : "bg-rose-500"
-                              }`}
-                            />
-                            {user.isActive ? "Active" : "Inactive"}
-                          </span>
+                          <StatusBadge status={user.isActive ? "Active" : "Inactive"} />
                         </div>
 
                         <p className="mt-1 text-xs font-semibold text-slate-500">
@@ -173,7 +161,7 @@ export default async function ProfilePage() {
                         <h3 className="text-base font-black text-fnh-navy-dark">
                           Contact Details
                         </h3>
-                        <p className="text-xs text-gray-500">
+                        <p className="text-xs text-slate-500">
                           Click edit to update your email or phone number.
                         </p>
                       </div>
@@ -185,16 +173,16 @@ export default async function ProfilePage() {
                     />
                   </div>
 
-                  <div className="border-t border-gray-100 pt-6">
+                  <div className="border-t border-slate-200 pt-6">
                     <div className="mb-5 flex items-center gap-3">
                       <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center">
-                        <KeyRound className="w-5 h-5 text-emerald-600" />
+                        <KeyRound className="w-5 h-5 text-emerald-700" />
                       </div>
                       <div>
                         <h3 className="text-base font-black text-fnh-navy-dark">
                           Change Password
                         </h3>
-                        <p className="text-xs text-gray-500">
+                        <p className="text-xs text-slate-500">
                           Generate a strong password or enter your own.
                         </p>
                       </div>

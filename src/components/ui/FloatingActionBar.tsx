@@ -5,6 +5,7 @@ import { ClientPortal } from "@/components/ui/ClientPortal";
 import { motion, AnimatePresence } from "framer-motion";
 import { CheckCheck, ChevronDown, XCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { SPRING } from "@/lib/motion";
 
 export interface FloatingAction {
   label: string;
@@ -87,7 +88,7 @@ export function FloatingActionBar({
     <ClientPortal>
       <AnimatePresence>
         {shouldShow && (
-          <div className="fixed bottom-6 left-0 right-0 z-50 flex justify-center pointer-events-none px-4">
+          <div className="fixed bottom-[max(1rem,env(safe-area-inset-bottom))] left-0 right-0 z-50 flex justify-center pointer-events-none px-4">
             <motion.div
               layout
               initial={{ opacity: 0, y: 50, scale: 0.95 }}
@@ -96,14 +97,14 @@ export function FloatingActionBar({
               transition={{
                 layout: { duration: 0.2, ease: "easeOut" },
                 opacity: { duration: 0.2 },
-              y: { type: "spring", stiffness: 300, damping: 30 },
-              scale: { type: "spring", stiffness: 300, damping: 30 },
-            }}
+                y: SPRING,
+                scale: SPRING,
+              }}
             className={cn(
-              "pointer-events-auto flex items-center px-2 py-2",
-              "bg-fnh-navy-dark/95 backdrop-blur-xl",
+              "pointer-events-auto flex flex-wrap items-center justify-center gap-y-1 px-2 py-2 max-w-[calc(100vw-1rem)]",
+              "bg-fnh-navy-dark",
               "border border-fnh-grey/30",
-              "rounded-full shadow-[0_16px_48px_rgba(0,0,0,0.4)]",
+              "rounded-2xl sm:rounded-full shadow-lg",
               className
             )}
           >
@@ -122,8 +123,8 @@ export function FloatingActionBar({
               </div>
               <button
                 onClick={onClearSelection}
-                className="px-3 py-1.5 rounded-full text-fnh-grey hover:text-white hover:bg-white/10 transition-colors duration-200 cursor-pointer text-xs font-medium"
-                title="Clear all filters"
+                className="inline-flex h-9 items-center px-3 rounded-full text-fnh-grey hover:text-white hover:bg-white/10 transition-colors duration-200 cursor-pointer text-xs font-medium"
+                title="Clear selection"
               >
                 Clear
               </button>
@@ -189,10 +190,9 @@ export function FloatingActionBar({
                 ref={menuButtonRef}
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
                 className={cn(
-                  "flex items-center gap-2 px-5 py-2.5 text-sm font-semibold rounded-full transition-all duration-200 cursor-pointer",
-                  "bg-fnh-blue text-white",
-                  "hover:bg-fnh-blue-light",
-                  "active:scale-[0.97]"
+                  "flex items-center gap-2 px-5 py-2.5 text-sm font-semibold rounded-full transition-colors duration-200 cursor-pointer",
+                  "bg-blue-600 text-white",
+                  "hover:bg-blue-700"
                 )}
               >
                 Actions
@@ -212,15 +212,11 @@ export function FloatingActionBar({
                     initial={{ opacity: 0, y: 8, scale: 0.95 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: 8, scale: 0.95 }}
-                    transition={{
-                      type: "spring",
-                      stiffness: 400,
-                      damping: 25,
-                    }}
+                    transition={SPRING}
                     className={cn(
                       "absolute bottom-full right-0 mb-2.5 min-w-[200px]",
                       "bg-fnh-navy-dark border border-fnh-grey/30",
-                      "rounded-2xl shadow-[0_20px_40px_rgba(0,0,0,0.3)] overflow-hidden"
+                      "rounded-2xl shadow-lg overflow-hidden"
                     )}
                   >
                     <div className="py-2">
@@ -233,7 +229,7 @@ export function FloatingActionBar({
                           }}
                           disabled={action.disabled}
                           className={cn(
-                            "flex w-full items-center gap-3 px-4 py-3 text-xs font-medium transition-colors duration-150 cursor-pointer whitespace-nowrap",
+                            "flex w-full items-center gap-3 px-4 py-3 text-sm font-medium transition-colors duration-150 cursor-pointer whitespace-nowrap",
                             action.variant === "destructive" && [
                               "text-red-400",
                               "hover:bg-red-500/20 hover:text-red-300",

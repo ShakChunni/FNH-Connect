@@ -50,7 +50,7 @@ const NewPatientButton: React.FC<{
     type="button"
     onClick={onClick}
     disabled={disabled}
-    className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-green-600 px-4 py-3 font-semibold text-white shadow-lg transition-all duration-300 hover:scale-105 hover:from-emerald-700 hover:to-green-700 hover:shadow-xl disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto sm:px-6"
+    className="flex h-10 w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 font-semibold text-white transition-colors hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto sm:px-6"
   >
     <Plus className="h-5 w-5" />
     <span>New Patient</span>
@@ -86,7 +86,7 @@ export default function DoctorChamberPage() {
     }),
     [debouncedSearch, page, queryDateRange],
   );
-  const { data, isLoading, isFetching, error } = useDoctorChamberVisits(filters);
+  const { data, isLoading, isFetching, error, refetch } = useDoctorChamberVisits(filters);
   const visits = data?.data ?? [];
   const totalRecords = data?.total ?? 0;
   const totalPages = data?.totalPages ?? 0;
@@ -229,24 +229,29 @@ export default function DoctorChamberPage() {
             </div>
           )}
 
-          {error && (
-            <div className="px-0 sm:px-2 lg:px-4">
-              <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-                Unable to load chamber patients. Please refresh and try again.
-              </div>
-            </div>
-          )}
-
           <div className="px-0 sm:px-2 lg:px-4">
             <div className="mb-4 overflow-hidden rounded-xl border border-slate-100 bg-white shadow-sm sm:mb-8 sm:rounded-3xl">
-              <DoctorChamberTable
-                visits={visits}
-                isLoading={isLoading}
-                startIndex={(page - 1) * 15}
-                printedBy={user?.fullName || "Staff"}
-                onEdit={openEditVisit}
-                onView={setOverviewVisit}
-              />
+              {error ? (
+                <div role="alert" className="p-8 text-center">
+                  <p className="text-sm font-medium text-red-700">Could not load chamber patients.</p>
+                  <button
+                    type="button"
+                    onClick={() => void refetch()}
+                    className="mt-3 inline-flex h-9 cursor-pointer items-center justify-center rounded-lg border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50"
+                  >
+                    Try again
+                  </button>
+                </div>
+              ) : (
+                <DoctorChamberTable
+                  visits={visits}
+                  isLoading={isLoading}
+                  startIndex={(page - 1) * 15}
+                  printedBy={user?.fullName || "Staff"}
+                  onEdit={openEditVisit}
+                  onView={setOverviewVisit}
+                />
+              )}
             </div>
 
             {totalPages > 1 && (

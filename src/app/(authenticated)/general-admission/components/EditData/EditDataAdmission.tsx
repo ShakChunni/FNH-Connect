@@ -44,20 +44,20 @@ const SECTION_IDS = ["patient", "status", "medicines", "financial"];
 const getTabColors = (color: string, isActive: boolean) => {
   const colors: Record<string, { active: string; inactive: string }> = {
     indigo: {
-      active: "bg-indigo-600 text-white shadow-lg",
-      inactive: "bg-indigo-100 text-indigo-700 hover:bg-indigo-200",
+      active: "bg-indigo-600 text-white",
+      inactive:"bg-indigo-100 text-indigo-700 hover:bg-indigo-200",
     },
     amber: {
-      active: "bg-amber-600 text-white shadow-lg",
+      active: "bg-amber-700 text-white",
       inactive: "bg-amber-100 text-amber-700 hover:bg-amber-200",
     },
     green: {
-      active: "bg-green-600 text-white shadow-lg",
-      inactive: "bg-green-100 text-green-700 hover:bg-green-200",
+      active: "bg-green-600 text-white",
+      inactive:"bg-green-100 text-green-700 hover:bg-green-200",
     },
     emerald: {
-      active: "bg-emerald-600 text-white shadow-lg",
-      inactive: "bg-emerald-100 text-emerald-700 hover:bg-emerald-200",
+      active: "bg-emerald-600 text-white",
+      inactive:"bg-emerald-100 text-emerald-700 hover:bg-emerald-200",
     },
   };
   return isActive ? colors[color]?.active : colors[color]?.inactive;
@@ -329,7 +329,7 @@ const EditDataAdmission: React.FC<EditDataProps> = ({
     <AnimatePresence mode="wait" onExitComplete={() => afterEditModalClosed()}>
       {isOpen && (
         <motion.div
-          className="fixed inset-0 bg-slate-900/70 flex items-center justify-center z-100000"
+          className="fixed inset-0 bg-slate-950/50 flex items-center justify-center z-100000"
           variants={backdropVariants}
           initial="hidden"
           animate="visible"
@@ -343,7 +343,7 @@ const EditDataAdmission: React.FC<EditDataProps> = ({
         >
           <motion.div
             ref={popupRef}
-            className="bg-white rounded-3xl shadow-lg w-full max-w-[95%] sm:max-w-[90%] md:max-w-[85%] lg:max-w-[80%] xl:max-w-[80%] h-[95%] sm:h-[90%] popup-content flex flex-col"
+            className="bg-white rounded-3xl shadow-lg w-full max-w-[95%] sm:max-w-[90%] md:max-w-[85%] lg:max-w-[80%] xl:max-w-[80%] h-[95%] sm:h-[90%] flex flex-col"
             variants={modalVariants}
             initial="hidden"
             animate="visible"
@@ -370,12 +370,10 @@ const EditDataAdmission: React.FC<EditDataProps> = ({
                     <button
                       key={section.id}
                       onClick={() => scrollToSection(section.id)}
-                      className={`flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-2 sm:py-2.5 rounded-lg sm:rounded-xl text-xs sm:text-sm font-semibold transition-all duration-300 shadow-sm cursor-pointer ${getTabColors(
+                      className={`flex min-h-9 items-center gap-1 sm:gap-2 px-2 sm:px-3 py-2 sm:py-2.5 rounded-lg sm:rounded-xl text-xs sm:text-sm font-semibold transition-colors shadow-sm cursor-pointer ${getTabColors(
                         section.color,
                         isActive
-                      )} ${
-                        isActive ? "transform scale-105" : "hover:shadow-md"
-                      }`}
+                      )}`}
                     >
                       <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
                       <span className="hidden sm:inline whitespace-nowrap">
@@ -428,8 +426,8 @@ const EditDataAdmission: React.FC<EditDataProps> = ({
               isSubmitting={isSubmitting}
               isDisabled={false}
               cancelText="Cancel"
-              submitText="Update Admission"
-              loadingText="Updating..."
+              submitText="Save Changes"
+              loadingText="Saving..."
               submitIcon={Save}
               theme="green"
             />

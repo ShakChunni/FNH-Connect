@@ -59,23 +59,23 @@ export const StaffFilter: React.FC<StaffFilterProps> = ({
         disabled={disabled}
         className={cn(
           "flex items-center justify-between gap-2 px-4 py-2.5 w-full",
-          "bg-white border border-gray-100 rounded-xl shadow-sm",
-          "text-sm font-semibold text-gray-700",
+          "bg-white border border-slate-100 rounded-xl shadow-sm",
+          "text-sm font-semibold text-slate-700",
           "focus:outline-none focus:ring-2 focus:ring-fnh-blue/20",
-          "transition-all duration-200 cursor-pointer",
+          "transition-colors duration-200 cursor-pointer",
           "disabled:opacity-50 disabled:cursor-not-allowed",
           isOpen && "ring-2 ring-fnh-blue/20 border-fnh-blue/30"
         )}
       >
         <div className="flex items-center gap-2 min-w-0">
-          <Users className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+          <Users className="w-3.5 h-3.5 text-slate-500 shrink-0" />
           <span className="truncate">
             {selectedStaff ? selectedStaff.fullName : placeholder}
           </span>
         </div>
         <ChevronDown
           className={cn(
-            "w-3.5 h-3.5 text-gray-400 transition-transform duration-200 shrink-0",
+            "w-3.5 h-3.5 text-slate-500 transition-transform duration-200 shrink-0",
             isOpen && "rotate-180"
           )}
         />
@@ -92,15 +92,15 @@ export const StaffFilter: React.FC<StaffFilterProps> = ({
       >
         <div className="py-1">
           {/* Search */}
-          <div className="px-2 py-2 border-b border-gray-100">
+          <div className="px-2 py-2 border-b border-slate-100">
             <div className="relative">
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400" />
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-500" />
               <input
                 type="text"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 placeholder="Search staff..."
-                className="w-full pl-8 pr-2.5 py-1.5 bg-gray-50 border border-gray-100 rounded-lg text-[11px] font-medium focus:outline-none focus:ring-2 focus:ring-fnh-blue/20"
+                className="h-9 w-full pl-8 pr-2.5 bg-slate-50 border border-slate-100 rounded-lg text-xs font-medium focus:outline-none focus:ring-2 focus:ring-fnh-blue/20"
                 autoFocus
               />
             </div>
@@ -113,9 +113,9 @@ export const StaffFilter: React.FC<StaffFilterProps> = ({
                 type="button"
                 onClick={() => handleSelect(null)}
                 className={cn(
-                  "w-full flex items-center justify-between gap-2 px-3 py-2 text-left",
+                  "w-full flex items-center justify-between gap-2 px-3 py-2 min-h-9 text-left",
                   "text-xs font-medium",
-                  "hover:bg-gray-50 transition-colors cursor-pointer",
+                  "hover:bg-slate-50 transition-colors cursor-pointer",
                   currentStaffId === null && "bg-fnh-blue/5",
                 )}
               >
@@ -127,7 +127,7 @@ export const StaffFilter: React.FC<StaffFilterProps> = ({
                 )}
               </button>
 
-              <div className="h-px bg-gray-100 my-1" />
+              <div className="h-px bg-slate-100 my-1" />
             </>
           ) : null}
 
@@ -144,7 +144,7 @@ export const StaffFilter: React.FC<StaffFilterProps> = ({
                   className={cn(
                     "w-full flex items-center justify-between gap-2 px-3 py-2 text-left",
                     "text-xs",
-                    "hover:bg-gray-50 transition-colors cursor-pointer",
+                    "hover:bg-slate-50 transition-colors cursor-pointer",
                     isSelected && "bg-fnh-blue/5"
                   )}
                 >
@@ -152,7 +152,7 @@ export const StaffFilter: React.FC<StaffFilterProps> = ({
                     <p className={cn("truncate", isSelected && "font-bold")}>
                       {member.fullName}
                     </p>
-                    <p className="text-[9px] text-gray-400 truncate uppercase tracking-tight">
+                    <p className="text-xs text-slate-500 truncate uppercase tracking-tight">
                       {member.role}
                     </p>
                   </div>
@@ -164,7 +164,7 @@ export const StaffFilter: React.FC<StaffFilterProps> = ({
             })}
 
             {filteredStaff.length === 0 && (
-              <div className="px-3 py-4 text-center text-xs text-gray-400">
+              <div className="px-3 py-4 text-center text-xs text-slate-500">
                 No staff found
               </div>
             )}

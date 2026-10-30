@@ -47,7 +47,7 @@ export const CashTrackerHeader: React.FC<CashTrackerHeaderProps> = ({
         <h2 className="text-sm lg:text-base font-semibold text-fnh-navy-dark">
           Cash Tracker
         </h2>
-        <p className="text-[10px] lg:text-xs text-gray-500">
+        <p className="text-2xs lg:text-xs text-slate-500">
           {periodLabel}
           {shiftsCount > 1 && (
             <span className="ml-1 text-fnh-navy">• {shiftsCount} shifts</span>
@@ -61,7 +61,8 @@ export const CashTrackerHeader: React.FC<CashTrackerHeaderProps> = ({
             ref={printButtonRef}
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
             disabled={!hasData || isFetching || isLoadingDetailedReport}
-            className="p-1.5 sm:p-2 rounded-lg bg-fnh-navy/5 hover:bg-fnh-navy/10 transition-colors text-fnh-navy cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex h-9 w-9 items-center justify-center rounded-lg bg-fnh-navy/5 hover:bg-fnh-navy/10 transition-colors text-fnh-navy cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+            aria-label="Print report"
             title="Print Report"
           >
             {isLoadingDetailedReport ? (
@@ -80,35 +81,35 @@ export const CashTrackerHeader: React.FC<CashTrackerHeaderProps> = ({
             {/* Summary Report Option */}
             <button
               onClick={handleSummaryReport}
-              className="w-full flex items-center gap-2 px-2.5 py-2 text-left text-xs text-gray-700 hover:bg-fnh-navy/5 transition-colors group"
+              className="w-full flex items-center gap-2 min-h-9 px-2.5 py-1.5 text-left text-xs text-slate-700 hover:bg-fnh-navy/5 transition-colors group"
             >
               <FileText className="w-3.5 h-3.5 text-fnh-navy group-hover:text-fnh-navy-dark transition-colors" />
               <div>
                 <span className="block font-medium text-fnh-navy-dark">
                   Summary
                 </span>
-                <span className="block text-[9px] text-gray-500/80">
+                <span className="block text-2xs text-slate-500">
                   Quick overview
                 </span>
               </div>
             </button>
 
             {/* Divider */}
-            <div className="h-px bg-gray-100 mx-2 my-0.5" />
+            <div className="h-px bg-slate-100 mx-2 my-0.5" />
 
             {/* Detailed Report Option */}
             {onGenerateDetailedReport && (
               <button
                 onClick={handleDetailedReport}
                 disabled={isLoadingDetailedReport}
-                className="w-full flex items-center gap-2 px-2.5 py-2 text-left text-xs text-gray-700 hover:bg-emerald-50 transition-colors disabled:opacity-50 group"
+                className="w-full flex items-center gap-2 min-h-9 px-2.5 py-1.5 text-left text-xs text-slate-700 hover:bg-emerald-50 transition-colors disabled:opacity-50 group"
               >
                 <List className="w-3.5 h-3.5 text-emerald-600 group-hover:text-emerald-700 transition-colors" />
                 <div>
                   <span className="block font-medium text-emerald-700">
                     Detailed
                   </span>
-                  <span className="block text-[9px] text-gray-500/80">
+                  <span className="block text-2xs text-slate-500">
                     With patient names
                   </span>
                 </div>
@@ -121,7 +122,8 @@ export const CashTrackerHeader: React.FC<CashTrackerHeaderProps> = ({
         <button
           onClick={onRefresh}
           disabled={isFetching}
-          className="p-1.5 sm:p-2 rounded-lg hover:bg-gray-100 transition-colors text-gray-400 hover:text-fnh-navy cursor-pointer disabled:opacity-50"
+          className="flex h-9 w-9 items-center justify-center rounded-lg hover:bg-slate-100 transition-colors text-slate-500 hover:text-fnh-navy cursor-pointer disabled:opacity-50"
+          aria-label="Refresh"
           title="Refresh"
         >
           <RefreshCw

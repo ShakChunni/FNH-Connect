@@ -74,8 +74,8 @@ export const TestDetails: React.FC<TestDetailsProps> = ({
       value: patient.isCompleted ? "Completed" : "Pending",
       icon: CheckCircle2,
       color: patient.isCompleted
-        ? "bg-emerald-50 text-emerald-600 border-emerald-100"
-        : "bg-amber-50 text-amber-600 border-amber-100",
+        ? "bg-emerald-50 text-emerald-700 border-emerald-100"
+        : "bg-amber-50 text-amber-700 border-amber-100",
       isBadge: true,
     },
     {
@@ -89,11 +89,11 @@ export const TestDetails: React.FC<TestDetailsProps> = ({
   ];
 
   const renderInfoCard = () => (
-    <div className="bg-white rounded-xl sm:rounded-2xl shadow-sm border border-gray-100 overflow-hidden h-full">
+    <div className="bg-white rounded-xl sm:rounded-2xl shadow-sm border border-slate-100 overflow-hidden h-full">
       {/* Header */}
-      <div className="bg-teal-600 px-3 py-2.5 sm:px-5 sm:py-4 flex items-center gap-2">
+      <div className="bg-fnh-navy px-3 py-2.5 sm:px-5 sm:py-4 flex items-center gap-2">
         <ClipboardList size={14} className="text-white sm:w-4 sm:h-4" />
-        <h4 className="text-[11px] sm:text-sm font-bold text-white uppercase tracking-wide">
+        <h4 className="text-2xs sm:text-sm font-bold text-white uppercase tracking-wide">
           Test Info
         </h4>
       </div>
@@ -107,7 +107,7 @@ export const TestDetails: React.FC<TestDetailsProps> = ({
           >
             <div
               className={cn(
-                "p-1.5 sm:p-2 rounded-md sm:rounded-lg border shrink-0 transition-transform group-hover:scale-110",
+                "p-1.5 sm:p-2 rounded-md sm:rounded-lg border shrink-0 transition-transform ",
                 item.color
               )}
             >
@@ -117,13 +117,13 @@ export const TestDetails: React.FC<TestDetailsProps> = ({
               />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-[9px] sm:text-[10px] font-bold text-gray-400 uppercase tracking-wide mb-0.5 sm:mb-1">
+              <p className="text-2xs sm:text-2xs font-bold text-slate-500 uppercase tracking-wide mb-0.5 sm:mb-1">
                 {item.label}
               </p>
               {item.isBadge ? (
                 <span
                   className={cn(
-                    "inline-flex items-center px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-md sm:rounded-lg text-[10px] sm:text-xs font-bold uppercase",
+                    "inline-flex items-center px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-md sm:rounded-lg text-2xs sm:text-xs font-bold uppercase",
                     patient.isCompleted
                       ? "bg-emerald-100 text-emerald-700"
                       : "bg-amber-100 text-amber-700"
@@ -133,7 +133,7 @@ export const TestDetails: React.FC<TestDetailsProps> = ({
                 </span>
               ) : (
                 <p
-                  className="text-xs sm:text-sm font-bold text-gray-800 truncate"
+                  className="text-xs sm:text-sm font-bold text-slate-800 truncate"
                   title={item.value}
                 >
                   {item.value}
@@ -147,16 +147,16 @@ export const TestDetails: React.FC<TestDetailsProps> = ({
   );
 
   const renderInvestigationsCard = () => (
-    <div className="bg-white rounded-xl sm:rounded-2xl shadow-sm border border-gray-100 overflow-hidden h-full">
+    <div className="bg-white rounded-xl sm:rounded-2xl shadow-sm border border-slate-100 overflow-hidden h-full">
       {/* Header */}
-      <div className="bg-indigo-600 px-3 py-2.5 sm:px-5 sm:py-4 flex items-center justify-between">
+      <div className="bg-fnh-navy px-3 py-2.5 sm:px-5 sm:py-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <FlaskConical size={14} className="text-white sm:w-4 sm:h-4" />
-          <h4 className="text-[11px] sm:text-sm font-bold text-white uppercase tracking-wide">
+          <h4 className="text-2xs sm:text-sm font-bold text-white uppercase tracking-wide">
             Investigations Ordered
           </h4>
         </div>
-        <span className="px-2 py-0.5 sm:px-2.5 sm:py-1 bg-white/20 rounded-md sm:rounded-lg text-[10px] sm:text-xs font-bold text-white">
+        <span className="px-2 py-0.5 sm:px-2.5 sm:py-1 bg-white/20 rounded-md sm:rounded-lg text-2xs sm:text-xs font-bold text-white">
           {tests.length} {tests.length === 1 ? "Test" : "Tests"}
         </span>
       </div>
@@ -177,22 +177,22 @@ export const TestDetails: React.FC<TestDetailsProps> = ({
               className="flex items-start gap-2 sm:gap-3 p-2 sm:p-3 rounded-lg sm:rounded-xl bg-indigo-50/50 border border-indigo-100/50 hover:bg-indigo-50 transition-colors"
             >
               <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-md sm:rounded-lg bg-indigo-100 flex items-center justify-center shrink-0 mt-0.5">
-                <span className="text-[10px] sm:text-xs font-bold text-indigo-600">
+                <span className="text-2xs sm:text-xs font-bold text-indigo-600">
                   {idx + 1}
                 </span>
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-xs sm:text-sm font-semibold text-gray-800 leading-snug wrap-break-word">
+                <p className="text-xs sm:text-sm font-semibold text-slate-800 leading-snug wrap-break-word">
                   {test.name}
                 </p>
                 <div className="flex items-center gap-2 mt-1">
-                  <span className="text-[9px] sm:text-[10px] font-medium text-indigo-500 uppercase">
+                  <span className="text-2xs sm:text-2xs font-medium text-indigo-700 uppercase">
                     {test.category}
                   </span>
                   {test.price > 0 && (
                     <>
-                      <span className="text-gray-300">•</span>
-                      <span className="text-[9px] sm:text-[10px] font-bold text-gray-500">
+                      <span className="text-slate-300">•</span>
+                      <span className="text-2xs sm:text-2xs font-bold text-slate-500">
                         ৳{test.price.toLocaleString()}
                       </span>
                     </>
@@ -207,7 +207,7 @@ export const TestDetails: React.FC<TestDetailsProps> = ({
         {hasMoreTests && (
           <button
             onClick={() => setShowAllTests(!showAllTests)}
-            className="mt-3 sm:mt-4 w-full flex items-center justify-center gap-1.5 py-2 sm:py-2.5 px-4 rounded-lg sm:rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-600 font-semibold text-[10px] sm:text-xs transition-colors"
+            className="mt-3 sm:mt-4 w-full flex items-center justify-center gap-1.5 py-2 sm:py-2.5 px-4 rounded-lg sm:rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-600 font-semibold text-2xs sm:text-xs transition-colors"
           >
             {showAllTests ? (
               <>

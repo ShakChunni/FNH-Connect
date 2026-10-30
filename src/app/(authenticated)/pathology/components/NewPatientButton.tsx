@@ -10,7 +10,7 @@ interface NewPatientButtonProps {
 
 /**
  * New Patient Button for Pathology
- * Dark navy blue button for adding new pathology patients
+ * Solid emerald "New X" entry button for adding new pathology patients
  * Can be disabled during loading (no visual change, just prevents interaction)
  */
 export const NewPatientButton: React.FC<NewPatientButtonProps> = ({
@@ -27,10 +27,9 @@ export const NewPatientButton: React.FC<NewPatientButtonProps> = ({
     <button
       onClick={handleClick}
       className={`
-        w-full sm:w-auto flex items-center justify-center gap-2 px-4 sm:px-5 py-2.5 sm:py-3 
-        bg-fnh-navy-dark hover:bg-fnh-navy text-white 
-        rounded-xl shadow-lg hover:shadow-xl 
-        transition-all duration-300 font-semibold text-sm sm:text-base 
+        w-full sm:w-auto h-10 flex items-center justify-center gap-2 px-4 sm:px-5
+        bg-emerald-600 hover:bg-emerald-700 text-white
+        rounded-xl transition-colors font-semibold text-sm
         ${disabled ? "cursor-default" : "cursor-pointer"}
       `}
       style={{ pointerEvents: disabled ? "none" : "auto" }}

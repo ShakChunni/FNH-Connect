@@ -1,67 +1,39 @@
 "use client";
 
 import { motion, Variants } from "framer-motion";
+import { DURATION, SPRING, tween } from "@/lib/motion";
 
 export const modalVariants: Variants = {
   hidden: {
     opacity: 0,
-    scale: 0.95,
-    y: 10, // Slight slide up
+    scale: 0.98,
+    y: 8,
   },
   visible: {
     opacity: 1,
     scale: 1,
     y: 0,
     transition: {
-      type: "spring",
-      damping: 25,
-      stiffness: 300,
-      mass: 0.8,
-      opacity: { duration: 0.2, ease: "easeOut" },
+      ...SPRING,
+      opacity: tween(DURATION.fast),
     },
   },
   exit: {
     opacity: 0,
-    scale: 0.95,
-    y: 10,
-    transition: {
-      duration: 0.2,
-      ease: "easeInOut",
-    },
+    scale: 0.98,
+    y: 8,
+    transition: tween(DURATION.fast),
   },
 };
 
+/**
+ * Opacity only. The dim colour comes from the backdrop's className
+ * (standard: `bg-slate-950/50`), so it is never overridden here.
+ */
 export const backdropVariants: Variants = {
-  hidden: {
-    opacity: 0,
-    backdropFilter: "blur(0px)",
-    // FIX: Set the target background color immediately in the hidden state.
-    // Since opacity is 0, it remains invisible, but this prevents the browser
-    // from interpolating "transparent" -> "rgba(0,0,0,0.2)" which causes the snap.
-    background: "rgba(0, 0, 0, 0.2)",
-    transform: "translateZ(0)", // Force hardware acceleration
-  },
-  visible: {
-    opacity: 1,
-    backdropFilter: "blur(4px)",
-    background: "rgba(0, 0, 0, 0.2)",
-    transform: "translateZ(0)", // Force hardware acceleration
-    willChange: "opacity, backdrop-filter",
-    transition: {
-      duration: 0.3,
-      ease: "easeOut",
-    },
-  },
-  exit: {
-    opacity: 0,
-    backdropFilter: "blur(0px)",
-    background: "rgba(0, 0, 0, 0.2)",
-    transform: "translateZ(0)",
-    transition: {
-      duration: 0.2,
-      ease: "easeIn",
-    },
-  },
+  hidden: { opacity: 0 },
+  visible: { opacity: 1, transition: tween(DURATION.base) },
+  exit: { opacity: 0, transition: tween(DURATION.fast) },
 };
 
 export const ModalBackdrop = motion.div;

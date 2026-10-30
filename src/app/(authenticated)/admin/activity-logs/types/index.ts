@@ -1,3 +1,5 @@
+import type { StatusTone } from "@/lib/statusStyles";
+
 /**
  * Activity Log Types
  * TypeScript interfaces for the activity logs module
@@ -132,88 +134,95 @@ export interface ActivityLogFilters {
   limit: number;
 }
 
-// Action type color mapping
-export const ACTION_COLORS: Record<
-  string,
-  { bg: string; text: string; icon: string }
-> = {
+// Action type -> shared status tone, by meaning:
+// create/login success -> success, update -> info, delete/failure -> danger,
+// security/warning -> warning, everything else -> neutral.
+export const ACTION_TONES: Record<string, StatusTone> = {
   // Authentication & Session
-  LOGIN: { bg: "bg-emerald-50", text: "text-emerald-600", icon: "🔐" },
-  LOGOUT: { bg: "bg-slate-50", text: "text-slate-600", icon: "🚪" },
-  FIRST_TIME_SETUP: { bg: "bg-purple-50", text: "text-purple-600", icon: "🎉" },
-  PASSWORD_CHANGE: { bg: "bg-orange-50", text: "text-orange-600", icon: "🔑" },
-  PASSWORD_RESET: { bg: "bg-orange-50", text: "text-orange-600", icon: "🔄" },
-  SESSION_EXPIRED: { bg: "bg-gray-50", text: "text-gray-600", icon: "⏱️" },
+  LOGIN: "success",
+  LOGOUT: "neutral",
+  FIRST_TIME_SETUP: "success",
+  PASSWORD_CHANGE: "warning",
+  PASSWORD_RESET: "warning",
+  SESSION_EXPIRED: "neutral",
 
   // CRUD Operations
-  CREATE: { bg: "bg-blue-50", text: "text-blue-600", icon: "➕" },
-  UPDATE: { bg: "bg-amber-50", text: "text-amber-600", icon: "✏️" },
-  DELETE: { bg: "bg-rose-50", text: "text-rose-600", icon: "🗑️" },
-  VIEW: { bg: "bg-indigo-50", text: "text-indigo-600", icon: "👁️" },
-  RESTORE: { bg: "bg-lime-50", text: "text-lime-600", icon: "🔄" },
+  CREATE: "success",
+  UPDATE: "info",
+  DELETE: "danger",
+  VIEW: "neutral",
+  RESTORE: "success",
 
   // Shift Management
-  SHIFT_START: { bg: "bg-teal-50", text: "text-teal-600", icon: "▶️" },
-  SHIFT_END: { bg: "bg-cyan-50", text: "text-cyan-600", icon: "⏹️" },
-  SHIFT_HANDOVER: { bg: "bg-sky-50", text: "text-sky-600", icon: "🤝" },
+  SHIFT_START: "info",
+  SHIFT_END: "neutral",
+  SHIFT_HANDOVER: "info",
 
   // Financial
-  PAYMENT: { bg: "bg-green-50", text: "text-green-600", icon: "💵" },
-  REFUND: { bg: "bg-red-50", text: "text-red-600", icon: "💸" },
-  DISCOUNT: { bg: "bg-yellow-50", text: "text-yellow-600", icon: "🏷️" },
-  COLLECTION: { bg: "bg-emerald-50", text: "text-emerald-600", icon: "💰" },
+  PAYMENT: "success",
+  REFUND: "danger",
+  DISCOUNT: "warning",
+  COLLECTION: "success",
 
   // Patient Flow
-  ADMISSION: { bg: "bg-blue-50", text: "text-blue-600", icon: "🏥" },
-  DISCHARGE: { bg: "bg-teal-50", text: "text-teal-600", icon: "🏠" },
-  TRANSFER: { bg: "bg-violet-50", text: "text-violet-600", icon: "🔄" },
-  CANCEL: { bg: "bg-pink-50", text: "text-pink-600", icon: "❌" },
-  CANCELLED: { bg: "bg-pink-50", text: "text-pink-600", icon: "❌" },
-  COMPLETE: { bg: "bg-green-50", text: "text-green-600", icon: "✅" },
-  COMPLETED: { bg: "bg-green-50", text: "text-green-600", icon: "✅" },
+  ADMISSION: "info",
+  DISCHARGE: "success",
+  TRANSFER: "info",
+  CANCEL: "danger",
+  CANCELLED: "danger",
+  COMPLETE: "success",
+  COMPLETED: "success",
 
   // Reports & Documents
-  EXPORT: { bg: "bg-fuchsia-50", text: "text-fuchsia-600", icon: "📤" },
-  PRINT: { bg: "bg-zinc-50", text: "text-zinc-600", icon: "🖨️" },
-  DOWNLOAD: { bg: "bg-fuchsia-50", text: "text-fuchsia-600", icon: "📥" },
-  GENERATE_REPORT: { bg: "bg-indigo-50", text: "text-indigo-600", icon: "📊" },
+  EXPORT: "neutral",
+  PRINT: "neutral",
+  DOWNLOAD: "neutral",
+  GENERATE_REPORT: "neutral",
 
   // Security Events
-  LOGIN_FAILED: { bg: "bg-red-50", text: "text-red-600", icon: "🚫" },
-  BLOCKED: { bg: "bg-red-50", text: "text-red-600", icon: "🔒" },
-  UNBLOCKED: { bg: "bg-green-50", text: "text-green-600", icon: "🔓" },
-  SUSPICIOUS: { bg: "bg-orange-50", text: "text-orange-600", icon: "⚠️" },
+  LOGIN_FAILED: "danger",
+  BLOCKED: "warning",
+  UNBLOCKED: "warning",
+  SUSPICIOUS: "warning",
 
   // Staff Management
-  STAFF_CREATE: { bg: "bg-blue-50", text: "text-blue-600", icon: "👤" },
-  STAFF_UPDATE: { bg: "bg-amber-50", text: "text-amber-600", icon: "👤" },
-  ROLE_CHANGE: { bg: "bg-purple-50", text: "text-purple-600", icon: "🎭" },
-  ACTIVATE: { bg: "bg-green-50", text: "text-green-600", icon: "✓" },
-  DEACTIVATE: { bg: "bg-gray-50", text: "text-gray-600", icon: "⏸️" },
+  STAFF_CREATE: "success",
+  STAFF_UPDATE: "info",
+  ROLE_CHANGE: "warning",
+  ACTIVATE: "success",
+  DEACTIVATE: "neutral",
 
   // Email
-  EMAIL_SENT: { bg: "bg-sky-50", text: "text-sky-600", icon: "📧" },
-  EMAIL_FAILED: { bg: "bg-red-50", text: "text-red-600", icon: "📧" },
+  EMAIL_SENT: "neutral",
+  EMAIL_FAILED: "danger",
 };
 
-// Get color for action type (with fallback)
-export function getActionColor(action: string): {
-  bg: string;
-  text: string;
-  icon: string;
-} {
+// Get tone for action type (with fallback)
+export function getActionTone(action: string): StatusTone {
   // Check for exact match first
-  if (ACTION_COLORS[action]) {
-    return ACTION_COLORS[action];
+  if (ACTION_TONES[action]) {
+    return ACTION_TONES[action];
   }
 
   // Check for partial match (e.g., "LOGIN_SUCCESS" contains "LOGIN")
-  for (const [key, value] of Object.entries(ACTION_COLORS)) {
-    if (action.toUpperCase().includes(key)) {
-      return value;
+  const upper = action.toUpperCase();
+  for (const [key, tone] of Object.entries(ACTION_TONES)) {
+    if (upper.includes(key)) {
+      return tone;
     }
   }
 
   // Default fallback
-  return { bg: "bg-gray-50", text: "text-gray-600", icon: "📋" };
+  return "neutral";
+}
+
+// Display label for a raw action code: "FIRST_TIME_SETUP" -> "First Time Setup".
+// Display only; the raw code is still what gets stored, filtered and shown in `title`.
+export function formatActionLabel(action: string): string {
+  return action
+    .toLowerCase()
+    .split("_")
+    .filter(Boolean)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
 }

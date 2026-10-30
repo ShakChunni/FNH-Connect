@@ -218,10 +218,10 @@ const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose }) => {
 
   const getInputClass = (hasValue: boolean) => {
     const base =
-      "text-gray-700 font-normal rounded-lg h-12 md:h-14 py-2 px-4 w-full focus:border-blue-900 focus:ring-2 focus:ring-blue-950 outline-none shadow-sm hover:shadow-md transition-all duration-300 placeholder:text-gray-400 placeholder:font-light text-xs sm:text-sm cursor-pointer";
+      "text-slate-700 font-normal rounded-lg h-12 md:h-14 py-2 px-4 w-full focus:border-blue-900 focus:ring-2 focus:ring-blue-950 outline-none shadow-sm transition-colors placeholder:text-slate-400 placeholder:font-light text-xs sm:text-sm cursor-pointer";
     return hasValue
-      ? `${base} bg-white border-2 border-green-600`
-      : `${base} bg-white border-2 border-gray-300`;
+      ? `${base} bg-white border-2 border-emerald-600`
+      : `${base} bg-white border-2 border-slate-300`;
   };
 
   const roleLabel = SYSTEM_ROLES.find((r) => r.value === role)?.label || role;
@@ -232,7 +232,7 @@ const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose }) => {
       <AnimatePresence mode="wait">
         {isOpen && (
           <motion.div
-            className="fixed inset-0 bg-slate-900/70 flex items-center justify-center z-100000"
+            className="fixed inset-0 bg-slate-950/50 flex items-center justify-center z-100000"
             variants={backdropVariants}
             initial="hidden"
             animate="visible"
@@ -246,27 +246,27 @@ const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose }) => {
               exit="exit"
             >
               <div className="text-center">
-                <div className="w-16 h-16 bg-green-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                  <Check className="w-8 h-8 text-green-600" />
+                <div className="w-16 h-16 bg-emerald-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                  <Check className="w-8 h-8 text-emerald-700" />
                 </div>
-                <h2 className="text-xl font-bold text-gray-900 mb-2">
+                <h2 className="text-xl font-bold text-slate-900 mb-2">
                   User Created Successfully!
                 </h2>
-                <p className="text-sm text-gray-600 mb-6">
+                <p className="text-sm text-slate-600 mb-6">
                   Save these credentials — the password will not be shown again.
                 </p>
 
                 <div className="space-y-3 mb-6">
-                  <div className="bg-gray-50 rounded-xl p-4 border border-gray-200 text-left">
-                    <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">
+                  <div className="bg-slate-50 rounded-xl p-4 border border-slate-200 text-left">
+                    <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">
                       Username
                     </p>
-                    <p className="text-sm font-bold text-gray-900">
+                    <p className="text-sm font-bold text-slate-900">
                       {username}
                     </p>
                   </div>
                   <div className="bg-amber-50 rounded-xl p-4 border border-amber-200 text-left">
-                    <p className="text-xs font-bold text-amber-600 uppercase tracking-wider mb-1">
+                    <p className="text-xs font-bold text-amber-700 uppercase tracking-wider mb-1">
                       Password
                     </p>
                     <div className="flex items-center justify-between gap-2">
@@ -306,7 +306,7 @@ const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose }) => {
     <AnimatePresence mode="wait">
       {isOpen && (
         <motion.div
-          className="fixed inset-0 bg-slate-900/70 flex items-center justify-center z-100000"
+          className="fixed inset-0 bg-slate-950/50 flex items-center justify-center z-100000"
           variants={backdropVariants}
           initial="hidden"
           animate="visible"
@@ -315,7 +315,7 @@ const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose }) => {
         >
           <motion.div
             ref={popupRef}
-            className="bg-white rounded-3xl shadow-lg w-full max-w-[95%] sm:max-w-[90%] md:max-w-[60%] lg:max-w-[50%] xl:max-w-[45%] h-auto max-h-[95%] sm:max-h-[90%] popup-content flex flex-col"
+            className="bg-white rounded-3xl shadow-lg w-full max-w-[95%] sm:max-w-[90%] md:max-w-[60%] lg:max-w-[50%] xl:max-w-[45%] h-auto max-h-[95%] sm:max-h-[90%] flex flex-col"
             variants={modalVariants}
             initial="hidden"
             animate="visible"
@@ -333,7 +333,7 @@ const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose }) => {
             <div className="flex-1 overflow-y-auto p-4 sm:p-6">
               <div className="space-y-6">
                 {/* Mode Toggle */}
-                <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl border border-gray-200">
+                <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-slate-200">
                   <button
                     type="button"
                     onClick={() => {
@@ -341,10 +341,10 @@ const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose }) => {
                       setSelectedStaff(null);
                     }}
                     className={cn(
-                      "flex-1 px-4 py-2.5 rounded-lg text-xs sm:text-sm font-semibold transition-all cursor-pointer",
+                      "flex-1 px-4 py-2.5 rounded-lg text-xs sm:text-sm font-semibold transition-colors cursor-pointer",
                       !linkExisting
                         ? "bg-white text-blue-700 shadow-sm border border-blue-200"
-                        : "text-gray-500 hover:text-gray-700",
+                        : "text-slate-500 hover:text-slate-700",
                     )}
                   >
                     Create New Staff
@@ -353,10 +353,10 @@ const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose }) => {
                     type="button"
                     onClick={() => setLinkExisting(true)}
                     className={cn(
-                      "flex-1 px-4 py-2.5 rounded-lg text-xs sm:text-sm font-semibold transition-all cursor-pointer",
+                      "flex-1 px-4 py-2.5 rounded-lg text-xs sm:text-sm font-semibold transition-colors cursor-pointer",
                       linkExisting
                         ? "bg-white text-blue-700 shadow-sm border border-blue-200"
-                        : "text-gray-500 hover:text-gray-700",
+                        : "text-slate-500 hover:text-slate-700",
                     )}
                   >
                     Link Existing Staff
@@ -377,8 +377,8 @@ const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose }) => {
                   {linkExisting ? (
                     // Staff Dropdown
                     <div>
-                      <label className="block text-xs font-semibold text-gray-700 mb-2">
-                        Staff Member <span className="text-red-500">*</span>
+                      <label className="block text-xs font-semibold text-slate-700 mb-2">
+                        Staff Member <span className="text-red-600">*</span>
                       </label>
                       <button
                         ref={staffBtnRef}
@@ -389,8 +389,8 @@ const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose }) => {
                         <span
                           className={
                             selectedStaff
-                              ? "text-gray-700 font-normal text-xs sm:text-sm"
-                              : "text-gray-400 font-light text-xs sm:text-sm"
+                              ? "text-slate-700 font-normal text-xs sm:text-sm"
+                              : "text-slate-400 font-light text-xs sm:text-sm"
                           }
                         >
                           {selectedStaff
@@ -399,7 +399,7 @@ const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose }) => {
                         </span>
                         <ChevronDown
                           className={cn(
-                            "w-4 h-4 text-gray-400 transition-transform",
+                            "w-4 h-4 text-slate-400 transition-transform",
                             staffSearchOpen && "rotate-180",
                           )}
                         />
@@ -415,12 +415,12 @@ const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose }) => {
                             value={staffSearchTerm}
                             onChange={(e) => setStaffSearchTerm(e.target.value)}
                             placeholder="Search by name..."
-                            className="w-full px-3 py-2 border border-gray-200 rounded-lg text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 mb-2"
+                            className="w-full px-3 py-2 border border-slate-200 rounded-lg text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 mb-2"
                             autoFocus
                           />
                           <div className="max-h-48 overflow-y-auto">
                             {availableStaff.length === 0 ? (
-                              <p className="text-xs text-gray-500 px-3 py-2">
+                              <p className="text-xs text-slate-500 px-3 py-2">
                                 No available staff found
                               </p>
                             ) : (
@@ -443,7 +443,7 @@ const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose }) => {
                                   <span className="font-medium">
                                     {staff.fullName}
                                   </span>
-                                  <span className="text-gray-400 ml-1">
+                                  <span className="text-slate-500 ml-1">
                                     ({staff.role})
                                   </span>
                                 </button>
@@ -457,8 +457,8 @@ const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose }) => {
                     // New Staff Fields
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-xs font-semibold text-gray-700 mb-2">
-                          First Name <span className="text-red-500">*</span>
+                        <label className="block text-xs font-semibold text-slate-700 mb-2">
+                          First Name <span className="text-red-600">*</span>
                         </label>
                         <input
                           type="text"
@@ -469,7 +469,7 @@ const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose }) => {
                         />
                       </div>
                       <div>
-                        <label className="block text-xs font-semibold text-gray-700 mb-2">
+                        <label className="block text-xs font-semibold text-slate-700 mb-2">
                           Last Name
                         </label>
                         <input
@@ -497,8 +497,8 @@ const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose }) => {
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-xs font-semibold text-gray-700 mb-2">
-                        Username <span className="text-red-500">*</span>
+                      <label className="block text-xs font-semibold text-slate-700 mb-2">
+                        Username <span className="text-red-600">*</span>
                       </label>
                       <input
                         type="text"
@@ -511,8 +511,8 @@ const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose }) => {
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold text-gray-700 mb-2">
-                        Password <span className="text-red-500">*</span>
+                      <label className="block text-xs font-semibold text-slate-700 mb-2">
+                        Password <span className="text-red-600">*</span>
                       </label>
                       <div className="flex gap-2">
                         <input
@@ -533,11 +533,11 @@ const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose }) => {
                         <button
                           type="button"
                           onClick={handleCopyPassword}
-                          className="px-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors cursor-pointer shrink-0"
+                          className="px-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition-colors cursor-pointer shrink-0"
                           title="Copy password"
                         >
                           {copied ? (
-                            <Check className="w-4 h-4 text-green-600" />
+                            <Check className="w-4 h-4 text-emerald-700" />
                           ) : (
                             <Copy className="w-4 h-4" />
                           )}
@@ -559,8 +559,8 @@ const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose }) => {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {/* System Role */}
                     <div>
-                      <label className="block text-xs font-semibold text-gray-700 mb-2">
-                        System Role <span className="text-red-500">*</span>
+                      <label className="block text-xs font-semibold text-slate-700 mb-2">
+                        System Role <span className="text-red-600">*</span>
                       </label>
                       <button
                         ref={roleBtnRef}
@@ -568,12 +568,12 @@ const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose }) => {
                         onClick={() => setRoleOpen(!roleOpen)}
                         className={`${getInputClass(!!role)} flex justify-between items-center`}
                       >
-                        <span className="text-gray-700 font-normal text-xs sm:text-sm">
+                        <span className="text-slate-700 font-normal text-xs sm:text-sm">
                           {roleLabel}
                         </span>
                         <ChevronDown
                           className={cn(
-                            "w-4 h-4 text-gray-400 transition-transform",
+                            "w-4 h-4 text-slate-400 transition-transform",
                             roleOpen && "rotate-180",
                           )}
                         />
@@ -607,7 +607,7 @@ const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose }) => {
 
                     {/* Staff Role */}
                     <div>
-                      <label className="block text-xs font-semibold text-gray-700 mb-2">
+                      <label className="block text-xs font-semibold text-slate-700 mb-2">
                         Hospital/Staff Role
                       </label>
                       <button
@@ -619,15 +619,15 @@ const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose }) => {
                         <span
                           className={
                             staffRole
-                              ? "text-gray-700 font-normal text-xs sm:text-sm"
-                              : "text-gray-400 font-light text-xs sm:text-sm"
+                              ? "text-slate-700 font-normal text-xs sm:text-sm"
+                              : "text-slate-400 font-light text-xs sm:text-sm"
                           }
                         >
                           {staffRole || "Select role..."}
                         </span>
                         <ChevronDown
                           className={cn(
-                            "w-4 h-4 text-gray-400 transition-transform",
+                            "w-4 h-4 text-slate-400 transition-transform",
                             staffRoleOpen && "rotate-180",
                           )}
                         />
@@ -663,15 +663,15 @@ const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose }) => {
 
                 {/* Optional Details */}
                 {!linkExisting && (
-                  <div className="bg-gray-50/50 rounded-2xl p-4 sm:p-5 border border-gray-100">
+                  <div className="bg-slate-50/50 rounded-2xl p-4 sm:p-5 border border-slate-200">
                     <div className="flex items-center gap-2 mb-4">
-                      <h3 className="text-sm font-bold text-gray-700">
+                      <h3 className="text-sm font-bold text-slate-700">
                         Additional Details (Optional)
                       </h3>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <div>
-                        <label className="block text-xs font-semibold text-gray-700 mb-2">
+                        <label className="block text-xs font-semibold text-slate-700 mb-2">
                           Specialization
                         </label>
                         <input
@@ -683,7 +683,7 @@ const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose }) => {
                         />
                       </div>
                       <div>
-                        <label className="block text-xs font-semibold text-gray-700 mb-2">
+                        <label className="block text-xs font-semibold text-slate-700 mb-2">
                           Phone
                         </label>
                         <input
@@ -695,7 +695,7 @@ const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose }) => {
                         />
                       </div>
                       <div>
-                        <label className="block text-xs font-semibold text-gray-700 mb-2">
+                        <label className="block text-xs font-semibold text-slate-700 mb-2">
                           Email
                         </label>
                         <input

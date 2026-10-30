@@ -34,6 +34,7 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import { motion, AnimatePresence } from "framer-motion";
+import { DURATION, tween } from "@/lib/motion";
 import { useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/axios";
 import { useNotification } from "@/hooks/useNotification";
@@ -558,7 +559,7 @@ const AddSaleModal: React.FC<AddSaleModalProps> = ({ isOpen, onClose }) => {
         {isOpen && (
           <motion.div
           key="sale-modal"
-          className="fixed inset-0 z-100000 flex items-center justify-center bg-slate-900/70 sm:p-4"
+          className="fixed inset-0 z-100000 flex items-center justify-center bg-slate-950/50 sm:p-4"
           variants={backdropVariants}
           initial="hidden"
           animate="visible"
@@ -573,7 +574,7 @@ const AddSaleModal: React.FC<AddSaleModalProps> = ({ isOpen, onClose }) => {
         >
           <motion.div
             ref={popupRef}
-            className="popup-content flex h-[100dvh] max-h-none w-full max-w-full flex-col bg-white shadow-lg sm:h-auto sm:max-h-[94vh] sm:max-w-[95%] sm:rounded-3xl md:max-w-[90%] lg:max-w-[85%] xl:max-w-[78%]"
+            className=" flex h-[100dvh] max-h-none w-full max-w-full flex-col bg-white shadow-lg sm:h-auto sm:max-h-[94vh] sm:max-w-[95%] sm:rounded-3xl md:max-w-[90%] lg:max-w-[85%] xl:max-w-[78%]"
             variants={modalVariants}
             initial="hidden"
             animate="visible"
@@ -623,7 +624,8 @@ const AddSaleModal: React.FC<AddSaleModalProps> = ({ isOpen, onClose }) => {
                         initial={{ opacity: 0, y: 4 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0 }}
-                        className="mt-3 flex items-center gap-2 text-xs text-gray-500"
+                        transition={tween(DURATION.fast)}
+                        className="mt-3 flex items-center gap-2 text-xs text-slate-500"
                       >
                         <Activity className="w-3.5 h-3.5 animate-pulse" />
                         Checking admission and package context…
@@ -637,6 +639,7 @@ const AddSaleModal: React.FC<AddSaleModalProps> = ({ isOpen, onClose }) => {
                         initial={{ opacity: 0, y: 6 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0 }}
+                        transition={tween(DURATION.fast)}
                         className="mt-3 flex flex-wrap items-center gap-2"
                       >
                         {formData.packageContext.slice(0, 4).map((admission) => (
@@ -646,7 +649,7 @@ const AddSaleModal: React.FC<AddSaleModalProps> = ({ isOpen, onClose }) => {
                             >
                               <Stethoscope className="w-3.5 h-3.5" />
                               {admission.departmentName} · {admission.admissionNumber}
-                              <span className="text-indigo-500 font-normal">
+                              <span className="text-indigo-700 font-normal">
                                 ({admission.status})
                               </span>
                             </span>
@@ -679,23 +682,21 @@ const AddSaleModal: React.FC<AddSaleModalProps> = ({ isOpen, onClose }) => {
                   <div className="flex items-center justify-between gap-3">
                     <div>
                       <p className="text-xs font-bold text-slate-800">Sale actions</p>
-                      <p className="text-[11px] text-slate-500">Add manually or apply a department preset.</p>
+                      <p className="text-2xs text-slate-500">Add manually or apply a department preset.</p>
                     </div>
                     <Package className="h-4 w-4 text-slate-400" />
                   </div>
 
                   <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
-                    <motion.button
+                    <button
                       type="button"
                       onClick={appendBlankRow}
                       disabled={isSubmitting}
-                      whileTap={isSubmitting ? undefined : { scale: 0.96 }}
-                      transition={{ type: "spring", stiffness: 400, damping: 17 }}
-                      className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-xl border border-blue-200 bg-white px-3 py-2 text-xs font-bold text-blue-700 transition hover:bg-blue-50 disabled:opacity-50"
+                      className="inline-flex h-10 items-center justify-center gap-1.5 rounded-xl border border-slate-300 bg-white px-3 text-xs font-semibold text-slate-700 transition-colors hover:bg-slate-50 disabled:opacity-50"
                     >
                       <Plus className="h-3.5 w-3.5" />
                       Add medicine
-                    </motion.button>
+                    </button>
 
                     <button
                       type="button"
@@ -708,35 +709,33 @@ const AddSaleModal: React.FC<AddSaleModalProps> = ({ isOpen, onClose }) => {
                         });
                       }}
                       disabled={isSubmitting}
-                      className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-xl border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-600 transition hover:bg-gray-50 disabled:opacity-50"
+                      className="inline-flex h-10 items-center justify-center gap-1.5 rounded-xl border border-slate-300 bg-white px-3 text-xs font-semibold text-slate-700 transition-colors hover:bg-slate-50 disabled:opacity-50"
                     >
                       <RefreshCcw className="h-3.5 w-3.5" />
                       Refresh
                     </button>
 
                     {hasRows && (
-                    <motion.button
+                    <button
                       type="button"
                       onClick={handleClearAllRows}
                       disabled={isSubmitting}
-                      whileTap={isSubmitting ? undefined : { scale: 0.96 }}
-                      transition={{ type: "spring", stiffness: 400, damping: 17 }}
-                      className="col-span-2 inline-flex min-h-10 items-center justify-center gap-1.5 rounded-xl border border-red-200 bg-white px-3 py-2 text-xs font-bold text-red-600 transition hover:bg-red-50 disabled:opacity-50 sm:col-span-1"
+                      className="col-span-2 inline-flex h-10 items-center justify-center gap-1.5 rounded-xl bg-red-600 px-3 text-xs font-bold text-white transition-colors hover:bg-red-700 disabled:opacity-50 sm:col-span-1"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                       Clear
-                    </motion.button>
+                    </button>
                     )}
                   </div>
 
                   {packageOptions.length > 0 && (
                     <div className="space-y-2 border-t border-slate-200 pt-3">
-                      <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
                         Available presets
                       </p>
                       <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
                         {packageOptions.map(({ pkg, admission }) => (
-                          <motion.button
+                          <button
                             key={`${pkg.code}-${admission.admissionId}`}
                             type="button"
                             onClick={() => requestApplyPackage({ pkg, admission })}
@@ -745,13 +744,7 @@ const AddSaleModal: React.FC<AddSaleModalProps> = ({ isOpen, onClose }) => {
                               isApplyingPackage ||
                               isLoadingPackageSummaries
                             }
-                            whileTap={
-                              isSubmitting || isApplyingPackage
-                                ? undefined
-                                : { scale: 0.97 }
-                            }
-                            transition={{ type: "spring", stiffness: 400, damping: 17 }}
-                            className="flex min-h-14 w-full items-center gap-3 rounded-xl border border-pink-200 bg-white px-3 py-2.5 text-left text-pink-700 transition hover:border-pink-400 hover:bg-pink-50 disabled:opacity-50"
+                            className="flex min-h-14 w-full items-center gap-3 rounded-xl border border-pink-200 bg-white px-3 py-2.5 text-left text-pink-700 transition-colors hover:border-pink-400 hover:bg-pink-50 disabled:opacity-50"
                           >
                             <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-pink-50">
                               {isApplyingPackage ? (
@@ -764,12 +757,12 @@ const AddSaleModal: React.FC<AddSaleModalProps> = ({ isOpen, onClose }) => {
                               <span className="block truncate text-xs font-bold">
                                 {pkg.operationName}
                               </span>
-                              <span className="mt-0.5 flex items-center gap-1 truncate text-[10px] font-medium text-pink-500">
+                              <span className="mt-0.5 flex items-center gap-1 truncate text-2xs font-medium text-pink-700">
                                 <Building2 className="h-3 w-3 shrink-0" />
                                 {pkg.departmentName} · {admission.admissionNumber}
                               </span>
                             </span>
-                          </motion.button>
+                          </button>
                         ))}
                       </div>
                     </div>
@@ -811,10 +804,10 @@ const AddSaleModal: React.FC<AddSaleModalProps> = ({ isOpen, onClose }) => {
                     <div className="w-12 h-12 mx-auto rounded-2xl bg-blue-100 flex items-center justify-center mb-3">
                       <Pill className="w-6 h-6 text-blue-500" />
                     </div>
-                    <h3 className="text-sm font-bold text-gray-800 mb-1">
+                    <h3 className="text-sm font-bold text-slate-800 mb-1">
                       Cart is empty
                     </h3>
-                    <p className="text-xs text-gray-500 max-w-sm mx-auto">
+                    <p className="text-xs text-slate-500 max-w-sm mx-auto">
                       Use <strong>Add medicine</strong> to start a manual
                       cart, or select a patient admission and use a department
                       package for the full template.
@@ -831,12 +824,12 @@ const AddSaleModal: React.FC<AddSaleModalProps> = ({ isOpen, onClose }) => {
                 )}
 
                 {/* Sale date */}
-                <div className="bg-gray-50 rounded-2xl p-4 sm:p-5 border border-gray-200">
+                <div className="bg-slate-50 rounded-2xl p-4 sm:p-5 border border-slate-200">
                   <div className="flex items-center gap-2 mb-3">
-                    <div className="w-8 h-8 bg-gray-200 rounded-lg flex items-center justify-center">
-                      <Calendar className="w-4 h-4 text-gray-600" />
+                    <div className="w-8 h-8 bg-slate-200 rounded-lg flex items-center justify-center">
+                      <Calendar className="w-4 h-4 text-slate-600" />
                     </div>
-                    <h3 className="text-sm font-bold text-gray-900">
+                    <h3 className="text-sm font-bold text-slate-900">
                       Sale Date
                     </h3>
                   </div>
@@ -845,9 +838,9 @@ const AddSaleModal: React.FC<AddSaleModalProps> = ({ isOpen, onClose }) => {
                       ref={saleDateBtnRef}
                       type="button"
                       onClick={() => setShowSaleCalendar(!showSaleCalendar)}
-                      className="h-12 px-4 py-2 bg-white border-2 border-gray-300 rounded-lg flex items-center gap-3 text-left text-sm font-medium text-gray-700 hover:border-blue-500 hover:shadow-sm transition min-w-[200px]"
+                      className="h-12 px-4 py-2 bg-white border-2 border-slate-300 rounded-lg flex items-center gap-3 text-left text-sm font-medium text-slate-700 hover:border-blue-500 hover:shadow-sm transition min-w-[200px]"
                     >
-                      <Calendar className="w-4 h-4 text-gray-400 shrink-0" />
+                      <Calendar className="w-4 h-4 text-slate-400 shrink-0" />
                       {format(formData.saleDate, "dd MMM yyyy")}
                     </button>
                     <DropdownPortal
@@ -872,10 +865,10 @@ const AddSaleModal: React.FC<AddSaleModalProps> = ({ isOpen, onClose }) => {
 
                 {/* Cart summary */}
                 {hasRows && (
-                  <div className="rounded-2xl border border-blue-200 bg-blue-50/40 p-4 sm:p-5 flex flex-wrap items-center justify-between gap-3">
-                    <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-gray-700">
+                  <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4 sm:p-5 flex flex-wrap items-center justify-between gap-3">
+                    <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-slate-700">
                       <span className="inline-flex items-center gap-1.5">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-700" />
                         {matchedCount} matched
                       </span>
                       <span className="inline-flex items-center gap-1.5">
@@ -891,10 +884,10 @@ const AddSaleModal: React.FC<AddSaleModalProps> = ({ isOpen, onClose }) => {
                       )}
                     </div>
                     <div className="text-right">
-                      <p className="text-[10px] uppercase font-bold tracking-widest text-gray-500">
+                      <p className="text-2xs uppercase font-bold tracking-widest text-slate-500">
                         Direct sale total
                       </p>
-                      <p className="text-lg font-black text-blue-700">
+                      <p className="text-lg font-black tabular-nums text-blue-700">
                         {formatCurrency(totalAmount)}
                       </p>
                     </div>

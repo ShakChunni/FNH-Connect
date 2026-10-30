@@ -81,11 +81,11 @@ export const FilterTriggerButton: React.FC<FilterTriggerButtonProps> = ({
       className={`
         relative flex h-full w-full items-center justify-center gap-2.5 px-5 sm:w-auto
         bg-white border rounded-full
-        transition-all duration-300 ease-out
+        transition duration-200 ease-out
         ${
           activeCount > 0
-            ? "border-emerald-600 bg-emerald-600/5 shadow-[0_0_0_3px_rgba(5,150,105,0.1)]"
-            : "border-gray-200 shadow-sm hover:border-gray-300 hover:shadow-md"
+            ? "border-emerald-600 bg-emerald-50"
+            : "border-slate-200 shadow-sm hover:border-slate-300 "
         }
         ${disabled ? "opacity-50 pointer-events-none" : "cursor-pointer"}
         group
@@ -93,12 +93,12 @@ export const FilterTriggerButton: React.FC<FilterTriggerButtonProps> = ({
     >
       <SlidersHorizontal
         className={`w-4 h-4 transition-colors duration-200 ${
-          activeCount > 0 ? "text-emerald-600" : "text-gray-400 group-hover:text-gray-600"
+          activeCount > 0 ? "text-emerald-700" : "text-slate-500 group-hover:text-slate-600"
         }`}
       />
       <span
         className={`text-sm font-medium transition-colors duration-200 ${
-          activeCount > 0 ? "text-emerald-600" : "text-gray-600 group-hover:text-gray-900"
+          activeCount > 0 ? "text-emerald-700" : "text-slate-600 group-hover:text-slate-900"
         }`}
       >
         Filters
@@ -108,9 +108,8 @@ export const FilterTriggerButton: React.FC<FilterTriggerButtonProps> = ({
         <span
           className="absolute -top-1.5 -right-1.5 flex items-center justify-center
             min-w-[20px] h-5 px-1.5 rounded-full
-            bg-emerald-600 text-white text-[10px] font-bold
-            shadow-[0_2px_8px_rgba(5,150,105,0.4)]
-            animate-in zoom-in duration-300"
+            bg-emerald-600 text-white text-2xs font-bold
+            animate-in fade-in duration-150"
         >
           {activeCount}
         </span>

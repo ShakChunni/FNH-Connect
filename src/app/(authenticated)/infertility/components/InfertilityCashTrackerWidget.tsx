@@ -534,7 +534,7 @@ export const InfertilityCashTrackerWidget: React.FC = () => {
       <button
         type="button"
         onClick={handleOpen}
-        className="inline-flex items-center justify-center gap-2 rounded-xl border border-emerald-100 bg-white px-3 sm:px-4 py-2.5 text-xs sm:text-sm font-bold text-emerald-800 shadow-sm transition hover:bg-emerald-50 hover:shadow-md active:scale-95"
+        className="inline-flex items-center justify-center gap-2 rounded-xl border border-emerald-100 bg-white px-3 sm:px-4 py-2.5 text-xs sm:text-sm font-bold text-emerald-800 shadow-sm transition hover:bg-emerald-50  "
       >
         <Wallet className="h-4 w-4" />
         Cash Tracker
@@ -587,15 +587,15 @@ export const InfertilityCashTrackerWidget: React.FC = () => {
                 onClick={() => setDateDropdownOpen((open) => !open)}
                 disabled={isFetching}
                 className={cn(
-                  "flex h-[42px] items-center justify-between gap-2 rounded-xl border border-gray-100 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 shadow-sm transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50",
+                  "flex h-[42px] items-center justify-between gap-2 rounded-xl border border-slate-100 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50",
                   !canSelectStaff && "sm:col-span-2",
                 )}
               >
                 <span className="flex min-w-0 items-center gap-2">
-                  <Calendar className="h-3.5 w-3.5 shrink-0 text-gray-400" />
+                  <Calendar className="h-3.5 w-3.5 shrink-0 text-slate-400" />
                   <span className="truncate">{selectedRange.label}</span>
                 </span>
-                <ChevronDown className="h-3.5 w-3.5 shrink-0 text-gray-400" />
+                <ChevronDown className="h-3.5 w-3.5 shrink-0 text-slate-400" />
               </button>
             </div>
 
@@ -612,10 +612,10 @@ export const InfertilityCashTrackerWidget: React.FC = () => {
                     type="button"
                     onClick={() => handleDatePresetSelect(preset.value)}
                     className={cn(
-                      "w-full px-3 py-2 text-left text-xs font-medium transition hover:bg-gray-50",
+                      "w-full px-3 py-2 text-left text-xs font-medium transition hover:bg-slate-50",
                       datePreset === preset.value
                         ? "bg-fnh-navy/5 text-fnh-navy"
-                        : "text-gray-700",
+                        : "text-slate-700",
                     )}
                   >
                     {preset.label}
@@ -639,8 +639,20 @@ export const InfertilityCashTrackerWidget: React.FC = () => {
             ) : null}
 
             {isError ? (
-              <div className="rounded-xl border border-rose-100 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">
-                Failed to load HSI cash tracker data.
+              <div
+                role="alert"
+                className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3"
+              >
+                <p className="text-sm font-medium text-red-700">
+                  Failed to load HSI cash tracker data.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => refetch()}
+                  className="h-9 rounded-lg border border-slate-300 bg-white px-3 text-xs font-medium text-slate-700 transition-colors hover:bg-slate-50 cursor-pointer"
+                >
+                  Try again
+                </button>
               </div>
             ) : null}
 
@@ -669,21 +681,21 @@ export const InfertilityCashTrackerWidget: React.FC = () => {
         {isCustomRangePickerOpen ? (
           <div className="fixed inset-0 z-[10000] flex items-center justify-center">
             <div
-              className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+              className="absolute inset-0 bg-slate-950/50 "
               onClick={() => setCustomRangePickerOpen(false)}
             />
 
-            <div className="relative z-10 w-[95vw] max-w-sm overflow-hidden rounded-xl bg-white shadow-2xl">
-              <div className="flex items-center justify-between border-b border-gray-100 p-4">
+            <div className="relative z-10 w-[95vw] max-w-sm overflow-hidden rounded-xl bg-white shadow-xl">
+              <div className="flex items-center justify-between border-b border-slate-100 p-4">
                 <h3 className="text-sm font-bold text-fnh-navy">
                   Select Custom Date Range
                 </h3>
                 <button
                   type="button"
                   onClick={() => setCustomRangePickerOpen(false)}
-                  className="rounded-lg p-1.5 transition hover:bg-gray-100"
+                  aria-label="Close" className="flex h-9 w-9 items-center justify-center rounded-full transition-colors hover:bg-slate-100 cursor-pointer"
                 >
-                  <X className="h-4 w-4 text-gray-500" />
+                  <X className="h-4 w-4 text-slate-500" />
                 </button>
               </div>
 
@@ -697,13 +709,13 @@ export const InfertilityCashTrackerWidget: React.FC = () => {
                   className="border-0 shadow-none"
                 />
 
-                <div className="mt-4 space-y-3 border-t border-gray-100 pt-4">
-                  <div className="text-[10px] font-black uppercase tracking-widest text-gray-400">
+                <div className="mt-4 space-y-3 border-t border-slate-100 pt-4">
+                  <div className="text-2xs font-black uppercase tracking-widest text-slate-500">
                     Selected Range
                   </div>
                   <div className="grid grid-cols-2 gap-2 text-xs">
                     <div>
-                      <span className="block text-[9px] font-bold uppercase tracking-wider text-gray-400">
+                      <span className="block text-2xs font-bold uppercase tracking-wider text-slate-500">
                         From
                       </span>
                       <span className="font-bold text-fnh-navy">
@@ -713,7 +725,7 @@ export const InfertilityCashTrackerWidget: React.FC = () => {
                       </span>
                     </div>
                     <div>
-                      <span className="block text-[9px] font-bold uppercase tracking-wider text-gray-400">
+                      <span className="block text-2xs font-bold uppercase tracking-wider text-slate-500">
                         To
                       </span>
                       <span className="font-bold text-fnh-navy">
@@ -728,7 +740,7 @@ export const InfertilityCashTrackerWidget: React.FC = () => {
                     <button
                       type="button"
                       onClick={handleClearRange}
-                      className="flex-1 rounded-lg bg-gray-100 px-3 py-2 text-xs font-bold text-gray-600 transition hover:bg-gray-200"
+                      className="flex-1 rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-bold text-slate-700 transition-colors hover:bg-slate-50"
                     >
                       Clear
                     </button>
@@ -736,7 +748,7 @@ export const InfertilityCashTrackerWidget: React.FC = () => {
                       type="button"
                       onClick={handleConfirmRange}
                       disabled={!tempRange.from || !tempRange.to}
-                      className="flex-1 rounded-lg bg-fnh-navy px-3 py-2 text-xs font-bold text-white transition hover:bg-fnh-navy/90 disabled:cursor-not-allowed disabled:opacity-50"
+                      className="flex-1 rounded-lg bg-fnh-blue px-3 py-2 text-xs font-bold text-white transition-colors hover:bg-fnh-blue-dark disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       Confirm
                     </button>

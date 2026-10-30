@@ -111,10 +111,10 @@ export function DateRangePresets({
             onClick={() => handleSelect(preset.value)}
             disabled={disabled}
             className={cn(
-              "px-2.5 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer",
+              "h-9 px-2.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer",
               isActive
                 ? "bg-fnh-navy text-white shadow-sm"
-                : "bg-gray-50 text-gray-600 hover:bg-gray-100 border border-gray-100"
+                : "bg-slate-50 text-slate-600 hover:bg-slate-100 border border-slate-100"
             )}
           >
             {preset.label}
@@ -126,7 +126,7 @@ export function DateRangePresets({
           type="button"
           onClick={() => handleSelect("clear")}
           disabled={disabled}
-          className="px-2.5 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider text-rose-500 hover:bg-rose-50 transition-all cursor-pointer"
+          className="h-9 px-2.5 rounded-lg text-xs font-bold uppercase tracking-wider text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
         >
           Clear
         </button>

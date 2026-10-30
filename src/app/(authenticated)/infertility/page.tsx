@@ -120,8 +120,18 @@ const InfertilityManagement = React.memo(() => {
   }, [investigationFilters]);
 
   // Fetching data
-  const { data: patientResult, isLoading: isPatientsLoading } = useFetchInfertilityData(patientHookFilters);
-  const { data: testsResult, isLoading: isTestsLoading } = useFetchInfertilityTests(investigationHookFilters);
+  const {
+    data: patientResult,
+    isLoading: isPatientsLoading,
+    isError: isPatientsError,
+    refetch: refetchPatients,
+  } = useFetchInfertilityData(patientHookFilters);
+  const {
+    data: testsResult,
+    isLoading: isTestsLoading,
+    isError: isTestsError,
+    refetch: refetchTests,
+  } = useFetchInfertilityTests(investigationHookFilters);
   const { updateStatus: updatePatientStatus, isUpdating: isUpdatingPatientStatus } =
     useUpdateInfertilityPatientStatus();
 
@@ -221,11 +231,11 @@ const InfertilityManagement = React.memo(() => {
 
           {/* Tabs */}
           <div className="px-1 sm:px-2 lg:px-4 pb-2">
-            <div className="flex space-x-6 border-b border-gray-200">
+            <div className="flex space-x-6 border-b border-slate-200">
               <button
-                className={`pb-3 text-sm font-medium transition-all ${
+                className={`pb-3 text-sm font-medium transition-colors ${
                   activeTab === "patients" 
-                    ? "border-b-2 border-emerald-600 text-emerald-600" 
+                    ? "border-b-2 border-emerald-600 text-emerald-700" 
                     : "text-slate-500 hover:text-slate-700"
                 }`}
                 onClick={() => handleTabChange("patients")}
@@ -233,9 +243,9 @@ const InfertilityManagement = React.memo(() => {
                 Patients
               </button>
               <button
-                className={`pb-3 text-sm font-medium transition-all ${
+                className={`pb-3 text-sm font-medium transition-colors ${
                   activeTab === "investigations" 
-                    ? "border-b-2 border-emerald-600 text-emerald-600" 
+                    ? "border-b-2 border-emerald-600 text-emerald-700" 
                     : "text-slate-500 hover:text-slate-700"
                 }`}
                 onClick={() => handleTabChange("investigations")}
@@ -261,15 +271,27 @@ const InfertilityManagement = React.memo(() => {
               className="bg-white rounded-xl sm:rounded-3xl shadow-sm border border-slate-100 overflow-hidden mb-4 sm:mb-8"
             >
               {activeTab === "patients" ? (
-                <PatientTable
-                  tableData={normalizedPatientData}
-                  isLoading={isPatientsLoading}
-                  onEdit={actions.openEditModal}
-                  onEditInvestigation={handleEditInvestigation}
-                  onOrderInvestigation={handleOrderInvestigation}
-                  onSetAdmitted={handleSetAdmitted}
-                  isStatusUpdating={isUpdatingPatientStatus}
-                  startIndex={startIndex}
+                isPatientsError ? (
+                  <LoadError
+                    message="Could not load HSI Center patients."
+                    onRetry={() => void refetchPatients()}
+                  />
+                ) : (
+                  <PatientTable
+                    tableData={normalizedPatientData}
+                    isLoading={isPatientsLoading}
+                    onEdit={actions.openEditModal}
+                    onEditInvestigation={handleEditInvestigation}
+                    onOrderInvestigation={handleOrderInvestigation}
+                    onSetAdmitted={handleSetAdmitted}
+                    isStatusUpdating={isUpdatingPatientStatus}
+                    startIndex={startIndex}
+                  />
+                )
+              ) : isTestsError ? (
+                <LoadError
+                  message="Could not load investigations."
+                  onRetry={() => void refetchTests()}
                 />
               ) : (
                 <InvestigationsTable
@@ -351,5 +373,22 @@ const InfertilityManagement = React.memo(() => {
 });
 
 InfertilityManagement.displayName = "InfertilityManagement";
+
+/** Shown instead of a table when the list request fails, so it never reads as "No results". */
+const LoadError: React.FC<{ message: string; onRetry: () => void }> = ({
+  message,
+  onRetry,
+}) => (
+  <div role="alert" className="p-8 text-center">
+    <p className="text-sm font-medium text-red-700">{message}</p>
+    <button
+      type="button"
+      onClick={onRetry}
+      className="mt-3 inline-flex h-10 items-center justify-center rounded-xl border border-slate-300 bg-white px-4 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer"
+    >
+      Try again
+    </button>
+  </div>
+);
 
 export default InfertilityManagement;
