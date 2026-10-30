@@ -48,9 +48,9 @@ const Notification: React.FC<NotificationProps> = ({
     <AnimatePresence onExitComplete={onClose}>
       {visible && (
         <motion.div
-          initial={{ opacity: 0, y: -12 }}
+          initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0, transition: SPRING }}
-          exit={{ opacity: 0, y: -4, transition: tween(DURATION.fast) }}
+          exit={{ opacity: 0, y: 4, transition: tween(DURATION.fast) }}
           role={type === "error" ? "alert" : "status"}
           className="relative flex items-center gap-3 overflow-hidden rounded-2xl bg-fnh-navy-dark py-3 pl-4 pr-2 shadow-xl ring-1 ring-white/10 w-full sm:w-auto sm:min-w-[280px] sm:max-w-md"
         >

@@ -1,12 +1,23 @@
 "use client";
 
-import { MotionConfig } from "framer-motion";
+import { useEffect } from "react";
+import { MotionGlobalConfig } from "framer-motion";
 
-/** Framer animations follow the OS "reduce motion" setting app-wide. */
+/** Framer animations are skipped entirely under the OS "reduce motion" setting. */
 export default function MotionProvider({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  return <MotionConfig reducedMotion="user">{children}</MotionConfig>;
+  useEffect(() => {
+    const query = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const sync = () => {
+      MotionGlobalConfig.skipAnimations = query.matches;
+    };
+    sync();
+    query.addEventListener("change", sync);
+    return () => query.removeEventListener("change", sync);
+  }, []);
+
+  return <>{children}</>;
 }

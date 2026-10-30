@@ -12,10 +12,9 @@ export function NotificationContainer({
   onClose,
 }: NotificationContainerProps) {
   return (
-    // Top centre: bottom-right would sit on top of modal Save buttons while an error is showing.
     <div
       aria-live="polite"
-      className="fixed top-[max(1rem,env(safe-area-inset-top))] inset-x-4 z-999999 flex flex-col items-stretch sm:items-center gap-2 pointer-events-none"
+      className="fixed bottom-[max(1rem,env(safe-area-inset-bottom))] inset-x-4 sm:left-auto sm:right-4 z-999999 flex flex-col items-stretch sm:items-end gap-2 pointer-events-none"
     >
       {notifications.map((notification) => (
         <div key={notification.id} className="pointer-events-auto">

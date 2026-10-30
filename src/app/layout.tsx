@@ -54,7 +54,7 @@ export default function RootLayout({
                 <AuthProvider>
                   <NotificationProvider>
                     <MainContent>{children}</MainContent>
-                    <Toaster position="top-center" richColors closeButton />
+                    <Toaster position="bottom-right" richColors closeButton />
                   </NotificationProvider>
                 </AuthProvider>
               </QueryClientProvider>
