@@ -143,6 +143,9 @@ const EditDataAdmission: React.FC<EditDataProps> = ({
     if (!patientData.firstName.trim()) {
       errors.push("Patient name is required");
     }
+    if (!patientData.guardianName?.trim()) {
+      errors.push("Guardian name is required");
+    }
     if (!hasRequiredBangladeshDistrict(patientData.address)) {
       errors.push("Patient district is required");
     }
@@ -177,6 +180,7 @@ const EditDataAdmission: React.FC<EditDataProps> = ({
     };
   }, [
     patientData.firstName,
+    patientData.guardianName,
     patientData.address,
     medicineChargeItems,
     initialPatientData.medicineBillingEnabled,

@@ -46,6 +46,7 @@ const STATUS_TONE: Record<string, StatusTone> = {
   // Visits / cases / tests
   active: "info",
   "in progress": "info",
+  "investigation ordered": "info",
   "follow-up": "warning",
   pending: "warning",
   completed: "success",

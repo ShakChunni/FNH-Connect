@@ -75,6 +75,18 @@ api.interceptors.response.use(
       console.warn("Rate limit exceeded. Please wait before trying again.");
     }
 
+    // Failed saves: show the server's reason instead of "Request failed with
+    // status code 400". GETs keep axios' message because query retry rules read
+    // the status code from it.
+    const serverMessage = error.response?.data?.error;
+    if (
+      error.config?.method !== "get" &&
+      typeof serverMessage === "string" &&
+      serverMessage.trim()
+    ) {
+      error.message = serverMessage;
+    }
+
     return Promise.reject(error);
   }
 );
